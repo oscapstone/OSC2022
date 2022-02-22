@@ -1,0 +1,18 @@
+[Flash Bootable Image to SD Card]
+$ lsblk
+$ dd if=nctuos.img of=sda
+
+[Interact with Rpi3]
+screen /dev/ttyUSB0 115200
+
+[Use QEMU to see the dumped assembly]
+qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm
+
+[Debug on QEMU]
+$ qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -S -s
+$ gdb-multiarch
+(gdb) file kernel8.elf
+(gdb) target remote :1234
+
+[Ref]
+https://www.electronicwings.com/raspberry-pi/raspberry-pi-uart-communication-using-python-and-c
