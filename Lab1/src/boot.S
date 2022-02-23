@@ -15,9 +15,9 @@ proc_hang:
 master:
 	adr	x0, bss_begin	// Load a label's relative address into the target register
 	adr	x1, bss_end		// bss_begin and bss_end are defined in the linker script
-	sub	x1, x1, x0
+	sub	x1, x1, x0		// Sets the condition register for branch
 	bl 	memzero			// In ARMv8 architecture, the first seven arguments are passed to the called function via registers x0–x6.
 
-	mov	sp, #LOW_MEMORY // Set stack pointer to 4MB (the kernel is loaded at address 0)
+	mov	sp, #LOW_MEMORY	// Set stack pointer to 4MB (the kernel is loaded at address 0)
 	bl	kernel_main		// Perform an unconditional branch and store the return address in x30
 	b 	proc_hang		// Should never come here
