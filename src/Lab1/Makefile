@@ -6,6 +6,8 @@ LIB_SRC = \
 	$(LIB_SRC_DIR)/mbox.c \
 	$(LIB_SRC_DIR)/mmio.c \
 	$(LIB_SRC_DIR)/reset.c \
+	$(LIB_SRC_DIR)/shell.c \
+	$(LIB_SRC_DIR)/string.c \
 	$(LIB_SRC_DIR)/uart.c \
 	$(LIB_SRC_DIR)/utils.c \
 

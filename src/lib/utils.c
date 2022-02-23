@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "mbox.h"
 
 void get_board_revision (unsigned int* board_revision) {
     mbox[0] = 7 * 4;              // buffer size in bytes

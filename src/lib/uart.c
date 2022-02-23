@@ -1,6 +1,4 @@
 #include "uart.h"
-#include "gpio.h"
-#include "aux.h"
 
 void uart_init () {
     unsigned int d;
@@ -41,6 +39,8 @@ void uart_init () {
     mmio_put(GPPUDCLK0, 0);
     /* Enable transmitter and receiver */
     mmio_put(AUX_MU_CNTL_REG, 3);
+    /* Clear rx data */
+    uart_flush();
 
     return;
 }
