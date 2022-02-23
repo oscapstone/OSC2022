@@ -3,7 +3,7 @@ lsblk
 sudo dd if=kernel8.img of=/dev/sda
 
 [Interact with Rpi3]
-screen /dev/ttyUSB0 115200
+sudo screen /dev/ttyUSB0 115200
 
 [Use QEMU to see the dumped assembly]
 qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm
@@ -19,7 +19,7 @@ gdb-multiarch
 
 
 [Dump Assembly]
-aarch64-linux-gnu-objdump -d build/kernel8.elf > kernel8.S
+aarch64-linux-gnu-objdump -d build/kernel8.elf > kernel8.s
 
 
 [GDB instructions]
