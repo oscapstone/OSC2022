@@ -9,6 +9,8 @@ void print_system_info();
 void welcome();
 void help();
 void clear();
+void put_left();
+void put_right();
 void echo_back(char c);
 void read_cmd(char *cmd);
 void do_cmd(char *cmd);

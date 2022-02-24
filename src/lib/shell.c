@@ -56,6 +56,20 @@ void clear () {
 
 //-----------------------------------------------------------------
 
+void put_left () {
+    uart_putc(0x1B);
+    uart_putc(0x5B);
+    uart_putc(0x44);
+    return;
+}
+
+void put_right () {
+    uart_putc(0x1B);
+    uart_putc(0x5B);
+    uart_putc(0x43);
+    return;
+}
+
 void echo_back (char c) {
 
     uart_putc(c);
@@ -86,13 +100,17 @@ void read_cmd (char *cmd) {
 
         c = uart_get();
         cmd[tail] = '\0';
-
         /* Deal with special operation */
         if (c == '\n') 
         {
             // Debug
             // uart_puts("\n  ");
             // uart_puts(cmd);
+            // uart_puts("\n  pos: ");
+            // uart_puth(pos);
+            // uart_puts("\n  tail: ");
+            // uart_puth(tail);
+
             echo_back(c);
             break;
         } 
@@ -140,9 +158,7 @@ void read_cmd (char *cmd) {
                     /* LEFT */
                     if (pos > 0) 
                     {
-                        uart_putc(0x1B);
-                        uart_putc(0x5B);
-                        uart_putc(0x44);
+                        put_left();
                         pos--;
                     }
                 }
@@ -151,9 +167,7 @@ void read_cmd (char *cmd) {
                     /* RIGHT */
                     if (pos < tail) 
                     {
-                        uart_putc(0x1B);
-                        uart_putc(0x5B);
-                        uart_putc(0x43);
+                        put_right();
                         pos++;
                     }
                 }
@@ -180,12 +194,17 @@ void read_cmd (char *cmd) {
             uart_flush();
             /* Go to tail */
             tmp = tail - pos;
-            for (int i = 0; i < tmp; i++) {
-                    uart_putc(0x1B);
-                    uart_putc(0x5B);
-                    uart_putc(0x43);
-            }
+            for (int i = 0; i < tmp; i++) put_right();
             pos = tail;
+        }
+        else if (c == 0x0B)
+        {
+            /* Erase till end of line */
+            tmp = tail - pos;
+            for (int i = 0; i < tmp; i++) uart_putc(' ');
+            for (int i = 0; i < tmp; i++) uart_putc('\b');
+            cmd[pos] = '\0';
+            tail = pos;
         }
         else if (pos >= 0 && pos < CMD_BUF_SIZE - 1)
         {
