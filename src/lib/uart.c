@@ -81,13 +81,14 @@ void uart_puth (unsigned int d) {
 
 void uart_puts (char *s) {
 
-    do {
+    while (*s != '\0') {
 
-        if (*s == '\n')
+        if (*s == '\n') 
             uart_putc('\r');
+            
         uart_putc(*s++);
 
-    } while (*s != '\0');
+    }
     
     return;
 }

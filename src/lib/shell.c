@@ -81,15 +81,18 @@ void read_cmd (char *cmd) {
     int tmp  = 0;
 
     uart_puts("> ");
-    memset(cmd, 0, sizeof(cmd));
 
     do {
 
         c = uart_get();
-        
+        cmd[tail] = '\0';
+
         /* Deal with special operation */
         if (c == '\n') 
         {
+            // Debug
+            // uart_puts("\n  ");
+            // uart_puts(cmd);
             echo_back(c);
             break;
         } 
@@ -166,7 +169,25 @@ void read_cmd (char *cmd) {
                 uart_puts("[assert] unknown input.\n");
             }
         }
-        else if (pos >= 0 && pos < 256) 
+        else if (c == 0x01)
+        {
+            /* Go to head */
+            for (int i = 0; i < pos; i++) uart_putc('\b');
+            pos = 0;
+        }
+        else if (c == 0x05)
+        {
+            uart_flush();
+            /* Go to tail */
+            tmp = tail - pos;
+            for (int i = 0; i < tmp; i++) {
+                    uart_putc(0x1B);
+                    uart_putc(0x5B);
+                    uart_putc(0x43);
+            }
+            pos = tail;
+        }
+        else if (pos >= 0 && pos < CMD_BUF_SIZE - 1)
         {
             if (pos < tail)
             {
@@ -226,7 +247,7 @@ void shell_start () {
 
     clear();
     welcome();
-    char cmd[256];
+    char cmd[CMD_BUF_SIZE];
 
     while (1) {
         read_cmd(cmd);

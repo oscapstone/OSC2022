@@ -165,7 +165,7 @@ char* strinsert (char *s, char c, int pos) {
     char *p;
     char tmp;
     
-    if (pos < strlen(s)) 
+    if (pos <= strlen(s)) 
     {
         p = s + pos;
 

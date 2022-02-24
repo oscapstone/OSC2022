@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "uart.h"
 #include "string.h"
+#define CMD_BUF_SIZE 32
 void print_system_info();
 void welcome();
 void help();
