@@ -17,7 +17,6 @@ int mailbox_call() {
     unsigned int msg = (((unsigned int)((unsigned long)mailbox) & ~0xF) | (0x8 & 0xF));
     while (*MAILBOX_STATUS & MAILBOX_FULL) {}
     *MAILBOX_WRITE = msg;
-    char buffer[20];
     while (1) {
         while (*MAILBOX_STATUS & MAILBOX_EMPTY) {}
         if(msg == *MAILBOX_READ){

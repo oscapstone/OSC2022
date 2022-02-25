@@ -57,6 +57,7 @@ void parse_command() {
         uart_send_string("\rhelp               : print this help menu\r\n");
         uart_send_string("hello              : print Hello World!\r\n");
         uart_send_string("reboot             : reboot the device\r\n");
+        uart_send_string("info               : print device info\r\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");
