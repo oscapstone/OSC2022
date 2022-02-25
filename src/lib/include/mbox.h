@@ -39,12 +39,10 @@ struct mail_body {
     unsigned int end;
 };
 
-struct mail_packet {
+typedef struct mail_t {
     struct mail_header header;
     struct mail_body   body;
-};
+} mail_t __attribute__((aligned(16)));
 
-extern volatile struct mail_packet mbox;
-
-int mbox_call(unsigned char ch);
+int mbox_call(mail_t *mbox, unsigned char ch);
 #endif

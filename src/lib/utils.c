@@ -1,6 +1,7 @@
 #include "utils.h"
 
 void get_board_revision (unsigned int* board_revision) {
+    mail_t mbox;
     mbox.header.packet_size = MAIL_PACKET_SIZE;
     mbox.header.code        = REQUEST_CODE;
 
@@ -8,8 +9,11 @@ void get_board_revision (unsigned int* board_revision) {
     mbox.body.buffer_size   = MAIL_BUF_SIZE;
     mbox.body.code          = TAG_REQUEST_CODE;
     mbox.body.end           = END_TAG;
-    
-    mbox_call(MBOX_CH_PROP);
+
+    /* Clear data buffer */
+    for (int i = 0; i < MAIL_BODY_BUF_LEN; i++) mbox.body.buffer[i] = 0;
+
+    mbox_call(&mbox, MBOX_CH_PROP);
 
     // Should be 0xA020D3 for rpi3 b+
     *board_revision = mbox.body.buffer[0];
@@ -17,6 +21,7 @@ void get_board_revision (unsigned int* board_revision) {
 }
 
 void get_board_serial(unsigned int* msb, unsigned int* lsb) {
+    mail_t mbox;
     mbox.header.packet_size = MAIL_PACKET_SIZE;
     mbox.header.code        = REQUEST_CODE;
 
@@ -24,8 +29,11 @@ void get_board_serial(unsigned int* msb, unsigned int* lsb) {
     mbox.body.buffer_size   = MAIL_BUF_SIZE;
     mbox.body.code          = TAG_REQUEST_CODE;
     mbox.body.end           = END_TAG;
+
+    /* Clear data buffer */
+    for (int i = 0; i < MAIL_BODY_BUF_LEN; i++) mbox.body.buffer[i] = 0;
     
-    if (mbox_call(MBOX_CH_PROP)) 
+    if (mbox_call(&mbox, MBOX_CH_PROP)) 
     {
         *msb = mbox.body.buffer[1];
         *lsb = mbox.body.buffer[0];
@@ -40,6 +48,7 @@ void get_board_serial(unsigned int* msb, unsigned int* lsb) {
 }
 
 void get_memory_info (unsigned int* mem_base, unsigned int* mem_size ) {
+    mail_t mbox;
     mbox.header.packet_size = MAIL_PACKET_SIZE;
     mbox.header.code        = REQUEST_CODE;
 
@@ -48,7 +57,10 @@ void get_memory_info (unsigned int* mem_base, unsigned int* mem_size ) {
     mbox.body.code          = TAG_REQUEST_CODE;
     mbox.body.end           = END_TAG;
 
-    if (mbox_call(MBOX_CH_PROP)) 
+    /* Clear data buffer */
+    for (int i = 0; i < MAIL_BODY_BUF_LEN; i++) mbox.body.buffer[i] = 0;
+
+    if (mbox_call(&mbox, MBOX_CH_PROP)) 
     {
         *mem_size = mbox.body.buffer[1];
         *mem_base = mbox.body.buffer[0];
