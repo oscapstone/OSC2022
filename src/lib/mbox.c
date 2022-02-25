@@ -1,5 +1,5 @@
 #include "mbox.h"
-volatile struct mail_packet mbox;
+volatile struct mail_packet mbox __attribute__((aligned(16)));
 
 int mbox_call (unsigned char ch) {
 
