@@ -1,6 +1,9 @@
 # Operating Systems Capstone 2022
 
-This repository is homework submission for students
+## Author 
+ | Student ID  | Github Account |    Name     | Email                    |
+ | ----------- | -------------- | ----------- | ------------------------ |
+ |  310551154  |    Henry658    | tzuheng lin | henry19980520@gmail.com  |
 
 ## How to submit homework
 
