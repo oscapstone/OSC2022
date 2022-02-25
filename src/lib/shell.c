@@ -250,14 +250,14 @@ void do_cmd (char *cmd) {
     }
     else if ( strcmp(cmd, "reboot") == 0 ) 
     {
-        reset(5);
+        reset(1);
     }
     else 
     {
         uart_puts("invalid command.");
     }
 
-    uart_puts("\n");
+    uart_puts("\n\n");
 
     return;
 }

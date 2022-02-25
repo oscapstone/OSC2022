@@ -160,7 +160,7 @@ int strncmp (char *s1, char *s2, size_t n) {
     return v;
 }
 
-char* strinsert (char *s, char c, int pos) {
+char *strinsert (char *s, char c, int pos) {
 
     char *p;
     char tmp;
@@ -186,7 +186,7 @@ char* strinsert (char *s, char c, int pos) {
     return s;
 }
 
-char* strpullout (char *s, int pos) {
+char *strpullout (char *s, int pos) {
 
     char *p;
     

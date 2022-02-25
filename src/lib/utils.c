@@ -1,39 +1,34 @@
 #include "utils.h"
 
 void get_board_revision (unsigned int* board_revision) {
-    mbox[0] = 7 * 4;              // buffer size in bytes
-    mbox[1] = REQUEST_CODE;
-    // tags begin
-    mbox[2] = GET_BOARD_REVISION; // tag identifier
-    mbox[3] = 4;                  // maximum of request and response value buffer's length.
-    mbox[4] = TAG_REQUEST_CODE;
-    mbox[5] = 0;                  // value buffer
-    // tags end
-    mbox[6] = END_TAG;
+    mbox.header.packet_size = MAIL_PACKET_SIZE;
+    mbox.header.code        = REQUEST_CODE;
 
+    mbox.body.identifier    = GET_BOARD_REVISION;
+    mbox.body.buffer_size   = MAIL_BUF_SIZE;
+    mbox.body.code          = TAG_REQUEST_CODE;
+    mbox.body.end           = END_TAG;
+    
     mbox_call(MBOX_CH_PROP);
 
     // Should be 0xA020D3 for rpi3 b+
-    *board_revision = mbox[5];
+    *board_revision = mbox.body.buffer[0];
     return;
 }
 
 void get_board_serial(unsigned int* msb, unsigned int* lsb) {
-    mbox[0] = 8 * 4;           
-    mbox[1] = REQUEST_CODE;
+    mbox.header.packet_size = MAIL_PACKET_SIZE;
+    mbox.header.code        = REQUEST_CODE;
 
-    mbox[2] = GET_BOARD_SERIAL;
-    mbox[3] = 8;          
-    mbox[4] = TAG_REQUEST_CODE;
-    mbox[5] = 0;
-    mbox[6] = 0;
-
-    mbox[7] = END_TAG;
+    mbox.body.identifier    = GET_BOARD_SERIAL;
+    mbox.body.buffer_size   = MAIL_BUF_SIZE;
+    mbox.body.code          = TAG_REQUEST_CODE;
+    mbox.body.end           = END_TAG;
     
     if (mbox_call(MBOX_CH_PROP)) 
     {
-        *msb = mbox[6];
-        *lsb = mbox[5];
+        *msb = mbox.body.buffer[1];
+        *lsb = mbox.body.buffer[0];
     }
     else 
     {
@@ -45,21 +40,18 @@ void get_board_serial(unsigned int* msb, unsigned int* lsb) {
 }
 
 void get_memory_info (unsigned int* mem_base, unsigned int* mem_size ) {
-    mbox[0] = 8 * 4;           
-    mbox[1] = REQUEST_CODE;
+    mbox.header.packet_size = MAIL_PACKET_SIZE;
+    mbox.header.code        = REQUEST_CODE;
 
-    mbox[2] = GET_MEMORY_BASE;
-    mbox[3] = 8;
-    mbox[4] = TAG_REQUEST_CODE;
-    mbox[5] = 0;              
-    mbox[6] = 0;          
-
-    mbox[7] = END_TAG;
+    mbox.body.identifier    = GET_MEMORY_BASE;
+    mbox.body.buffer_size   = MAIL_BUF_SIZE;
+    mbox.body.code          = TAG_REQUEST_CODE;
+    mbox.body.end           = END_TAG;
 
     if (mbox_call(MBOX_CH_PROP)) 
     {
-        *mem_size = mbox[6];
-        *mem_base = mbox[5];
+        *mem_size = mbox.body.buffer[1];
+        *mem_base = mbox.body.buffer[0];
     } 
     else
     {
@@ -67,5 +59,17 @@ void get_memory_info (unsigned int* mem_base, unsigned int* mem_size ) {
         *mem_base = 0xFFFFFFFF;
     } 
 
+    return;
+}
+
+void reset(int tick) {                      // reboot after watchdog timer expire
+    mmio_put(PM_RSTC, PM_PASSWORD | 0x20);  // full reset
+    mmio_put(PM_WDOG, PM_PASSWORD | tick);  // number of watchdog tick
+    return;
+}
+
+void cancel_reset() {
+    mmio_put(PM_RSTC, PM_PASSWORD | 0);  // full reset
+    mmio_put(PM_WDOG, PM_PASSWORD | 0);  // number of watchdog tick
     return;
 }

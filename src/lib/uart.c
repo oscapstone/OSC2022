@@ -16,7 +16,7 @@ void uart_init () {
     mmio_put(AUX_MU_MCR_REG, 0);
     /* Set baud rate to 115200 */
     mmio_put(AUX_MU_BAUD_REG, 270);
-    /* No FIFO */
+    /* Clear RX/TX FIFO */
     mmio_put(AUX_MU_IIR_REG, 0xC6);
 
     /* Get previous status of GPFSEL1 */
@@ -60,8 +60,8 @@ char uart_get () {
 }
 
 void uart_putc (char c) {
-    /* Wait for transmitter empty */
-    while ((mmio_get(AUX_MU_LSR_REG) & AUX_MU_LSR_TRANS_IDEL) == 0) asm volatile ("nop");
+    /* Wait for transmitter ready to receive data */
+    while ((mmio_get(AUX_MU_LSR_REG) & AUX_MU_LSR_TRANS_EMPTY) == 0) asm volatile ("nop");
     /* Put data */
     mmio_put(AUX_MU_IO_REG, c);
 
@@ -70,6 +70,7 @@ void uart_putc (char c) {
 
 void uart_puth (unsigned int d) {
     unsigned int c;
+
     for (int i = 28; i >= 0; i -= 4) {
         /* Highest 4 bits */
         c = (d >> i) & 0xF;
@@ -77,6 +78,8 @@ void uart_puth (unsigned int d) {
         c = (c > 9) ? (0x37 + c) : (0x30 + c) ;
         uart_putc(c);
     }
+
+    return;
 }
 
 void uart_puts (char *s) {

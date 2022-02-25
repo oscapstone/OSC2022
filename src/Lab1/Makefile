@@ -5,7 +5,6 @@ LIB_SRC_DIR = ../lib
 LIB_SRC = \
 	$(LIB_SRC_DIR)/mbox.c \
 	$(LIB_SRC_DIR)/mmio.c \
-	$(LIB_SRC_DIR)/reset.c \
 	$(LIB_SRC_DIR)/shell.c \
 	$(LIB_SRC_DIR)/string.c \
 	$(LIB_SRC_DIR)/uart.c \
@@ -61,6 +60,7 @@ OUT_ELF = ./$(PROJ).elf
 OUT_IMG = ./$(PROJ).img
 LINKER_FILE = linker.ld
 
+CCFLAGS = -Wall -O2
 LDFLAGS = -T$(LINKER_FILE)
 
 .PHONY: clean directories out_elf
@@ -73,7 +73,7 @@ out_img: directories $(OUT_IMG)
 $(APP_BUILD_DIR)/%.o : %.c
 	@echo "[APP Objects] : $@ -----------------------------------------"
 	@echo "Building: $<"
-	$(CC) $(CFLAGS) $(APP_INCLUDES) -o $@ -c $<
+	$(CC) $(CCFLAGS) $(APP_INCLUDES) -o $@ -c $<
 	@echo "Finished Building: $<"
 
 $(APP_BUILD_DIR)/%.o : %.S
@@ -85,7 +85,7 @@ $(APP_BUILD_DIR)/%.o : %.S
 $(LIB_BUILD_DIR)/%.o : %.c
 	@echo "[LIB Objects] : $@ -----------------------------------------"
 	@echo "Building: $<"
-	$(CC) $(CFLAGS) $(LIB_INCLUDES) -o $@ -c $<
+	$(CC) $(CCFLAGS) $(LIB_INCLUDES) -o $@ -c $<
 	@echo "Finished Building: $<"
 
 # Generate ELF -----------------------------------------------------------------
@@ -94,6 +94,8 @@ $(OUT_ELF): $(OUT_OBJS)
 	@echo 'Building target: $@'
 	@echo '--------------------------------'
 	$(LD) $(LDFLAGS) -o $@ $(OUT_OBJS)
+	$(OD) -d $@ > $(BUILD_DIR)/$(PROJ).objdump
+	$(SP) $@
 	@echo 'Finished building target: $@'
 	@echo ' '
 

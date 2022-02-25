@@ -1,8 +1,9 @@
 #ifndef __UART__H__
 #define __UART__H__
+#include "stddef.h"
 #include "gpio.h"
 #include "aux.h"
-#define AUX_MU_LSR_TRANS_IDEL  (1 << 6)
+#define AUX_MU_LSR_TRANS_EMPTY (1 << 5)
 #define AUX_MU_LSR_DATA_READY  (1)
 
 void uart_init();

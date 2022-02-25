@@ -1,8 +1,11 @@
 #include "mbox.h"
-volatile unsigned int  __attribute__((aligned(16))) mbox[36];
+volatile struct mail_packet mbox;
 
 int mbox_call (unsigned char ch) {
+
     unsigned int addr_channel;
+    /* Clear data buffer */
+    for (int i = 0; i < MAIL_BODY_BUF_LEN; i++) mbox.body.buffer[i] = 0;
     /* Wait for mbox not full */
     while (mmio_get(MBOX_STATUS) & MBOX_FULL) asm volatile ("nop");
     /* Write the address of message to the mbox with channel identifier */
@@ -16,5 +19,5 @@ int mbox_call (unsigned char ch) {
     } while (mmio_get(MBOX_READ) != addr_channel);
 
     /* check response vaild */
-    return mbox[1] == MBOX_RESPONSE;
+    return mbox.header.code == MBOX_RESPONSE;
 }
