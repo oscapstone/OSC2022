@@ -1,23 +1,27 @@
 #include "mini_uart.h"
 #include "shell.h"
-#include "stringUtils.h"
+#include "utils.h"
 #include "reboot.h"
+#include "peripherals/mail_box.h"
+#include "mail_box.h"
 
 #define MAX_BUFFER_SIZE 256u
-static char input_buffer[MAX_BUFFER_SIZE];
+static char buffer[MAX_BUFFER_SIZE];
 
-void getCommand();
-void parseCommand();
+void get_command();
+void parse_command();
+
+void get_board_revision();
 
 void shell(void) {
     while (1) {
         uart_send_string("> ");
-        getCommand();
-        parseCommand();
+        get_command();
+        parse_command();
     }
 }
 
-void getCommand() {
+void get_command() {
     unsigned int index = 0;
     char recv;
     while (1) {
@@ -25,26 +29,31 @@ void getCommand() {
         if (recv == '\r')
             continue;
         uart_send(recv);
-        input_buffer[index++] = recv;
+        buffer[index++] = recv;
         index = index < MAX_BUFFER_SIZE ? index : MAX_BUFFER_SIZE - 1;
         if (recv == '\n') {
-            input_buffer[index - 1] = '\0';
+            buffer[index - 1] = '\0';
             break;
         }
     }
 }
 
-void parseCommand() {
-    if (compareString(input_buffer, "\0") == 0)
+void parse_command() {
+    if (compare_string(buffer, "\0") == 0)
         uart_send_string("\r");
-    else if (compareString(input_buffer, "hello") == 0)
+    else if (compare_string(buffer, "hello") == 0)
         uart_send_string("\rHello World!\r\n");
-    else if (compareString(input_buffer, "reboot") == 0) {
+    else if (compare_string(buffer, "reboot") == 0) {
         uart_send_string("\rrebooting ...\r\n");
         reboot(100);
         while (1) {}
     }
-    else if (compareString(input_buffer, "help") == 0) {
+    else if (compare_string(buffer, "info") == 0) {
+        uart_send_string("\r");
+        get_board_revision();
+        get_arm_memory();
+    }
+    else if (compare_string(buffer, "help") == 0) {
         uart_send_string("\rhelp               : print this help menu\r\n");
         uart_send_string("hello              : print Hello World!\r\n");
         uart_send_string("reboot             : reboot the device\r\n");

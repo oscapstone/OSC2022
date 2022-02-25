@@ -18,6 +18,7 @@ master:
 	sub	x1, x1, x0		// Sets the condition register for branch
 	bl 	memzero			// In ARMv8 architecture, the first seven arguments are passed to the called function via registers x0–x6.
 
-	mov	sp, #LOW_MEMORY	// Set stack pointer to 4MB (the kernel is loaded at address 0)
+	ldr x1, =_start
+	mov	sp, x1			// set top of stack just before our code
 	bl	kernel_main		// Perform an unconditional branch and store the return address in x30
 	b 	proc_hang		// Should never come here
