@@ -102,7 +102,7 @@ void get_arm_memory() {
 
     volatile uint32_t buf[36] __attribute__((aligned(16)));
 
-    create_mailbox_request(buf, GET_ARM_MEMORY, 8, 0);
+    create_mailbox_request(buf, GET_ARM_MEMORY, 0, 8);
 
     if(mailbox_call(0x8, buf)) {
         uart_write("ARM Memory:\n");
