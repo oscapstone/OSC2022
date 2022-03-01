@@ -32,4 +32,10 @@
 ├── build\
 │   ├── kernel8.img\
 │   ├── *.o\
+├── os\
+│   ├── bootcode.bin\
+│   ├── fixup.dat\
+│   ├── startup.elf\
+│   ├── kernel8.img\
 ├── Makefile
+├── os.img
