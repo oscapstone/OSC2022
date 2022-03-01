@@ -2,9 +2,6 @@
 
 This repository is homework submission for students
 
-b4435242
-310551091
-林柏均
 
 ## How to submit homework
 
