@@ -22,8 +22,9 @@ make run
 
 ```
 make run_debug
-
+```
 (in another terminal)
+```
 gdb
 file build/kernel8.elf 
 target remote :1234
