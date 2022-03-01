@@ -16,6 +16,13 @@ SECTIONS
 
 ## QEMU command
 `qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm`
+```
+-M machine?
+-d enable specified debug log
+-S freeze CPU at startup (use 'c' to start execution)???
+-s shorthand for -gdb tcp::1234, debugger port
+```
+
 
 - output of Lab0
 ```bash
