@@ -26,14 +26,14 @@ make run
 
 ## Directory structure
 
->lab
-  >>src
-    >>>*.S
-    >>>*.c
-    >>>*.h
-  >>build
-    >>>kernel8.img
-    >>>*.o
-  >>Makefile
+> lab
+  >> src
+    >>> *.S
+    >>> *.c
+    >>> *.h
+  >> build
+    >>> kernel8.img
+    >>> *.o
+  >> Makefile
 
 **WIP**
