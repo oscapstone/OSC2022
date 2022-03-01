@@ -8,19 +8,15 @@
 
 ## How to build
 
-make
-
-**WIP**
+**make**
 
 ## How to run
 
-make run
+**make run**
 
 ## How to burn it into pi3
 
-make burn
-
-**WIP**
+**make burn**
 
 ## Architecture
 
@@ -37,5 +33,3 @@ make burn
 │   ├── kernel8.img\
 │   ├── *.o\
 ├── Makefile
-
-**WIP**
