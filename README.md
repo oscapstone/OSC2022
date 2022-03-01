@@ -2,12 +2,16 @@
 
 This repository is homework submission for students
 
+b4435242
+310551091
+林柏均
+
 ## How to submit homework
 
 1. Fork [this repository](https://github.com/oscapstone/osc2022) on GitHub 
     ![](images/fork_button.png)
 2. Write down following info in your `README.md`
-    - GitHub account name
+    - GitHub account name 
     - Student ID
     - Your name
 3. Design and implement your kernel in forked repository
