@@ -12,6 +12,11 @@ void append_str(char *s, char ch){
     s[i+1] = 0;
 }
 
+void pop_str(char *s){
+    int i = strlen(s);
+    s[i-1] = 0;
+}
+
 int strcmp(const char *X, const char *Y)
 {
     while (*X)

@@ -7,10 +7,13 @@
 void shell(char *input){
   char read = 0;
   read = uart_getc();
-  if(read != '\n'){
+  if(read != '\n' && read != 0x7f){
     append_str(input, read);
     uart_send(read);
     read = 0;
+  }else if(read == 0x7f){
+    pop_str(input);
+    uart_puts("\b \b");
   }else{
     uart_puts("\n");
     if(read == '\n'){ 
