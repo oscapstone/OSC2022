@@ -3,7 +3,7 @@ CROSS_COMPILER_PREFIX = aarch64-linux-gnu
 SRCS = $(wildcard lib/*.c) main.c
 OBJS = $(SRCS:.c=.o)
 
-CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
+CFLAGS = -Wall -O2 -ffreestanding -nostdlib -nostartfiles # -nostdinc
 
 all: clean kernel8.img
 
