@@ -70,6 +70,7 @@ void help()
     uart_printf("help\t: print this help menu\n");
     uart_printf("hello\t: print hello world\n");
     uart_printf("reboot\t: reboot the device\n");
+    uart_printf("mailbox\t: show infos of board revision and ARM memory\n");
 }
 
 void hello()
