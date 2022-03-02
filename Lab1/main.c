@@ -30,7 +30,7 @@
 #define PM_RSTC 0x3F10001c
 #define PM_WDOG 0x3F100024
 
-const unsigned char size = 256;
+const unsigned char size = 255;
 char buffer [256];
 
 void set(long addr, unsigned int value) {
