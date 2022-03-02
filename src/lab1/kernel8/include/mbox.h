@@ -25,7 +25,7 @@
 // #define TAG_REQUEST_CODE    ((volatile unsigned int *)(0x00000000))
 // #define END_TAG             ((volatile unsigned int *)(0x00000000))
 
-#define MBOX_TAG_GET_VC_MEMORY  0x00010006
+#define MBOX_TAG_GET_ARM_MEMORY  0x00010005
 #define GET_BOARD_REVISION  0x00010002
 #define REQUEST_CODE        0x00000000
 #define REQUEST_SUCCEED     0x80000000
@@ -46,4 +46,4 @@
 
 int mbox_call(unsigned char ch);
 void get_board_revision();
-void mbox_vc_memory();
+void mbox_arm_memory();

@@ -65,6 +65,7 @@ void command_controller ( enum SPECIAL_CHARACTER input_parse, char c, char buffe
 
             if      ( !strcmp(buffer, "help"        ) ) command_help();
             else if ( !strcmp(buffer, "hello"       ) ) command_hello();
+            else if ( !strcmp(buffer, "mbox"       ) ) command_info();
             else if ( !strcmp(buffer, "reboot"      ) ) {reset();flag = 1;}
 			else if ( !strcmp(buffer, "cancel"      ) ) cancel_reset();
 			else if ( !strcmp(buffer, "\0"      ) )   uart_puts("");

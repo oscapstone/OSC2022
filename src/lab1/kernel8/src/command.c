@@ -1,5 +1,6 @@
 #include "uart.h"
 #include "string.h"
+#include "mbox.h"
 
 void input_buffer_overflow_message ( char cmd[] )
 {
@@ -26,6 +27,10 @@ void command_hello ()
     uart_puts("Hello World!\n");
 }
 
+void command_info (){
+    get_board_revision();
+    mbox_arm_memory();
+}
 
 void command_not_found (char * s) 
 {

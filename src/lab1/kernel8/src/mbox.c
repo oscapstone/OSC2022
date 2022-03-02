@@ -44,20 +44,20 @@ void get_board_revision(){
 }
 
 
-void mbox_vc_memory() {
+void mbox_arm_memory() {
     // unsigned int __attribute__((aligned(16))) mbox[8];
     mbox[0] = 8 * 4;  // buffer size in bytes
     mbox[1] = REQUEST_CODE;
     // tags begin
-    mbox[2] = MBOX_TAG_GET_VC_MEMORY;  // tag identifier
+    mbox[2] = MBOX_TAG_GET_ARM_MEMORY;  // tag identifier
     mbox[3] = 8;                       // maximum of request and response value buffer's length.
     mbox[4] = TAG_REQUEST_CODE;       // tag code
     mbox[5] = 0;                       // base address
     mbox[6] = 0;                       // size in bytes
     mbox[7] = 0x0;                     // end tag
     // tags end
-    mbox_call( 8);
-    uart_puts("VC Core base addr: 0x");
+    mbox_call(8);
+    uart_puts("ARM Core base addr: 0x");
     uart_hex(mbox[5]);
     uart_puts(", size: 0x");
     uart_hex(mbox[6]);

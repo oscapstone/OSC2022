@@ -7,7 +7,7 @@ void main(){
     // set up serial console
     uart_init();
     get_board_revision();
-    mbox_vc_memory();
+    mbox_arm_memory();
     // uart_puts
     uart_puts("rpi3 is already\n");
 

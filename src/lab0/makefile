@@ -19,5 +19,5 @@ clean:
 	rm -f *.o
 
 run:
-	qemu-system-aarch64 -M raspi3ap -kernel kernel8.img -display none -d in_asm
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -d in_asm
 
