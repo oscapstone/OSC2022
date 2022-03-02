@@ -23,8 +23,7 @@
  *
  */
 
-void uart_init();
-void uart_send(unsigned int c);
-char uart_getc();
-void uart_puts(char *s);
-void uart_hex(unsigned int d);
+void wait_cycles(unsigned int n);
+void wait_msec(unsigned int n);
+unsigned long get_system_timer();
+void wait_msec_st(unsigned int n);

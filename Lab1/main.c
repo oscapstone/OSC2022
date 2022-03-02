@@ -24,9 +24,11 @@
  */
 #include "utils.h"
 #include "uart.h"
+#include "mbox.h"
+#include "power.h"
 #include "commands.h"
 
-#define NUM_OF_COMMANDS 3
+#define NUM_OF_COMMANDS 4
 #define CMD_LEN 10
 #define MSG_LEN 50
 #define BUF_LEN 30
@@ -71,13 +73,6 @@ int compare(char const *a, char const *b){
     }
     return 1; // 
 }
-char compare_c(char const *a, char const *b, int size){
-    for(int i = 0; i<size; i++){
-        if(a[i] != b[i]) return '0';
-        if(a[i] == '\0') return '1'; /// ????????
-    }
-    return '1'; // 
-}
 
 void execute_command(char* str, commads cmd_list[NUM_OF_COMMANDS]){
 
@@ -94,14 +89,90 @@ void execute_command(char* str, commads cmd_list[NUM_OF_COMMANDS]){
 
     }else if(compare(str, "reboot") == 1){
 
-        uart_puts("reboot system");
+        //uart_puts("reboot system");
+        reset();
 
+    }else if(compare(str, "mailbox") == 1){
+
+        // see mailbox detail in https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
+
+        // get the board's unique serial number with a mailbox call
+        mbox[0] = 8*4;                  // length of the message
+        mbox[1] = MBOX_REQUEST;         // this is a request message
+        
+        mbox[2] = MBOX_TAG_GETSERIAL;   // get serial number command
+        mbox[3] = 8;                    // buffer size
+        mbox[4] = 8;
+        mbox[5] = 0;                    // clear output buffer
+        mbox[6] = 0;
+    
+        mbox[7] = MBOX_TAG_LAST;
+    
+        // send the message to the GPU and receive answer
+        if (mbox_call(MBOX_CH_PROP)) {
+            uart_puts("My serial number is: ");
+            uart_hex(mbox[6]);
+            uart_hex(mbox[5]);
+            uart_puts("\r\n");
+        } else {
+            uart_puts("Unable to query serial!\n");
+        }
+        
+        /* ===== get the board's revison ===== */
+
+        mbox[0] = 8*4;                  // length of the message
+        mbox[1] = MBOX_REQUEST;         // this is a request message
+        
+        mbox[2] = MBOX_TAG_BOARD_REVISION;   // get serial number command
+        mbox[3] = 4;                    // buffer size
+        mbox[4] = 4;
+        mbox[5] = 0;                    // clear output buffer
+        mbox[6] = 0;
+    
+        mbox[7] = MBOX_TAG_LAST;
+    
+        // send the message to the GPU and receive answer
+        if (mbox_call(MBOX_CH_PROP)) {
+            uart_puts("My board revision is: ");
+            uart_hex(mbox[6]);
+            uart_hex(mbox[5]);
+            uart_puts("\r\n");
+        } else {
+            uart_puts("Unable to query serial!\n");
+        }
+
+        /* ===== get the board's memory info ===== */
+
+        mbox[0] = 8*4;                  // length of the message
+        mbox[1] = MBOX_REQUEST;         // this is a request message
+        
+        mbox[2] = MBOX_TAG_BOARD_MEMORY;   // get serial number command
+        mbox[3] = 8;                    // buffer size
+        mbox[4] = 8;
+        mbox[5] = 0;                    // clear output buffer
+        mbox[6] = 0;
+    
+        mbox[7] = MBOX_TAG_LAST;
+    
+        // send the message to the GPU and receive answer
+        if (mbox_call(MBOX_CH_PROP)) {
+            uart_puts("My ARM memory base address in bytes is: ");
+            uart_hex(mbox[5]);
+            uart_puts("\r\n");
+            uart_puts("My ARM memory size in bytes is: ");
+            uart_hex(mbox[6]);
+            uart_puts("\r\n");
+        } else {
+            uart_puts("Unable to query serial!\n");
+        }
+
+
+        // echo everything back
+        // uart_send(uart_getc());
     }else{
         uart_puts("command not found");
     }
-    
 }
-
 
 void main()
 {
@@ -109,12 +180,13 @@ void main()
     uart_init();
     
     // say hello
-    uart_puts("Hello World!\r\n");
+    uart_puts("Wellcome!\r\n");
 
     commads cmd_list[NUM_OF_COMMANDS]={
         {.cmd="help", .help="print this help menu"},
         {.cmd="hello", .help="print Hello World!"},
-        {.cmd="reboot", .help="reboot the device"}
+        {.cmd="reboot", .help="reboot the device"},
+        {.cmd="mailbox", .help="get mailbox information"},
     };
     
     char input_buffer[BUF_LEN];
@@ -123,10 +195,7 @@ void main()
         clear_buffer(input_buffer, BUF_LEN);
         // read command
         read_command(input_buffer);
-        // uart_puts(cmd);
         // uart_puts(input_buffer); // echo input
-
         execute_command(input_buffer, cmd_list);
-
     }
 }
