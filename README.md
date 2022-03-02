@@ -7,9 +7,9 @@ This repository is homework submission for students
 1. Fork [this repository](https://github.com/oscapstone/osc2022) on GitHub 
     ![](images/fork_button.png)
 2. Write down following info in your `README.md`
-    - GitHub account name
-    - Student ID
-    - Your name
+    - ricky42613
+    - A102152
+    - 徐子桓
 3. Design and implement your kernel in forked repository
 4. Create a GitHub pull request
     - Choose `oscapstone/osc2022` as base repository and `{your student ID}` as base branch
