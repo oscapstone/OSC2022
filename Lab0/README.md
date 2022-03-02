@@ -2,29 +2,56 @@
 ---
 ## 1. How to write linker file
 - https://blog.louie.lu/2016/11/06/10%E5%88%86%E9%90%98%E8%AE%80%E6%87%82-linker-scripts/
-## Linker File
-```
-SECTIONS
-{
-  . = 0x80000; // location counter, start from 0x80000
-  .text : // output section
-  { 
-    *(.text) // find .text as input file
-  } 
-}
-```
+    ### Linker File
+    ```
+    SECTIONS
+    {
+      . = 0x80000; // location counter, start from 0x80000
+      .text : // output section
+      { 
+        *(.text) // find .text as input file
+      } 
+    }
+    ```
 
-## QEMU command
+## 2. QEMU 
 `qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm`
+
 ```
 -M machine?
 -d enable specified debug log
 -S freeze CPU at startup (use 'c' to start execution)???
 -s shorthand for -gdb tcp::1234, debugger port
 ```
-
-
 - output of Lab0
+    - see Reference
+
+## 3. How to create your bootable image
+1. You need following things to create a bootable image
+    - An FAT16/32 partition contains
+        - Firmware for GPU.
+        - Kernel image.(kernel8.img)
+    - The image create by TA is already a bootable img
+    - find your sd card
+        - `lsblk`
+        - `sudo ls /dev/sd` + tab
+    - you can mount the SD card with this image to replace the kernel you want
+        `sudo mount -t vfat /dev/sdc1 sd-card-mount`
+        -   `sdc` is not mountable
+    - After mounting you can see
+        ```
+        mount_dir
+        ├── bootcode.bin
+        ├── fixup.dat
+        ├── kernel8.img
+        └── start.elf
+        ```
+    - replace kernel8.img with yours
+    - `sudo umount sd-card-mount`
+
+## Problems
+1. why two partition on SD card(sdc, sdc1)?
+## Reference
 ```bash
 > qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm
 ----------------
