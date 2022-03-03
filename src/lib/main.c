@@ -6,7 +6,7 @@
 void main()
 {
 	uart_init();
-	//boot_msg();
+	boot_msg();
 
 	char cmd[MAX_LEN];
 	cmd_input(cmd);
