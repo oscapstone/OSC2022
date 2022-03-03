@@ -13,7 +13,9 @@ void shell_get_command(char *cmd, int lim)
 		*cmd++ = c;
 	}
 	*cmd = '\0';
-	uart_send('\n');
+	
+	// print \n\r
+	uart_printf("\0");
 }
 
 void shell_execute(char *cmd)
@@ -28,8 +30,7 @@ void shell_execute(char *cmd)
 	}
 	else if (!str_cmp(cmd, "reboot")) {
 	    uart_printf("rebooting...");
-	    reset(100);
-	    uart_printf("reboot finish");
+	    reset(150);
 	}
 	else {
 		uart_printf("ERROR: unsupport shell command : %s", cmd);

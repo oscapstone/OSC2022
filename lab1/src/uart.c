@@ -4,18 +4,18 @@
 
 // mini UART registers
 // ch 2.2.2
-#define AUX_ENB 		((volatile unsigned int*)(MMIO_BASE+0x00215004))
-#define AUX_MU_IO_REG		((volatile unsigned int*)(MMIO_BASE+0x00215040))
-#define AUX_MU_IER_REG		((volatile unsigned int*)(MMIO_BASE+0x00215044))
-#define AUX_MU_IIR_REG		((volatile unsigned int*)(MMIO_BASE+0x00215048))
-#define AUX_MU_LCR_REG  	((volatile unsigned int*)(MMIO_BASE+0x0021504C))
-#define AUX_MU_MCR_REG  	((volatile unsigned int*)(MMIO_BASE+0x00215050))
-#define AUX_MU_LSR_REG		((volatile unsigned int*)(MMIO_BASE+0x00215054))
-#define AUX_MU_MSR_REG		((volatile unsigned int*)(MMIO_BASE+0x00215058))
+#define AUX_ENB 				((volatile unsigned int*)(MMIO_BASE+0x00215004))
+#define AUX_MU_IO_REG			((volatile unsigned int*)(MMIO_BASE+0x00215040))
+#define AUX_MU_IER_REG			((volatile unsigned int*)(MMIO_BASE+0x00215044))
+#define AUX_MU_IIR_REG			((volatile unsigned int*)(MMIO_BASE+0x00215048))
+#define AUX_MU_LCR_REG  		((volatile unsigned int*)(MMIO_BASE+0x0021504C))
+#define AUX_MU_MCR_REG  		((volatile unsigned int*)(MMIO_BASE+0x00215050))
+#define AUX_MU_LSR_REG			((volatile unsigned int*)(MMIO_BASE+0x00215054))
+#define AUX_MU_MSR_REG			((volatile unsigned int*)(MMIO_BASE+0x00215058))
 #define AUX_MU_SCRATCH_REG  	((volatile unsigned int*)(MMIO_BASE+0x0021505C))
-#define AUX_MU_CNTL_REG		((volatile unsigned int*)(MMIO_BASE+0x00215060))
-#define AUX_MU_STAT_REG		((volatile unsigned int*)(MMIO_BASE+0x00215064))
-#define AUX_MU_BAUD_REG		((volatile unsigned int*)(MMIO_BASE+0x00215068))
+#define AUX_MU_CNTL_REG			((volatile unsigned int*)(MMIO_BASE+0x00215060))
+#define AUX_MU_STAT_REG			((volatile unsigned int*)(MMIO_BASE+0x00215064))
+#define AUX_MU_BAUD_REG			((volatile unsigned int*)(MMIO_BASE+0x00215068))
 
 /**
  * Set baud rate and characteristics (115200 8N1) and map to GPIO
@@ -30,27 +30,35 @@ void uart_init()
     *AUX_MU_IER_REG = 0;	// disable interrupt
     *AUX_MU_LCR_REG = 3;       	// the UART works in 8-bit mode
     *AUX_MU_MCR_REG = 0;	// Don’t need auto flow control
-    *AUX_MU_IIR_REG = 0xc6;    	// disable interrupts
+    //*AUX_MU_IIR_REG = 0xc6;    	// disable interrupts
     *AUX_MU_BAUD_REG = 270;    	// 115200 baud rate
     *AUX_MU_IIR_REG = 6;	// no FIFO
-    *AUX_MU_CNTL_REG = 3;     	// enable tx, rx
+
 
     // configure GPFSELn register to change alternate function(UART1)
-    r=*GPFSEL1;
-    r&=~((7<<12)|(7<<15)); // select gpio14, gpio15, and reset to 0 (ref table 6-3)
-    r|=(2<<12)|(2<<15);    // 2(010) means choose alt5(ref 6.2)
+    r = *GPFSEL1;
+    r &= ~((7<<12) | (7<<15)); // select gpio14, gpio15, and reset to 0 (ref table 6-3)
+    r |= (2<<12) | (2<<15);    // 2(010) means choose alt5(ref 6.2)
     *GPFSEL1 = r;
 
     // ref: SYNOPSIS of GPPUDCLKn
     // enable pins 14 and 15 
     *GPPUD = 0;            
-    r=150;
-    while(r--) { asm volatile("nop"); }		//  Inline Assembly Language in C, nop: do nothing, Wait 150 cycles
+    r = 150;
+    while (r--) { asm volatile("nop"); }		//  Inline Assembly Language in C, nop: do nothing, Wait 150 cycles
 
-    *GPPUDCLK0 = (1<<14)|(1<<15);
-    r=150; 
-    while(r--) { asm volatile("nop"); }
+    *GPPUDCLK0 = (1<<14) | (1<<15);
+    r = 150; 
+    while (r--) { asm volatile("nop"); }
     *GPPUDCLK0 = 0;        	// flush GPIO setup
+    
+    *AUX_MU_CNTL_REG = 3;     	// enable tx, rx
+}
+
+void uart_flush()
+{
+    while (*AUX_MU_LSR_REG & 0x01)
+    	*AUX_MU_IO_REG;
 }
 
 /**
@@ -58,7 +66,7 @@ void uart_init()
  */
 void uart_send(unsigned int c) {
     /* wait until we can send */
-    do{ asm volatile("nop"); }while( !(*AUX_MU_LSR_REG & 0x20) );	// see 5th bit
+    do { asm volatile("nop"); } while ( !(*AUX_MU_LSR_REG & 0x20) );	// see 5th bit
     /* write the character to the buffer */
     *AUX_MU_IO_REG = c;
 }
@@ -69,11 +77,12 @@ void uart_send(unsigned int c) {
 char uart_getc() {
     char r;
     /* wait until something is in the buffer */
-    do{ asm volatile("nop"); }while( !(*AUX_MU_LSR_REG & 0x01) );
+    do { asm volatile("nop"); } while ( !(*AUX_MU_LSR_REG & 0x01) );
     /* read it and return */
     r = (char)(*AUX_MU_IO_REG);
     /* convert carrige return to newline */
     return r == '\r' ? '\n' : r;
+    //return r;
 }
 
 

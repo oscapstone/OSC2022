@@ -20,8 +20,9 @@ void main()
 {
     // set uart
     uart_init();
+    uart_flush();
     uart_printf("uart init");
-    
+
     // print raspi revision
     mailbox_get_board_revision();
     // print memory base addr and size
