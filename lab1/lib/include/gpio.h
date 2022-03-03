@@ -1,7 +1,6 @@
 #ifndef __GPIO_H__
 #define __GPIO_H__
 
-// TODO: GPIO_BASE 是 0x7e200000 or 0x3f200000 ?
 #define GPIO_BASE           0x3f200000
 #define GPFSEL0             (GPIO_BASE + 0x0)
 #define GPFSEL1             (GPIO_BASE + 0x4)

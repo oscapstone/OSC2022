@@ -13,7 +13,7 @@ void uart_init() {
     t &= ~(7 << 12);  // clean gpio14
     t |= (2 << 12);   // set alt5
     t &= ~(7 << 15);  // clean gpio15
-    t |= (2 << 15);   // set alt5 TODO: why 2
+    t |= (2 << 15);   // set alt5
     mmio_write(GPFSEL1, t);
 
     /* Configure pull up/down register to disable GPIO pull up/down */
@@ -60,7 +60,7 @@ void uart_init() {
     mmio_write(AUX_MU_BAUD_REG, 270);
 
     // 7. Set AUX_MU_IIR_REG to 6. No FIFO.
-    mmio_write(AUX_MU_IIR_REG, 6);  // TODO: 6 還是 0xc6 @@
+    mmio_write(AUX_MU_IIR_REG, 6);
 
     // 8. Set AUX_MU_CNTL_REG to 3. Enable the transmitter and receiver.
     mmio_write(AUX_MU_CNTL_REG, 3);
