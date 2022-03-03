@@ -5,6 +5,7 @@ FLAGS = -g -ffreestanding -nostdinc -nostdlib -nostartfiles
 BUILD_DIR = build
 SRC_DIR = src
 OS_DIR = os
+IMG = os.img
 
 all: kernel8.img
 
@@ -32,6 +33,4 @@ run:
 	qemu-system-aarch64 -M raspi3 -kernel build/kernel8.img -display none -serial null -serial stdio
 
 burn:
-	cp $(BUILD_DIR)/kernel8.img $(OS_DIR)/kernel8.img
-	genisoimage -o os.img $(OS_DIR)
-	sudo dd if=os.img of=/dev/sdb
+	cp $(BUILD_DIR)/kernel8.img /dev/sdb1/
