@@ -73,15 +73,8 @@ void cmd_sysinfo() {
     uart_puth(*board_revision);
     uart_write_string(ENDL);
 
-    // Board Serial
-    get_board_serial(board_serial_msb, board_serial_lsb);
-    uart_write_string("Board Serial        : 0x");
-    uart_puth(*board_serial_msb);
-    uart_puth(*board_serial_lsb);
-    uart_write_string(ENDL);
-
     // Memory Info
-    // get_memory_info(mem_base, mem_size);
+    get_memory_info(mem_base, mem_size);
     uart_write_string("Memroy Base Address : 0x");
     uart_puth(*mem_base);
     uart_write_string(ENDL);
