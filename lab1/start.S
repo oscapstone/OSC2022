@@ -20,7 +20,7 @@ _core0:
         adr x1, __bss_end
         sub x1, x1, x0
 _zero:
-        cbz w1, _kernel
+        cbz x1, _kernel
         str xzr, [x0], #8
         sub x1, x1, #8
         cbnz x1, _zero
