@@ -123,7 +123,7 @@ int streq(const char *s1, const char *s2, int len) {
 
 
 void shell() {
-  char buf[BUF_LEN];
+  static char buf[BUF_LEN];
   print("Hello Basic Shell!\n");
   while (1) {
     print("# ");

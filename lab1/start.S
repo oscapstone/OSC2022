@@ -16,13 +16,14 @@ _core0:
         mov sp, x0
 
         // initialize bss section
-        ldr x1, =__bss_begin
-        ldr w1, =__bss_size
+        adr x0, __bss_begin
+        adr x1, __bss_end
+        sub x1, x1, x0
 _zero:
         cbz w1, _kernel
-        str xzr, [x1], #8
-        sub w1, w1, #1
-        cbnz w1, _zero
+        str xzr, [x0], #8
+        sub x1, x1, #8
+        cbnz x1, _zero
 _kernel:
         bl kernel_main
         b  _loop
