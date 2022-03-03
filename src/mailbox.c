@@ -21,13 +21,13 @@ Mailbox 0 defines the following channels:
 // mailbox address and flags
 
 //#define MMIO_BASE   0x3F000000
-#define VIDEOCORE_MBOX  (MMIO_BASE+0x0000B880)
-#define MAILBOX_READ       ((volatile unsigned int*)(VIDEOCORE_MBOX+0x0))
-#define MAILBOX_POLL       ((volatile unsigned int*)(VIDEOCORE_MBOX+0x10))
-#define MAILBOX_SENDER     ((volatile unsigned int*)(VIDEOCORE_MBOX+0x14))
-#define MAILBOX_STATUS     ((volatile unsigned int*)(VIDEOCORE_MBOX+0x18))
-#define MAILBOX_CONFIG     ((volatile unsigned int*)(VIDEOCORE_MBOX+0x1C))
-#define MAILBOX_WRITE      ((volatile unsigned int*)(VIDEOCORE_MBOX+0x20))
+#define MAILBOX_BASE    MMIO_BASE + 0xb880
+#define MAILBOX_READ       ((volatile unsigned int*)(MAILBOX_BASE+0x0))
+#define MAILBOX_POLL       ((volatile unsigned int*)(MAILBOX_BASE+0x10))
+#define MAILBOX_SENDER     ((volatile unsigned int*)(MAILBOX_BASE+0x14))
+#define MAILBOX_STATUS     ((volatile unsigned int*)(MAILBOX_BASE+0x18))
+#define MAILBOX_CONFIG     ((volatile unsigned int*)(MAILBOX_BASE+0x1C))
+#define MAILBOX_WRITE      ((volatile unsigned int*)(MAILBOX_BASE+0x20))
 #define MBOX_REQUEST    0
 
 #define MAILBOX_RESPONSE   0x80000000
@@ -40,9 +40,8 @@ Mailbox 0 defines the following channels:
 #define END_TAG            0x00000000
 
 int mailbox_call(volatile unsigned int* mailbox,unsigned char ch){
-    //unsigned char ch = (unsigned char)MBOX_CH_PROP;
-    
-     unsigned int r = (unsigned int)(((unsigned long)mailbox) & (~0xF)) | (ch & 0xF);
+    // combine mailbox message address(upper 28 bits) and channel number(4bits).
+     unsigned int r = (unsigned int)(((unsigned long)mailbox) & (~0xF)) | ch;//(ch & 0xF);
     // wait for the mailbox not full.
     do{asm volatile("nop");}while(*MAILBOX_STATUS & MAILBOX_FULL);
 

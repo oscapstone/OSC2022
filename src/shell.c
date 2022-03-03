@@ -61,7 +61,7 @@ void handle_command(enum Action action, char *buffer){
         writes_uart("hello      : print Hello World!\r\n");
         writes_uart("revision   : print board revision\r\n");
         writes_uart("memory     : print ARM memory address and size\r\n");
-        writes_uart("reboot     : reboot the device after 1000 ticks\r\n");
+        writes_uart("reboot     : reboot the device after 50000 ticks\r\n");
         writes_uart("ccreboot   : cancel reboot the device\r\n");
         break;
     case hello:
