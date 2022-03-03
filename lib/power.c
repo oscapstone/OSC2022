@@ -1,7 +1,6 @@
 #include "address.h"
 
-void reset()
-{
+void reset() {
     unsigned int r;
     // trigger a restart by instructing the GPU to boot from partition 0
     r = *PM_RSTS; 

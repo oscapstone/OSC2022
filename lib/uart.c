@@ -1,8 +1,7 @@
 #include "address.h"
 #include "utils.h"
 
-void uart_init()
-{
+void uart_init() {
     register unsigned int r;
 
     /* initialize mini UART */
