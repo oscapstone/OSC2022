@@ -76,6 +76,12 @@ void uart_send(unsigned int c) {
     do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x20));
     /* write the character to the buffer */
     *AUX_MU_IO=c;
+    if (c == '\n') {
+        /* only on raspberry pi */
+        do {asm volatile("nop");} while( ! ( *AUX_MU_LSR&0x20 ));
+
+        *AUX_MU_IO = '\r';
+    }
 }
 
 /**
