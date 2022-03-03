@@ -18,15 +18,22 @@ void welcome_msg() {
 void read_cmd() {
     char tmp;
     uart_write_string("# ");
-    for (uint32_t i = 0; tmp = uart_read(); i++) {
+    for (uint32_t i = 0; tmp = uart_read();) {
         uart_write(tmp);
         switch (tmp) {
             case '\r':
             case '\n':
-                buf[i] = '\0';
+                buf[i++] = '\0';
                 return;
+            case 127:  // Backspace
+                if (i > 0) {
+                    i--;
+                    buf[i] = '\0';
+                    uart_write_string("\b \b");
+                }
+                break;
             default:
-                buf[i] = tmp;
+                buf[i++] = tmp;
                 break;
         }
     }
