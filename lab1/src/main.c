@@ -2,6 +2,7 @@
 #include "shell.h"
 #include "mailbox.h"
 
+/*
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
 {
@@ -9,9 +10,9 @@ void __stack_chk_guard_setup(void)
 }
 
 void __stack_chk_fail(void)                         
-{
- /* Error message */                                 
+{                              
 }
+*/
 
 #define MAXCMD 30	// max length of command
 
@@ -26,9 +27,9 @@ void main()
     // print memory base addr and size
     mailbox_get_arm_memory();
     
+    char cmd[MAXCMD]; 
     // echo everything back
-    while(1) {
-    	char cmd[MAXCMD];
+    while(1) {  
         shell_get_command(cmd, MAXCMD);
         shell_execute(cmd);
     }
