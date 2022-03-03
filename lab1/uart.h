@@ -6,3 +6,4 @@ char uart_read();
 void uart_write(unsigned int c);
 void uart_printf(char* fmt, ...);
 void uart_flush();
+void uart_hex(unsigned int d);

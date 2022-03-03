@@ -42,8 +42,6 @@ void shell_init() {
     uart_flush();
     uart_puts("\nOSC2022 Lab 1 Demo\n");
     fb_init();
-    mbox_board_revision();
-    mbox_vc_memory();
 }
 
 void shell_input(char* cmd) {

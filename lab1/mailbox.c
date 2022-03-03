@@ -64,7 +64,10 @@ void mbox_board_revision() {
     mbox[6] = 0x0;                          // end tag
     // tags end
     mbox_call(mbox, 8);
-    uart_printf("Board Revision: %x\n", mbox[5]);
+    uart_printf("Board Revision: 0x");
+    uart_hex(mbox[5]);
+    uart_printf("\n");
+    
 }
 
 void mbox_vc_memory() {
@@ -80,5 +83,11 @@ void mbox_vc_memory() {
     mbox[7] = 0x0;                     // end tag
     // tags end
     mbox_call(mbox, 8);
-    uart_printf("VC Core base addr: 0x%x size: 0x%x\n", mbox[5], mbox[6]);
+    
+    uart_printf("VC Core base addr: 0x");
+    uart_hex(mbox[5]);
+    uart_printf(" size: 0x");
+    uart_hex(mbox[6]);
+    uart_printf("\n");
+
 }
