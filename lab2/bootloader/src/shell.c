@@ -8,6 +8,7 @@ void shell()
 {
     char cmd[MAX_BUF_SIZE];
     print_system_messages();
+    uart_puts("Welcome, this is bootloader. Try to load kernel with uart with protocol in system.c(load_kernel)");
     while(1)
     {
         uart_printf("# ");
