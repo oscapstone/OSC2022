@@ -2,7 +2,7 @@
 #include "uart.h"
 #include "mbox.h"
 
-extern char _kernel_start_addr[]; //bootloader load kernel to here
+extern char _start[]; //bootloader load kernel to here
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -87,7 +87,7 @@ void load_kernel()
 {
     char c;
     unsigned long long kernel_size=0;
-    volatile char* kernel_start = (char*) (&_kernel_start_addr);
+    volatile char* kernel_start = (char*) (&_start);
 
     uart_puts("kernel size:");
     for(int i=0;i<8;i++)  //protocol : use little endian to get kernel size

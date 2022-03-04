@@ -1,0 +1,1 @@
+void code_relocate(unsigned long long addr);

@@ -9,10 +9,11 @@ ASMOPS = $(ASMFLAGS) -Iinclude
 BUILD_DIR = build
 SRC_DIR = src
 
-all : kernel8.img
+all : kernel8.img bootloader/bootloader.img
 
 clean :
 	rm -rf $(BUILD_DIR) *.img 
+	make -C bootloader clean
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
@@ -41,4 +42,7 @@ run_debug:
 
 connect_raspi:
 	sudo screen /dev/ttyUSB0 115200
+
+bootloader/bootloader.img:
+	make -C bootloader
 
