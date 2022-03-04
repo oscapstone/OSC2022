@@ -9,7 +9,7 @@ ASMOPS = $(ASMFLAGS) -Iinclude
 BUILD_DIR = build
 SRC_DIR = src
 
-all : kernel8.img
+all : bootloader.img
 
 clean :
 	rm -rf $(BUILD_DIR) *.img 
@@ -29,15 +29,21 @@ OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 DEP_FILES = $(OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)
 
-kernel8.img: linker.ld $(OBJ_FILES)
-	$(ARMGNU)-ld -g -T linker.ld -o $(BUILD_DIR)/kernel8.elf  $(OBJ_FILES)
-	$(ARMGNU)-objcopy -g $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
+bootloader.img: linker.ld $(OBJ_FILES)
+	$(ARMGNU)-ld -g -T linker.ld -o $(BUILD_DIR)/bootloader.elf  $(OBJ_FILES)
+	$(ARMGNU)-objcopy -g $(BUILD_DIR)/bootloader.elf -O binary bootloader.img
 
 run:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio
+	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial stdio
+
+run_pty:
+	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial pty
 
 run_debug:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -s -S
+	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial stdio -s -S
+
+run_debug_pty:
+	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial pty -s -S
 
 connect_raspi:
 	sudo screen /dev/ttyUSB0 115200

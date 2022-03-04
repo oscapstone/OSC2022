@@ -2,6 +2,8 @@
 #include "uart.h"
 #include "mbox.h"
 
+extern char _kernel_start_addr[]; //bootloader load kernel to here
+
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
 #define PM_WDOG 0x3F100024
@@ -72,11 +74,36 @@ void reset(int tick)
 {                                      // reboot after watchdog timer expire
     set(PM_RSTC, PM_PASSWORD | 0x20);  // full reset
     set(PM_WDOG, PM_PASSWORD | tick);  // number of watchdog tick
-    while(1);
+    while(1);                          // wati for clock
 }
 
 void cancel_reset() 
 {
     set(PM_RSTC, PM_PASSWORD | 0);  // full reset
     set(PM_WDOG, PM_PASSWORD | 0);  // number of watchdog tick
+}
+
+void load_kernel()
+{
+    char c;
+    unsigned long long kernel_size=0;
+    volatile char* kernel_start = (char*) (&_kernel_start_addr);
+
+    uart_puts("kernel size:");
+    for(int i=0;i<8;i++)  //protocol : use little endian to get kernel size
+    {
+        c = uart_getc_pure();
+        kernel_size += c<<(i*8);
+    }
+
+    for(int i=0;i<kernel_size;i++)
+    {
+        c = uart_getc_pure();
+        kernel_start[i]=c;
+    }
+    uart_puts("susccess get kernel");
+    uart_puts("change ip to kernel...");
+
+    ((void (*)(void))kernel_start)();
+
 }
