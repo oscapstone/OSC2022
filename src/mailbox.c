@@ -22,12 +22,20 @@ Mailbox 0 defines the following channels:
 
 //#define MMIO_BASE   0x3F000000
 #define MAILBOX_BASE    MMIO_BASE + 0xb880
-#define MAILBOX_READ       ((volatile unsigned int*)(MAILBOX_BASE+0x0))
-#define MAILBOX_POLL       ((volatile unsigned int*)(MAILBOX_BASE+0x10))
-#define MAILBOX_SENDER     ((volatile unsigned int*)(MAILBOX_BASE+0x14))
-#define MAILBOX_STATUS     ((volatile unsigned int*)(MAILBOX_BASE+0x18))
-#define MAILBOX_CONFIG     ((volatile unsigned int*)(MAILBOX_BASE+0x1C))
-#define MAILBOX_WRITE      ((volatile unsigned int*)(MAILBOX_BASE+0x20))
+// mailbox0: CPU read from GPU
+#define MAILBOX0_RW       ((volatile unsigned int*)(MAILBOX_BASE+0x0)) //read write register.
+#define MAILBOX0_POLL       ((volatile unsigned int*)(MAILBOX_BASE+0x10))
+#define MAILBOX0_SENDER     ((volatile unsigned int*)(MAILBOX_BASE+0x14))
+#define MAILBOX0_STATUS     ((volatile unsigned int*)(MAILBOX_BASE+0x18))
+#define MAILBOX0_CONFIG     ((volatile unsigned int*)(MAILBOX_BASE+0x1C))
+// mailbox1: CPU write to GPU
+#define MAILBOX1_RW      ((volatile unsigned int*)(MAILBOX_BASE+0x20))
+#define MAILBOX1_POLL       ((volatile unsigned int*)(MAILBOX_BASE+0x30))
+#define MAILBOX1_SENDER     ((volatile unsigned int*)(MAILBOX_BASE+0x34))
+#define MAILBOX1_STATUS     ((volatile unsigned int*)(MAILBOX_BASE+0x38))
+#define MAILBOX1_CONFIG     ((volatile unsigned int*)(MAILBOX_BASE+0x3C))
+
+
 #define MBOX_REQUEST    0
 
 #define MAILBOX_RESPONSE   0x80000000
@@ -41,22 +49,20 @@ Mailbox 0 defines the following channels:
 
 int mailbox_call(volatile unsigned int* mailbox,unsigned char ch){
     // combine mailbox message address(upper 28 bits) and channel number(4bits).
-     unsigned int r = (unsigned int)(((unsigned long)mailbox) & (~0xF)) | ch;//(ch & 0xF);
-    // wait for the mailbox not full.
-    do{asm volatile("nop");}while(*MAILBOX_STATUS & MAILBOX_FULL);
+    unsigned int r = (unsigned int)(((unsigned long)mailbox) & (~0xF)) | ch;//(ch & 0xF);
+    // wait for the mailbox1 not full.
+    do{asm volatile("nop");}while(*MAILBOX1_STATUS & MAILBOX_FULL);
 
     // write the message address(28 bits) and channel number (4bits) to mailbox write register.
-    *MAILBOX_WRITE = r;
+    *MAILBOX1_RW = r;
 
     while(1) {
         // is there any response in mailbox
-        while(*MAILBOX_STATUS & MAILBOX_EMPTY){asm volatile("nop");};
-        if(r == *MAILBOX_READ) 
+        while(*MAILBOX0_STATUS & MAILBOX_EMPTY){asm volatile("nop");};
+        if(r == *MAILBOX0_RW) 
         {
             return mailbox[1]==MAILBOX_RESPONSE; // check if it is the response, if failed: 0x80000001
         }
-            
-
     }
     return 0;
 
