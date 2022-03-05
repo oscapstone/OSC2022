@@ -8,7 +8,7 @@ void uart_putc(char c);
 char uart_getc();
 int uart_puts(char *s);
 char* uart_gets(char *buf);
-int uart_printf(char *s);
+int uart_printf(char *fmt, ...);
 void uart_hex(unsigned int d);
 void disable_uart();
 

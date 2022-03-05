@@ -35,10 +35,10 @@ kernel8.img: linker.ld $(OBJ_FILES)
 	$(ARMGNU)-objcopy -g $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
 
 run:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
 
 run_debug:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -s -S
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -s -S -initrd initramfs.cpio
 
 connect_raspi:
 	sudo screen /dev/ttyUSB0 115200

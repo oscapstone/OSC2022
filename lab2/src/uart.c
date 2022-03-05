@@ -1,5 +1,6 @@
 #include "gpio.h"
 #include "uart.h"
+#include "sprintf.h"
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
@@ -14,6 +15,9 @@
 #define AUX_MU_CNTL     ((volatile unsigned int*)(MMIO_BASE+0x00215060))
 #define AUX_MU_STAT     ((volatile unsigned int*)(MMIO_BASE+0x00215064))
 #define AUX_MU_BAUD     ((volatile unsigned int*)(MMIO_BASE+0x00215068))
+
+// get address from linker
+extern volatile unsigned char _end;
 
 /**
  * Set baud rate and characteristics (115200 8N1) and map to GPIO
@@ -149,15 +153,26 @@ char* uart_gets(char *buf)
 }
 
 /**
- * printf (TODO)
+ * printf (from https://github.com/bztsrc/raspi3-tutorial/tree/master/12_printf)
+   initial printf from github dont use any va_end, and it is also can run. (in assembly there is nothing compiled from __builtin_va_end)
  */
-int uart_printf(char *s) {
-    int i = 0;
+int uart_printf(char *fmt, ...) {
+    __builtin_va_list args;
+    __builtin_va_start(args, fmt);
+    // we don't have memory allocation yet, so we
+    // simply place our string after our code
+    char *s = (char*)&_end;
+    // use sprintf to format our string
+    int count = vsprintf(s,fmt,args);
+    // print out as usual
     while(*s) {
+        /* convert newline to carrige return + newline */
+        if(*s=='\n')
+            uart_putc('\r');
         uart_putc(*s++);
-        i++;
     }
-    return i;
+    __builtin_va_end(args); 
+    return count;
 }
 
 /**

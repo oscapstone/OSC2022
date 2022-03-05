@@ -1,3 +1,6 @@
+#ifndef MBOX_H
+#define MBOX_H
+
 /* a properly aligned buffer */
 /* use this buffer(global variable) directly and the mbox_call will use it after call*/ 
 /* mbox  format https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface */
@@ -24,3 +27,5 @@ extern volatile unsigned int mbox[36];
 #define MBOX_TAG_LAST           0
 
 int mbox_call(unsigned char ch);
+
+#endif
