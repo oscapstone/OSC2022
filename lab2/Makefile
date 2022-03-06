@@ -1,4 +1,4 @@
-# debug use CFLAGS='-g' ASMFLAGS='-g'
+# debug use CFLAGS='-g -O3' ASMFLAGS='-g -O3'
 # Modify from 
 # https://github.com/s-matyukevich/raspberry-pi-os/blob/master/src/lesson01/Makefile
 ARMGNU ?= aarch64-linux-gnu

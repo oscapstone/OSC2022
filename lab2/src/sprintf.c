@@ -26,6 +26,9 @@
 /**
  * minimal sprintf implementation
  */
+
+#include "uart.h"
+
 unsigned int vsprintf(char *dst, char* fmt, __builtin_va_list args)
 {
     long int arg;
@@ -40,6 +43,11 @@ unsigned int vsprintf(char *dst, char* fmt, __builtin_va_list args)
     // main loop
     arg = 0;
     while(*fmt) {
+        if(dst-orig > MAX_BUF_SIZE-0x10)
+        {
+            uart_puts("Error!!! format string too long!!!!");
+            return -1;
+        }
         // argument access
         if(*fmt=='%') {
             fmt++;

@@ -159,9 +159,10 @@ char* uart_gets(char *buf)
 int uart_printf(char *fmt, ...) {
     __builtin_va_list args;
     __builtin_va_start(args, fmt);
+    char buf[MAX_BUF_SIZE];
     // we don't have memory allocation yet, so we
     // simply place our string after our code
-    char *s = (char*)&_end;
+    char *s = (char*)buf;
     // use sprintf to format our string
     int count = vsprintf(s,fmt,args);
     // print out as usual
