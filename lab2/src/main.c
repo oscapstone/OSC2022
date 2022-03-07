@@ -3,9 +3,18 @@
 #include "shell.h"
 #include "string.h"
 #include "malloc.h"
+#include "dtb.h"
+#include "cpio.h"
 
-void main()
+void init_cpio_default_place();
+
+extern char* dtb_place;
+
+void main(char* dtb)
 {
+    //stroe dtb pointer to global (device tree)
+    dtb_place = dtb;
+    init_cpio_default_place(); //stroe cpio pointer to global (file system)
     //test malloc
     char* test1 = malloc(0x18);
     memcpy(test1,"test malloc1",sizeof("test malloc1"));
@@ -17,8 +26,12 @@ void main()
     memcpy(test3,"test malloc3",sizeof("test malloc3"));
     uart_printf("%s\n",test3);
 
-    // set up serial console
-    uart_init();
+    uart_printf("dtb : 0x%x\n",dtb);
 
     shell();
+}
+
+void init_cpio_default_place()
+{
+    traverse_device_tree(dtb_place,dtb_callback_initramfs);
 }

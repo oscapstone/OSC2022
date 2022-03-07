@@ -4,6 +4,7 @@
 #include "mbox.h"
 #include "system.h"
 #include "filesystem.h"
+#include "dtb.h"
 
 void shell()
 {
@@ -21,10 +22,12 @@ void do_cmd(char* cmd)
 {
     if(strcmp(cmd,"help")==0)
     {
-        uart_puts("help       : print this help menu");
-        uart_puts("hello      : print Hello World!");
-        uart_puts("reboot     : reboot the device");
-        uart_puts("ls         : list current directory");
+        uart_puts("help             : print this help menu");
+        uart_puts("hello            : print Hello World!");
+        uart_puts("reboot           : reboot the device");
+        uart_puts("ls               : list current directory");
+        uart_puts("cat              : print content of a file");
+        uart_puts("show_device_tree : show device tree");
     }
     else if(strcmp(cmd,"hello")==0)
     {
@@ -43,6 +46,9 @@ void do_cmd(char* cmd)
     }else if(strcmp(cmd,"ls")==0)
     {
         ls(".");
+    }else if(strcmp(cmd,"show_device_tree")==0)
+    {
+        traverse_device_tree(dtb_place,dtb_callback_show_tree);
     }else
     {
         uart_puts("Unknown command!");

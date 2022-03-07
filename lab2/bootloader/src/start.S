@@ -2,7 +2,9 @@
 
 .global _start
 
+//avoid use x0 which stored dtb place
 _start:
+
     // read cpu id, stop slave cores
     mrs     x1, mpidr_el1
     and     x1, x1, #3
@@ -24,7 +26,10 @@ _start:
     sub     w2, w2, #1
     cbnz    w2, 3b
 
+    //      store x0 into _dtb
+4:  ldr     x1, =_dtb
+    str     x0, [x1], #8
     // jump to C code, should not return
-4:  bl      main
+    bl      main
     // for failsafe, halt this core too
     b       1b

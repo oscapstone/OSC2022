@@ -8,7 +8,7 @@ void* malloc(unsigned int size) {
     if(size<0x18)size=0x18;  // minimum size 0x20 //like ptmalloc
     size = size + 0x7;
     size = 0x10 + size - size%0x10;
-    *(unsigned int*)(r+0x8) = size;
+    *(unsigned int*)(r-0x8) = size;
     top += size;
     return r;
 }

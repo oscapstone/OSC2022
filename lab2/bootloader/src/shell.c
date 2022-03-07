@@ -24,7 +24,7 @@ void do_cmd(char* cmd)
         uart_puts("help       : print this help menu");
         uart_puts("hello      : print Hello World!");
         uart_puts("reboot     : reboot the device");
-        uart_puts("bootload   : load kernel code from uart to _kernel_start and jump to it!");
+        uart_puts("load_kernel   : load kernel code from uart to 0x80000 and jump to it!");
     }
     else if(strcmp(cmd,"hello")==0)
     {
@@ -33,7 +33,7 @@ void do_cmd(char* cmd)
     else if(strcmp(cmd,"reboot")==0)
     {
         reboot();
-    }else if(strcmp(cmd,"bootload")==0)
+    }else if(strcmp(cmd,"load_kernel")==0)
     {
         load_kernel();
     }else
