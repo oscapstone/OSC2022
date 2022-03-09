@@ -70,6 +70,21 @@ void Reboot(){
   while(1);
 }
 
+/* uart booting */
+void Bootimg(char buf[MAX_SIZE]){
+  memset(buf, '\0', MAX_SIZE);
+  readnbyte(buf, 10);
+  unsigned int size = atoi(buf);
+  uart_puts("kernal image size: ");
+  uart_puts(buf);
+  uart_puts("\n");
+
+  memset(buf, '\0', MAX_SIZE);
+  readnbyte(buf, size);
+
+  uart_puts("done\n");
+}
+
 /* Main Shell */
 void ShellLoop(){
   char buf[MAX_SIZE];
@@ -86,6 +101,7 @@ void ShellLoop(){
     else if(strcmp("reboot", buf) == 0) Reboot();
     else if(strcmp("revision", buf) == 0) PrintRevision(buf);
     else if(strcmp("memory", buf) == 0) PrintMemory(buf);
+    else if(strcmp("bootimg", buf) == 0) Bootimg(buf);
     else PrintUnknown(buf);
 
     uart_puts("# ");

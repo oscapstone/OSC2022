@@ -11,7 +11,7 @@ ALLOFILES = $(OFILES) $(BOOTOFILES)
 
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 
-all: clean kernel8.img
+all: clean kernel8.img pty
 
 %.o: %.S
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ 
@@ -28,3 +28,6 @@ clean:
 
 run: 
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial stdio
+
+pty: 
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial pty

@@ -88,6 +88,20 @@ void uitohex(unsigned int d, char buf[MAX_SIZE]){
   reverse_string(buf);
 }
 
+/* array to int */
+int atoi(const char buf[MAX_SIZE]){
+  int num = 0;
+  int sign = 1;
+  if(buf[0] == '-'){
+    sign = -1;
+    buf++;
+  }
+  for(unsigned int i = 0; i < strlen(buf); i++){
+    num = num * 10 + (buf[i] - '0');
+  }
+  return num * sign;
+}
+
 void memcpy(char *d, const char *s, unsigned int len){
   for(unsigned int i = 0; i < len; i++){
     d[i] = s[i];

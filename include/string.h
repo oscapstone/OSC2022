@@ -1,7 +1,7 @@
 #ifndef STRING_H_
 #define STRING_H_
 
-#define MAX_SIZE 1024
+#define MAX_SIZE 10000
 
 /* Compare S1 and S2, returning less than, equal to or
    greater than zero if S1 is lexicographically less than,
@@ -19,6 +19,9 @@ void itoa(int, char *);
 
 /* uint to string */
 void uitohex(unsigned int, char *);
+
+/* array to int */
+int atoi(const char *);
 
 void memcpy(char *, const char *, unsigned int);
 void memset(char *, const char, unsigned int);

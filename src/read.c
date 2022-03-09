@@ -35,3 +35,15 @@ int readline(char buf[MAX_SIZE], int size){
   buf[idx] = '\0';
   return idx;
 }
+
+/* read n bytes from uart */
+int readnbyte(char buf[MAX_SIZE], int size){
+  unsigned int idx = 0;
+  char c;
+  while(idx < size){
+    c = uart_getc();
+    buf[idx++] = c;
+  }
+  buf[idx] = '\0';
+  return idx;
+}

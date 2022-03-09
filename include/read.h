@@ -6,4 +6,6 @@
 /* scan the input until get \r */
 int readline(char [MAX_SIZE], int);
 
+/* read n bytes from uart */
+int readnbyte(char [MAX_SIZE], int);
 #endif
