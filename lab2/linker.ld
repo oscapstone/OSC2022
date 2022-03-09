@@ -35,6 +35,9 @@ SECTIONS
     _bss_end = .;
     _bss_size = _bss_end - _bss_start;
 
+    . = 0x70000;
+    _stack_start = .;
+    
     . = 0x80000;
     _kernel_start = .;
 

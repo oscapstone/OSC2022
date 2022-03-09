@@ -36,8 +36,13 @@ _start:
     add     x20, x20, #8
     b       3b
 
+4:  
+    // initialize sp
+    ldr     x20, =_stack_start
+    mov     sp, x20
+
     // jump to C code, should not return
     bl      kernel_main
-4:  
+5:
     // for failsafe, halt this core too
-    b       4b
+    b       5b
