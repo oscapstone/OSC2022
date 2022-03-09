@@ -1,5 +1,7 @@
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
+#include "utils.h"
+#include "mini_uart.h"
 
 // The AUX_MU_LSR_REG register (8 bits) shows the data status.
 // The AUX_MU_IO_REG register (8 bits) is primary used to write data to and read data from the UART FIFOs. 
@@ -16,11 +18,31 @@ char uart_recv ( void )
 	return recv != '\r' ? recv : '\n';
 }
 
+void uart_recv_string(char *buffer) {
+    int size = 0;
+    while(size < MAX_BUFFER_SIZE){
+        buffer[size] = uart_recv();
+        uart_send(buffer[size]);
+        if(buffer[size++] == '\n'){
+            break;
+        }
+    }
+    buffer[--size] = '\0';
+}
+
+
 void uart_send_string(char* str)
 {
 	for (int i = 0; str[i] != '\0'; i ++) {
 		uart_send((char)str[i]);
 	}
+}
+
+unsigned char uart_getb(){ //for data transfer
+	unsigned char r;
+	do{ asm volatile("nop"); } while (!(*AUX_MU_LSR_REG & 0x01));
+	r = (unsigned char)(*AUX_MU_IO_REG);
+	return r;
 }
 
 void delay(unsigned int clock) {

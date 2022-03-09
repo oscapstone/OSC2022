@@ -5,7 +5,6 @@
 #include "peripherals/mail_box.h"
 #include "mail_box.h"
 
-#define MAX_BUFFER_SIZE 256u
 static char buffer[MAX_BUFFER_SIZE];
 
 void get_command();

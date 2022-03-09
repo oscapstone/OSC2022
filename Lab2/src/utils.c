@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "mini_uart.h"
 
 int compare_string(const char *s1, const char *s2) {
     unsigned char c1, c2;
@@ -45,3 +46,32 @@ void uintoa(char *out, unsigned int i)
         out[i] = tmp[index - i];
     out[index + 1] = '\0';
 }
+
+unsigned int getIntegerFromString(const char *str) {
+    unsigned int value = 0u;
+
+    while (*str) {
+        if(*str >= '0' && *str<= '9'){
+            value = value * 10u + (*str - '0');
+        }
+        ++str;
+    }
+    return value;
+}
+
+unsigned long getHexFromString(const char *str) {
+    unsigned long value = 0u;
+
+    while (*str) {
+        if(*str >= '0' && *str <= '9'){
+            value = value*16 + *str - '0';
+        }else if(*str >= 'a' && *str <= 'z'){
+            value = value*16 + *str - 'a' + 10u;
+        }else if(*str >= 'A' && *str <= 'Z'){
+            value = value*16 + *str - 'A' + 10u;
+        }
+        ++str;
+    }
+    return value;
+}
+
