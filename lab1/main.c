@@ -9,18 +9,18 @@ void main() {
     while (1) {
         uart_puts("\r# ");
         int i = 0;
-        char *command = "";
+        char command[1024];
         char tmp;
         while (1) {
             tmp = uart_getc();
             if (tmp == '\n') {
                 uart_puts("\n");
-                *(command + i) = '\0';
+                command[i] = '\0';
                 break;
             } else
                 uart_send(tmp);
 
-            *(command + i) = tmp;
+            command[i] = tmp;
             i++;
         }
         if (strcmp(command, "help") == 0) {
