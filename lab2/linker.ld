@@ -3,46 +3,40 @@ ENTRY(_start)
 
 SECTIONS
 {
-    /* start at LOADER_ADDR */
-    . = 0x80000;
+    /* We are going to move boot.S itself from 0x80000 to 0x60000 */
+    . = 0x60000;
 
-    __start = .;
-    __text_start = .;
+    _text_start = .;
     .text : 
     { 
         KEEP(*(.text.boot))
+        _bl_start = .;
+        *(.text._bl)
         *(.text) 
     }
-    . = ALIGN(4096); /* align to page size */
-    __text_end = .;
+    . = ALIGN(0x1000); /* align to page size */
+    _text_end = .;
 
-    . = ALIGN(4096); /* align to page size */
-    .rodata :
-    {
-        *(.rodata)
-    }
-    __rodata_end = .;
-
-    __data_start = .;
+    _data_start = .;
     .data :
     {
         *(.data)
     }
-    . = ALIGN(4096); /* align to page size */
-    __data_end = .;
+    . = ALIGN(0x1000); /* align to page size */
+    _data_end = .;
 
-    __bss_start = .;
+    _bss_start = .;
     .bss :
     {
         bss = .;
         *(.bss)
     }
-    . = ALIGN(4096); /* align to page size */
-    __bss_end = .;
-    __bss_size = __bss_end - __bss_start;
+    . = ALIGN(0x1000); /* align to page size */
+    _bss_end = .;
+    _bss_size = _bss_end - _bss_start;
 
-    . = 0x200000;
-    _estack = .;
-    
-    __end = .;
+    . = 0x80000;
+    _kernel_start = .;
+
+    _bl_size = _bss_end - _text_start; /* size of bootloader */
 }
