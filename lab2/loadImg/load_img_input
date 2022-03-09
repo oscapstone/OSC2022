@@ -1,0 +1,6 @@
+load_img
+../kernel8.img
+help
+hello
+info
+.
