@@ -1,0 +1,37 @@
+[Flash Bootable Image to SD Card]
+lsblk
+sudo dd if=kernel8.img of=/dev/sda
+
+[Use QEMU to see the dumped assembly]
+qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -d in_asm
+
+[Debug on QEMU using GDB]
+qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -S -s -serial null -serial stdio //  using mini UART
+gdb-multiarch
+(gdb) file kernel8.elf
+(gdb) target remote :1234
+
+[Dump Assembly]
+aarch64-linux-gnu-objdump -d build/kernel8.elf > kernel8.s
+
+[GDB instructions]
+---- Deal With Core Dump ----
+where: call stack
+bt full: detail
+x addr: inpect value store in addr
+
+---- Resuming Execution ----
+s(tep) [count]: steps inside a called function
+n(ext) [count]: executes called functions
+finish: Continue execution until the current function returns.
+c(ontinue) [[filename:]lineno|function: Continue execution; only stop when a breakpoint is encountered.
+                                        If a line position is given, continue until that line is reached.
+
+---- Other ----
+p var: print out variable (can specify scope)
+break line_number: set break point
+condition break_point_num var==number: conditional break
+
+
+[Ref]
+https://www.electronicwings.com/raspberry-pi/raspberry-pi-uart-communication-using-python-and-c
