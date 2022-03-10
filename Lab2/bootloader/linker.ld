@@ -1,12 +1,28 @@
+ENTRY(_start)
 SECTIONS
-{	
-	. = 0x60000;
-	.text.boot : { *(.text.boot) }
-	.text : { *(.text) }
-	.rodata : { *(.rodata) }
-	.data : { *(.data) }
-	. = ALIGN(0x8);
-	bss_begin = .;
-	.bss : { *(.bss*) } 
-	bss_end = .;
+{
+  . = 0x60000;
+  _stext = .;
+  .text : { 
+    *(.text.relo)
+    _bl_entry = .;
+    *(.text.boot)
+    *(.text) 
+    *(.rodata) 
+  }
+  . = ALIGN(0x1000);
+  _etext = .;
+
+  _sdata = .;
+  .data : { *(.data) }
+  . = ALIGN(0x1000);
+  _edata = .;
+
+  
+  _sbss = .;
+  .bss : { *(.bss*) } 
+  . = ALIGN(0x1000);
+  _ebss = .;  
+
+  _blsize = _ebss - _stext;
 }
