@@ -1,14 +1,6 @@
 BUILD_DIR = ./build
 # Lib
-LIB_SRC_DIR = ./lib
-
-# LIB_SRC = \
-# 	$(LIB_SRC_DIR)/mbox.c \
-# 	$(LIB_SRC_DIR)/mmio.c \
-# 	$(LIB_SRC_DIR)/shell.c \
-# 	$(LIB_SRC_DIR)/string.c \
-# 	$(LIB_SRC_DIR)/uart.c \
-# 	$(LIB_SRC_DIR)/utils.c \
+LIB_SRC_DIR = ../lib
 
 LIB_SRC = \
 	$(LIB_SRC_DIR)/mmio.c \
@@ -61,7 +53,7 @@ BUILD_DIRECTORIES = \
 	$(LIB_BUILD_DIR) \
 	$(APP_BUILD_DIR) \
 
-PROJ = kernel8
+PROJ = bootloader
 OUT_ELF = ./$(PROJ).elf
 OUT_IMG = ./$(PROJ).img
 LINKER_FILE = linker.ld
@@ -123,32 +115,10 @@ $(OUT_IMG): $(OUT_ELF)
 	@echo '[+] Finished building target: $@'
 	@echo ' '
 
-	make -C bootloader
-
 $(BUILD_DIRECTORIES):
 	mkdir -p $@
 
-run:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -display none -serial null -serial pty
-
-run_stdio:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -display none -serial null -serial stdio
-
-run_cpio:
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
-
-debug:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -display none -serial null -serial pty -s -S
-
-docker_cp:
-	docker cp kernel8.elf my_kali:/
-	docker cp bootloader/bootloader.elf my_kali:/
-
-cpio:
-	cd rootfs && find . | cpio -o -H newc > ../initramfs.cpio
-
 clean:
 	rm -rf *.elf
-	rm -rf kernel.img
+	rm -rf *.img
 	rm -rf $(BUILD_DIR)
-	make -C ./bootloader clean

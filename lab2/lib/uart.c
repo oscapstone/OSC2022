@@ -74,9 +74,11 @@ void uart_write(char c) {
     mmio_write(AUX_MU_IO_REG, c);
 }
 
-char uart_read() {
-    while (!(mmio_read(AUX_MU_LSR_REG) & 1)) delay(1);
-    return (mmio_read(AUX_MU_IO_REG) & 0xff);
+void uart_read(char* buf, uint32_t size) {
+    for (uint32_t i = 0; i < size; i++) {
+        while (!(mmio_read(AUX_MU_LSR_REG) & 1)) delay(1);
+        buf[i] = mmio_read(AUX_MU_IO_REG) & 0xff;
+    }
 }
 
 void uart_flush() {
