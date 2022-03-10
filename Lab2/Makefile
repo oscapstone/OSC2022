@@ -2,7 +2,7 @@
 
 ARMGNU ?= aarch64-linux-gnu
 
-FLAGS = -O0 -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
+FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
 INC = -Iinclude
 LIB = lib
 CPIO = archive/initramfs.cpio
