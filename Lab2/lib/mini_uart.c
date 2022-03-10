@@ -30,12 +30,23 @@ void uart_recv_string(char *buffer) {
     buffer[--size] = '\0';
 }
 
-
 void uart_send_string(char* str)
 {
 	for (int i = 0; str[i] != '\0'; i ++) {
 		uart_send((char)str[i]);
 	}
+}
+
+void uart_hex(unsigned int d) {
+    unsigned int n;
+    int c;
+    for(c=28;c>=0;c-=4) {
+        // get highest tetrad
+        n=(d>>c)&0xF;
+        // 0-9 => '0'-'9', 10-15 => 'A'-'F'
+        n+=n>9?0x37:0x30;
+        uart_send(n);
+    }
 }
 
 unsigned char uart_getb(){ //for data transfer

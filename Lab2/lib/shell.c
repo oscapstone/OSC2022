@@ -4,8 +4,9 @@
 #include "reboot.h"
 #include "peripherals/mail_box.h"
 #include "mail_box.h"
+#include "initrd.h"
 
-static char buffer[MAX_BUFFER_SIZE];
+char buffer[MAX_BUFFER_SIZE];
 
 void get_command();
 void parse_command();
@@ -52,11 +53,22 @@ void parse_command() {
         get_board_revision();
         get_arm_memory();
     }
+    else if (compare_string(buffer, "ls") == 0) {
+        uart_send_string("\r");
+        initrd_list();
+    }
+    else if (compare_string(buffer, "cat") == 0)
+    {
+        uart_send_string("Filename: ");
+        get_command();
+        initrd_cat(buffer);
+    }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("\rhelp               : print this help menu\r\n");
         uart_send_string("hello              : print Hello World!\r\n");
         uart_send_string("reboot             : reboot the device\r\n");
         uart_send_string("info               : print device info\r\n");
+        uart_send_string("ls                 : print files in rootfs\r\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");

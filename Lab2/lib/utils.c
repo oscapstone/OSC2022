@@ -75,3 +75,23 @@ unsigned long getHexFromString(const char *str) {
     return value;
 }
 
+// convert hexadecimal string into decimal
+unsigned long hexToDec(char *s){
+    unsigned long r = 0;
+    for(int i = 0 ;i < 8 ; ++i){
+        if(s[i] >= '0' && s[i] <= '9'){
+            r = r* 16 + s[i]-'0';
+        }else{
+            r = r * 16 + s[i]-'a'+10;
+        }
+    }
+    return r;
+}
+
+/* align to multiple of 4 */
+void align_4(void* size){
+    unsigned long* x =(unsigned long*) size;
+    if((*x)&3){
+        (*x) += 4-((*x)&3);
+    }
+}
