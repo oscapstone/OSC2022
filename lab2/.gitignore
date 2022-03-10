@@ -3,3 +3,4 @@ gen.py
 build/
 *.img
 kernel8.elf
+*.o
