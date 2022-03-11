@@ -10,14 +10,18 @@ int main(){
 
     memset(buf, '\0', 15);
     readnbyte(buf, 10);
-    unsigned int size = atoi(buf);
+    int size = atoi(buf);
     uart_puts("kernal image size: ");
     uart_puts(buf);
     uart_puts("\n");
 
+    while(size--){
+        char c = uart_getc();
+        *kernal++ = c;
 
-    for(int i = 0; i < size; i++){
-        *kernal++ = uart_getc();
+        itoa(size,buf);
+        uart_puts(buf);
+        uart_puts("\n");
     }
 
     uart_puts("kernal image loaded\n");
