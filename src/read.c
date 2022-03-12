@@ -40,7 +40,7 @@ int readline(char buf[MAX_SIZE], int size){
 int readnbyte(char buf[MAX_SIZE], int size){
   unsigned int idx = 0;
   char c;
-  while(idx < size){
+  while(idx < size && idx < MAX_SIZE){
     c = uart_getc();
     buf[idx++] = c;
   }
