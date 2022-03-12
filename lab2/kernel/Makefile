@@ -9,6 +9,7 @@ LIB_SRC = \
 	$(LIB_SRC_DIR)/mbox.c \
 	$(LIB_SRC_DIR)/shell.c \
 	$(LIB_SRC_DIR)/uart.c \
+	$(LIB_SRC_DIR)/dtb.c \
 	
 
 LIB_INCLUDES = \

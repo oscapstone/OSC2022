@@ -2,6 +2,7 @@
 
 .global _start
 
+// x0 register stores address to dtb
 _start:
     // clear bss
     ldr     x20, =_bss_start
