@@ -102,3 +102,9 @@ void uart_puth(uint32_t d) {
         uart_write(c);
     }
 }
+
+void uart_putc(char* buf, uint32_t size) {
+    for (uint32_t i = 0; i < size; i++) {
+        uart_write(buf[i]);
+    }
+}

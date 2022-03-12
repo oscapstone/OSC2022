@@ -3,10 +3,13 @@ BUILD_DIR = ./build
 LIB_SRC_DIR = ../lib
 
 LIB_SRC = \
+	$(LIB_SRC_DIR)/cpio.c \
+	$(LIB_SRC_DIR)/malloc.c \
 	$(LIB_SRC_DIR)/mmio.c \
 	$(LIB_SRC_DIR)/mbox.c \
 	$(LIB_SRC_DIR)/shell.c \
 	$(LIB_SRC_DIR)/uart.c \
+	
 
 LIB_INCLUDES = \
 	-I $(LIB_SRC_DIR)/include \

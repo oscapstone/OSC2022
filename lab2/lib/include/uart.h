@@ -11,6 +11,7 @@ void uart_read(char* buf, uint32_t size);
 void uart_flush();
 void uart_write_string(char* str);
 void uart_puth(uint32_t d);
+void uart_putc(char* buf, uint32_t size);
 void delay(uint32_t t) {
     for (uint32_t i = 0; i < t; i++)
         asm volatile("nop");

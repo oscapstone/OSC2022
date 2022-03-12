@@ -1,7 +1,7 @@
 #include "malloc.h"
 
-extern char __heap_start;
-static char* ptr = &__heap_start;
+extern char _heap_start;
+static char* ptr = &_heap_start;
 
 void* malloc(uint32_t size) {
     char* ret = ptr + sizeof(malloc_chunk);
