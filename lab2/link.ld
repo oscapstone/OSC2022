@@ -2,17 +2,17 @@
 
 SECTIONS
 {
-    . = 0x80000;
-    .text : { *(.text) }
-    
-    .bss (NOLOAD) : {
-        . = ALIGN(16);
-        __bss_start = .;
-        *(.bss .bss.*)
-        *(COMMON)
-        __bss_end = .;
-    }
-    _end = .;
+  . = 0x80000;
+  .text : { *(.text) }
+  
+  .bss (NOLOAD) : {
+    . = ALIGN(16);
+    __bss_start = .;
+    *(.bss .bss.*)
+    *(COMMON)
+    __bss_end = .;
+  }
+  _end = .;
 }
 __bss_size = (__bss_end - __bss_start)>>3; 
 
