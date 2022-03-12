@@ -1,5 +1,6 @@
 
-#define CPIO_ADDR 0x8000000 
+#define CPIO_ADDR 0x8000000
+// #define CPIO_ADDR 0x20000000 
 
 typedef struct cpio_newc_header cpio_header;
 
@@ -20,4 +21,5 @@ struct cpio_newc_header {
   char	   c_check[8];
 };
 
-char* cpio_ls();
+void cpio_ls();
+void cpio_cat(char *str);
