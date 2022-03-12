@@ -24,18 +24,12 @@ void self_relocation(){
     //Cast the address back to a function and call it.
     void (*func_ptr)() = (void (*)())&_bootstart;
     func_ptr();
-
-    // asm volatile(
-    //     "ldr    x1, 0x60c48;"
-    //     "br     x1;"
-    // );
 }
 
 int main(){
     if(begin){
         begin = 0;
         self_relocation();
-        uart_puts("2\n");
     }
     uart_init();
 
@@ -59,8 +53,12 @@ int main(){
     // void (*kernel_ptr)() = (void (*)())kernel;
     // kernel_ptr();
     asm volatile(
-        "ldr    x1, 0x80000;"
-        "br     x1;"
+        "mov    x0, x10;"
+        "mov    x1, x11;"
+        "mov    x2, x12;"
+        "mov    x3, x13;"
+        "mov    x15, 0x80000;"
+        "br     x15;"
     );
  
     

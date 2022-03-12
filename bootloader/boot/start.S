@@ -2,6 +2,11 @@
 .global _start
 
 _start:
+    mov     x10, x0
+    mov     x11, x1
+    mov     x12, x2
+    mov     x13, x3
+    
     mrs     x1, mpidr_el1 // get system register
     and     x1, x1, #3 // mask out bits not belonging to core id
     cbz     x1, 2f // branch if result is zero (core id matched)
