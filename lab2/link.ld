@@ -12,6 +12,7 @@ SECTIONS
     *(COMMON)
     __bss_end = .;
   }
+  _heap_start = .;
   _end = .;
 }
 __bss_size = (__bss_end - __bss_start)>>3; 
