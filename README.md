@@ -13,9 +13,16 @@
 
 ## How to run
 
-**make run**
+* Qemu 
 
+      1. make run
+      2. cat /dev/pts/$(n)
+      3. python3 write.py /dev/pts/$(n)
+      4. echo ls > /dev/pts/$(n)
+ 
+* Rpi3
 
-## Directory structure
-
+      1. Make sure SD card contains bootcode.bin, fixup.dat, start.elf, config.txt, bootloader.img, initramfs.cpio, bcm2710-rpi-3-b-plus.dtb
+      2. sudo screen /dev/ttyUSB0 115200
+      3. sudo python3 write.py /dev/ttyUSB0
 
