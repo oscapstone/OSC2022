@@ -1,4 +1,6 @@
-#!usr/bin/python3	# defines where the interpreter is located
+#!usr/bin/python3.6
+
+# defines where the interpreter is located
 
 from serial import Serial
 
@@ -13,7 +15,7 @@ with open("kernel8.img", "rb") as fileobj:		# read only as binary, "with as" mak
 		print("size of kernel8.img :", length)
 		fileobj.seek(0, 0)		# 0 means move read/write pointer to the start of the file
 		
-		# sen size to pi
+		# send size to pi(uart)
 		serial.write(str(length).encode() + b'\n')		# b convert str to the type: bytes, ref: pySerial doc website
 		serial.flush()									# wait until all data is written
 	

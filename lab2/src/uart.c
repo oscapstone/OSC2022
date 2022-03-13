@@ -158,54 +158,22 @@ void uart_printf(char *fmt, ...)
 }
 
 
-
-#include "boot.h"
-
-extern char __start[];		// define in linker.ld?
-extern char __end[];
-
-
-void loadimg(){
-	char *cur_addr = __start, *end_addr = __end, *target_addr = TEMP_ADDR;
-	
-	uart_printf("Copy bootloader to 0x60000");
-	while (cur_addr <= end_addr) {
-		*targer_addr++ = *cur_addr++;
-	}
-	uart_printf("Copy bootloader finish\r\n");
-	
-    char *current_addr = __start;
-    char *end_addr = __end;
-    char *target_addr = TEMP_ADDR;
-    while(current_addr <= end_addr){
-        *target_addr = *current_addr;
-        target_addr++;
-        current_addr++;
-    }
-	
-    void (*func_ptr)() = load_new_kernel;
-    unsigned long int func_addr = (unsigned long int)func_ptr;
-    void (*function_call)(void) = (void (*)(void))(func_addr - (unsigned long int)__start + TEMP_ADDR);
-    function_call();
-
-}
-
-void load_new_kernel(){
-    uart_printf("Copy new kernel to 0x80000\r\n");
-    char *current_addr;
-    current_addr = KERNEL_ADDR;
+int uart_get_int(){
+    int res = 0;
     char c;
-    uart_printf("New kernel size: ");
-    int img_size = uart_get_int();
-    uart_printf("\r\n");
-    for(int i = 0; i < img_size; ++i){
-        c = uart_get();
-        *(current_addr + i) = c;
+    while(1){
+        c = uart_getc();
+        if(c == '\0' || c == '\n')
+            break;
+        uart_send(c);
+        res = res * 10 + (c - '0');
     }
-    uart_printf("Transmit done.\r\n                        ");
-    void (*new_kernel_start)(void) = (void*)KERNEL_ADDR;
-    new_kernel_start();
+    return res;
 }
+
+
+
+
 
 
 

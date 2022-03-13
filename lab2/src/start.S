@@ -9,7 +9,7 @@ _start:
 
 2:
 	// set stack pointer
-	ldr x0, = 0x200000
+	ldr x0, = __stack_top
 	mov sp, x0
 	
 	// clear bss
