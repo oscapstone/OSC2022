@@ -22,4 +22,4 @@ clean:
 	rm kernel8.elf *.o ./lib/*.o >/dev/null 2>/dev/null || true
 
 run:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -serial null -serial stdio
+	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -serial null -serial stdio -dtb ./../bcm2710-rpi-3-b-plus.dtb 

@@ -5,19 +5,20 @@ extern char* _code_relocate_place;
 extern unsigned long long  __code_size;
 extern unsigned long long _start;
 
-void code_relocate(char * addr);
+void code_relocate(char * addr, char * dtb);
 
 int relocate=1;
 
-void main()
-{
+void main(char* arg){
+  // register char* x0 asm("x0");
+  
+  char *_dtb = arg;
   uart_init();
-
   char* reloc_place = (char*)&_code_relocate_place;
 
   if(relocate){
     relocate = 0;
-    code_relocate(reloc_place);
+    code_relocate(reloc_place, _dtb);
   }
 
   unsigned long long kernel_size = 0;
@@ -32,17 +33,16 @@ void main()
     c = uart_getc_pure();
     kernel_start[i] = c;
   }
-  void (*kernel) (void) = (void (*) (void))kernel_start;
-  kernel();
+  void (*kernel) (char *) = (void (*) (char *))kernel_start;
+  kernel(arg);
 }
 
-void code_relocate(char * addr)
-{
+void code_relocate(char * addr, char * dtb){
   unsigned long long size = (unsigned long long)&__code_size;
   char* start = (char *)&_start;
   for(unsigned long long i=0; i<size; i++){
     addr[i] = start[i];
   }
-  void (*relocation)(void)  = (void (*) (void))addr; 
-  relocation();
+  void (*relocation)(char *)  = (void (*) (char *))addr; 
+  relocation(dtb);
 }

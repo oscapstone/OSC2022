@@ -1,6 +1,13 @@
 
 #define uint32_t unsigned int
 
+#define FDT_BEGIN_NODE 0x00000001
+#define FDT_END_NODE 0x00000002
+#define FDT_PROP 0x00000003
+#define FDT_NOP 0x00000004
+#define FDT_END 0x00000009
+
+// big-endian
 struct fdt_header {
   uint32_t magic;
   uint32_t totalsize;
@@ -13,3 +20,9 @@ struct fdt_header {
   uint32_t size_dt_strings;
   uint32_t size_dt_struct;
 };
+
+extern void* CPIO_DEFAULT_PLACE; 
+char* dtb_place;
+typedef void (*dtb_callback)(uint32_t node_type, char *name, void *value, uint32_t name_size);
+void fdt_traverse(dtb_callback callback);
+void initramfs_callback(uint32_t node_type, char *name, void *value, uint32_t name_size);

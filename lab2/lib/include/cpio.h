@@ -1,6 +1,8 @@
 
-#define CPIO_ADDR 0x8000000
-// #define CPIO_ADDR 0x20000000 
+// #define CPIO_DEFAULT_PLACE 0x8000000
+// #define CPIO_DEFAULT_PLACE 0x20000000
+
+char * CPIO_DEFAULT_PLACE ;
 
 typedef struct cpio_newc_header cpio_header;
 

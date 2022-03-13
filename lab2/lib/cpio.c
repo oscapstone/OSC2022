@@ -5,7 +5,7 @@
 int read_header(char *str, int size);
 
 void cpio_ls(){
-  cpio_header *cpio = (cpio_header *)CPIO_ADDR;
+  cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
   char *header = cpio->c_magic;
   while(strcmp(header+110, "TRAILER!!!")){
     int namesize = read_header(header + 94, 8);
@@ -22,7 +22,7 @@ void cpio_ls(){
 }
 
 void cpio_cat(char *str){
-  cpio_header *cpio = (cpio_header *)CPIO_ADDR;
+  cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
   char *header = cpio->c_magic;
   while(strcmp(header+110, "TRAILER!!!")){
     int namesize = read_header(header + 94, 8);
