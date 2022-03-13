@@ -12,7 +12,7 @@ void init_uart(){
 
     /* configure gpio*/
     
-    register unsigned int tmp_reg; // hope the register can be stored in CPU register.
+    register unsigned int tmp_reg; // hope the register can be stored as CPU register.
     // GPFSELn: define the operation of the GPIO pins
     // GPFSEL1: FSEL10(0~2) ~ FSEL19(27~29) + 30,31 reserved
     /*  FSEL: 3bits, in GPFSELn
@@ -64,7 +64,7 @@ char read_uart(){
         asm volatile("nop");
     }
     r = (char)(*AUX_MU_IO_REG);
-    return r=='\r'?'\n':r;
+    return r;
 }
 
 int read_int(){
@@ -88,7 +88,6 @@ void writes_uart(char *s){
             writec_uart('\r');
         writec_uart(*s++);
     }
-    
 }
 void writehex_uart(unsigned int h){
     writes_uart("0x");

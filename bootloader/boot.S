@@ -1,5 +1,6 @@
 .section ".text"
 .global _start
+.global _end
 _start:
 	mrs	x0, mpidr_el1		
 	and	x0, x0,#0xFF		// Check processor id
@@ -26,3 +27,7 @@ init_bss:
 main_loop:
 	bl main
 	b busy_loop
+
+.global branch_to_address
+branch_to_address:
+    br x0

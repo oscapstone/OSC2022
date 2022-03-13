@@ -2,9 +2,8 @@
 #include "string.h"
 #include "mailbox.h"
 #include "reboot.h"
-
+#include "bootload.h"
 int match_command(char *buffer){
-    
     if(strcmp(buffer,"help")==0){
         return help;
     }
@@ -21,8 +20,8 @@ int match_command(char *buffer){
     else if(strcmp(buffer,"ccreboot")==0){
         return ccreboot;
     }
-    else if(strcmp(buffer,"version")==0){
-        return version;
+    else if(strcmp(buffer,"bootload")==0){
+        return bootload;
     }
     else{
         return unknown;
@@ -30,7 +29,7 @@ int match_command(char *buffer){
 }
 
 void read_command(){
-    char buffer[256];
+    char buffer[25600];
     int count=0;
     int action = 0;
     writes_uart("# ");
@@ -39,19 +38,13 @@ void read_command(){
         
         if(c!='\n' && count<256){
             if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
-                //writes_uart("H1\r\n");
-                writec_uart(c);
-                //writes_uart("H2\r\n");
+               writec_uart(c);
                 buffer[count++] = c; 
             }
             
         }else{
-            //writes_uart("H1\r\n");
             writec_uart('\r');
-            //writes_uart("H2\r\n");
             writec_uart('\n');
-            //writes_uart("H3\r\n");
-            
             buffer[count]='\0';
             if(buffer[0] != '\0'){
                 action = match_command(buffer);
@@ -73,6 +66,7 @@ void handle_command(enum Action action, char *buffer){
         writes_uart("memory     : print ARM memory address and size\r\n");
         writes_uart("reboot     : reboot the device after 50000 ticks\r\n");
         writes_uart("ccreboot   : cancel reboot the device\r\n");
+        writes_uart("bootload   : boot the kernel image from uart\r\n");
         break;
     case hello:
         writes_uart("Hello World!\r\n");
@@ -92,14 +86,13 @@ void handle_command(enum Action action, char *buffer){
         cancel_reset();
         writes_uart("reset operation has been canceled\r\n");
         break;
-    case version:
-        writes_uart("Here is your booted kernel ver 0.1\r\n");
+    case bootload:
+        writes_uart("Start loading the image file.\r\n");
+        bootload_image();
         break;
     default:
         writes_uart("command not found: ");
         writes_uart(buffer);
-        strcmp(buffer,"help");
-
         writes_uart("\r\n");
         break;
     }

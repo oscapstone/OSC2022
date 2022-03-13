@@ -17,7 +17,7 @@ char read_uart();
 int read_int();
 void writec_uart(unsigned int s);
 void writes_uart(char *s);
-void writehex_uart(unsigned int h);
+void writehex_uart(unsigned int);
 
 
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))

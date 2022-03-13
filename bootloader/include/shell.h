@@ -7,7 +7,6 @@ enum Action{
     reboot,
     ccreboot,
     bootload,
-    version,
     unknown
 };
 

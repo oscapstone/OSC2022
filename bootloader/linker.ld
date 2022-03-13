@@ -1,5 +1,7 @@
 SECTIONS
 {
+    . = 0x60000;
+    _relocate_addr = .;
     . = 0x80000;
     .text :  { *(.text) }
     .rodata : { *(.rodata) }

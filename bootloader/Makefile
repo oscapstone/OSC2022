@@ -1,7 +1,7 @@
 SRCS = $(wildcard src/*.c)
 OBJS = $(SRCS:.c=.o)
 INCLUDE = -I ./include/
-ASMS = a
+ASMS = boot
 LINK = linker
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 
@@ -30,9 +30,9 @@ screen:
 	sudo screen /dev/ttyUSB0 115200
 
 ptty:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial pty
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial pty -s
 
 boot:
-	python3 uart_boot.py
+	sudo python3 uart_boot.py
 screenb:
-	sudo screen /dev/pts/2 115200
+	sudo screen /dev/pts/5 115200
