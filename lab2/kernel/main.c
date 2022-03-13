@@ -4,8 +4,7 @@
 // #include "uart.h"
 // #include "cpio.h"
 
-void kernel_main() {
-    register uint64_t x0 asm("x0");
+void kernel_main(char* x0) {
     dtb_init(x0);
     shell();
 }

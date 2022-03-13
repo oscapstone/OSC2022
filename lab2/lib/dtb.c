@@ -12,7 +12,7 @@ void dtb_init(uint64_t x0) {
 
 void dtb_parser(dtb_callback_t callback) {
     fdt_header* header = (fdt_header*)DTB_ADDRESS;
-
+    uart_puth(header);
     // Check magic
     if (get_be_uint32(&header->magic) != 0xd00dfeed) {
         uart_write_string("[+] BAD\r\n");

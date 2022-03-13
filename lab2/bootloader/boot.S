@@ -2,6 +2,7 @@
 
 .global _start
 
+// x0 register stores address to dtb
 _start:
     adr     x20, .
     ldr     x21, =_bl_size
