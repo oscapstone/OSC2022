@@ -36,7 +36,7 @@ void PrintRevision(char buf[MAX_SIZE]){
   unsigned int success = get_board_revision(mbox);
   if (success){
     uart_puts("Board Revision: 0x");
-    uitohex(mbox[5], buf);
+    uitohex(buf, mbox[5]);
     uart_puts(buf);
     uart_puts("\n");
   } else{
@@ -50,12 +50,12 @@ void PrintMemory(char buf[MAX_SIZE]){
   unsigned int success = get_arm_memory(mbox);
   if (success){
     uart_puts("ARM Memory Base Address: 0x");
-    uitohex(mbox[5], buf);
+    uitohex(buf, mbox[5]);
     uart_puts(buf);
     uart_puts("\n");
 
     uart_puts("ARM Memory Size: 0x");
-    uitohex(mbox[6], buf);
+    uitohex(buf, mbox[6]);
     uart_puts(buf);
     uart_puts("\n");
   } else{

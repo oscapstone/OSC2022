@@ -12,7 +12,7 @@ int readline(char buf[MAX_SIZE], int size){
     if(c < 0 || c >= 128) continue;
     /* if get newline, then print \r\n and break */
     if(c == '\n'){
-      uart_puts("\n");
+      // uart_puts("\n");
       break;
     } 
     /* check the backspace character */
@@ -26,7 +26,7 @@ int readline(char buf[MAX_SIZE], int size){
     }
     /* otherwise, print and save the character */
     else{
-      uart_send(c); // need to recv the echo back
+      // uart_send(c); // need to recv the echo back
       if( idx < size){
         buf[idx++] = c;
       }

@@ -58,7 +58,7 @@ char uart_getc(){
   /* read it and return */
   char r = (char)(*AUX_MU_IO);
   /* convert carrige return to newline */
-  return r == '\r'?'\n':r;
+  return r;
 }
 
 /* Display a string */

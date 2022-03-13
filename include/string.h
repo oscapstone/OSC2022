@@ -15,10 +15,10 @@ unsigned int strlen(const char *);
 void reverse_buf(char *);
 
 /* int to string */
-void itoa(int, char *);
+void itoa(char *, int);
 
 /* uint to string */
-void uitohex(unsigned int, char *);
+void uitohex(char *, unsigned int);
 
 /* array to int */
 int atoi(const char *);

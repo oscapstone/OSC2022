@@ -1,5 +1,4 @@
 #include <uart.h>
-#include <shell.h>
 #include <read.h>
 #include <string.h>
 
@@ -38,19 +37,18 @@ int main(){
 
     memset(buf, '\0', 15);
     readline(buf, 15);
-    int size = atoi(buf);
     uart_puts("kernel image size: ");
+    int size = atoi(buf);
     uart_puts(buf);
-    uart_puts("\n");
+    uart_puts("\nloading...\n");
 
     while(size--){
-        char c = uart_getc();
-        *kernel++ = c;
+        *kernel++ = uart_getc();
     }
 
-    uart_puts("kernel image loaded\n");
 
-    // void (*kernel_ptr)() = (void (*)())kernel;
+    // unsigned long jump = 0x80000;
+    // void (*kernel_ptr)() = (void (*)())&jump;
     // kernel_ptr();
     asm volatile(
         "mov    x0, x10;"
