@@ -22,6 +22,7 @@ with open(args.filename,'rb') as fd:
       ser.write(kernel_raw[i: i+1])
       ser.flush()
     print("{:>6}/{:>6} bytes".format(length, length))
-    # ser.readline()
-    time.sleep(2)
+    while(1):
+      print(ser.readline())
+    # time.sleep(2)
     print("Transfer finished!")
