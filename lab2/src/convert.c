@@ -54,3 +54,16 @@ char *ftoa(float value, char *s) {
 
     return s;
 }
+
+unsigned long htoi(char* addr, const int size){
+    unsigned long res = 0;
+    char c;
+    for(int i = 0 ;i < size; ++i){
+        res <<= 4;
+        c = *(addr + i);
+        if(c >= '0' && c <= '9') res += c - '0';
+        else if(c >= 'A' && c <= 'F') res += c - 'A' + 10;
+        else if(c >= 'a' && c <= 'f') res += c - 'a' + 10;
+    }
+    return res;
+}

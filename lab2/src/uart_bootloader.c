@@ -23,7 +23,7 @@ void loadimg(){
 }
 
 void load_new_kernel(){   
-    // get img size from host2pi.py
+    // input new img size (know the size through host2pi.py)
     int size = uart_get_int();
     uart_printf("New kernel size: %d", size);
 

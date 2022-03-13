@@ -25,6 +25,7 @@ void shell_execute(char *cmd)
 		uart_printf("help:\t print this help menu");
 		uart_printf("hello:\t print Hello World!");
 		uart_printf("reboot:\t reboot the device");
+		uart_printf("loadimg:\t load img from host2pi.py");
 	}
 	else if (!str_cmp(cmd, "hello")) {
 	    uart_printf("Hello World!");
