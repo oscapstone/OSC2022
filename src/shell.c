@@ -22,6 +22,8 @@ void PrintHelp(){
   uart_puts("revision : print board_revision\n");
   uart_puts("memory   : print memory info\n");
   uart_puts("reboot   : reboot the device\n");
+  uart_puts("ls       : list directory contents\n");
+  uart_puts("cat      : concatenate files and print on the standard output\n");
 }
 
 /* print unknown command message*/

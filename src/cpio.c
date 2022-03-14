@@ -12,7 +12,13 @@ void testprint(){
     // uart_puts(place); 
 }
 
-
+/*
+The pathname is followed by NUL bytes so that the total size of the fixed
+header plus pathname is a multiple	of four.  Likewise, the	file data is
+padded to a multiple of four bytes.  Note that this format	supports only
+4 gigabyte	files (unlike the older	ASCII format, which supports 8 giga-
+byte files).
+*/
 unsigned int padding(unsigned int size){
     unsigned int padding = size % 4;
     if(padding == 0) return size;
