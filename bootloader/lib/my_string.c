@@ -1,6 +1,5 @@
 #include "my_math.h"
 #include "my_string.h"
-#include "uart.h"
 
 char *itoa(int value, char *s) {
     int idx = 0;
@@ -24,6 +23,14 @@ char *itoa(int value, char *s) {
     s[idx] = '\0';
 
     return s;
+}
+
+int atoi(char *s)
+{
+    int sum = 0;
+    for (int i = 0; s[i] != '\0'; i++)
+        sum = sum * 10 + s[i] - '0';
+    return sum;
 }
 
 char *ftoa(float value, char *s) {
@@ -83,13 +90,6 @@ unsigned int vsprintf(char *dst, char *fmt, __builtin_va_list args) {
                     *dst++ = *p++;
                 }
             }
-            if (*fmt == 'x') {
-                unsigned long long arg = __builtin_va_arg(args, unsigned long long);
-                char buf[11];
-                char *p = unsign_itohexa(arg, buf);
-                while (*p)
-                    *dst++ = *p++;
-            }
             // float
             if (*fmt == 'f') {
                 float arg = (float) __builtin_va_arg(args, double);
@@ -129,20 +129,6 @@ int strcmp(const char *X, const char *Y) {
         return *(const unsigned char *)X - *(const unsigned char *)Y;
 }
 
-int strncmp(const char *a, const char *b, unsigned long n)
-{
-    unsigned long i;
-    for (i = 0; i < n; i++) {
-        if (a[i] != b[i]) {
-            return a[i] - b[i];
-        }
-        if (a[i] == 0) {
-            return 0;
-        }
-    }
-    return 0;
-}
-
 char *strcat(char *dest, const char *src)
 {
     char *tmp = dest;
@@ -156,18 +142,8 @@ unsigned int strlen(const char *src)
 {
     unsigned int len = 0;
     while ((*src++) != '\0')
-        ++len;
+        ;
     return len;
-}
-
-char *strcpy(char *to, const char *from) {
-    char *save = to;
-    while (*from != 0) {
-        *to = *from;
-        to++;
-        from++;
-    }
-    return save;
 }
 
 void reverse(char *x, char *y){
@@ -184,7 +160,7 @@ void reverse(char *x, char *y){
     y[j] = '\0';
 }
 
-char *unsign_itohexa(unsigned long long x, char *res){
+void unsign_itohexa(unsigned long long x, char *res){
     char buf[20];
     int i=0;
     while(x != 0){
@@ -197,5 +173,4 @@ char *unsign_itohexa(unsigned long long x, char *res){
     buf[i] = '\0';
 
     reverse(buf, res);
-    return res;
 }
