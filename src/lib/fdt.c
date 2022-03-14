@@ -62,4 +62,6 @@ void init_callback(fdt_prop *prop, char *node_name, char *prop_name)
 {
     if (strncmp(node_name, "chosen", strlen("chosen")) == 0 && strncmp(prop_name, "linux,initrd-start", strlen("linux,initrd-start")) == 0)
         CPIO_BASE = swap_endianess(*((uint32_t *)(prop+1)));
+
+    /*others*/
 }

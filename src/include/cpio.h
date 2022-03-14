@@ -2,7 +2,7 @@
 #define __CPIO__H__
 
 //#define CPIO_BASE 0x20000000 //rasb3
-//static unsigned long CPIO_BASE;
+//#define CPIO_BASE 0x20000000 //rasb3
 
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"

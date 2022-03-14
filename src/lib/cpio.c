@@ -6,7 +6,6 @@
 #define NULL ((void *)0)
 unsigned long CPIO_BASE;
 
-
 static unsigned long cpio_len_next(unsigned long len, const void *prev, const void *next)
 {
     unsigned long diff = (unsigned long)(next - prev);
