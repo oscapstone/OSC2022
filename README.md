@@ -6,6 +6,17 @@
 
 ## How to build
 
+### Bootloader
 ```
 make
+```
+
+### kernel
+```
+make
+```
+
+## How to send kernel
+```
+python3 sendImage.py [-i image] [-s tty]
 ```
