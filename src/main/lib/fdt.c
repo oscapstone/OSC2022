@@ -59,9 +59,9 @@ void fdt_parse(uint32_t *addr, fdt_struct_t* tree, void* (*mf)(size_t)) {
             chnode_ptr = (fdt_node_t*) mf(sizeof(fdt_node_t));
             fdt_init_node(chnode_ptr);
             chnode_ptr->addr = ptr;
-            if(*ptr != '\0')
+            if(*ptr != '\0'){
                 chnode_ptr->node_name = ptr;
-            else
+            } else
                 chnode_ptr->node_name = "/";
             if(list_empty(node_head)) {
                 list_add_tail(&chnode_ptr->list, node_head);
@@ -73,7 +73,7 @@ void fdt_parse(uint32_t *addr, fdt_struct_t* tree, void* (*mf)(size_t)) {
                 cur_node_ptr = chnode_ptr;
             }
 
-            ptr = align_l(ptr, _strlen(chnode_ptr->node_name));
+            ptr = align_l(ptr, _strlen_null(chnode_ptr->node_name));
             goto parsing;
 
 
@@ -100,6 +100,8 @@ void fdt_parse(uint32_t *addr, fdt_struct_t* tree, void* (*mf)(size_t)) {
 
     }
 }
+
+
 
 
 

@@ -29,6 +29,7 @@
 
 #define GET_BOARD_REVISION          0x00010002
 #define GET_ARM_MEMORY              0x00010005
+#define SET_CLKRATE                 0x00038002
 
 /*
   ┌────────────────────────────────────────────────────────────────────────────┐

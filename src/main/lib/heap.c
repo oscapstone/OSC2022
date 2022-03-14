@@ -14,7 +14,7 @@ void _heap_init() {
     INIT_LIST_HEAD(&__FREE_HEAD);
     INIT_LIST_HEAD(&__ALLOC_HAED);
 
-    heap_head_t* hptr = _heap_start;
+    heap_head_t* hptr = &_heap_start;
 
     hptr->daddr = (uint32_t)hptr + sizeof(heap_head_t);
     hptr->size = _heap_end - (hptr->daddr) - sizeof(heap_head_t);
@@ -35,7 +35,7 @@ void* hmalloc(size_t size) {
     {
         if(item->size >= size) { //* first best fit
             alloc = item->daddr;
-            alloc->daddr += sizeof(heap_head_t);
+            alloc->daddr = (char*)alloc + sizeof(heap_head_t);
             INIT_LIST_HEAD(&alloc->list);
 
             if(item->size - size == 0) {
@@ -43,9 +43,10 @@ void* hmalloc(size_t size) {
             } else {
                 item->size -= size;
                 item->daddr = alloc->daddr + size;
-                //* allocate to ALLOC_HEAD
-                list_add(&item->list, &__ALLOC_HAED);
+                
             }
+            //* allocate to ALLOC_HEAD
+            list_add(&alloc->list, &__ALLOC_HAED);
             break;
         }
     }

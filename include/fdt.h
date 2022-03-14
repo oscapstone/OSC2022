@@ -66,6 +66,8 @@ typedef struct fdt_struct {
 
 
 
+
+
 void fdt_init_node(fdt_node_t *node);
 void fdt_init_prop(fdt_prop_accessor_t *prop_obj, void* prop_addr);
 

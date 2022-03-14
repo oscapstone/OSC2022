@@ -17,8 +17,8 @@ extern uint32_t __dtb_start_addr_; //* The address of dtb file
 
 int main(void) {
 
-    init_uart(270);
-    // pll0_uart_init();
+    // init_uart(270);
+    pll0_uart_init();
     uint32_t entry_point = 0x80000;
     uint32_t relo_addr = 0x40000;
     
@@ -46,7 +46,7 @@ int load_img(uint32_t* start_addr) {
 
 
 
-    // unsigned char sym = pll0_uart_getc();
+    // unsigned char sym = uart_getc();
 
     while(1) {
         // memset(&cmd, 0, sizeof(cmd));
@@ -87,7 +87,8 @@ int load_img(uint32_t* start_addr) {
     // memset(&cmd, 0, sizeof(cmd));
     memset(&ksize, 0, sizeof(cmd));
     tty_recv(&ksize, 8);
-    tty_send(&ksize, 8);
+
+    // tty_send(&ksize, 8);
 
     char* ptr = (char*)start_addr;
     for(int i=0;i<ksize.val64;i++) {

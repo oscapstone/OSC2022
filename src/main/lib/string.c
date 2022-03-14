@@ -4,6 +4,7 @@
 #else
 #include <stdint.h>
 #endif
+#include "uart.h"
 
 
 int strcmp(char* _str1, char* _str2) {
@@ -41,10 +42,10 @@ void* memset(void* ptr, int c, size_t size) {
     return p;
 }
 
-void* memcpy(void* dst, void* src, size_t size) {
+void* memcpy(void* _dst, void* _src, size_t size) {
 
-    char* dst_cur = (char*) dst;
-    char* src_cur = (char*) src;
+    char* dst_cur = (char*)_dst;
+    char* src_cur = (char*)_src;
     for(int i=0;i<size;i++) {
         *dst_cur++ = *src_cur++;
     }

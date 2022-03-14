@@ -10,6 +10,31 @@
 static char recv_buf[100];
 
 
+
+
+#define _addr(addr, off)       ((char*)addr + off) 
+#define PRINTBYTE(key, ptr, len)                            \
+    do {                                                    \
+        uart_write(key);                               \
+        if(len == 4) {                                          \
+            uart_hex(*((uint32_t*)ptr));                        \ 
+        } else {                                                \
+            char* p = ptr;                                      \
+            for(int i=0;i<len;i++) {                            \
+                uart_send(*((char*)p + i));                 \
+            }                                                     \
+        }                                                \
+        uart_write("\n");                                       \
+    } while(0)
+
+
+
+
+
+
+
+
+
 void init();
 void cat(char* filename);
 void _cmd_help();
@@ -38,6 +63,7 @@ int main(void) {
 void init() {
 
     init_uart(270);
+    // pll0_uart_init();
     _heap_init();
 }
 
@@ -153,5 +179,83 @@ void read_dtb() {
     fdt_parse((uint32_t*)__dtb_start_addr_, fdt_tree, hmalloc);
     uart_write("Magic :");
     uart_hex(fdt_tree->header->magic);
+
+    fdt_node_t* nodeitem;
+
+    list_for_each_entry(nodeitem, &fdt_tree->node_head, list) {
+        uart_write("Node Name: ");
+        uart_write(nodeitem->node_name);
+        uart_write("\n");
+        uart_write("Addr");
+        // uart_write(nodeitem->addr);
+        uart_hex(nodeitem->addr);
+
+        uart_write("\n");
+
+        fdt_prop_accessor_t* propitem;
+
+        list_for_each_entry(propitem, &nodeitem->prop_head, list) {
+            uart_write("Prop name: ");
+            uart_write(_addr(fdt_tree->strblk_addr, brl(propitem->prop->nameoff)));
+            uart_write("\n");
+            PRINTBYTE("Prop val: ", _addr(propitem->prop, sizeof(fdt_prop_t)), brl(propitem->prop->len));
+        }
+
+        dump_chnode(&nodeitem->chnode_head, fdt_tree);
+
+    }
+
+
+    fdt_reserve_entry_t* fdt_rsv = fdt_tree->rsvmap;
+
+    while(fdt_rsv) {
+        if(fdt_rsv->address == 0 && fdt_rsv->size == 0) 
+            break;
+
+        uint32_t *t = &fdt_rsv->address;
+        uart_write("Address ");
+        uart_hex(*t);
+        uart_hex(*(t+1));
+        uart_write("Size ");
+        t = &fdt_rsv->size;
+        uart_hex(*t);
+        uart_hex(*(t+1));
+
+        fdt_rsv++;
+    }
+
+
+}
+
+
+void dump_chnode(struct list_head *head, fdt_struct_t* tree) {
+
+
+
+    fdt_node_t* nodeitem;
+    char* ptr;
+
+    list_for_each_entry(nodeitem, head, list) {
+        uart_write("Node Name: ");
+        uart_write(nodeitem->node_name);
+        uart_write("\n");
+        uart_write("Addr");
+        // uart_write(nodeitem->addr);
+        uart_hex(nodeitem->addr);
+        uart_write("\n");
+
+        fdt_prop_accessor_t* propitem;
+
+        list_for_each_entry(propitem, &nodeitem->prop_head, list) {
+            uart_write("Prop name: ");
+            ptr = _addr(tree->strblk_addr, brl(propitem->prop->nameoff));
+            uart_write(ptr);
+            uart_write("\n");
+            ptr = _addr(propitem->prop, sizeof(fdt_prop_t));
+            PRINTBYTE("Prop val: ", ptr, brl(propitem->prop->len));
+        }
+
+        dump_chnode(&nodeitem->chnode_head, tree);
+    }
 
 }

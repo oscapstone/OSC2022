@@ -9,7 +9,8 @@ LINK_DIR := ../../linker-script
 
 
 LDFILE := $(LINK_DIR)/linker.ld
-C_FLAG := -g -Wall -static -nostdlib -nostartfiles -fno-builtin-memset -fno-builtin-strtol
+builtin := -fno-builtin-memset -fno-builtin-strtol -fno-builtin-memcpy -fno-builtin-strlen
+C_FLAG := -g -Wall -static -nostdlib -nostartfiles $(builtin)
 INC := -I../../include
 LD_FLAG := -static -nostdlib -nostartfiles
 # -L$(ROOT_PATH)/setup
@@ -68,6 +69,11 @@ echo: echo.elf
 
 com :
 	$(GCC) -g -Wall $(SRC_DIR)/main/utils/raspi3bcom.c -o raspi3bcom
+
+
+ccom:
+	$(GCC) -g -Wall $(SRC_DIR)/main/utils/raspbootcom.cc -o ccom
+
 
 clean:
 	rm *.log
