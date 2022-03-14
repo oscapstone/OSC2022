@@ -26,4 +26,7 @@ void Reboot();
 /* Main Shell */
 void ShellLoop();
 
+void Ls();
+void Cat(char [MAX_SIZE]);
+
 #endif

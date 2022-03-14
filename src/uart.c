@@ -67,3 +67,12 @@ void uart_puts(char *s) {
       uart_send(*s++);
   }
 }
+
+void uart_nbyte(char *s, unsigned int len) {
+  while(len--) {
+      /* convert newline to carrige return + newline */
+      if(*s=='\n') uart_send('\r');
+      uart_send(*s++);
+  }
+}
+

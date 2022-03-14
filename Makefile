@@ -27,7 +27,7 @@ clean:
 	rm *.elf *.img src/*.o boot/*.o >/dev/null 2>/dev/null || true
 
 run: 
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial stdio
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial stdio -initrd initramfs.cpio
 
 pty: 
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial pty

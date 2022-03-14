@@ -4,6 +4,7 @@
 #include <mailbox.h>
 #include <reboot.h>
 #include <read.h>
+#include <cpio.h>
 
 /* print welcome message*/
 void PrintWelcome(){
@@ -85,6 +86,20 @@ void Bootimg(char buf[MAX_SIZE]){
   uart_puts("done\n");
 }
 
+void Ls(){
+  ls();
+}
+
+void Cat(char buf[MAX_SIZE]){
+  uart_puts("Filename: ");
+  unsigned int size = readline(buf, MAX_SIZE);
+  if (size == 0){
+    // uart_puts("\n");
+    return;
+  }
+  cat(buf);
+}
+
 /* Main Shell */
 void ShellLoop(){
   char buf[MAX_SIZE];
@@ -102,6 +117,8 @@ void ShellLoop(){
     else if(strcmp("revision", buf) == 0) PrintRevision(buf);
     else if(strcmp("memory", buf) == 0) PrintMemory(buf);
     else if(strcmp("bootimg", buf) == 0) Bootimg(buf);
+    else if(strcmp("ls", buf) == 0) Ls();
+    else if(strcmp("cat", buf) == 0) Cat(buf);
     else PrintUnknown(buf);
 
     uart_puts("# ");

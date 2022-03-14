@@ -7,6 +7,7 @@
    greater than zero if S1 is lexicographically less than,
    equal to or greater than S2.  */
 int strcmp(const char *, const char *);
+int strncmp(const char *, const char *, unsigned int);
 
 /* string length */
 unsigned int strlen(const char *);
@@ -22,6 +23,9 @@ void uitohex(char *, unsigned int);
 
 /* array to int */
 int atoi(const char *);
+
+/* hex string to unsigned int */
+unsigned int hextoui(const char *, unsigned int);
 
 void memcpy(char *, const char *, unsigned int);
 void memset(char *, const char, unsigned int);
