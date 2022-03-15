@@ -34,17 +34,14 @@ $(IMAGE).img: $(IMAGE).elf
 $(IMAGE).elf: $(OBJS)
 	$(LK) $(OBJS) -T linker.ld -o $(IMAGE).elf
 
-src/%.o: src/lib/%.S
+%.o: lib/%.S
 	$(CC) -c $< $(CFLAGS) -o $@
 
-src/%.o: src/lib/%.c
+%.o: lib/%.c
 	$(CC) -c $< $(CFLAGS) -o $@
 
 tty: $(IMAGE).img
 	$(QEMU) -machine $(MACHINE) -kernel $(IMAGE).img -initrd $(CPIO_FILE) -dtb $(DTB_FILE) -display none -serial null -serial pty
-
-run: $(IMAGE).img
-	$(QEMU) -machine $(MACHINE) -kernel $(IMAGE).img -initrd $(CPIO_FILE) -dtb $(DTB_FILE) -display none -serial null -serial stdio
 
 clean:
 	rm -rf $(OBJS) *.img *.elf
