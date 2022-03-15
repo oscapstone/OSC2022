@@ -17,6 +17,7 @@ char read_uart();
 int read_int();
 void writec_uart(unsigned int s);
 void writes_uart(char *s);
+void writes_n_uart(char *s, unsigned int size);
 void writehex_uart(unsigned int h);
 
 

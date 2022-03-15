@@ -17,6 +17,22 @@ strcmp (const char *p1, const char *p2)
   return c1 - c2;
 }
 
+int strncmp(const char *s1, const char *s2, unsigned int n)
+{
+  register unsigned char u1, u2;
+  while (n-- > 0)
+  {
+    u1 = (unsigned char) *s1++;
+    u2 = (unsigned char) *s2++;
+    if (u1 != u2)
+      return u1 - u2;
+    if (u1 == '\0')
+      return 0;
+  }
+  return 0;
+}
+
+
 int strlen(char *s){
     unsigned int count = 0;
     char *tmps = s;

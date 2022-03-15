@@ -2,6 +2,8 @@
 #include "string.h"
 #include "mailbox.h"
 #include "reboot.h"
+#include "cpio.h"
+
 
 int match_command(char *buffer){
     
@@ -24,6 +26,12 @@ int match_command(char *buffer){
     else if(strcmp(buffer,"version")==0){
         return version;
     }
+    else if(strcmp(buffer,"ls")==0){
+        return ls;
+    }
+    else if(strcmp(buffer,"cat")==0){
+        return cat;
+    }
     else{
         return unknown;
     }
@@ -36,21 +44,24 @@ void read_command(){
     writes_uart("# ");
     while(1){
         char c = read_uart();
-        
         if(c!='\n' && count<256){
-            if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
-                //writes_uart("H1\r\n");
+            if(c=='\x7f'){
+                if(count >0 ){
+                    writec_uart('\b');
+                    writec_uart(' ');
+                    writec_uart('\b');
+                    buffer[--count]='\0';
+                }
+                
+            }
+            else if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
                 writec_uart(c);
-                //writes_uart("H2\r\n");
                 buffer[count++] = c; 
             }
             
         }else{
-            //writes_uart("H1\r\n");
             writec_uart('\r');
-            //writes_uart("H2\r\n");
             writec_uart('\n');
-            //writes_uart("H3\r\n");
             
             buffer[count]='\0';
             if(buffer[0] != '\0'){
@@ -63,6 +74,42 @@ void read_command(){
     }
     return;
 }
+void read_string(char **s){
+    char buffer[256];
+    int count=0;
+    while(1){
+        char c = read_uart();
+        if(c!='\n' && count<256){
+            if(c=='\x7f'){
+                if(count >0 ){
+                    writec_uart('\b');
+                    writec_uart(' ');
+                    writec_uart('\b');
+                    buffer[--count]='\0';
+                }
+                
+            }
+            else if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
+                writec_uart(c);
+                buffer[count++] = c; 
+            }
+            
+        }else{
+            writec_uart('\r');
+            writec_uart('\n');
+            
+            buffer[count]='\0';
+            if(buffer[0] != '\0'){
+                *s = buffer;
+                return;
+            }
+            break;
+        }
+        
+    }
+    return;
+}
+
 void handle_command(enum Action action, char *buffer){
     switch (action)
     {
@@ -73,6 +120,8 @@ void handle_command(enum Action action, char *buffer){
         writes_uart("memory     : print ARM memory address and size\r\n");
         writes_uart("reboot     : reboot the device after 50000 ticks\r\n");
         writes_uart("ccreboot   : cancel reboot the device\r\n");
+        writes_uart("ls         : print the files in rootfs.\r\n");
+        writes_uart("cat        : print the file information\r\n");
         break;
     case hello:
         writes_uart("Hello World!\r\n");
@@ -94,6 +143,12 @@ void handle_command(enum Action action, char *buffer){
         break;
     case version:
         writes_uart("Here is your booted kernel ver 0.1\r\n");
+        break;
+    case ls:
+        cpio_ls();
+        break;
+    case cat:
+        cpio_cat();
         break;
     default:
         writes_uart("command not found: ");

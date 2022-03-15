@@ -82,6 +82,15 @@ void writec_uart(unsigned int s){
     while(!(*AUX_MU_LSR_REG & 0x20)) asm volatile("nop");
     *AUX_MU_IO_REG = c;
 }
+
+void writes_n_uart(char *s, unsigned int size){
+    for(int i=0;i<size;i++){
+        if(*s=='\n')
+            writec_uart('\r');
+        writec_uart(*s++);
+    }
+}
+
 void writes_uart(char *s){
     while(*s){
         if(*s=='\n')
