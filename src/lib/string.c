@@ -26,6 +26,16 @@ int strncmp(const char* a, const char* b, int n)
     return 0;
 }
 
+size_t strlen(const char *str)
+{
+    int l = 0;
+    while(*str){
+        l++;
+        str++;
+    }
+    return l;
+}
+
 char u42hex(uint32_t num)
 {
     if(num<=9) return '0'+num;
@@ -67,4 +77,16 @@ void u642hex(uint64_t num, char* buf, size_t len)
         buf[i-j-1] = tmp;
     }
     buf[(i>0?i:1)] = 0;
+}
+
+int atoi(const char* buf)
+{
+    int num = 0;
+    int i=0;
+    while(buf[i]){
+        num *= 10;
+        num += buf[i]-'0';
+        i++;
+    }
+    return num;
 }
