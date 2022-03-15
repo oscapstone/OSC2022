@@ -6,7 +6,6 @@ FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
 INC = -Iinclude
 LIB = lib
 CPIO = archive/initramfs.cpio
-DTB = config/bcm2710-rpi-3-b-plus.dtb
 
 all: kernel8.img bootloader.img $(CPIO)
 
@@ -25,16 +24,16 @@ rd.o:$(CPIO)
 	aarch64-linux-gnu-ld -r -b binary -o rd.o $(CPIO)
 
 qemu-kernel: $(CPIO)
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd $(CPIO) -dtb $(DTB)
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd $(CPIO)
 
 qemu-bootloader: $(CPIO)
-	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial pty -initrd $(CPIO) -dtb $(DTB)
+	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial pty -initrd $(CPIO)
 
 load-kernel:
 	sudo ./load_kernel.py
 
 qemu:
-	sudo screen /dev/pts/0 115200
+	sudo screen /dev/pts/2 115200
 
 on-board:
 	sudo screen /dev/ttyUSB0 115200
