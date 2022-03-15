@@ -24,6 +24,4 @@ with open('kernel8.img', 'rb') as f:
     for i in range(len(data)):
         ser.write(data[i:i+1])
         ser.flush()
-        time.sleep(0.001)
-    # ser.write(data)
-    # ser.flush()
+        # time.sleep(0.001)

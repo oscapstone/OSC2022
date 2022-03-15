@@ -96,7 +96,7 @@ void uitohex(char buf[MAX_SIZE], unsigned int d){
   do{
     buf[i] = d % 16;
     if(buf[i] < 10) buf[i] += '0';
-    else buf[i] += 'A' - 10;
+    else buf[i] += 'a' - 10;
     i++;
   }while((d /= 16) > 0);
   buf[i] = '\0';

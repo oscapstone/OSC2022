@@ -1,7 +1,7 @@
 #ifndef CPIO_H_
 #define CPIO_H_
 
-#define CPIO_BASE   ((volatile unsigned int*)(0x8000000))
+#define CPIO_BASE   ((volatile unsigned long*)(0x8000000))
 
 /* Magic identifiers for the "cpio" file format. */
 #define CPIO_HEADER_MAGIC "070701"
