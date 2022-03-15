@@ -1,4 +1,15 @@
-ARMGNU = aarch64-linux-gnu
+OS := $(shell uname)
+
+ifeq ($(OS), Linux)
+	ARMGNU = aarch64-linux-gnu
+	MACHINE = raspi3
+endif
+
+ifeq ($(OS), Darwin)
+	ARMGNU = aarch64-unknown-linux-gnu
+	MACHINE = raspi3b
+endif
+
 CC = $(ARMGNU)-gcc
 LK = $(ARMGNU)-ld
 OBJCPY = $(ARMGNU)-objcopy
@@ -30,7 +41,7 @@ kernel/%.o: kernel/lib/%.c
 	$(CC) -c $< $(CFLAGS) -o $@
 
 run: $(IMAGE).img
-	$(QEMU) -M raspi3 -kernel $(IMAGE).img -initrd $(CPIO_FILE) -dtb $(DTB_FILE) -display none -serial null -serial stdio
+	$(QEMU) -machine $(MACHINE) -kernel $(IMAGE).img -initrd $(CPIO_FILE) -dtb $(DTB_FILE) -display none -serial null -serial stdio
 
 clean:
 	rm -rf $(OBJS) *.img *.elf

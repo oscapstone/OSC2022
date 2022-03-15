@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "my_string.h"
 
+unsigned long DTB_BASE;
+
 void boot_msg()
 {
     uart_printf("\nWELCOME to Bootloader!!!!!\n\n");
@@ -47,7 +49,6 @@ void cmd_resolve(char *cmd)
 
 void loadimg()
 {
-    extern unsigned long DTB_BASE;
 
     char *kernel = (char *)0x80000;
     char buf[8];

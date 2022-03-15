@@ -10,9 +10,8 @@
 #define FDT_NOP         0x00000004
 #define FDT_END         0x00000009
 
-unsigned long DTB_BASE;
-
 extern unsigned long CPIO_BASE;
+extern unsigned long DTB_BASE;
 
 typedef struct fdt_header {
     uint32_t magic;

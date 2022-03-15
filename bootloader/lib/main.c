@@ -3,7 +3,6 @@
 #include "my_string.h"
 #include "utils.h"
 
-
 void main()
 {
 	register unsigned long x0 asm("x0");

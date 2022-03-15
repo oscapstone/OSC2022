@@ -3,7 +3,7 @@
 #include "my_string.h"
 #include "cpio.h"
 
-extern unsigned long DTB_BASE;
+unsigned long DTB_BASE;
 
 uint32_t fdt_align(uint32_t n)
 {
