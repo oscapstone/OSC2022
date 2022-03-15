@@ -1,8 +1,7 @@
 #ifndef __INITRD__
 #define __INITRD__
 
-#define CPIO_ADDR  (char *)0x8000000; // qemu
-// #define CPIO_ADDR  (char *)0x20000000; // raspi3
+extern char *initrd_addr;
 
 typedef struct cpio_header 
 {

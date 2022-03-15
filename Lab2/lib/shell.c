@@ -55,13 +55,19 @@ void parse_command() {
     }
     else if (compare_string(buffer, "ls") == 0) {
         uart_send_string("\r");
-        initrd_list();
+        if (!initrd_addr)
+            uart_send_string("Cannot find CPIO archive!\r\n");
+        else
+            initrd_list();
     }
     else if (compare_string(buffer, "cat") == 0)
     {
-        uart_send_string("Filename: ");
+        uart_send_string("\rFilename: \r\n");
         get_command();
-        initrd_cat(buffer);
+        if (!initrd_addr)
+            uart_send_string("Cannot find CPIO archive!\r\n");
+        else
+            initrd_cat(buffer);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("\rhelp               : print this help menu\r\n");
@@ -69,6 +75,7 @@ void parse_command() {
         uart_send_string("reboot             : reboot the device\r\n");
         uart_send_string("info               : print device info\r\n");
         uart_send_string("ls                 : print files in rootfs\r\n");
+        uart_send_string("cat                : print conent in a file\r\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");

@@ -4,12 +4,14 @@
 #include "shell.h"
 #include "initrd.h"
 
+char *initrd_addr = NULL;
+
 void initrd_list() {
     /*
      cpio archive comprises a header record with basic numeric metadata followed by
      the full pathname of the entry and the file data.
     */
-    char *addr = CPIO_ADDR;
+    char *addr = initrd_addr;
 
     while (compare_string((char *)(addr + sizeof(cpio_header)), "TRAILER!!!") != 0) {   
         cpio_header *header = (cpio_header*)addr;
@@ -27,7 +29,7 @@ void initrd_list() {
 }
 
 char *findFile(char *name) {
-    char *addr = CPIO_ADDR;
+    char *addr = initrd_addr;
     while (compare_string((char *)(addr + sizeof(cpio_header)), "TRAILER!!!") != 0) {
         if ((compare_string((char *)(addr + sizeof(cpio_header)), name) == 0)) {
             return addr;

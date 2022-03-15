@@ -15,6 +15,12 @@ int compare_string(const char *s1, const char *s2) {
     return c1 - c2;
 }
 
+size_t strlen(const char *s) {
+  size_t i = 0;
+  while (s[i]) i++;
+  return i;
+}
+
 void uintoa(char *out, unsigned int i)
 {   
     unsigned int index = 0;
@@ -91,7 +97,5 @@ unsigned long hexToDec(char *s){
 /* align to multiple of 4 */
 void align_4(void* size){
     unsigned long* x =(unsigned long*) size;
-    if((*x)&3){
-        (*x) += 4-((*x)&3);
-    }
+    *x = (*x + 4 - 1) & -4;
 }
