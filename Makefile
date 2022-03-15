@@ -4,10 +4,10 @@ LK = $(ARMGNU)-ld
 OBJCPY = $(ARMGNU)-objcopy
 QEMU = qemu-system-aarch64
 
-A_SRCS = $(wildcard src/lib/*.S)
-C_SRCS = $(wildcard src/lib/*.c)
+A_SRCS = $(wildcard kernel/lib/*.S)
+C_SRCS = $(wildcard kernel/lib/*.c)
 OBJS = $(A_SRCS:.S=.o) $(C_SRCS:.c=.o)
-INCLUDE = src/include
+INCLUDE = kernel/include
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles -I$(INCLUDE)
 CPIO_FILE = initramfs.cpio
 DTB_FILE = bcm2710-rpi-3-b-plus.dtb
@@ -21,12 +21,12 @@ $(IMAGE).img: kernel8.elf
 	$(OBJCPY) -O binary $(IMAGE).elf kernel8.img
 
 $(IMAGE).elf: $(OBJS)
-	$(LK) $(OBJS) -T src/linker.ld -o $(IMAGE).elf
+	$(LK) $(OBJS) -T kernel/linker.ld -o $(IMAGE).elf
 
-src/%.o: src/lib/%.S
+kernel/%.o: kernel/lib/%.S
 	$(CC) -c $< $(CFLAGS) -o $@
 
-src/%.o: src/lib/%.c
+kernel/%.o: kernel/lib/%.c
 	$(CC) -c $< $(CFLAGS) -o $@
 
 run: $(IMAGE).img
