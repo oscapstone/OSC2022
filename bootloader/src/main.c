@@ -11,7 +11,8 @@ extern unsigned long _start;
 /* kernel image size */
 extern unsigned long __kernel_image_size;
 
-register unsigned long x0 asm("x0");
+unsigned long DTB_BASE = 0x123;
+
 int begin = 1;
 
 void self_relocation(){
@@ -27,22 +28,24 @@ void self_relocation(){
 }
 
 int main(unsigned long dtb){
+    register unsigned long x0 asm("x0");
     if(begin){
+        DTB_BASE = x0;
         begin = 0;
         self_relocation();
     }
 
-    unsigned long DTB_BASE = x0;
     uart_init();
     char buf[15];
     char *kernel = (char *)0x80000;
+  
 
     memset(buf, '\0', 15);
     readline(buf, 15);
-    uart_puts("kernel image size: ");
+    uart_puts("[*] kernel image size: ");
     int size = atoi(buf);
     uart_puts(buf);
-    uart_puts("\nloading...\n");
+    uart_puts("\n[*] loading...\n");
 
     while(size--){
         *kernel++ = uart_getc();
