@@ -3,7 +3,7 @@
 #include "stdint.h"
 #include "string.h"
 #include "mini_uart.h"
-
+#include "memory.h"
 typedef struct commads
 {
     char* cmd;
@@ -17,12 +17,15 @@ void shell_hello();
 void shell_mailbox();
 void shell_reboot();
 void shell_ls();
+void shell_alloc();
+
 commads cmd_list[]={
         {.cmd="help", .help="print this help menu", .func=shell_help},
         {.cmd="hello", .help="print Hello World!", .func=shell_hello},
         {.cmd="reboot", .help="reboot the device", .func=shell_reboot},
         {.cmd="mailbox", .help="get mailbox information", .func=shell_mailbox},
-        {.cmd="ls", .help="list directory", .func=shell_ls}
+        {.cmd="ls", .help="list directory", .func=shell_ls},
+        {.cmd="alloc", .help="memory allocation test", .func=shell_alloc}
 };
 
 // https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
@@ -193,4 +196,28 @@ void shell_mailbox(){
     }
     // echo everything back
     // uart_send(uart_getc());
+}
+
+void shell_alloc(){
+    uart_puts("My Heap starting address in bytes is: ");
+    uart_hex(HEAP_START);
+    uart_puts("\r\n");
+
+    char* str1 = simple_malloc(8);
+    str1 = "apple!\r\n";
+    uart_puts(str1);
+
+    char* str2 = simple_malloc(9);
+    str2 = "banana!\r\n";
+    uart_puts(str2);
+
+    char* array = simple_malloc(sizeof(int)*20);
+    for(int i = 0; i< 26; i++){
+        array[i] = 'a'+i;
+    }
+    for(int i = 0; i< 26; i++){
+        uart_putc(array[i]);
+    }
+    uart_puts("\r\n");
+
 }

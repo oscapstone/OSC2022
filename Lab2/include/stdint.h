@@ -1,6 +1,8 @@
 #ifndef _STDINT_H
 #define _STDINT_H
 
+typedef unsigned long size_t;
+
 typedef unsigned long long int uint64_t;
 typedef signed long long int int64_t;
 
