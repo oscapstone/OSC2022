@@ -1,3 +1,6 @@
+#ifndef MBOX
+#define MBOX
+
 /* a properly aligned buffer */
 extern volatile unsigned int mbox[36];
 
@@ -24,3 +27,5 @@ extern volatile unsigned int mbox[36];
 
 int mbox_call(unsigned char ch);
 void mbox_request(unsigned int tag, unsigned int res_len);
+
+#endif
