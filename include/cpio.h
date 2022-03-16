@@ -1,14 +1,15 @@
 #ifndef CPIO_H_
 #define CPIO_H_
 
-#define CPIO_BASE   ((volatile unsigned long*)(0x8000000))
+#include <string.h>
+// #define CPIO_BASE   ((volatile unsigned long*)(0x8000000))
+unsigned long CPIO_BASE;
 
 /* Magic identifiers for the "cpio" file format. */
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
 #define CPIO_ALIGNMENT 4
 
-#include <string.h>
 
 typedef struct _cpio_newc_header{
    	char c_magic[6];      /* Magic header '070701'. */

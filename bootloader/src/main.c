@@ -47,17 +47,16 @@ int main(){
     }
 
 
-    // unsigned long jump = 0x80000;
-    // void (*kernel_ptr)() = (void (*)())&jump;
-    // kernel_ptr();
-    asm volatile(
-        "mov    x0, x10;"
-        "mov    x1, x11;"
-        "mov    x2, x12;"
-        "mov    x3, x13;"
-        "mov    x15, 0x80000;"
-        "br     x15;"
-    );
+    void (*kernel_ptr)() = (void *)0x80000;
+    kernel_ptr();
+    // asm volatile(
+    //     "mov    x0, x10;"
+    //     "mov    x1, x11;"
+    //     "mov    x2, x12;"
+    //     "mov    x3, x13;"
+    //     "mov    x15, 0x80000;"
+    //     "br     x15;"
+    // );
  
     
     return 0;

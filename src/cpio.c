@@ -3,14 +3,14 @@
 #include <string.h>
 
 
-void testprint(){
-    // char buf[MAX_SIZE];
-    char *place = (char *)CPIO_BASE;
-    for(int i = 0; i < 500; i++){
-        uart_send(place[i]);
-    }
-    // uart_puts(place); 
-}
+// void testprint(){
+//     // char buf[MAX_SIZE];
+//     char *place = (char *)CPIO_BASE;
+//     for(int i = 0; i < 500; i++){
+//         uart_send(place[i]);
+//     }
+//     // uart_puts(place); 
+// }
 
 /*
 The pathname is followed by NUL bytes so that the total size of the fixed
