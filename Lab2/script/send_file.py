@@ -4,7 +4,7 @@ import serial
 
 def send_all_data(tty, data):
     while len(data) > 0:
-        write_cnt = tty.write(data)
+        write_cnt = tty.write(data) # return success byte
         data = data[write_cnt:]
 
 if __name__ == '__main__':
@@ -36,6 +36,7 @@ if __name__ == '__main__':
         with open(args.src_file_pth, 'rb') as src_file:
             while True:
                 data = src_file.read()
+                #print(f"{data}\n\n")
                 if data == b'':
                     break
                 send_all_data(tty, data)

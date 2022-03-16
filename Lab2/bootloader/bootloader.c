@@ -1,6 +1,5 @@
 
 #include "mini_uart.h"
-#include "utils.h"
 #include "stdint.h"
 
 union large_int_by_byte{
