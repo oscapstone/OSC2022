@@ -1,3 +1,6 @@
 *.o
 *.elf
 *.img
+*.img2
+.cache
+x86test

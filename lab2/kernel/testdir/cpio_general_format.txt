@@ -1,0 +1,9 @@
+Each file system object in	a cpio archive comprises a header record with
+     basic numeric metadata followed by	the full pathname of the entry and the
+     file data.	 The header record stores a series of integer values that gen-
+     erally follow the fields in struct	stat.  (See stat(2) for	details.)  The
+     variants differ primarily in how they store those integers	(binary, oc-
+     tal, or hexadecimal).  The	header is followed by the pathname of the en-
+     try (the length of	the pathname is	stored in the header) and any file
+     data.  The	end of the archive is indicated	by a special record with the
+     pathname "TRAILER!!!".

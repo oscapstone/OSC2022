@@ -1,0 +1,102 @@
+[
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-Wall",
+      "-O2",
+      "-ffreestanding",
+      "-nostdinc",
+      "-mcpu=cortex-a53+nosimd",
+      "-I../lib",
+      "-c",
+      "-o",
+      "start.o",
+      "start.S"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader/start.S",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader/start.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib64/llvm/11/bin/clang-11",
+      "-c",
+      "-cc1as",
+      "-triple",
+      "aarch64-unknown-unknown-elf",
+      "-filetype",
+      "obj",
+      "-main-file-name",
+      "-target-cpu",
+      "cortex-a53",
+      "-target-feature",
+      "+fp-armv8",
+      "-target-feature",
+      "+crc",
+      "-target-feature",
+      "+crypto",
+      "-target-feature",
+      "-neon",
+      "-target-feature",
+      "+sha2",
+      "-target-feature",
+      "+aes",
+      "-I",
+      "../lib",
+      "-fdebug-compilation-dir",
+      "/home/marvin/homework/osc2022/lab2/bootloader",
+      "-dwarf-debug-producer",
+      "clang version 11.0.0",
+      "-I",
+      "../lib",
+      "-dwarf-version=4",
+      "-mrelocation-model",
+      "static",
+      "-o",
+      "start.o",
+      "start.S"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader/start.S",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader/start.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-Wall",
+      "-O2",
+      "-ffreestanding",
+      "-nostdinc",
+      "-mcpu=cortex-a53+nosimd",
+      "-I../lib",
+      "-c",
+      "-o",
+      "../lib/mini_uart.o",
+      "../lib/mini_uart.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/lib/mini_uart.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/lib/mini_uart.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-Wall",
+      "-O2",
+      "-ffreestanding",
+      "-nostdinc",
+      "-mcpu=cortex-a53+nosimd",
+      "-I../lib",
+      "-c",
+      "-o",
+      "main.o",
+      "main.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader/main.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab2/bootloader/main.o"
+  }
+]
