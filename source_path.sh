@@ -1,0 +1,1 @@
+export PATH="/usr/local/cross-compiler/bin:$PATH"
