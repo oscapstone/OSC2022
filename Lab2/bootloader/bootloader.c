@@ -13,6 +13,7 @@ void boot_main(){
     union large_int_by_byte program;
     volatile uint8_t *program_addr = (volatile uint8_t *)0x80000;
 
+    // receive magic number from python script, prevent dirty uart signal
     while(1) {
         uint8_t data;
         data = uart_getc();
@@ -38,5 +39,6 @@ label_1:
     for(uint64_t offset=0; offset<program.larg_int; offset++)
         program_addr[offset] = uart_getc();
 
+    // execute assembly to jump to kernel posision
     asm volatile("br %x[program_addr]"::[program_addr]"r"(program_addr));
 }

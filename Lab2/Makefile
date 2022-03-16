@@ -6,10 +6,11 @@ INCLUDES = -Iinclude
 KERNEL_SRC_DIR = kernel
 BOOT_SRC_DIR = bootloader
 LIB_SRC_DIR = src
-
 OBJ_DIR = objs
 
-.PHONY: clean run
+RAMFS = initramfs.cpio
+
+.PHONY: clean all $(RAMFS)
 
 ##############
 _KERNEL_C_FILES   = $(wildcard $(KERNEL_SRC_DIR)/*.c)
@@ -51,7 +52,7 @@ $(OBJ_DIR)/%_c.o: $(LIB_SRC_DIR)/%.c
 $(OBJ_DIR)/%_s.o: $(LIB_SRC_DIR)/%.S
 	$(ARMGNU)-gcc $(INCLUDES) $(CFLAGS) -MMD -c $< -o $@
 
-all: clean kernel8.img bootloader.img
+all: clean kernel8.img bootloader.img $(RAMFS)
 
 bootloader.img: $(BOOT_SRC_DIR)/bootloader.ld $(BOOT_OBJ_FILES) $(LIB_OBJ_FILES)
 	$(ARMGNU)-ld -T $< -o $(OBJ_DIR)/bootloader.elf $(BOOT_OBJ_FILES) $(LIB_OBJ_FILES)
@@ -60,8 +61,12 @@ bootloader.img: $(BOOT_SRC_DIR)/bootloader.ld $(BOOT_OBJ_FILES) $(LIB_OBJ_FILES)
 kernel8.img: $(KERNEL_SRC_DIR)/kernel.ld $(KERNEL_OBJ_FILES) $(LIB_OBJ_FILES)
 	$(ARMGNU)-ld -nostdlib -nostartfiles -T $< -o $(OBJ_DIR)/kernel8.elf $(KERNEL_OBJ_FILES) $(LIB_OBJ_FILES)
 	$(ARMGNU)-objcopy $(OBJ_DIR)/kernel8.elf -O binary $@
-	
+
+$(RAMFS): rootfs
+	cd ./rootfs; pwd; find . | cpio -o -H newc > ../$@; cd ..;
 clean:
 	rm -rf $(OBJ_DIR)/* *.img *.cpio
-test:
+run:
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img  -serial null -serial stdio -initrd initramfs.cpio
+test_makefile:
 	echo $(OBJS)

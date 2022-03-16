@@ -1,11 +1,15 @@
+#ifndef _STRING_H
+#define _STRING_H
 #include "stdint.h"
-
-int strcmp(char *s1, char *s2){
-    while(*s1!='\0' && *s2!='\0' && *s1==*s2){
-        s1 += 1;
-        s2 += 1;
+int compare(char const *a, char const *b){
+    //for(int i = 0; i<size; i++){
+    //uart_puts(a);
+    while(*a){
+        if(*a != *b) return 0;
+        if(*a == '\0' && *b == '\0') return 1; /// ????????
+        a++; b++;
     }
-    return *s1 - *s2;
+    return 1; // 
 }
 
 char* itoa(int64_t val, int base){
@@ -21,3 +25,4 @@ char* itoa(int64_t val, int base){
 
     return &buf[i + 1];
 }
+#endif
