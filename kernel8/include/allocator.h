@@ -1,1 +1,1 @@
-char *simple_alloc(unsigned int nbytes);
+char *simple_alloc(unsigned long nbytes);

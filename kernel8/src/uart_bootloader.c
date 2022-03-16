@@ -16,14 +16,14 @@ void bootloader_self_relocation(){
 	char *cur_addr = __start, *end_addr = __end, *target_addr = TARGET_ADDR;
 	
 	uart_printf("Copy bootloader(old kernel) to 0x60000(TARGET_ADDR)");
-	while (*cur_addr <= *end_addr) {
+	while (cur_addr <= end_addr) {
 		*target_addr++ = *cur_addr++;
 	}
 	uart_printf("finish");
-	
+
     // calculate the new func addr
     void (*call_load_new_kernel)(void) = (void (*)(void))((unsigned long int)load_new_kernel - (unsigned long int)__start + TARGET_ADDR);
-    call_load_new_kernel();
+    call_load_new_kernel();   
 }
 
 void load_new_kernel(){   

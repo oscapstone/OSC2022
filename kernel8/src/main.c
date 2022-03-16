@@ -1,7 +1,6 @@
 #include "uart.h"
 #include "shell.h"
 #include "mailbox.h"
-#include "allocator.h"
 
 /*
 unsigned long __stack_chk_guard;
@@ -21,10 +20,7 @@ void main()
 {
     // set uart
     uart_init();
-    uart_flush();
-    char *s = simple_alloc(10);
-    s = "ya\0";
-    uart_printf("%s", s);
+    uart_flush();    
     uart_printf("uart init");
 
     // print raspi revision

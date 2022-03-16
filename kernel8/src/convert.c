@@ -57,6 +57,7 @@ char *ftoa(float value, char *s) {
 
 
 // Convert ascii code which represent hex to integer
+// size = # bytes
 unsigned long ahtoi(char* addr, const int size){
     unsigned long res = 0;
     char c;
