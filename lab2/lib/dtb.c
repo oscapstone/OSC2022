@@ -3,7 +3,6 @@
 #include "utilities.h"
 #include "string.h"
 
-
 void fdt_traverse(dtb_callback callback){
   struct fdt_header* header = (struct fdt_header*) dtb_place;
 
@@ -17,6 +16,7 @@ void fdt_traverse(dtb_callback callback){
   char* dt_strings_ptr = (char*)((char*)header + little_2_big_u32(header->off_dt_strings));
   char* end = (char*)dt_struct_ptr + struct_size;
   char* pointer = dt_struct_ptr;
+  struct fdt_prod *prod_ptr;
 
   while(pointer < end){
     uint32_t token_type = little_2_big_u32(*(uint32_t*)pointer);
@@ -25,25 +25,16 @@ void fdt_traverse(dtb_callback callback){
       callback(token_type, pointer, 0, 0);
       pointer += strlen(pointer);
       pointer += 4 - (unsigned long long)pointer%4;           //alignment 4 byte
-    }else if(token_type == FDT_END_NODE) {
-      callback(token_type, 0, 0, 0);
     }else if(token_type == FDT_PROP) {
-      uint32_t len = little_2_big_u32(*(uint32_t*)pointer);
-      pointer += 4;
-      char* name = (char*)dt_strings_ptr + little_2_big_u32(*(uint32_t*)pointer);
-      pointer += 4;
+      prod_ptr = (struct fdt_prod *) pointer;
+      pointer += 8;  // add the fdt_prod len
+      uint32_t len = little_2_big_u32(prod_ptr->len);
+      char* name = (char*)dt_strings_ptr + little_2_big_u32(prod_ptr->nameoff);
       callback(token_type, name, pointer, len);
       pointer += len;
       if((unsigned long long)pointer % 4 !=0){
         pointer += 4 - (unsigned long long)pointer%4;   //alignment 4 byte
       }
-    }else if(token_type == FDT_NOP) {
-      callback(token_type,0,0,0);
-    }else if(token_type == FDT_END) {
-      callback(token_type,0,0,0);
-    }else {
-      printf("error type:%x\n",token_type);
-      return;
     }
   }
 }

@@ -21,6 +21,12 @@ struct fdt_header {
   uint32_t size_dt_struct;
 };
 
+struct fdt_prod{
+  uint32_t len;
+  uint32_t nameoff;
+};
+
+
 extern void* CPIO_DEFAULT_PLACE; 
 char* dtb_place;
 typedef void (*dtb_callback)(uint32_t node_type, char *name, void *value, uint32_t name_size);

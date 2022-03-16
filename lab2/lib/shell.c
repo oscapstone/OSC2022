@@ -24,10 +24,12 @@ void shell(){
       if(strlen(input) != 0){
         printf("\n\r");
         if(!strcmp(input, "help")){
-          printf("help    : print this help menu\n\r");
-          printf("hello   : print Hello World!\n\r");
-          printf("reboot  : reboot the device\n\r");
-          printf("sysinfo : print the system information\n\r");
+          printf("help      : print this help menu\n\r");
+          printf("hello     : print Hello World!\n\r");
+          printf("reboot    : reboot the device\n\r");
+          printf("sysinfo   : print the system information\n\r");
+          printf("ls        : list the file\n\r");
+          printf("cat <file>: print the content of the file\n\r");
         }else if(!strcmp(input, "hello")){
           printf("Hello World!\n\r");
         }else if(!strcmp(input, "reboot")){
@@ -48,11 +50,9 @@ void shell(){
           }
         }else if(!strcmp(input, "ls")){
           cpio_ls();
-        }
-        else if((input[0] == 'c') && (input[1] == 'a') && (input[2] == 't') && (input[3] == 0x20)){
+        }else if((input[0] == 'c') && (input[1] == 'a') && (input[2] == 't') && (input[3] == 0x20)){
           cpio_cat(input+4);
-        }
-        else{
+        }else{
           printf("Please use \"help\" to get information.\n\r");
         }
         printf("raspberryPi: ");
