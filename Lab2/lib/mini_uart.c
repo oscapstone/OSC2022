@@ -5,14 +5,14 @@
 
 // The AUX_MU_LSR_REG register (8 bits) shows the data status.
 // The AUX_MU_IO_REG register (8 bits) is primary used to write data to and read data from the UART FIFOs. 
-void uart_send ( char c )
-{
+void uart_send ( char c ) {	
+	if (c == '\n')
+    	uart_send('\r');
 	while(!(*AUX_MU_LSR_REG & 0x20)) {} // Bit 5, if set to 1, tells us that the transmitter is empty.
 	*AUX_MU_IO_REG = c;
 }
 
-char uart_recv ( void )
-{
+char uart_recv ( void ) {
 	while(!(*AUX_MU_LSR_REG & 0x01)) {} // Bit 0, if set to 1, indicates that the data is ready.
 	char recv = *AUX_MU_IO_REG & 0xFF;
 	return recv != '\r' ? recv : '\n';
@@ -30,8 +30,7 @@ void uart_recv_string(char *buffer) {
     buffer[--size] = '\0';
 }
 
-void uart_send_string(char* str)
-{
+void uart_send_string(char* str) {
 	for (int i = 0; str[i] != '\0'; i ++) {
 		uart_send((char)str[i]);
 	}
@@ -66,8 +65,7 @@ void delay(unsigned int clock) {
 // GPFSEL1 register is used to control alternative functions for pins 10-19. 
 // pin 14 -> TXD1: set bits 14-12 to 5
 // pin 15 -> RXD1: set bits 17-15 to 5
-void uart_init ( void )
-{	
+void uart_init ( void ) {	
 	// connect Mini UART to the GPIO pins
 	unsigned int selector;
 	selector = *GPFSEL1;

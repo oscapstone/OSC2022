@@ -2,9 +2,9 @@
 #include "mini_uart.h"
 #include "utils.h"
 #include "shell.h"
-#include "initrd.h"
+#include "cpio.h"
 
-void initrd_list() {
+void cpio_list() {
     /*
      cpio archive comprises a header record with basic numeric metadata followed by
      the full pathname of the entry and the file data.
@@ -44,7 +44,7 @@ char *findFile(char *name) {
     return 0;
 }
 
-void initrd_cat(char *filename) {
+void cpio_cat(char *filename) {
     char *target = findFile(filename);
     if (target) {
         cpio_header *header = (cpio_header *)target;
@@ -59,7 +59,7 @@ void initrd_cat(char *filename) {
         for (unsigned int i = 0; i < file_size; i++) {
             uart_send(file_content[i]); // print the file content
         }
-        uart_send_string("\n");
+        uart_send_string("\r\n");
     }
     else {
         uart_send_string("File not found!\n");

@@ -13,11 +13,9 @@ void load_kernel() {
 
     uart_recv_string(buffer);
     k_addr = getHexFromString(buffer);
-    uart_send_string("\n");
 	uart_send_string("Please enter kernel size (Dec): ");
     uart_recv_string(buffer);
     k_size = getIntegerFromString(buffer);
-    uart_send_string("\n");
 
 	uart_send_string("Please send kernel image now...\n");
     unsigned char* target=(unsigned char*)k_addr;
