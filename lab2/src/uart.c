@@ -46,6 +46,8 @@ void uart_init()
     *GPPUDCLK0 = 0;        // flush GPIO setup          // remove clock
     
     *AUX_MU_CNTL = 3;      // enable Tx, Rx 
+
+    while((*AUX_MU_LSR&0x01))*AUX_MU_IO; // clear Rx
 }
 
 /**
@@ -76,17 +78,21 @@ void uart_send(unsigned int c) {
 /**
  * Receive a character
  */
-char uart_getc() {
+char uart_getc(int e) {
     char r;
-    /* wait until something is in the buffer */
     do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x01));
-    /* read it and return */
     r=(char)(*AUX_MU_IO);
+    if (e == ECHO) {
+        echo(r);
+    }
+    if (e == ECHO_OFF) {
+        return r;
+    }
+    return r=='\r'?'\n':r;
+}
 
-    // uart_hex(r);
-    // uart_send(' ');
-    
-    /* echo */
+void echo(char r) {
+        /* echo */
 
     if (r == '\r'){
         uart_send('\r');
@@ -115,9 +121,7 @@ char uart_getc() {
     else {
         uart_send(r);
     }
-    
-    /* convert carrige return to newline */
-    return r=='\r'?'\n':r;
+
 }
 
 /**
@@ -136,7 +140,7 @@ char* uart_gets(char *buf) {
     count = 0;
     left_count = 0;
     state = 0;
-    for (s = buf,count = 0; (c = uart_getc()) != '\n' && count!=BUFFER_SIZE-1 ;count++) {
+    for (s = buf,count = 0; (c = uart_getc(ECHO)) != '\n' && count!=BUFFER_SIZE-1 ;count++) {
         
         if(state == 0) {
             
@@ -236,7 +240,22 @@ void uart_puts(char *s) {
         /* convert newline to carrige return + newline */
         if(*s=='\n')
             uart_send('\r');
-        uart_send(*s++);
+        uart_send(*s);
+        s++;
+    }
+}
+
+/**
+ * Display a string with length
+ */
+void uart_puts_len(char *s, unsigned long len) {
+    while(len) {
+        /* convert newline to carrige return + newline */
+        if(*s=='\n')
+            uart_send('\r');
+        uart_send(*s);
+        s++;
+        len--;
     }
 }
 

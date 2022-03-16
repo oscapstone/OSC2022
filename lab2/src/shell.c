@@ -3,22 +3,22 @@
 #include "mbox.h"
 #include "lib.h"
 #include "reboot.h"
+#include "cpio.h"
 
 void shell(){
     char cmd[BUFFER_SIZE];
     int reboot_scheduled = 0;
 
     shell_prompt();
-    uart_int(atoi("0000123"));
     while(1){
         uart_puts("# ");
         for (int i=0; i<BUFFER_SIZE; i++) {
             cmd[i] = '\0';
         }
         uart_gets(cmd);
-        uart_puts("you typed:\n");
-        uart_puts(cmd);
-        uart_puts("\n");
+        // uart_puts("you typed:\n");
+        // uart_puts(cmd);
+        // uart_puts("\n");
 
         if ( strcmp(cmd, "help") == 0 ) {
             help();
@@ -30,6 +30,18 @@ void shell(){
             continue;
         }
         
+        if ( strcmp(cmd, "ls") == 0  ) {
+            ls();
+            continue;
+        }
+        
+        if ( strcmp(cmd, "cat") == 0  ) {
+            uart_puts("filename: ");
+            uart_gets(cmd);
+            cat(cmd);
+            continue;
+        }
+
         if ( strcmp(cmd, "clear") == 0 ) {
             uart_puts("\033[2J\033[H");
             continue;
@@ -67,6 +79,7 @@ void shell(){
 }
 
 void shell_prompt(){
+    uart_puts("\n");
     uart_puts("\033[2J\033[H");
     unsigned int board_revision;
     get_board_revision(&board_revision);
@@ -92,6 +105,8 @@ void shell_prompt(){
 
 void help(){
     uart_puts("help     : print this help menu.\n");
+    uart_puts("ls       : list files.\n");
+    uart_puts("cat      : print file content.\n");
     uart_puts("hello    : print hello world!\n");
     uart_puts("clear    : clear screen.\n");
     uart_puts("reboot   : reboot raspberry pi.\n");
@@ -119,4 +134,13 @@ void reboot(int time){
 void cancel_reboot(){
     cancel_reset();
     uart_puts("reboot canceled.\n");
+}
+
+void ls(){
+    uart_hex(CPIO_BASE);
+    cpio_ls(CPIO_BASE);
+}
+
+void cat(char *filename){
+    cpio_cat(CPIO_BASE, filename );
 }
