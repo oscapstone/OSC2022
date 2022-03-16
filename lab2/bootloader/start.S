@@ -5,7 +5,7 @@
 _start:
     // address relative
     adr     x0, _start  
-    ldr     x1, =0x70000
+    ldr     x1, =0x60000
     mov     x2, x1
     adr     x4, _end
     cmp     x0, x1
