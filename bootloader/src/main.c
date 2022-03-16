@@ -11,6 +11,7 @@ extern unsigned long _start;
 /* kernel image size */
 extern unsigned long __kernel_image_size;
 
+register unsigned long x0 asm("x0");
 int begin = 1;
 
 void self_relocation(){
@@ -21,17 +22,18 @@ void self_relocation(){
         dst[i] = src[i];
     }
     //Cast the address back to a function and call it.
-    void (*func_ptr)() = (void (*)())&_bootstart;
+    void (*func_ptr)() = (void *)&_bootstart;
     func_ptr();
 }
 
-int main(){
+int main(unsigned long dtb){
     if(begin){
         begin = 0;
         self_relocation();
     }
-    uart_init();
 
+    unsigned long DTB_BASE = x0;
+    uart_init();
     char buf[15];
     char *kernel = (char *)0x80000;
 
@@ -47,17 +49,8 @@ int main(){
     }
 
 
-    void (*kernel_ptr)() = (void *)0x80000;
-    kernel_ptr();
-    // asm volatile(
-    //     "mov    x0, x10;"
-    //     "mov    x1, x11;"
-    //     "mov    x2, x12;"
-    //     "mov    x3, x13;"
-    //     "mov    x15, 0x80000;"
-    //     "br     x15;"
-    // );
- 
-    
+    void (*kernel_ptr)(unsigned long) = (void *)0x80000;
+    kernel_ptr(DTB_BASE);
+
     return 0;
 }

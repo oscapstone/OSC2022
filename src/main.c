@@ -5,15 +5,15 @@
 #include <string.h>
 #include <fdt.h>
 
-int main(){
+int main(unsigned long dtb_base){
     char buf[15];
-    register unsigned long x0 asm("x0");
-    unsigned long DTB_BASE = x0;
+    // register unsigned long x0 asm("x0");
+    // unsigned long DTB_BASE = x0;
     uart_puts("[*] DTB_BASE: 0x");
-    uitohex(buf, (unsigned int)DTB_BASE);
+    uitohex(buf, (unsigned int)dtb_base);
     uart_puts(buf);
     uart_puts("\n");
-    fdt_traverse((fdt_header *)DTB_BASE, initramfs_callback);
+    fdt_traverse((fdt_header *)dtb_base, initramfs_callback);
 
     uart_init();
     char *test1 = (char *)simple_malloc(sizeof(char) * 8);
