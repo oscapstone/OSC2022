@@ -25,6 +25,14 @@ char *itoa(int value, char *s) {
     return s;
 }
 
+int atoi(char *s)
+{
+    int sum = 0;
+    for (int i = 0; s[i] != '\0'; i++)
+        sum = sum * 10 + s[i] - '0';
+    return sum;
+}
+
 char *ftoa(float value, char *s) {
     int idx = 0;
     if (value < 0) {
