@@ -17,11 +17,7 @@ int main(unsigned long dtb_base){
 
     uart_init();
     char *test1 = (char *)simple_malloc(sizeof(char) * 8);
-    test1[0] = 'a';
-    test1[1] = 'b';
-    test1[2] = 'c';
-    test1[3] = 'd';
-    test1[4] = 'e';
+    memcpy(test1, "abcdef", 6);
     uart_puts("[*] simple malloc - char array: ");
     uart_puts(test1);
     uart_puts("\n");

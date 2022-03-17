@@ -8,15 +8,15 @@
 
 /* print welcome message*/
 void PrintWelcome(){
-  uart_puts("**************************************************\n");
-  uart_puts("************* Welcome to FanFan's OS *************\n");
-  uart_puts("**************************************************\n");
+  uart_puts("******************************************************************\n");
+  uart_puts("********************* Welcome to FanFan's OS *********************\n");
+  uart_puts("******************************************************************\n");
   uart_puts("# ");
 }
 
 /* print help message*/
 void PrintHelp(){
-  uart_puts("------------------ Help Message ------------------\n");
+  uart_puts("-------------------------- Help Message --------------------------\n");
   uart_puts("help     : print this help menu\n");
   uart_puts("hello    : print Hello World!\n");
   uart_puts("revision : print board_revision\n");
