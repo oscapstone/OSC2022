@@ -4,11 +4,14 @@
 #include "string.h"
 #include "reboot.h"
 #include "mbox.h"
+#include "cpio.h"
 #define MAX_BUFFER_SIZE 256u
 
 void print_sys_info();
 void welcome_msg();
 void help();
+void do_cpiols();
+void do_cpiocat();
 void cmd_handler(char *cmd);
 void cmd_reader(char *cmd);
 void exe_shell();
