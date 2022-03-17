@@ -1,12 +1,6 @@
 import sys
 import serial
 import time
-
-# def calculate_checksum(kb):
-#     n = 0
-#     for b in kb:
-#         n = (n + b) % (2 ** 32)
-#     return n
 def send_string(_serial, s):
     _serial.write(bytes(s, "ascii"))
 
@@ -30,7 +24,7 @@ with open(kernel_path,"rb") as k:
 
         print("kernel size: ",k_size)
         send_string(tty,"bootload\n")
-        #tty.write(bytearray(start_code.encode("utf-8")))
+
         time.sleep(1)
         send_int(tty,k_size)
 
@@ -38,4 +32,3 @@ with open(kernel_path,"rb") as k:
         tty.write(kernel)
 
         print("Send done")
-

@@ -88,7 +88,7 @@ void handle_command(enum Action action, char *buffer){
         break;
     case bootload:
         writes_uart("Start loading the image file.\r\n");
-        bootload_image();
+        //bootload_image();
         break;
     default:
         writes_uart("command not found: ");

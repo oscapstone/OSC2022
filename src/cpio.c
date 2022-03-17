@@ -2,10 +2,12 @@
 #include "cpio.h"
 #include "string.h"
 #include "shell.h"
+#include "utils.h"
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
 #define CPIO_ALIGNMENT 4
-#define cpio_addr ((volatile unsigned int*)(0x8000000))
+
+ //((volatile unsigned int*)(0x8000000))
 typedef struct {
     char c_magic[6];      /* Magic header '070701'. */
     char c_ino[8];        /* "i-node" number. */
@@ -45,15 +47,6 @@ static unsigned long parse_hex_str(char *s, unsigned int max_len)
     return r;
 }
 
-/* The pathname is followed by NUL bytes so that the total size of the fixed
-     header plus pathname is a multiple	of four.  Likewise, the	file data is
-     padded to a multiple of four bytes. */
-/* align to multiple of align */
-static unsigned long align_up(unsigned long n, unsigned long align)
-{
-    return (n + align - 1) & (~(align - 1));
-}
-
 int cpio_parse_header(cpio_newc_header *archive,
         char **filename, unsigned long *_filesize, char **data,
         cpio_newc_header **next)
@@ -85,6 +78,7 @@ int cpio_parse_header(cpio_newc_header *archive,
     return 0;
 }
 void cpio_ls(){
+    //writehex_uart(cpio_addr);
     cpio_newc_header* cnh = (cpio_newc_header*)cpio_addr;
     cpio_newc_header* next_header;
     char *filename;
@@ -124,7 +118,7 @@ void cpio_cat(){
             break;
         }
         else if(strncmp(read_name,filename,sizeof(cnh->c_namesize))==0){
-            writes_uart(filedata);
+            writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
             writes_uart("\r\n");
             break;
         }

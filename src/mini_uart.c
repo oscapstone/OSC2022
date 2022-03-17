@@ -111,3 +111,33 @@ void writehex_uart(unsigned int h){
         writec_uart(n);
     }
 }
+void writeint_uart(unsigned int i){
+    int iter=0;
+    char buffer[100];
+    int k=i;
+    while(1){
+        if(k==0)
+        {
+            buffer[iter]=k%10;
+            break;
+        }else{
+            buffer[iter++] = k%10;
+            k = k/10;
+        }   
+    }
+    writes_uart(buffer);
+    writes_uart("\r\n");
+}
+// void writeaddr_uart(unsigned int* addrh){
+
+//     writes_uart("0x");
+//     unsigned int n;
+//     int c;
+//     for(c=28;c>=0;c-=4) {
+        
+//         n=(h>>c)&(0xF); // n = 1,2,3....th byte of h from left to right.
+        
+//         n+=n>9?0x37:0x30; // int 0~9 -> char '0'~'9', 10~15 -> 'A'~'F'
+//         writec_uart(n);
+//     }
+// }

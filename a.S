@@ -1,6 +1,8 @@
 .section ".text"
 .global _start
+
 _start:
+	mov x15,x0
 	mrs	x0, mpidr_el1		
 	and	x0, x0,#0xFF		// Check processor id
 	cbz	x0, init_rasp
@@ -19,7 +21,7 @@ init_rasp:
     bl     init_bss
 init_bss:
 	cbz x1,main_loop // if x1==0, jump to infinity loop.
-	str xzr, [x0], #8 // assign zero register to the address of x0, then x0=x0-1
+	str xzr, [x0], #8 // assign zero register to the address of x0, then x0=x0+8
 	subs x1, x1, #8
 	b init_bss
 

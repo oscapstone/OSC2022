@@ -21,7 +21,7 @@ clean:
 	rm kernel8.elf kernel8.img src/*.o *.o>/dev/null 2>/dev/null || true
 
 run:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img --display none -serial null -serial stdio -s -initrd initramfs.cpio
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img --display none -serial null -serial stdio -s -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 flash:
 	sudo dd if=kernel8.img of=/dev/sdb
@@ -30,12 +30,12 @@ screen:
 	sudo screen /dev/ttyUSB0 115200
 
 ptty:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -s -display none -serial null -serial pty
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -s -display none -serial null -serial pty -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 boot:
 	python3 uart_boot.py
 screenb:
-	sudo screen /dev/pts/2 115200
+	sudo screen /dev/pts/4 115200
 cpio:
 	cd rootfs
 	find . | cpio -o -H newc > ../initramfs.cpio
