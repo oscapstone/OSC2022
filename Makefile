@@ -1,6 +1,6 @@
 ARMGNU ?= aarch64-linux-gnu
 
-COPS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
+COPS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g 
 ASMOPS = -Iinclude 
 
 BUILD_DIR = build
@@ -29,5 +29,19 @@ DEP_FILES = $(OBJ_FILES:%.o=%.d)
 kernel8.img: $(SRC_DIR)/linker.ld $(OBJ_FILES)
 	$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8.elf  $(OBJ_FILES)
 	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
-run:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -serial null -serial stdio -display none
+run: all
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -serial null -serial stdio -display none -dtb bcm2710-rpi-3-b-plus.dtb 
+	
+cpio:
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -serial null -serial stdio -display none -initrd ./initramfs.cpio
+
+remote:
+	sudo chmod 777 /dev/ttyUSB0
+	python sending.py
+	screen /dev/ttyUSB0 115200
+
+debug:
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -S -s --dtb bcm2710-rpi-3-b-plus.dtb
+
+gdb:
+	aarch64-gdb build/kernel8.elf

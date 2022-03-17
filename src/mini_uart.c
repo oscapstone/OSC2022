@@ -2,7 +2,7 @@
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
 #include "string.h"
-
+typedef unsigned long uint32_t;
 void uart_send ( char c )
 {
 	while(1) {
@@ -21,6 +21,12 @@ char uart_recv ( void )
 	return(get32(AUX_MU_IO_REG)&0xFF);
 }
 
+void uart_puts_width(unsigned char* str, int width){
+	for (int i = 0; i < width ; ++i){
+		uart_send(*(str+ i));
+	}
+}
+
 void uart_send_string(char* str)
 {
 	for (int i = 0; str[i] != '\0'; i ++) {
@@ -35,6 +41,41 @@ void uart_send_string_int2hex(int value)
 	for (int i = 0; p[i] != '\0'; i ++) {
 		uart_send((char)p[i]);
 	}
+}
+
+void uart_send_string_longlong2hex(long long value)
+{	
+	char buf[8 + 1];
+	char *p = int2hex(value,buf);
+	for (int i = 0; p[i] != '\0'; i ++) {
+		uart_send((char)p[i]);
+	}
+}
+
+void uart_print_long(long long l){
+	char str[128] = {0};
+	ltoxstr(l, str);
+	uart_send_string(str);
+
+}
+
+void uart_print_int(int i){
+	char str[128] = {0};
+	itoxstr(i, str);
+	uart_send_string(str);
+	str[0] = '\0';
+}
+
+void uart_print_uint(unsigned int i){
+	char str[128] = {0};
+	uitoxstr(i, str);
+	uart_send_string(str);
+}
+
+void uart_print_uint32_t(uint32_t i){
+	char str[128] = {0};
+	uitoxstr(i, str);
+	uart_send_string(str);
 }
 
 void uart_init ( void )
