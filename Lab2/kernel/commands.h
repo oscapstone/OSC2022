@@ -4,6 +4,7 @@
 #include "string.h"
 #include "mini_uart.h"
 #include "memory.h"
+#include "dtb.h"
 typedef struct commads
 {
     char* cmd;
@@ -202,6 +203,11 @@ void shell_alloc(){
     uart_puts("My Heap starting address in bytes is: ");
     uart_hex(HEAP_START);
     uart_puts("\r\n");
+
+    uart_puts("dtb: ");
+    uart_hex(DTB_ADDR);
+    uart_puts("\r\n");
+
 
     char* str1 = simple_malloc(8);
     str1 = "apple!\r\n";
