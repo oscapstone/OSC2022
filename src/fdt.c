@@ -13,6 +13,15 @@ uint32_t big_to_little(uint32_t big){
     return little;
 }
 
+
+
+// {
+// 	chosen {
+// 		linux,initrd-start = <0x82000000>;
+// 		linux,initrd-end = <0x82800000>;
+// 	};
+// };
+
 void initramfs_callback(char * prop_name, uint32_t token_type, uint32_t len, uint32_t *struct_addr){
     if(token_type == FDT_PROP){
         if(strcmp("linux,initrd-start", prop_name) == 0){
@@ -43,7 +52,7 @@ void fdt_traverse(fdt_header *header, dtb_callback the_callback){
         
         struct_addr += 1; // skip token type
         if(token_type == FDT_BEGIN_NODE){
-            node_name = (char *)(struct_addr);
+            node_name = (char *)(struct_addr); // chosen
             int node_name_size = strlen(node_name) + 1; // The node’s name as a '\0' string
             struct_addr += padding(node_name_size) / 4;
         }
