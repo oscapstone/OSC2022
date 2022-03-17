@@ -75,6 +75,18 @@ void shell_command(char* str){
     else if(!strcmp(str,"cancel reboot")){
         command_cancel_reboot();
     }
+    else if(!strcmp(str,"ls")){
+        command_ls();
+    }
+    else if(!strcmp_len(str,"cat",3)){
+        command_cat(str);
+    }
+    else if(!strcmp(str,"test alloc")){
+        command_test_alloc();
+    }
+    else if(!strcmp(str,"fdt_traverse")){
+    	command_fdt_traverse();
+    }
     else{
         command_not_found();
     }
