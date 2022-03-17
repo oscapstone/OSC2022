@@ -81,7 +81,7 @@ void command_mailbox()
     mbox[0] = 8*4;                  // length of the message
     mbox[1] = MBOX_REQUEST;         // this is a request message
     
-    mbox[2] = MBOX_TAG_GETBDVS;   // get serial number command
+    mbox[2] = MBOX_TAG_GETBDVS;     // get board revision
     mbox[3] = 4;                    // buffer size
     mbox[4] = 4;
     mbox[5] = 0;                    // clear output buffer
@@ -99,7 +99,7 @@ void command_mailbox()
     mbox[0] = 8*4;                  // length of the message
     mbox[1] = MBOX_REQUEST;         // this is a request message
     
-    mbox[2] = MBOX_TAG_GETARMMEM;   // get serial number command
+    mbox[2] = MBOX_TAG_GETARMMEM;   // get arm memory info
     mbox[3] = 8;                    // buffer size
     mbox[4] = 8;
     mbox[5] = 0;                    // clear output buffer

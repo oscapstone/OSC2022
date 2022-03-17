@@ -8,7 +8,7 @@
 ## How to build
 
 ```bash
-make
+./make.sh
 ```
 ## How to run
 
@@ -17,6 +17,7 @@ make run
 ```
 ## How to burn it into pi3
 ```bash
+./rus.sh # write kernel to rpi3 through uart
 sudo screen /dev/ttyUSB0 115200
 ```
 ## Note
