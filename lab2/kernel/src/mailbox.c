@@ -1,5 +1,5 @@
 #include "mailbox.h"
-#include "io.h"
+#include "uart.h"
 
 void mailbox_call(unsigned int* mailbox){
     // Write the data (shifted into the upper 28 bits) combined with 
@@ -37,10 +37,10 @@ void get_board_revision(){
 
     mailbox_call(mailbox); // message passing procedure call, you should implement it following the 6 steps provided above.
 
-    puts("board revision : ");
-    puth(mailbox[5]);
-    putc('\r');
-    putc('\n');
+    uart_puts("board revision : ");
+    uart_puth(mailbox[5]);
+    uart_send('\r');
+    uart_send('\n');
 }
 
 void get_memory_info() {
@@ -56,12 +56,12 @@ void get_memory_info() {
     mailbox[7] = END_TAG;           // end tag
     // tags end
     mailbox_call(mailbox);
-    puts("ARM memory base address : ");
-    puth(mailbox[5]);
-    putc('\r');
-    putc('\n');
-    puts("ARM memory size : ");
-    puth(mailbox[6]);
-    putc('\r');
-    putc('\n');
+    uart_puts("ARM memory base address : ");
+    uart_puth(mailbox[5]);
+    uart_send('\r');
+    uart_send('\n');
+    uart_puts("ARM memory size : ");
+    uart_puth(mailbox[6]);
+    uart_send('\r');
+    uart_send('\n');
 }
