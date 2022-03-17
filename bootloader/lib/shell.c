@@ -2,8 +2,7 @@
 #include "uart.h"
 #include "utils.h"
 #include "my_string.h"
-
-unsigned long DTB_BASE;
+#include "fdt.h"
 
 void boot_msg()
 {
