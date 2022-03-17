@@ -22,3 +22,13 @@ meson build --cross-file arch/aarch64/cross.ini
 ninja -C build
 # kernel8.img will be at (src/)build/kernel8.img
 ```
+
+For bootloader, replace src with bootloader on commands above. Additional
+program for host to send kernel will be at `(bootloader/)build/send-kernel`.
+
+Usage: `send-kernel DEVICE KERNEL INITRD`
+
+Support for passing initrd currently is incomplete as it does not modify address
+in fdt yet. The loading address is the same as qemu. If device is using a dtb
+and initrd address is different, it won't work. In that case, you can pass
+/dev/null to skip loading it, and use whatever is already loaded by device.
