@@ -12,7 +12,7 @@ void init_uart(){
 
     /* configure gpio*/
     
-    register unsigned int tmp_reg; // hope the register can be stored in CPU register.
+    register unsigned int tmp_reg; // hope the register can be stored as CPU register.
     // GPFSELn: define the operation of the GPIO pins
     // GPFSEL1: FSEL10(0~2) ~ FSEL19(27~29) + 30,31 reserved
     /*  FSEL: 3bits, in GPFSELn
@@ -64,7 +64,7 @@ char read_uart(){
         asm volatile("nop");
     }
     r = (char)(*AUX_MU_IO_REG);
-    return r=='\r'?'\n':r;
+    return r;
 }
 
 int read_int(){
@@ -82,22 +82,12 @@ void writec_uart(unsigned int s){
     while(!(*AUX_MU_LSR_REG & 0x20)) asm volatile("nop");
     *AUX_MU_IO_REG = c;
 }
-
-void writes_n_uart(char *s, unsigned int size){
-    for(int i=0;i<size;i++){
-        if(*s=='\n')
-            writec_uart('\r');
-        writec_uart(*s++);
-    }
-}
-
 void writes_uart(char *s){
     while(*s){
         if(*s=='\n')
             writec_uart('\r');
         writec_uart(*s++);
     }
-    
 }
 void writehex_uart(unsigned int h){
     writes_uart("0x");
@@ -111,33 +101,3 @@ void writehex_uart(unsigned int h){
         writec_uart(n);
     }
 }
-void writeint_uart(unsigned int i){
-    int iter=0;
-    char buffer[100];
-    int k=i;
-    while(1){
-        if(k==0)
-        {
-            buffer[iter]=k%10;
-            break;
-        }else{
-            buffer[iter++] = k%10;
-            k = k/10;
-        }   
-    }
-    writes_uart(buffer);
-    writes_uart("\r\n");
-}
-// void writeaddr_uart(unsigned int* addrh){
-
-//     writes_uart("0x");
-//     unsigned int n;
-//     int c;
-//     for(c=28;c>=0;c-=4) {
-        
-//         n=(h>>c)&(0xF); // n = 1,2,3....th byte of h from left to right.
-        
-//         n+=n>9?0x37:0x30; // int 0~9 -> char '0'~'9', 10~15 -> 'A'~'F'
-//         writec_uart(n);
-//     }
-// }

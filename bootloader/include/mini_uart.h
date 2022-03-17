@@ -17,10 +17,9 @@ char read_uart();
 int read_int();
 void writec_uart(unsigned int s);
 void writes_uart(char *s);
-void writes_n_uart(char *s, unsigned int size);
-void writehex_uart(unsigned int h);
-void writeint_uart(unsigned int);
-//void writeaddr_uart(unsigned int*);
+void writehex_uart(unsigned int);
+
+
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
 #define GPFSEL1         ((volatile unsigned int*)(MMIO_BASE+0x00200004))
 #define GPFSEL2         ((volatile unsigned int*)(MMIO_BASE+0x00200008))

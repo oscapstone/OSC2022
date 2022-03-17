@@ -2,11 +2,8 @@
 #include "string.h"
 #include "mailbox.h"
 #include "reboot.h"
-#include "cpio.h"
-
-
+#include "bootload.h"
 int match_command(char *buffer){
-    
     if(strcmp(buffer,"help")==0){
         return help;
     }
@@ -23,14 +20,8 @@ int match_command(char *buffer){
     else if(strcmp(buffer,"ccreboot")==0){
         return ccreboot;
     }
-    else if(strcmp(buffer,"version")==0){
-        return version;
-    }
-    else if(strcmp(buffer,"ls")==0){
-        return ls;
-    }
-    else if(strcmp(buffer,"cat")==0){
-        return cat;
+    else if(strcmp(buffer,"bootload")==0){
+        return bootload;
     }
     else{
         return unknown;
@@ -38,31 +29,22 @@ int match_command(char *buffer){
 }
 
 void read_command(){
-    char buffer[256];
+    char buffer[25600];
     int count=0;
     int action = 0;
     writes_uart("# ");
     while(1){
         char c = read_uart();
+        
         if(c!='\n' && count<256){
-            if(c=='\x7f'){
-                if(count >0 ){
-                    writec_uart('\b');
-                    writec_uart(' ');
-                    writec_uart('\b');
-                    buffer[--count]='\0';
-                }
-                
-            }
-            else if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
-                writec_uart(c);
+            if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
+               writec_uart(c);
                 buffer[count++] = c; 
             }
             
         }else{
             writec_uart('\r');
             writec_uart('\n');
-            
             buffer[count]='\0';
             if(buffer[0] != '\0'){
                 action = match_command(buffer);
@@ -74,42 +56,6 @@ void read_command(){
     }
     return;
 }
-void read_string(char **s){
-    char buffer[256];
-    int count=0;
-    while(1){
-        char c = read_uart();
-        if(c!='\n' && count<256){
-            if(c=='\x7f'){
-                if(count >0 ){
-                    writec_uart('\b');
-                    writec_uart(' ');
-                    writec_uart('\b');
-                    buffer[--count]='\0';
-                }
-                
-            }
-            else if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
-                writec_uart(c);
-                buffer[count++] = c; 
-            }
-            
-        }else{
-            writec_uart('\r');
-            writec_uart('\n');
-            
-            buffer[count]='\0';
-            if(buffer[0] != '\0'){
-                *s = buffer;
-                return;
-            }
-            break;
-        }
-        
-    }
-    return;
-}
-
 void handle_command(enum Action action, char *buffer){
     switch (action)
     {
@@ -120,8 +66,7 @@ void handle_command(enum Action action, char *buffer){
         writes_uart("memory     : print ARM memory address and size\r\n");
         writes_uart("reboot     : reboot the device after 50000 ticks\r\n");
         writes_uart("ccreboot   : cancel reboot the device\r\n");
-        writes_uart("ls         : print the files in rootfs.\r\n");
-        writes_uart("cat        : print the file information\r\n");
+        writes_uart("bootload   : boot the kernel image from uart\r\n");
         break;
     case hello:
         writes_uart("Hello World!\r\n");
@@ -141,20 +86,13 @@ void handle_command(enum Action action, char *buffer){
         cancel_reset();
         writes_uart("reset operation has been canceled\r\n");
         break;
-    case version:
-        writes_uart("Here is your booted kernel ver 0.1\r\n");
-        break;
-    case ls:
-        cpio_ls();
-        break;
-    case cat:
-        cpio_cat();
+    case bootload:
+        writes_uart("Start loading the image file.\r\n");
+        //bootload_image();
         break;
     default:
         writes_uart("command not found: ");
         writes_uart(buffer);
-        strcmp(buffer,"help");
-
         writes_uart("\r\n");
         break;
     }

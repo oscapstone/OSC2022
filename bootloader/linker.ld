@@ -1,5 +1,7 @@
 SECTIONS
 {
+    . = 0x60000;
+    _relocate_addr = .;
     . = 0x80000;
     .text :  { *(.text) }
     .rodata : { *(.rodata) }
@@ -9,9 +11,7 @@ SECTIONS
     .bss : { *(.bss*) } 
     bss_end = .;
     _end = .;
-    _head_start_brk = .;
 
 }
 
 _boot_size = _end - _start;
-_head_start_brk = _head_start_brk + 0x00020;
