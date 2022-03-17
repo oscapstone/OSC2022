@@ -4,6 +4,8 @@
 #include "lib.h"
 #include "reboot.h"
 #include "cpio.h"
+#include "fdt.h"
+#include "malloc.h"
 
 void shell(){
     char cmd[BUFFER_SIZE];
@@ -49,14 +51,27 @@ void shell(){
 
         if ( strcmp(cmd, "reboot") == 0 ) {
             reboot_scheduled = 1;
-            uart_puts("You have roughly 17 seconds to cancel reboot.\nCancel reboot with\nreboot -c\n");
-            reboot(65536);
+            // uart_puts("You have roughly 17 seconds to cancel reboot.\nCancel reboot with\nreboot -c\n");
+
+            int time;
+            uart_puts("time out: ");
+            uart_gets(cmd);
+            time = atoi(cmd);
+            uart_puts("Set time out ");
+            uart_int(time);
+            uart_puts(" sec.\n");
+            reboot(time);
             continue;
         }
 
         if ( strcmp(cmd, "reboot now") == 0 ) {
             reboot(1);
             break;
+        }
+
+        if ( strcmp(cmd, "dtb list -a") == 0 ) {
+            traverse_device_tree(dtb_place,dtb_callback_show_tree);
+            continue;
         }
 
         if ( strcmp(cmd, "reboot -c") == 0 ) {
@@ -79,6 +94,8 @@ void shell(){
 }
 
 void shell_prompt(){
+    traverse_device_tree(dtb_place,dtb_callback_initramfs);
+
     uart_puts("\n");
     uart_puts("\033[2J\033[H");
     unsigned int board_revision;
@@ -96,6 +113,20 @@ void shell_prompt(){
     uart_puts("\n");
     uart_puts("ARM memory size in bytes : 0x");
     uart_hex(arm_mem_size);
+    uart_puts("\n");
+    uart_puts("DTB base address: ");
+    uart_hex(dtb_place);
+    uart_puts("\n");
+    
+    char* string = malloc(8);
+
+    uart_puts("malloc(8) address:");
+    uart_hex(string);
+    uart_puts("\n");
+
+    string = malloc(4);
+    uart_puts("malloc(8) address:");
+    uart_hex(string);
     uart_puts("\n");
 
     uart_puts("\n");
@@ -128,7 +159,7 @@ void reboot(int time){
     // uart_puts(" sec.\n");
     // reset(time);
 
-    reset(time);
+    reset(time << 16);
 }
 
 void cancel_reboot(){
@@ -137,7 +168,6 @@ void cancel_reboot(){
 }
 
 void ls(){
-    uart_hex(CPIO_BASE);
     cpio_ls(CPIO_BASE);
 }
 

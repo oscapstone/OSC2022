@@ -12,6 +12,8 @@ SECTIONS
         *(COMMON)
         __bss_end = .;
     }
+    . = ALIGN(4096);
+    _heap_start = .;
     _end = .;
 
    /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }

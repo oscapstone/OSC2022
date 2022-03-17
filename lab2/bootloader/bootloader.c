@@ -16,7 +16,7 @@ void main(void *dtb)
     /* relocate bootloader */
     s = (char *) 0x80000;
     d = (char *) 0x60000;
-    for (i = 0;i<0x1f000;i++) {
+    for (i = 0;i<0x5000;i++) {
         *d = *s;
         s++;
         d++;
@@ -30,10 +30,11 @@ void main(void *dtb)
 
     uart_init();
     uart_puts("\033[2J\033[H");
-    uart_hex(dtb);
-    uart_puts("\n");
     uart_puts("Simple Bootloader\n");
     uart_puts("version: 0.7.0.alpha\n\n");
+    uart_puts("DTB Base Address: ");
+    uart_hex(dtb);
+    uart_puts("\n");
     uart_puts("Loading kernel image from mini UART ...\n");
     uart_puts("img size :");
     

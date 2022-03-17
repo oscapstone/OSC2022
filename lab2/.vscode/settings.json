@@ -3,6 +3,7 @@
         "dtb.h": "c",
         "cpio.h": "c",
         "fdt.h": "c",
-        "uart.h": "c"
+        "uart.h": "c",
+        "malloc.h": "c"
     }
 }

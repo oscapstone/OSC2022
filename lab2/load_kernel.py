@@ -1,10 +1,21 @@
 import os
 import sys
 import serial
+import signal
+from tqdm import tqdm
 
-uart = serial.Serial("/dev/pts/6")
+
+def handler(signum, frame):
+        raise Exception("end of time")
+
+def read_all():
+        while True:
+                print(uart.read().decode(), end='')
+
+uart = serial.Serial("/dev/tty.usbserial-0001")
 uart.baudrate = 115200
 
+print(uart.readline().replace(b'\r\n',b'').decode())
 print(uart.readline().replace(b'\r\n',b'').decode())
 print(uart.readline().replace(b'\r\n',b'').decode())
 print(uart.readline().replace(b'\r\n',b'').decode())
@@ -20,10 +31,27 @@ uart.readline()
 print(uart.readline().replace(b'\r\n',b'').decode())
 
 with open(img, "rb", buffering = 0) as kernel:
-	for _ in range(int(size)):
-		uart.write(kernel.read(1))
-		print(uart.readline().replace(b'\r\n',b'').decode())
+        for i in tqdm(range(int(size))):
+                tmp = kernel.read(1)
+                uart.write(tmp)
+                check = uart.readline().replace(b'\r\n',b'').decode()[-2:]
+#               print(i, ': ', check, end='\r')
+#               if (tmp.hex().upper() != check):
+#                       print(tmp.hex().upper(), check)
 
-#print(uart.readline().replace(b'\r\n',b'').decode())
+
+timeout=0.01
+cmd = ""
+while cmd != "exit":
+        signal.signal(signal.SIGALRM, handler)
+        signal.setitimer(signal.ITIMER_REAL,.05)
+        try:
+                read_all()
+        except Exception as e:
+                pass
+
+        cmd = input()
+        uart.write((cmd+'\n').encode())
+        uart.readline()
 
 uart.close()
