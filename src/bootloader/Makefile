@@ -3,11 +3,7 @@ BUILD_DIR = ./build
 LIB_SRC_DIR = ../lib
 
 LIB_SRC = \
-	$(LIB_SRC_DIR)/shell.c \
-	$(LIB_SRC_DIR)/string.c \
 	$(LIB_SRC_DIR)/mini_uart.c \
-	$(LIB_SRC_DIR)/reboot.c \
-	$(LIB_SRC_DIR)/mbox.c \
 
 LIB_INCLUDES = \
 	-I $(LIB_SRC_DIR)/include \
@@ -19,7 +15,7 @@ LIB_OBJS := $(patsubst %.c,$(LIB_BUILD_DIR)/%.o,$(notdir $(LIB_SRC)))
 APP_SRC_DIR = .
 
 APP_SRC = \
-	$(APP_SRC_DIR)/main.c \
+	$(APP_SRC_DIR)/uart_bootloader.c \
 
 APP_ASM = \
 	$(APP_SRC_DIR)/boot.S \
@@ -54,7 +50,7 @@ BUILD_DIRECTORIES = \
 	$(LIB_BUILD_DIR) \
 	$(APP_BUILD_DIR) \
 
-PROJ = kernel8
+PROJ = bootloader
 OUT_ELF = ./$(PROJ).elf
 OUT_IMG = ./$(PROJ).img
 LINKER_FILE = linker.ld

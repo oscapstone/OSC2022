@@ -28,6 +28,8 @@ void helper() {
     uart_puts("* hello   : print hello world!\n");
     uart_puts("* reboot  : reboot the device\n");
     uart_puts("* hwinfo  : print the hardware information\n");
+    uart_puts("* ls      : print files in cpio archieve\n");
+    uart_puts("* cat     : print content in cpio archieve\n");
     uart_puts("*************************************************\n");
 }
 
@@ -49,6 +51,16 @@ void cmd_handler(char *cmd) {
     }
     else if (strcmp(cmd, "hwinfo") == 0) {
         print_sys_info();
+    }
+    else if (strcmp(cmd, "ls") == 0) {
+        cpio_ls((cpio_new_header *)CPIO_BASE);
+    }
+    else if (strcmp(cmd, "cat") == 0) {
+        uart_puts("Filename: ");
+        char input[MAX_BUFFER_SIZE];
+        cmd_reader(input);
+        uart_puts("\r\n");
+        cpio_cat((cpio_new_header *)CPIO_BASE, input);
     }
     else {
         uart_puts("invalid command!");

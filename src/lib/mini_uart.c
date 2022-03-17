@@ -78,3 +78,17 @@ void uart_hex(unsigned int d) {
         uart_send(n);
     }
 }
+
+void uart_getline(char *input) {
+    char c;
+    int idx;
+
+    do {
+        c = uart_getc();
+        if (c <= 127) {
+            uart_send(c);
+            input[idx++] = c;
+        }
+    } while (c != '\n' && c != '\r');
+    return;
+}
