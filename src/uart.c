@@ -1,4 +1,5 @@
-#include "gpio.h"
+
+#include "uart.h"
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
@@ -45,7 +46,7 @@ void uart_init()
 /**
  * Send a character
  */
-void uart_send(unsigned int c) {
+void uart_send(char c) {
     /* wait until we can send */
     do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x20));
     /* write the character to the buffer */
@@ -65,6 +66,20 @@ char uart_getc() {
     return r=='\r'?'\n':r;
 }
 
+char* uart_getline(char *buf) {
+    char c;
+    int i=0;
+    _memset(buf, 0, sizeof(buf));
+    do {
+        c = uart_getc();
+        if(c<=127){
+            uart_send(c);
+            buf[i++] = c;
+        }
+    } while (c!='\n'&&c!='\r');
+    return buf;
+}
+
 /**
  * Display a string
  */
@@ -73,6 +88,14 @@ void uart_puts(char *s) {
         uart_send((char)s[i]);
     }
 }
+
+
+void uart_puts_withSize(char* s, unsigned int size){
+    for(int i=0; i<size; i++){
+        uart_send(*(s+i));
+    }
+}
+
 
 /**
  * Display a binary value in hexadecimal

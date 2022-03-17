@@ -2,51 +2,51 @@
 #include "lib.h"
 #include "mbox.h"
 #include "reset.h"
+#include "cpio.h"
+#include "fdt.h"                        
+
 
 void main()
 {
+    register unsigned long x0 asm("x0");
+    unsigned long DTB_BASE = x0;
     // set up serial console
     uart_init();    
+    
 
-    // Mailbox
-    get_board_revision();
-    uart_puts("\r\nboard revision is ");
-    uart_hex(mailbox[5]);
-    uart_puts("\r\n");
+    uart_puts("[kernel] DTB_BASE ");
+    uart_hex(DTB_BASE);
+    uart_puts("\n \r");
 
-    get_arm_memory();
-    uart_puts("ARM memory base address is ");
-    uart_hex(mailbox[5]);
-    uart_puts("\r\n");
-    uart_puts("ARM memory size is ");
-    uart_hex(mailbox[6]);
-    uart_puts("\n\r");
+    fdt_traverse((fdt_header*)(DTB_BASE), initramfs_callback);
 
-   
+    
 
-    char buf[100];
-    char c;
-    // echo everything back
     while(1) {
-        int i=0;
-        _memset(buf, 0, sizeof(buf));
-        do {
-            c = uart_getc();
-            if(c<=127){
-                uart_send(c);
-                //uart_hex(c);
-                buf[i++] = c;
-            }
-        } while (c!='\n');
+        char input[100];
+        uart_puts("#");
+        uart_getline(input);
         uart_puts("\r");
-        if (_strncmp(buf, "help", 4)==0){
+        if (!_strncmp(input, "help", 4)){
             uart_puts("help      : print this help menu\r\nhello     : print Hello World!\r\nreboot    : reboot the device\r\n");
-        } else if (_strncmp(buf, "hello", 5)==0){
+        } else if (!_strncmp(input, "hello", 5)){
             uart_puts("Hello World!\r\n");
-        } else if (_strncmp(buf, "reboot", 6)==0){
+        } else if (!_strncmp(input, "reboot", 6)){
             uart_puts("\r");
             reset(1);
-        }
+        } else if (!_strncmp(input, "ls", 2)) {
+            cpio_ls();
+        } else if (!_strncmp(input, "cat", 3)) {
+            cpio_cat();
+        } else if (!_strncmp(input, "malloc", 6)){
+            char* str1=simple_malloc(30);
+            char* str2=simple_malloc(20);
+            str1 = "Hi! It is the first malloc\n";
+            str2 = "The second malloc\n";
+            uart_puts(str1);
+            uart_puts(str2);
+        } 
+        
 
     }
 }

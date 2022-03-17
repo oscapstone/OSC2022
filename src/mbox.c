@@ -1,6 +1,5 @@
 #include "mbox.h"
-#include "gpio.h"
-#include "uart.h"
+
 
 #define MAILBOX_BASE    (MMIO_BASE + 0xb880)
 
@@ -19,7 +18,7 @@
 #define END_TAG             0x00000000
 unsigned int __attribute__((aligned(16))) mailbox[30]; // without manually setting alinged still work
 
-unsigned int get_board_revision(){
+void get_board_revision(){
   mailbox[0] = 7 * 4; // buffer size in bytes
   mailbox[1] = REQUEST_CODE;
   // tags begin
@@ -33,7 +32,7 @@ unsigned int get_board_revision(){
   mailbox_call(8); // message passing procedure call, you should implement it following the 6 steps provided above.
 
   //printf("0x%x\n", mailbox[5]); // it should be 0xa020d3 for rpi3 b+
-  return mailbox[5];
+  //return mailbox[5];
 }
 
 void get_arm_memory(){
