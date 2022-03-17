@@ -26,7 +26,7 @@ int parse(char input_char, int buffer_counter) {
 void shell() {
     int buffer_counter = 0;
     char input_char;
-    char buffer[MAX_BUFFER_LEN] = {0};
+    char buffer[MAX_BUFFER_LEN];
 
     parse_command("mbox_board_revision");
     parse_command("mbox_arm_memory");
@@ -44,7 +44,7 @@ void shell() {
             // Enter
             buffer[buffer_counter] = 0;
             buffer_counter = 0;
-            // continue;
+
             parse_command(buffer);
             uart_puts("# ");
         }
