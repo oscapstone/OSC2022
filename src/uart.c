@@ -1,9 +1,8 @@
 #include "uart.h"
-#include "gpio.h"
 
 void uart_init()
 {
-    register unsigned int r;
+    register uint32_t r;
     /* map UART1 to GPIO pins */
     r = *GPFSEL1;
     r &= ~((7 << 12) | (7 << 15)); // clear GPIO14, GPIO15, each GPIO pin has 3-bit
@@ -26,13 +25,13 @@ void uart_init()
     *AUX_MU_CNTL = 3;      // enable Tx, Rx
 }
 
-void uart_putc(unsigned int c)
+void uart_putc(const uint32_t c)
 {
     // Send a character
     /* wait until we can send */
     do {
         asm volatile("nop");
-    } while (!(*AUX_MU_LSR & 0x20));
+    } while (!(*AUX_MU_LSR & 0x20)); // This bit is set if the transmit FIFO can accept at least R one byte.
     /* write the character to the buffer */
     *AUX_MU_IO = c;
 }
@@ -43,17 +42,18 @@ char uart_getc()
     /* wait until something is in the buffer */
     do {
         asm volatile("nop");
-    } while (!(*AUX_MU_LSR & 0x01));
+    } while (!(*AUX_MU_LSR & 0x01)); // This bit is set if the receive FIFO holds at least 1 R symbol.
     /* read it and return */
     c = (char)(*AUX_MU_IO);
     /* convert carrige return to newline */
-    return (c == '\r')? '\n' : c;
+    // return (c == '\r')? '\n' : c;
+    return c;
 }
 
 /**
  * Display a string
  */
-void uart_puts(char *s)
+void uart_puts(const char *s)
 {
     while (*s) {
         /* convert newline to carrige return + newline */
@@ -63,14 +63,27 @@ void uart_puts(char *s)
     }
 }
 
-void uart_putx(unsigned int d) {
-    unsigned int n;
+void uart_putx(const uint32_t d)
+{
+    uint32_t n;
     int c;
-    for(c = 28; c >= 0; c -= 4) {
+    for (c = 28; c >= 0; c -= 4) {
         // get highest tetrad
         n = (d >> c) & 0xF;
         // 0-9 => '0'-'9', 10-15 => 'A'-'F'
         n += (n > 9)? 0x37 : 0x30;
         uart_putc(n);
     }
+}
+
+void uart_put_hb(const uint8_t c)
+{
+    uint8_t t;
+    t = (c >> 4) & 0xf;
+    t += (t > 9)? 0x37 : 0x30;
+    uart_putc(t);
+
+    t = c & 0xf;
+    t += (t > 9)? 0x37 : 0x30;
+    uart_putc(t);
 }
