@@ -2,8 +2,11 @@
 #include <stddef.h>
 #include <uart.h>
 #include <mmio.h>
+#include <string.h>
 #define RECEIVER_ENABLE_BIT (1<<0)
 #define TRANSMITTER_ENABLE_BIT (1<<1)
+#define NEWLINE '\n'
+#define NEWLINE_OUT "\n\r"
 
 void uart_init()
 {
@@ -37,15 +40,15 @@ size_t uart_read(char* buf, size_t len)
     while(recvlen < len){
         while(!(mmio_load(AUX_MU_LSR_REG) & 1));
         buf[recvlen++] = (char)(mmio_load(AUX_MU_IO_REG)&0xff);
-        if(buf[recvlen-1]!=0xd)uart_write(&buf[recvlen-1], 1);
-        else uart_write("\r\n", 2);
+        //if(buf[recvlen-1]!=NEWLINE)uart_write(&buf[recvlen-1], 1);
+        //else uart_write(NEWLINE_OUT, 2);
     }
     //*AUX_MU_CNTL_REG &= ~RECEIVER_ENABLE_BIT;
     //mmio_set(AUX_MU_CNTL_REG, oldcntl);
     return recvlen;
 }
 
-size_t uart_write(char* buf, size_t len)
+size_t uart_write(const char* buf, size_t len)
 {
     //*AUX_MU_CNTL_REG = 0xffffffff & TRANSMITTER_ENABLE_BIT;
     //unsigned int oldcntl = mmio_load(AUX_MU_CNTL_REG);
@@ -61,7 +64,7 @@ size_t uart_write(char* buf, size_t len)
     return writelen;
 }
 
-void uart_print(char* buf)
+void uart_print(const char* buf)
 {
     int i=0;
     while(buf[i]){
@@ -70,21 +73,35 @@ void uart_print(char* buf)
     }
 }
 
-void uart_puts(char* buf)
+void uart_puts(const char* buf)
 {
     uart_print(buf);
-    uart_write("\r\n", 2);
+    uart_write(NEWLINE_OUT, 2);
 }
 
 size_t uart_gets(char* buf)
 {
     int i=0;
     while(uart_read(&buf[i], 1)){
-        if(buf[i]==0xd){
+        if(buf[i]==NEWLINE){
             buf[i] = 0;
             break;
         }
         i++;
     }
     return i;
+}
+
+
+void uart_print_hex(uint64_t num)
+{
+    char buf[0x10];
+    u642hex(num, buf, 0x10);
+    uart_print(buf);
+}
+
+void uart_putshex(uint64_t num)
+{
+    uart_print_hex(num);
+    uart_puts("");
 }
