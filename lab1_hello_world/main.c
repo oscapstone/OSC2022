@@ -15,7 +15,8 @@ int main(void) {
     uart_num(bss_var[2]); uart_puts("\n");
     uart_num(bss_var[3]); uart_puts("\n");
     uart_puts("=======================\n");
-
+    uart_getc(); // prevent init signal(0xE0) from triggering echo
+    
     char commands[256];
     int i = 0;
     char c;
