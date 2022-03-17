@@ -6,10 +6,10 @@ OUTPUT_DIR = $(BUILD_DIR)/..
 SRCS = $(wildcard *.c) $(wildcard ../api/src/*.c)
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRCS:.c=.o))
 INCLUDES = -I ../api/inc/ -I ./
-CCFLAGS = -Wall -O3 -nostartfiles -ffreestanding
+CCFLAGS = -Wall -nostartfiles -ffreestanding -nostdlib
 # CCFLAGS = -nostartfiles -ffreestanding -mthumb -Wall -fdump-rtl-expand -specs=nano.specs --specs=rdimon.specs   -Wl,--start-group -lgcc -lc -lm -lrdimon -Wl,--end-group
 ASMFLAGS = $(CCFLAGS)
-LDFLAGS = -T link.ld -O3 -nostartfiles -ffreestanding -static -specs=nosys.specs
+LDFLAGS = -T link.ld -nostartfiles -ffreestanding -static
 # LDFLAGS = -T link.ld -nostartfiles -ffreestanding -nostartfiles -ffreestanding -mthumb -Wall -fdump-rtl-expand -specs=nano.specs --specs=rdimon.specs   -Wl,--start-group -lgcc -lc -lm -lrdimon -Wl,--end-group
 TOOL_CHAIN_PREFIX = aarch64-none-elf
 CC = $(TOOL_CHAIN_PREFIX)-gcc
@@ -41,7 +41,13 @@ clean:
 	rm build/ -r
 
 run:
-	qemu-system-aarch64 -M raspi3b -display none -serial null -serial stdio -kernel $(OUTPUT_DIR)/kernel8.img
+	qemu-system-aarch64 -M raspi3b -display none -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -kernel $(OUTPUT_DIR)/kernel8.img
 
 flash:
 	cp $(OUTPUT_DIR)/kernel8.img /D/kernel8.img
+	cp initramfs.cpio /D/initramfs.cpio
+	cp bcm2710-rpi-3-b-plus.dtb /D/bcm2710-rpi-3-b-plus.dtb
+	cp config.txt /D/config.txt
+
+flash_py:
+	python ../lab2-bootloader/send_img.py ./build/kernel8.img

@@ -91,6 +91,16 @@ char uart_getc() {
   return r;
 }
 
+uint8_t uart_read_byte(){
+  uint8_t r;
+  // wait until something is in the buffer
+  while(!(*AUX_MU_LSR&0x01));
+
+  // read it and return
+  r = (char)(*AUX_MU_IO);
+  return r;
+}
+
 /**
  * Display a string
  */
@@ -101,6 +111,43 @@ void uart_puts(char *s) {
       uart_send('\r');
 
     uart_send(*s++);
+  }
+}
+
+/** Get string
+ * @param n: maximum length of str[]
+ * @param str: output of string
+ * @param echo: print character received or not
+ * @return Length of str (not tested yet)
+*/
+int uart_gets_n(int n, char *str, int echo){
+  char temp;
+  int index = 0;
+  while(1){
+    
+    // Check for maximum length
+    if(index >= n){
+      str[n-1] = '\0';
+      return n-1;
+    }
+
+    // Read a char and try to parse
+    temp = uart_getc();
+    if(temp == '\b' && index > 0){           // backspace implementation
+        uart_printf("\b \b");
+        index--;
+        str[index] = '\0';
+      }
+    else if(temp != '\b' && temp != '\n'){
+      if(echo) uart_send(temp); // echos
+      str[index] = temp;
+      index++;
+    }
+    else if(temp == '\n'){
+      str[index] = '\0';
+      uart_printf("\r\n");
+      return index+1;
+    }
   }
 }
 
