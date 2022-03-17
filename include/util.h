@@ -1,24 +1,7 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-/* TYPE DEFINITIONS */
-typedef signed char int8_t;
-typedef short int16_t;
-typedef int int32_t;
-typedef long int64_t;
-
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned uint32_t;
-typedef unsigned long uint64_t;
-
-/* REGISTER DATA TYPE DEFINITION */
-/**
- * Use "volatile" to make sure before accessing the variable,
- * process always read it from memory instead of register
- */
-typedef volatile uint32_t reg32;
-typedef volatile uint64_t reg64;
+#include <types.h>
 
 /* MEMORY SIZE DEFINITIONS */
 #define KB (1 << 10)
@@ -57,7 +40,36 @@ typedef volatile uint64_t reg64;
     } while(0)
 
 /* STRING OPERATION */
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+#define NULL 0
+
 int strcmp(const char *s1, const char *s2);
+int strcpy(char *s1, const char *s2);
+int strlen(const char *s1);
+
+/* MEMORY OPERATION */
+#define ALIGN_32(ptr) ( (((uint64_t) ptr) + 3) & ~3 )
+int memcmp(const char *dst, const char *src, uint32_t sz);
+void memcpy(char *dst, const char *src, uint32_t sz);
+void memset(char *s1, char c, uint32_t sz);
+
+/* MATH OPERATION */
+uint64_t ceiling_2(uint64_t value);
+uint8_t log_2(uint64_t value);
+#define endian_xchg_32(val) ( ((val>>24)&0xff)     | \
+                              ((val>>8)&0xff00)    | \
+                              ((val<<8)&0xff0000)  | \
+                              ((val<<24)&0xff000000) )
+
+#define endian_xchg_64(val) ( ((val>>56)&0xff)               | \
+                              ((val>>40)&0xff00)             | \
+                              ((val>>24)&0xff0000)           | \
+                              ((val>>8)&0xff000000)          | \
+                              ((val<<8)&0xff00000000)        | \
+                              ((val<<24)&0xff0000000000)     | \
+                              ((val<<40)&0xff000000000000)   | \
+                              ((val<<56)&0xff00000000000000) )
 
 /* OTHER HELPER */
 void sleep(int cycles);

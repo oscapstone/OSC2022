@@ -9,48 +9,115 @@ CFLAGS = -Wall \
 		-nostartfiles \
 		-ffreestanding \
 		-mgeneral-regs-only \
+		-g \
 		-Iinclude
 
 BUILD_DIR = build
-SRC_DIR = src
-ELF = kernel8.elf
-IMG = kernel8.img # the 8 of kernel8 means ARMv8
-LINK_SCRIPT = linker.ld
+BOOT_DIR = boot
+KERNEL_DIR = kernel
+SCRIPT_DIR = scripts
 
-all: $(IMG)
+UBOOT_IMG = bootloader.img
+UBOOT_ELF = bootloader.elf
+BOOT_LINK_SCRIPT = $(SCRIPT_DIR)/linker_boot.ld
 
-debug:
+KERN_IMG = kernel8.img # The 8 of kernel8 means ARMv8
+KERN_ELF = kernel8.elf
+KERN_LINK_SCRIPT = $(SCRIPT_DIR)/linker_kern.ld
+
+# stdio / pty
+INTERFACE = stdio
+
+all: $(KERN_IMG) $(UBOOT_IMG)
+
+.PHONY: debug
+debug_kern:
 	qemu-system-aarch64 -M raspi3b \
-						-kernel $(IMG) \
+						-kernel $(KERN_IMG) \
 						-serial null \
-						-serial stdio \
+						-serial $(INTERFACE) \
+						-initrd initramfs.cpio \
+						-dtb bcm2710-rpi-3-b-plus.dtb \
 						-display none \
 						-S -s
 
-run:
+debug_boot:
 	qemu-system-aarch64 -M raspi3b \
-						-kernel $(IMG) \
+						-kernel $(UBOOT_IMG) \
 						-serial null \
-						-serial stdio \
+						-serial $(INTERFACE) \
+						-initrd initramfs.cpio \
+						-dtb bcm2710-rpi-3-b-plus.dtb \
+						-display none \
+						-S -s
+
+.PHONY: run
+run_kern:
+	qemu-system-aarch64 -M raspi3b \
+						-kernel $(KERN_IMG) \
+						-serial null \
+						-serial $(INTERFACE) \
+						-initrd initramfs.cpio \
+						-dtb bcm2710-rpi-3-b-plus.dtb \
 						-display none
 
+run_boot:
+	qemu-system-aarch64 -M raspi3b \
+						-kernel $(UBOOT_IMG) \
+						-serial null \
+						-serial $(INTERFACE) \
+						-initrd initramfs.cpio \
+						-dtb bcm2710-rpi-3-b-plus.dtb \
+						-display none
+
+ROOTFS = rootfs
+.PHONY: new_cpio
+new_cpio:
+	echo "AAAA" > $(ROOTFS)/A.txt
+	echo "BBBB" > $(ROOTFS)/B.txt
+	echo "CCCC" > $(ROOTFS)/C.txt
+	find $(ROOTFS)/ | cpio -o -H newc > initramfs.cpio
+
+.PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR) $(IMG)
+	rm -rf $(BUILD_DIR) $(KERN_IMG) $(UBOOT_IMG)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+UBOOT_SRC_FILES = $(shell find "./$(BOOT_DIR)" -name "*.c") $(shell find "./$(BOOT_DIR)" -name "*.S")
+UBOOT_DEP_FILES = $(patsubst %,$(BUILD_DIR)/%.d,$(UBOOT_SRC_FILES))
+UBOOT_OBJ_FILES = $(patsubst %,$(BUILD_DIR)/%.o,$(UBOOT_SRC_FILES))
+-include UBOOT_DEP_FILES
+
+KERN_SRC_FILES = $(shell find "./$(KERNEL_DIR)" -name "*.c") $(shell find "./$(KERNEL_DIR)" -name "*.S")
+KERN_DEP_FILES = $(patsubst %,$(BUILD_DIR)/%.d,$(KERN_SRC_FILES))
+KERN_OBJ_FILES = $(patsubst %,$(BUILD_DIR)/%.o,$(KERN_SRC_FILES))
+-include KERN_DEP_FILES
+
+LIB_SRC_FILES = $(shell find . -name "*.c"  ! -path "./$(BOOT_DIR)/*"    \
+											! -path "./$(KERNEL_DIR)/*"  \
+											! -path "./$(SCRIPT_DIR)/*"  )
+LIB_DEP_FILES = $(patsubst %,$(BUILD_DIR)/%.d,$(LIB_SRC_FILES))
+LIB_OBJ_FILES = $(patsubst %,$(BUILD_DIR)/%.o,$(LIB_SRC_FILES))
+-include LIB_DEP_FILES
+
+FILTER = $(foreach v,$(2),$(if $(findstring $(1),$(v)),$(v),))
+BOOT_OBJ_FILES =  $(call FILTER,printf.c.o, $(LIB_OBJ_FILES))
+BOOT_OBJ_FILES += $(call FILTER,uart.c.o, $(LIB_OBJ_FILES))
+BOOT_OBJ_FILES += $(call FILTER,util.c.o, $(LIB_OBJ_FILES))
+
+test:
+	@echo $(LIB_OBJ_FILES)
+
+$(BUILD_DIR)/%.o: %
 	mkdir -p $(@D)
 	$(CROSS_COMPILER_PREFIX)-gcc $(CFLAGS) -MMD -c $< -o $@
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.S
-	mkdir -p $(@D)
-	$(CROSS_COMPILER_PREFIX)-gcc $(CFLAGS) -MMD -c $< -o $@
+$(KERN_IMG): $(LINK_SCRIPT) $(KERN_OBJ_FILES) $(LIB_OBJ_FILES)
+	$(CROSS_COMPILER_PREFIX)-ld -T $(KERN_LINK_SCRIPT) -o $(BUILD_DIR)/$(KERN_ELF) $(KERN_OBJ_FILES) $(LIB_OBJ_FILES)
+	$(CROSS_COMPILER_PREFIX)-objcopy $(BUILD_DIR)/$(KERN_ELF) -O binary $(KERN_IMG)
 
-C_FILES = $(wildcard $(SRC_DIR)/**/*.c $(SRC_DIR)/*.c)
-ASM_FILES = $(wildcard $(SRC_DIR)/**/*.S $(SRC_DIR)/*.S)
-OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
-OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%.o)
+.PHONY: boot
+boot: $(UBOOT_IMG)
 
-
-$(IMG): $(SRC_DIR)/$(LINK_SCRIPT) $(OBJ_FILES)
-	$(CROSS_COMPILER_PREFIX)-ld -T $(SRC_DIR)/$(LINK_SCRIPT) -o $(BUILD_DIR)/$(ELF) $(OBJ_FILES)
-	$(CROSS_COMPILER_PREFIX)-objcopy $(BUILD_DIR)/$(ELF) -O binary $(IMG)
+$(UBOOT_IMG): $(LINK_SCRIPT) $(UBOOT_OBJ_FILES) $(BOOT_OBJ_FILES)
+	$(CROSS_COMPILER_PREFIX)-ld -T $(BOOT_LINK_SCRIPT) -o $(BUILD_DIR)/$(UBOOT_ELF) $(UBOOT_OBJ_FILES) $(BOOT_OBJ_FILES)
+	$(CROSS_COMPILER_PREFIX)-objcopy $(BUILD_DIR)/$(UBOOT_ELF) -O binary $(UBOOT_IMG)
