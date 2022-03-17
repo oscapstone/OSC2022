@@ -4,6 +4,7 @@
 #include "mbox.h"
 #include "str_tool.h"
 #include "stdint.h"
+#include "device_tree.h"
 
 void clean_buffer(char * buffer, int buffer_len)
 {
@@ -21,6 +22,8 @@ void command_help()
     uart_puts("ls\t: show all files\n");
     uart_puts("cat\t: show file info\n");
     uart_puts("test\t: test simple allocator\n");
+    uart_puts("dbt\t: dbt info\n");
+    uart_puts("parsedbt\t: parse dbt info\n");
 }
 
 void command_hello()
@@ -43,6 +46,7 @@ void command_ls(){
     uint64_t name_size, file_size;
     char *file_name;
     // char *file_content;
+    uart_puts("\r");
 
     while(1){
         cpio_ptr = (cpio_newc_header*)cur_addr;
@@ -80,13 +84,18 @@ void command_ls(){
 }
 
 void command_cat(){
+    uart_send('\r');
     uart_puts("Filename: ");
     char file[64]={'\0'};
     int file_idx=0;
     while(1){
         char c = uart_getc();
+        if(c=='\n') {
+            uart_send('\r');
+            uart_send(c);
+            break;
+        }
         uart_send(c);
-        if(c=='\n') break;
         file[file_idx++] =c;
     }
     uint64_t cur_addr = 0x2000000;
@@ -199,7 +208,8 @@ void* simple_allocate(int size)
 void command_test()
 {
     // test simple_allocate
-    uart_puts("test simple_allocate\r\n");
+    uart_puts("\r");
+    uart_puts("test simple_allocate\n");
     char * c = simple_allocate(30);
     c[0]='a';
     c[1]='b';
@@ -225,6 +235,8 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "cat")) command_cat();
     else if ( !strcmp(buffer, "test")) command_test();
     else if ( !strcmp(buffer, "reboot")) reset();
+    else if ( !strcmp(buffer, "dbt")) print_dt_info();
+    else if ( !strcmp(buffer, "parsedbt")) parse_dt();
     else command_not_found(buffer);
 }
 
