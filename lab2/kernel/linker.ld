@@ -19,6 +19,8 @@ SECTIONS
 
     __bss_end = .;
   }
+  . = ALIGN(16); 
+  _heap_start = .;
   _end = .;
 }
 
