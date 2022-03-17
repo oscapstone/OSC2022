@@ -1,6 +1,5 @@
 // void input_buffer_overflow_message(char[]);
 
-int strcmp(const char* s1, const char* s2);
 void set(long addr, unsigned int value);
 void reset(int tick);
 void cancel_reset();
