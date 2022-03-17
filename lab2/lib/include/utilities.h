@@ -1,0 +1,1 @@
+unsigned int little_2_big_u32(unsigned int str);

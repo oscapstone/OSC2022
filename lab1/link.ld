@@ -16,4 +16,4 @@ SECTIONS
 }
 __bss_size = (__bss_end - __bss_start)>>3; 
 
-/* >>>3 == /8 for change the unit to how many 64 bits */
+/* >>3 == /8 for change the unit to how many 64 bits */
