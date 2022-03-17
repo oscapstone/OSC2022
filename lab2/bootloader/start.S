@@ -2,10 +2,14 @@
 .globl _start
         
 _start:
+        // store dtb address at 0x5FFF8
+        mov x1, #0xFFF8
+        movk x1, #5, lsl #16
+        str x0, [x1]
         // read cpu id
         mrs x0, mpidr_el1
         // only use core0, the other core goes into infinite loop
-        and x0, x0, #0xFF
+        and x0, x0, #0x3
         cbz x0, _core0
 _loop:
         wfe
