@@ -205,7 +205,7 @@ void shell_alloc(){
     uart_puts("\r\n");
 
     uart_puts("dtb: ");
-    uart_hex(DTB_ADDR);
+    //uart_hex(DTB_ADDR);
     uart_puts("\r\n");
 
 

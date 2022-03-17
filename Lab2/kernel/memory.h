@@ -1,6 +1,6 @@
 #include "stdint.h"
 
-extern uint32_t DTB_ADDR;
+//extern uint32_t DTB_ADDR;
 extern uint32_t HEAP_START;
 static size_t heap_offset=0;
 
