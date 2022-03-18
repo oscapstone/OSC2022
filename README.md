@@ -4,34 +4,39 @@
 |---|---|---|
 |fanhouin|310552001|樊浩賢|
 
-## Build
-### Make kernel image
+## Run with QEMU
+### Prerequisites
+```bash
+sudo apt-get install gcc-aarch64-linux-gnu
+sudo apt-get install qemu-system-aarch64
 ```
-> make
+### Make kernel image
+```bash
+make
 ```
 
 ### Make bootloader image
-```
-> cd bootloader
-> make
+```bash
+cd bootloader
+make
 ```
 
 ## Run
 ###  Just run kernel image
-```
-> make run
+```bash
+make run
 ```
 ### Boot kernel image with bootloader
-```
-/* terminal 1 */
-> cd bootloader
-> make pty
+```bash
+# terminal 1
+cd bootloader
+make pty
 
-/* terminal 2 */
-> sudo screen /dev/pts/<num> 115200
+# terminal 2
+sudo screen /dev/pts/<num> 115200
 
-/* terminal 3 */
-> sudo ./uartboot.py <num>
+# terminal 3 
+sudo ./uartboot.py <num>
 ```
 ## Directory
 ```
