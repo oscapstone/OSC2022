@@ -2,6 +2,6 @@
 *.py
 build/
 *.img
-kernel8.elf
+kernel.elf
 *.o
 !send_kernel.py
