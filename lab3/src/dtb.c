@@ -69,7 +69,7 @@ void traverse_device_tree(void *dtb_ptr,dtb_callback callback)
             callback(token_type,0,0,0);
         }else
         {
-            uart_printf("error type:%x\n",token_type);
+            uart_printf("error type:%x\r\n",token_type);
             return;
         }
     }
@@ -80,18 +80,18 @@ void dtb_callback_show_tree(uint32_t node_type, char *name, void *data, uint32_t
     static int level = 0;
     if(node_type==FDT_BEGIN_NODE)
     {
-        for(int i=0;i<level;i++)uart_printf("   ");
-        uart_async_printf("%s{\n",name);
+        for(int i=0;i<level;i++)uart_async_printf("   ");
+        uart_async_printf("%s{\r\n",name);
         level++;
     }else if(node_type==FDT_END_NODE)
     {
         level--;
-        for(int i=0;i<level;i++)uart_printf("   ");
-        uart_async_printf("}\n");
+        for(int i=0;i<level;i++)uart_async_printf("   ");
+        uart_async_printf("}\r\n");
     }else if(node_type==FDT_PROP)
     {
-        for(int i=0;i<level;i++)uart_printf("   ");
-        uart_async_printf("%s\n",name);
+        for(int i=0;i<level;i++)uart_async_printf("   ");
+        uart_async_printf("%s\r\n",name);
     }
 }
 

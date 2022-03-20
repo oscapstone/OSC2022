@@ -17,7 +17,7 @@ void main(char* dtb)
     dtb_place = dtb;
 
     //cannot use original input series after interrupt start (input is going to the buffer), use async input instead.
-    //output series are not affected.
+    //output series are not affected. (order is affected)
     enable_mini_uart_interrupt();
     enable_interrupt();  // enable interrupt in EL1 -> EL1
 

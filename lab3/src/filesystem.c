@@ -31,7 +31,7 @@ int cat(char* thefilepath)
         }
 
         //if this is TRAILER!!! (last of file)
-        if(header_pointer==0)uart_printf("cat: %s: No such file or directory\n",thefilepath);
+        if(header_pointer==0)uart_printf("cat: %s: No such file or directory\r\n",thefilepath);
     }
     return 0;
 }
@@ -60,7 +60,7 @@ int execfile(char* thefilepath)
         }
 
         //if this is TRAILER!!! (last of file)
-        if(header_pointer==0)uart_printf("execfile: %s: No such file or directory\n",thefilepath);
+        if(header_pointer==0)uart_printf("execfile: %s: No such file or directory\r\n",thefilepath);
     }
     return 0;
 }

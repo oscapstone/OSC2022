@@ -222,9 +222,6 @@ int uart_printf(char *fmt, ...) {
     int count = vsprintf(s,fmt,args);
     // print out as usual
     while(*s) {
-        /* convert newline to carrige return + newline */
-        if(*s=='\n')
-            uart_putc('\r');
         uart_putc(*s++);
     }
     __builtin_va_end(args); 
@@ -242,9 +239,6 @@ int uart_async_printf(char *fmt, ...) {
     int count = vsprintf(s,fmt,args);
     // print out as usual
     while(*s) {
-        /* convert newline to carrige return + newline */
-        if(*s=='\n')
-            uart_async_putc('\r');
         uart_async_putc(*s++);
     }
     __builtin_va_end(args); 
