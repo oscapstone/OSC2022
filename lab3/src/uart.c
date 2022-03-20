@@ -288,7 +288,12 @@ void uart_interrupt_handler(){
 
 void uart_async_putc(char c){
 
-    while( (uart_tx_buffer_widx + 1) % MAX_BUF_SIZE == uart_tx_buffer_ridx ); // full buffer wait
+    // full buffer wait
+    while( (uart_tx_buffer_widx + 1) % MAX_BUF_SIZE == uart_tx_buffer_ridx )
+    {
+        // start asynchronous transfer 
+        enable_mini_uart_w_interrupt();
+    }
     uart_tx_buffer[uart_tx_buffer_widx++] = c;
     if(uart_tx_buffer_widx>=MAX_BUF_SIZE)uart_tx_buffer_widx=0;  // cycle pointer
 
