@@ -4,13 +4,14 @@ LIB_SRC_DIR = ../lib
 
 LIB_SRC = \
 	$(LIB_SRC_DIR)/cpio.c \
+	$(LIB_SRC_DIR)/mbox.c \
+	$(LIB_SRC_DIR)/reset.c \
+	$(LIB_SRC_DIR)/string.c \
+	$(LIB_SRC_DIR)/dtb.c \
 	$(LIB_SRC_DIR)/malloc.c \
 	$(LIB_SRC_DIR)/mmio.c \
-	$(LIB_SRC_DIR)/mbox.c \
 	$(LIB_SRC_DIR)/shell.c \
 	$(LIB_SRC_DIR)/uart.c \
-	$(LIB_SRC_DIR)/dtb.c \
-	
 
 LIB_INCLUDES = \
 	-I $(LIB_SRC_DIR)/include \
@@ -121,25 +122,6 @@ $(OUT_IMG): $(OUT_ELF)
 
 $(BUILD_DIRECTORIES):
 	mkdir -p $@
-
-run:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -display none -serial null -serial pty
-
-run_stdio:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -display none -serial null -serial stdio
-
-run_cpio:
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
-
-debug:
-	qemu-system-aarch64 -M raspi3b -kernel bootloader.img -display none -serial null -serial pty -s -S
-
-docker_cp:
-	docker cp kernel.elf my_kali:/
-	docker cp bootloader/bootloader.elf my_kali:/
-
-cpio:
-	cd rootfs && find . | cpio -o -H newc > ../initramfs.cpio
 
 clean:
 	rm -rf *.elf

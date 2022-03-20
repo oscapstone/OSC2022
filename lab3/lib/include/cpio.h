@@ -6,6 +6,7 @@ extern void* INITRD_ADDR;
 
 #include "malloc.h"
 #include "stdint.h"
+#include "string.h"
 
 typedef struct cpio_newc_header {
     char c_magic[6];

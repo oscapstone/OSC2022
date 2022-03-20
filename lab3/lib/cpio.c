@@ -1,7 +1,5 @@
 #include "cpio.h"
 
-// #include "uart.h"
-
 cpio_newc_header* header;
 
 void cpio_init() {
