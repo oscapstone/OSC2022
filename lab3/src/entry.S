@@ -57,7 +57,7 @@ exception_vector_table:
     
     //Exception from the current EL while using SP_ELx
     ventry	sync_el1h			        // Synchronous EL1h	
-    ventry	irq_invalid_el1h			// IRQ EL1h	
+    ventry	irq_el1h		        	// IRQ EL1h	
     ventry	fiq_invalid_el1h			// FIQ EL1h
     ventry	error_invalid_el1h			// Error EL1h
 
@@ -105,13 +105,13 @@ error_invalid_el1t:
 sync_el1h:
     save_all
     mov x0,4
-    bl el1_irq_router
+    bl sync_el0_64_router
     load_all
     eret
-irq_invalid_el1h:
+irq_el1h:
     save_all
     mov x0,5
-    bl invalid_exception_router
+    bl el1_irq_router
     load_all
     eret
 fiq_invalid_el1h:

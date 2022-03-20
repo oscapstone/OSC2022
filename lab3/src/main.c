@@ -5,6 +5,7 @@
 #include "malloc.h"
 #include "dtb.h"
 #include "cpio.h"
+#include "exception.h"
 
 void init_cpio_default_place();
 
@@ -14,10 +15,15 @@ void main(char* dtb)
 {
     //stroe dtb pointer to global (device tree)
     dtb_place = dtb;
+
+    //cannot use original input series after interrupt start (input is going to the buffer), use async input instead.
+    //output series are not affected.
     enable_mini_uart_interrupt();
+    enable_interrupt();  // enable interrupt in EL1 -> EL1
+
     init_cpio_default_place(); //stroe cpio pointer to global (file system)
 
-    uart_printf("dtb : 0x%x\n",dtb);
+    uart_printf("dtb : 0x%x\r\n",dtb);
 
     shell();
 }

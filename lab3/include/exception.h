@@ -32,5 +32,7 @@ p112-115 https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 void sync_el0_64_router();
 void el1_irq_router();
 void invalid_exception_router();
+void enable_interrupt();
+void disble_interrupt();
 
 #endif

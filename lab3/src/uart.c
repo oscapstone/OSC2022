@@ -20,6 +20,15 @@
 // get address from linker
 extern volatile unsigned char _end;
 
+
+//implement first in first out buffer with a read index and a write index
+char uart_tx_buffer[MAX_BUF_SIZE]={}; 
+unsigned int uart_tx_buffer_widx = 0;  //write index
+unsigned int uart_tx_buffer_ridx = 0;  //read index
+char uart_rx_buffer[MAX_BUF_SIZE]={};
+unsigned int uart_rx_buffer_widx = 0;
+unsigned int uart_rx_buffer_ridx = 0;
+
 /**
  * Set baud rate and characteristics (115200 8N1) and map to GPIO
  */
@@ -33,7 +42,7 @@ void uart_init()
     *AUX_MU_IER = 0;       // Set AUX_MU_IER_REG to 0. Disable interrupt because currently you don’t need interrupt.
     *AUX_MU_LCR = 3;       // Set AUX_MU_LCR_REG to 3. Set the data size to 8 bit.
     *AUX_MU_MCR = 0;       // Set AUX_MU_MCR_REG to 0. Don’t need auto flow control.
-    *AUX_MU_IIR = 0xc6;     // disable interrupts
+    *AUX_MU_IIR = 0x6;     // disable interrupts
     *AUX_MU_BAUD = 270;    // 115200 baud
     /* map UART1 to GPIO pins */
     r=*GPFSEL1;
@@ -68,7 +77,7 @@ void  disable_uart()
 }
 
 /**
- * Send a character
+ * Send a character  (only replace uart_put with uart_async_putc when non-echo output)
  */
 void uart_putc(char c) {
     unsigned int intc = c;
@@ -93,7 +102,7 @@ char uart_getc() {
     */
     if(r == '\r')
     {
-        uart_puts("\r");
+        uart_printf("\r\r\n");
         do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x40));  //wait for output success Transmitter idle
     }else if(r == '\x7f') // backspace -> get del
     {
@@ -125,7 +134,52 @@ int uart_puts(char *s) {
 }
 
 /**
- * get a string
+ * Display a string with newline
+ */
+int uart_async_puts(char *s) {
+    int i=0;
+
+    while(*s) {
+        uart_async_putc(*s++);
+        i++;
+    }
+    uart_async_putc('\r');
+    uart_async_putc('\n');
+
+    return i+2;
+}
+
+/**
+ * get a string (use async getc)
+ */
+char* uart_async_gets(char *buf)
+{
+    int count;
+	char c;
+	char *s;
+	for (s = buf,count = 0; (c = uart_async_getc()) != '\n' && count!=MAX_BUF_SIZE-1 ;count++)
+    {
+        *s = c;
+        if(*s=='\x7f') //delete -> backspace
+        {
+            count--;
+            if(count==-1)
+            {
+                uart_putc(' '); // prevent back over command line #
+                continue;
+            }
+            s--;
+            count--;
+            continue;
+        }
+        s++;
+    }
+	*s = '\0';
+	return buf;
+}
+
+/**
+ * get a string (use async getc)
  */
 char* uart_gets(char *buf)
 {
@@ -177,21 +231,25 @@ int uart_printf(char *fmt, ...) {
     return count;
 }
 
-/**
- * Display a binary value in hexadecimal
- */
-void uart_hex(unsigned int d) {
-    unsigned int n;
-    int c;
-    for(c=28;c>=0;c-=4) {
-        // get highest tetrad
-        n=(d>>c)&0xF;
-        // 0-9 => '0'-'9', 10-15 => 'A'-'F'
-        n+=n>9?0x37:0x30;
-        uart_putc(n);
+int uart_async_printf(char *fmt, ...) {
+    __builtin_va_list args;
+    __builtin_va_start(args, fmt);
+    char buf[MAX_BUF_SIZE];
+    // we don't have memory allocation yet, so we
+    // simply place our string after our code
+    char *s = (char*)buf;
+    // use sprintf to format our string
+    int count = vsprintf(s,fmt,args);
+    // print out as usual
+    while(*s) {
+        /* convert newline to carrige return + newline */
+        if(*s=='\n')
+            uart_async_putc('\r');
+        uart_async_putc(*s++);
     }
+    __builtin_va_end(args); 
+    return count;
 }
-
 
 //https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf p13
 /*
@@ -206,25 +264,53 @@ void uart_hex(unsigned int d) {
 // buffer read, write
 void uart_interrupt_handler(){
 
-    if(*AUX_MU_IIR & (0x01<<1)) //on write
+    if(*AUX_MU_IIR & (0b01<<1)) //can write
     {
+        // buffer empty
         if(uart_tx_buffer_ridx == uart_tx_buffer_widx)
         {
-            disable_mini_uart_w_interrupt();
-            return;  // buffer empty
+            disable_mini_uart_w_interrupt();  // disable w_interrupt to prevent interruption without any async output
+            return;  
         }
-        uart_putc(uart_tx_buffer[uart_tx_buffer_ridx++]);
-        if(uart_tx_buffer_ridx>=MAX_BUF_SIZE-1)uart_tx_buffer_ridx=0;
+        uart_putc(uart_tx_buffer[uart_tx_buffer_ridx++]);  
+        if(uart_tx_buffer_ridx>=MAX_BUF_SIZE)uart_tx_buffer_ridx=0; // cycle pointer
     }
-    else if(*AUX_MU_IIR & (0x10<<1)) //on read
+    else if(*AUX_MU_IIR & (0b10<<1)) //can read
     {
-        uart_rx_buffer[uart_tr_buffer_widx++] = uart_getc();
-        if(uart_rx_buffer_widx>=MAX_BUF_SIZE-1)uart_rx_buffer_widx=0;
+         //read buffer full
+        if((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx)
+        {   
+            disable_mini_uart_r_interrupt();    //disable read interrupt when read buffer full
+            return;
+        }
+        uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
+        if(uart_rx_buffer_widx>=MAX_BUF_SIZE)uart_rx_buffer_widx=0;
     }else
     {
         uart_printf("uart_interrupt_handler error!!\n");
     }
-    
+
+}
+
+void uart_async_putc(char c){
+
+    while( (uart_tx_buffer_widx + 1) % MAX_BUF_SIZE == uart_tx_buffer_ridx ); // full buffer wait
+    uart_tx_buffer[uart_tx_buffer_widx++] = c;
+    if(uart_tx_buffer_widx>=MAX_BUF_SIZE)uart_tx_buffer_widx=0;  // cycle pointer
+
+    // start asynchronous transfer 
+    enable_mini_uart_w_interrupt();
+}
+
+char uart_async_getc(){
+
+    // while buffer empty
+    // enable read interrupt to get some input into buffer
+    while(uart_rx_buffer_ridx == uart_rx_buffer_widx)enable_mini_uart_r_interrupt();
+
+    char r = uart_rx_buffer[uart_rx_buffer_ridx++];
+
+    return r;
 }
 
 void enable_mini_uart_interrupt(){

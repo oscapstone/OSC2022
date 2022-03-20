@@ -81,17 +81,17 @@ void dtb_callback_show_tree(uint32_t node_type, char *name, void *data, uint32_t
     if(node_type==FDT_BEGIN_NODE)
     {
         for(int i=0;i<level;i++)uart_printf("   ");
-        uart_printf("%s{\n",name);
+        uart_async_printf("%s{\n",name);
         level++;
     }else if(node_type==FDT_END_NODE)
     {
         level--;
         for(int i=0;i<level;i++)uart_printf("   ");
-        uart_printf("}\n");
+        uart_async_printf("}\n");
     }else if(node_type==FDT_PROP)
     {
         for(int i=0;i<level;i++)uart_printf("   ");
-        uart_printf("%s\n",name);
+        uart_async_printf("%s\n",name);
     }
 }
 

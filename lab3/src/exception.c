@@ -2,7 +2,7 @@
 #include "exception.h"
 #include "timer.h"
 
-void sync_el0_64_router(){
+void sync_el0_64_router(unsigned long long x0){
     unsigned long long spsr_el1;
 	__asm__ __volatile__("mrs %0, SPSR_EL1\n\t" : "=r" (spsr_el1) :  : "memory");
 
@@ -16,12 +16,13 @@ void sync_el0_64_router(){
 
 }
 
-void el1_irq_router(){
+void el1_irq_router(unsigned long long x0){
 
-    uart_printf("irq_basic_pending: %x\n",*IRQ_BASIC_PENDING);
-    uart_printf("irq_pending_1: %x\n",*IRQ_PENDING_1);
-    uart_printf("irq_pending_2: %x\n",*IRQ_PENDING_2);
-    uart_printf("source : %x\n",*CORE0_INTERRUPT_SOURCE);
+    //uart_printf("exception type: %x\n",x0);
+    //uart_printf("irq_basic_pending: %x\n",*IRQ_BASIC_PENDING);
+    //uart_printf("irq_pending_1: %x\n",*IRQ_PENDING_1);
+    //uart_printf("irq_pending_2: %x\n",*IRQ_PENDING_2);
+    //uart_printf("source : %x\n",*CORE0_INTERRUPT_SOURCE);
 
     //目前實測能從pending_1 AUX_INT, CORE0_INTERRUPT_SOURCE=GPU 辨別其他都是0(或再找)
     if(*IRQ_PENDING_1 & IRQ_PENDING_1_AUX_INT && *CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_GPU) // from aux && from GPU0 -> uart exception  
@@ -35,4 +36,12 @@ void el1_irq_router(){
 
 void invalid_exception_router(unsigned long long x0){
     uart_printf("invalid exception\n : %d",x0);
+}
+
+void enable_interrupt(){
+    __asm__ __volatile__("msr daifclr, 0xf");
+}
+
+void disable_interrupt(){
+    __asm__ __volatile__("msr daifset, 0xf");
 }
