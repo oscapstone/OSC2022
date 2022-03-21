@@ -3,7 +3,7 @@ extern char _heap_start;
 static char* top = &_heap_start;
 
 // like C malloc
-void* malloc(unsigned int size) {
+void* kmalloc(unsigned int size) {
     char* r = top+0x10;
     if(size<0x18)size=0x18;  // minimum size 0x20 //like ptmalloc
     size = size + 0x7;

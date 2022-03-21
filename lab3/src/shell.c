@@ -5,11 +5,15 @@
 #include "system.h"
 #include "filesystem.h"
 #include "dtb.h"
+#include "timer.h"
 
 void shell()
 {
     char cmd[MAX_BUF_SIZE];
     print_system_messages();
+    core_timer_enable();
+    timer_list_init();
+    add_timer(two_second_alert,2,"two_second_alert");
     while(1)
     {
         uart_async_printf("# ");
@@ -22,13 +26,14 @@ void do_cmd(char* cmd)
 {
     if(strcmp(cmd,"help")==0)
     {
-        uart_async_printf("help             : print this help menu\r\n");
-        uart_async_printf("hello            : print Hello World!\r\n");
-        uart_async_printf("reboot           : reboot the device\r\n");
-        uart_async_printf("ls               : list current directory\r\n");
-        uart_async_printf("cat              : print content of a file\r\n");
-        uart_async_printf("show_device_tree : show device tree\r\n");
-        uart_async_printf("exec             : load a user program in the initramfs and run it in EL0\r\n");
+        uart_async_printf("help                            : print this help menu\r\n");
+        uart_async_printf("hello                           : print Hello World!\r\n");
+        uart_async_printf("reboot                          : reboot the device\r\n");
+        uart_async_printf("ls                              : list current directory\r\n");
+        uart_async_printf("cat                             : print content of a file\r\n");
+        uart_async_printf("show_device_tree                : show device tree\r\n");
+        uart_async_printf("exec                            : load a user program in the initramfs and run it in EL0\r\n");
+        uart_async_printf("setTimeout [MESSAGE] [SECONDS]  : print message after [SECONDS] seconds (non-blocking)\r\n");
     }
     else if(strcmp(cmd,"hello")==0)
     {
@@ -58,6 +63,15 @@ void do_cmd(char* cmd)
         char filepath[MAX_BUF_SIZE];
         uart_async_gets(filepath);
         execfile(filepath);
+
+    }else if(strncmp(cmd,"setTimeout",sizeof("setTimeout")-1)==0)
+    {
+        char* message = strchr(cmd,' ') + 1;
+        char* end_message = strchr(message,' ');
+        *end_message = '\0';
+        char* seconds = end_message+1;
+        add_timer(uart_async_puts,atoi(seconds),message);
+
     }else
     {
         uart_async_printf("Unknown command!\r\n");

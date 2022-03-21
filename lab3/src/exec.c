@@ -4,7 +4,7 @@
 
 int exec(char* data){
 
-    char* ustack = malloc(USTACK_SIZE);
+    char* ustack = kmalloc(USTACK_SIZE);
 
     core_timer_enable(2);
 

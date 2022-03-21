@@ -7,5 +7,6 @@ char* strcat (char *dest, const char *src);
 unsigned long long strlen(const char *str);
 char* strcpy (char *dest, const char *src);
 char* memcpy (void *dest, const void *src, unsigned long long len);
-
+char* strchr (register const char *s, int c);
+int   atoi(char* str);
 #endif

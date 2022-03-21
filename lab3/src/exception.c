@@ -12,12 +12,11 @@ void sync_el0_64_router(unsigned long long x0){
     unsigned long long esr_el1;
 	__asm__ __volatile__("mrs %0, ESR_EL1\n\t" : "=r" (esr_el1) :  : "memory");
 
-    uart_printf("exception sync_el0_64_router -> spsr_el1 : 0x%x, elr_el1 : 0x%x, esr_el1 : 0x%x\n",spsr_el1,elr_el1,esr_el1);
+    uart_printf("exception sync_el0_64_router -> spsr_el1 : 0x%x, elr_el1 : 0x%x, esr_el1 : 0x%x\r\n",spsr_el1,elr_el1,esr_el1);
 
 }
 
 void el1_irq_router(unsigned long long x0){
-
     //uart_printf("exception type: %x\n",x0);
     //uart_printf("irq_basic_pending: %x\n",*IRQ_BASIC_PENDING);
     //uart_printf("irq_pending_1: %x\n",*IRQ_PENDING_1);
