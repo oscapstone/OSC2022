@@ -1,4 +1,4 @@
 gef-remote host.docker.internal:1234
 b exec
-b welcome_msg
+b core_timer_handler
 c
