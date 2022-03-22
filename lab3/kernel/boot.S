@@ -1,3 +1,5 @@
+#include "regs.h"
+
 .section ".text.boot"
 
 .global _start
@@ -19,6 +21,14 @@ from_el2_to_el1:
     eret
 
 el1_start:
+    // enable all instructions -> set FPEN, bits [21:20] to 0b11 at CPACR_EL1 
+    ldr     x1, =CPACR_EL1_FPEN
+    msr     cpacr_el1, x1
+
+    // initialize EL1 stack
+    ldr     x1, =_el1_stack_end
+    mov     sp, x1 
+
     // clear bss
     ldr     x20, =_bss_start
     ldr     x21, =_bss_size
