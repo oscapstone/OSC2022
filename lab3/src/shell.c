@@ -13,7 +13,6 @@ void shell()
     print_system_messages();
     core_timer_enable();
     timer_list_init();
-    add_timer(two_second_alert,2,"two_second_alert");
     while(1)
     {
         uart_async_printf("# ");
@@ -34,6 +33,7 @@ void do_cmd(char* cmd)
         uart_async_printf("show_device_tree                : show device tree\r\n");
         uart_async_printf("exec                            : load a user program in the initramfs and run it in EL0\r\n");
         uart_async_printf("setTimeout [MESSAGE] [SECONDS]  : print message after [SECONDS] seconds (non-blocking)\r\n");
+        uart_async_printf("clockAlert                      : alert every two seconds\r\n");
     }
     else if(strcmp(cmd,"hello")==0)
     {
@@ -72,8 +72,10 @@ void do_cmd(char* cmd)
         char* seconds = end_message+1;
         add_timer(uart_async_puts,atoi(seconds),message);
 
-    }else
+    }else if(strcmp(cmd,"clockAlert")==0)
     {
+        add_timer(two_second_alert,2,"two_second_alert");
+    }else{
         uart_async_printf("Unknown command!\r\n");
     }
 }

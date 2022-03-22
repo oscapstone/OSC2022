@@ -2,7 +2,7 @@
 #include "exception.h"
 #include "timer.h"
 
-void sync_el0_64_router(unsigned long long x0){
+void sync_64_router(unsigned long long x0){
     unsigned long long spsr_el1;
 	__asm__ __volatile__("mrs %0, SPSR_EL1\n\t" : "=r" (spsr_el1) :  : "memory");
 
@@ -16,7 +16,7 @@ void sync_el0_64_router(unsigned long long x0){
 
 }
 
-void el1_irq_router(unsigned long long x0){
+void irq_router(unsigned long long x0){
     //uart_printf("exception type: %x\n",x0);
     //uart_printf("irq_basic_pending: %x\n",*IRQ_BASIC_PENDING);
     //uart_printf("irq_pending_1: %x\n",*IRQ_PENDING_1);

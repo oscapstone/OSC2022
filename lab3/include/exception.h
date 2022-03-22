@@ -29,8 +29,8 @@ p112-115 https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 //#define SYSTEM_TIMER_MATCH_3 (1<<3)
 //#define UART_INT (1ULL<<57)
 
-void sync_el0_64_router();
-void el1_irq_router();
+void sync_64_router();
+void irq_router();
 void invalid_exception_router();
 void enable_interrupt();
 void disble_interrupt();

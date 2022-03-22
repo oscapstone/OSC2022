@@ -105,13 +105,13 @@ error_invalid_el1t:
 sync_el1h:
     save_all
     mov x0,4
-    bl sync_el0_64_router
+    bl invalid_exception_router
     load_all
     eret
 irq_el1h:
     save_all
     mov x0,5
-    bl el1_irq_router
+    bl irq_router
     load_all
     eret
 fiq_invalid_el1h:
@@ -132,13 +132,13 @@ error_invalid_el1h:
 sync_el0_64:
     save_all
     mov x0,8
-    bl sync_el0_64_router
+    bl sync_64_router
     load_all
     eret
 irq_el0_64:
     save_all
     mov x0,9
-    bl el1_irq_router
+    bl irq_router
     load_all
     eret
 fiq_invalid_el0_64:
