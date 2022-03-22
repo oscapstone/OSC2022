@@ -105,6 +105,10 @@ void cmd_dtb(char* param) {
     dtb_parser(dtb_show_callback);
 }
 
+void cmd_exec(char* param) {
+    cpio_newc_parser(cpio_exec_callback, param);
+}
+
 void cmd_unknown() {
     uart_write_string("Unknown command: ");
     uart_write_string(buf);
