@@ -8,6 +8,8 @@
 #define FDT_NOP         0x00000004
 #define FDT_END         0x00000009
 
+extern void *_fdt_ptr;
+
 int fdt_indent = 0;
 
 typedef struct {
@@ -74,6 +76,11 @@ void initramfs_callback(int type, char *name, void *data, unsigned int size) {
     }
 }
 
+void cpio_callback(int type, char *name, void *data, unsigned int size) {
+    if (type == FDT_PROP && !strcmp(name, "linux,initrd-start")) {
+        cpio_addr = (void *)(unsigned long)endiantoi(data);
+    }
+}
 
 int fdt_parser(unsigned long _dt_struct, unsigned long _dt_strings, unsigned int totalsize, void (*callback)(int type, char *name, void *data, unsigned int size)) {
     unsigned int end = _dt_struct + totalsize;
@@ -121,8 +128,8 @@ int fdt_parser(unsigned long _dt_struct, unsigned long _dt_strings, unsigned int
 
 
 
-int fdt_traverse(void* _addr, void (*callback)(int type, char *name, void *data, unsigned int size)) {
-    unsigned long addr = (unsigned long)_addr;
+int fdt_traverse(void (*callback)(int type, char *name, void *data, unsigned int size)) {
+    unsigned long addr = (unsigned long)_fdt_ptr;
     fdt_header* ftd = (fdt_header*)addr;
 
     if (endiantoi(&ftd->magic) != 0xd00dfeed)

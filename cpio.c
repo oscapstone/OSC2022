@@ -1,4 +1,6 @@
 #include "cpio.h"
+
+#include "devicetree.h"
 #include "uart.h"
 #include "utils.h"
 #include "shell.h"
@@ -80,9 +82,9 @@ void getName(char* target){
 }
 
 void cat_file(){
-	cpio_t* addr = (cpio_t*)0x20000000;//qemu: 0x8000000 ,raspi: 0x20000000
+	cpio_t* addr = (cpio_t*)cpio_addr;//qemu: 0x8000000 ,raspi: 0x20000000
 	if (strcmp((char*)(addr+1), "."))
-		printf("error no cpio (qemu: 0x8000000 ,raspi: 0x20000000)\n");
+		printf("error no cpio\n");
 	else {
 		char target[128];
 		getName(target);
@@ -92,9 +94,9 @@ void cat_file(){
 }
 
 void list_file(){
-	cpio_t* addr = (cpio_t*)0x20000000;//qemu: 0x8000000 ,raspi: 0x20000000
+	cpio_t* addr = (cpio_t*)cpio_addr;//qemu: 0x8000000 ,raspi: 0x20000000
 	if (strcmp((char*)(addr+1), "."))
-		printf("error no cpio (qemu: 0x8000000 ,raspi: 0x20000000)\n");
+		printf("error no cpio\n");
 	else
 		while(1){
 			unsigned long nsize, fsize;

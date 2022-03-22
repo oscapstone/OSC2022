@@ -7,8 +7,6 @@
 #include "devicetree.h"
 #include "utils.h"
 
-extern void *_fdt_ptr;
-
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
 #define PM_WDOG 0x3F100024
@@ -57,8 +55,8 @@ void exec_cat() {
 }
 
 void exec_lsfdt() {
-    if (fdt_traverse(_fdt_ptr, initramfs_callback))
-            printf("error\n");
+    if (fdt_traverse(initramfs_callback))
+            printf("flattened devicetree error\n");
 }
 
 void exec_testmem() {
