@@ -39,8 +39,9 @@ void timer_event_callback(timer_event_t * timer_event){
         set_core_timer_interrupt_by_tick(((timer_event_t*)timer_event_list->next)->interrupt_time);
     }else
     {
-        set_core_timer_interrupt(1<<29);  // disable timer interrupt (set a very big value)
+        set_core_timer_interrupt(10000);  // disable timer interrupt (set a very big value)
     }
+    
 }
 
 void two_second_alert(char* str)

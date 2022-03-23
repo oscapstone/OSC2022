@@ -27,6 +27,10 @@ void irq_router(unsigned long long x0){
     if(*IRQ_PENDING_1 & IRQ_PENDING_1_AUX_INT && *CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_GPU) // from aux && from GPU0 -> uart exception  
     {
         uart_interrupt_handler();
+        //uart_printf("dd");
+        //disable_interrupt();
+        //enable_interrupt();
+        //while(1);
     }else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ)  //from CNTPNS (core_timer)
     {
         core_timer_handler();
@@ -34,7 +38,7 @@ void irq_router(unsigned long long x0){
 }
 
 void invalid_exception_router(unsigned long long x0){
-    uart_printf("invalid exception\n : %d",x0);
+    uart_printf("invalid exception : %d\r\n",x0);
 }
 
 void enable_interrupt(){

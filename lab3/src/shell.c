@@ -70,7 +70,7 @@ void do_cmd(char* cmd)
         char* end_message = strchr(message,' ');
         *end_message = '\0';
         char* seconds = end_message+1;
-        add_timer(uart_async_puts,atoi(seconds),message);
+        add_timer(uart_puts,atoi(seconds),message);
 
     }else if(strcmp(cmd,"clockAlert")==0)
     {
