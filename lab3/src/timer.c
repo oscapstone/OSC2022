@@ -112,7 +112,7 @@ unsigned long long get_tick_plus_s(unsigned long long second){
 
 
 // set timer interrupt time to [expired_time] seconds after now (relatively)
-void set_core_timer_interrupt(unsigned int expired_time){
+void set_core_timer_interrupt(unsigned long long expired_time){
     __asm__ __volatile__(
         "mrs x1, cntfrq_el0\n\t"   //cntfrq_el0 -> relative time
         "mul x1, x1, %0\n\t"

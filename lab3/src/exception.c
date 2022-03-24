@@ -26,11 +26,12 @@ void irq_router(unsigned long long x0){
     //目前實測能從pending_1 AUX_INT, CORE0_INTERRUPT_SOURCE=GPU 辨別其他都是0(或再找)
     if(*IRQ_PENDING_1 & IRQ_PENDING_1_AUX_INT && *CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_GPU) // from aux && from GPU0 -> uart exception  
     {
-        uart_interrupt_handler();
-        //uart_printf("dd");
-        //disable_interrupt();
         //enable_interrupt();
-        //while(1);
+        uart_interrupt_handler();
+        //uart_printf("k");
+        //while(uart_getc()!='c');
+        //disable_interrupt();
+        //while(uart_getc()!='c');
     }else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ)  //from CNTPNS (core_timer)
     {
         core_timer_handler();
