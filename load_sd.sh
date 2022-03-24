@@ -1,4 +1,8 @@
-sudo mount -t vfat /dev/sdc1 sd-card-mount
-sudo rm -rf sd-card-mount/kernel8.img 
-sudo cp Lab1/kernel8.img sd-card-mount/kernel8.img
-sudo umount sd-card-mount
+IMG=$1 # kernel8.img
+SD_DEVICE=$2 #/dev/sdc1
+echo "loading [$IMG] to device [$SD_DEVICE]..."
+sudo mount -t vfat $SD_DEVICE sd-card-mount
+sudo rm -rf sd-card-mount/$1 
+sudo cp $1 sd-card-mount/$1
+#sudo umount sd-card-mount
+#echo "done"

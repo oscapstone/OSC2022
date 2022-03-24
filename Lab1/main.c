@@ -68,7 +68,7 @@ int compare(char const *a, char const *b){
     //for(int i = 0; i<size; i++){
     while(*a){
         if(*a != *b) return 0;
-        if(*a == '\0') return 1; /// ????????
+        if(*a == '\0' && *b == '\0') return 1; /// ????????
         a++; b++;
     }
     return 1; // 
