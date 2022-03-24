@@ -10,32 +10,32 @@
 make
 ```
 
-## How to Run
+## How to Run on QEMU
 
 ```bash
 make run
 ```
 
-## Files
+## How to Run on Rpi3
 
+- put files in SD card
+
+    - bootcode.bin
+
+    - fixup.dat
+
+    - start.elf
+
+    - bcm2710-rpi-3-b-plus.dtb
+
+    - bootloader.img
+
+    - config.txt
+
+    - initramfs.cpio
+
+```bash
+python3 send_kernel.py
+screen /dev/cu.usbserial-0001 115200
 ```
-lab1
- ┣ include
- ┃ ┣ command.h
- ┃ ┣ gpio.h
- ┃ ┣ mbox.h
- ┃ ┣ shell.h
- ┃ ┣ string.h
- ┃ ┗ uart.h
- ┣ src
- ┃ ┣ command.c
- ┃ ┣ main.c
- ┃ ┣ mbox.c
- ┃ ┣ shell.c
- ┃ ┣ string.c
- ┃ ┗ uart.c
- ┣ README.md
- ┣ linker.ld
- ┣ makefile
- ┗ start.s
- ```
+

@@ -1,28 +1,44 @@
-#ifndef UART_H
-#define UART_H
+#ifndef __UART_H__
+#define __UART_H__
+
 #include "gpio.h"
+#include "mmio.h"
 
-/* Auxilary mini UART registers */
-#define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
-#define AUX_MU_IO       ((volatile unsigned int*)(MMIO_BASE+0x00215040))
-#define AUX_MU_IER      ((volatile unsigned int*)(MMIO_BASE+0x00215044))
-#define AUX_MU_IIR      ((volatile unsigned int*)(MMIO_BASE+0x00215048))
-#define AUX_MU_LCR      ((volatile unsigned int*)(MMIO_BASE+0x0021504C))
-#define AUX_MU_MCR      ((volatile unsigned int*)(MMIO_BASE+0x00215050))
-#define AUX_MU_LSR      ((volatile unsigned int*)(MMIO_BASE+0x00215054))
-#define AUX_MU_MSR      ((volatile unsigned int*)(MMIO_BASE+0x00215058))
-#define AUX_MU_SCRATCH  ((volatile unsigned int*)(MMIO_BASE+0x0021505C))
-#define AUX_MU_CNTL     ((volatile unsigned int*)(MMIO_BASE+0x00215060))
-#define AUX_MU_STAT     ((volatile unsigned int*)(MMIO_BASE+0x00215064))
-#define AUX_MU_BAUD     ((volatile unsigned int*)(MMIO_BASE+0x00215068))
+#define AUX_BASE            (MMIO_BASE + 0x00215000)
+#define AUX_IRQ             (AUX_BASE + 0x0)
+#define AUX_ENABLES         (AUX_BASE + 0x4)
+#define AUX_MU_IO_REG       (AUX_BASE + 0x40)
+#define AUX_MU_IER_REG      (AUX_BASE + 0x44)
+#define AUX_MU_IIR_REG      (AUX_BASE + 0x48)
+#define AUX_MU_LCR_REG      (AUX_BASE + 0x4c)
+#define AUX_MU_MCR_REG      (AUX_BASE + 0x50)
+#define AUX_MU_LSR_REG      (AUX_BASE + 0x54)
+#define AUX_MU_MSR_REG      (AUX_BASE + 0x58)
+#define AUX_MU_SCRATCH      (AUX_BASE + 0x5c)
+#define AUX_MU_CNTL_REG     (AUX_BASE + 0x60)
+#define AUX_MU_STAT_REG     (AUX_BASE + 0x64)
+#define AUX_MU_BAUD_REG     (AUX_BASE + 0x68)
+#define AUX_SPI0_CNTL0_REG  (AUX_BASE + 0x80)
+#define AUX_SPI0_CNTL1_REG  (AUX_BASE + 0x84)
+#define AUX_SPI0_STAT_REG   (AUX_BASE + 0x88)
+#define AUX_SPI0_IO_REG     (AUX_BASE + 0x90)
+#define AUX_SPI0_PEEK_REG   (AUX_BASE + 0x94)
+#define AUX_SPI1_CNTL0_REG  (AUX_BASE + 0xc0)
+#define AUX_SPI1_CNTL1_REG  (AUX_BASE + 0xc4)
+#define AUX_SPI1_STAT_REG   (AUX_BASE + 0xc8)
+#define AUX_SPI1_IO_REG     (AUX_BASE + 0xd0)
+#define AUX_SPI1_PEEK_REG   (AUX_BASE + 0xd4)
 
-// Set baud rate and characteristics (115200 8N1) and map to GPIO
 void uart_init();
-// Send a character
-void uart_send(unsigned int c);
-// Receive a character
-char uart_getc();
-// Display a string
-void uart_puts(char *s);
+void uart_write(char c);
+void uart_read(char* buf, uint32_t size);
+void uart_flush();
+void uart_write_string(char* str);
+void uart_puth(uint32_t d);
+void uart_putc(char* buf, uint32_t size);
+void delay(uint32_t t) {
+    for (uint32_t i = 0; i < t; i++)
+        asm volatile("nop");
+}
 
 #endif
