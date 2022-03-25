@@ -96,10 +96,28 @@ void Cat(char buf[MAX_SIZE]){
   uart_puts("Filename: ");
   unsigned int size = readline(buf, MAX_SIZE);
   if (size == 0){
-    // uart_puts("\n");
     return;
   }
   cat(buf);
+}
+
+void Run(char buf[MAX_SIZE]){
+  uart_puts("Filename: ");
+  unsigned int size = readline(buf, MAX_SIZE);
+  if (size == 0){
+    return;
+  }
+  unsigned long fileDataAddr = findDataAddr(buf);
+  uitohex(buf, (unsigned int)fileDataAddr);
+  if(!fileDataAddr){
+    uart_puts("[x] Failed to find file data address\n");
+    return;
+  }
+
+  uart_puts("[*] File data address: 0x");
+  uart_puts(buf);
+  uart_puts("\n");
+  run(fileDataAddr);
 }
 
 /* Main Shell */
@@ -121,6 +139,7 @@ void ShellLoop(){
     else if(strcmp("bootimg", buf) == 0) Bootimg(buf);
     else if(strcmp("ls", buf) == 0) Ls();
     else if(strcmp("cat", buf) == 0) Cat(buf);
+    else if(strcmp("run", buf) == 0) Run(buf);
     else PrintUnknown(buf);
 
     uart_puts("# ");

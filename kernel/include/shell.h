@@ -28,5 +28,6 @@ void ShellLoop();
 
 void Ls();
 void Cat(char [MAX_SIZE]);
+void Run(char [MAX_SIZE]);
 
 #endif
