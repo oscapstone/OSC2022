@@ -17,16 +17,13 @@ void lower_sync_handler() {
 
 void lower_iqr_handler() {
 	disable_interrupt();
-	asm volatile("mrs x0, cntfrq_el0	\n");
-	asm volatile("add x0, x0, x0		\n");
-	asm volatile("msr cntp_tval_el0, x0	\n");
-	unsigned long cntpct,cntfrq,tmp;
-	asm volatile("mrs %0, cntpct_el0	\n":"=r"(cntpct):);
-	asm volatile("mrs %0, cntfrq_el0	\n":"=r"(cntfrq):);
-	tmp=cntpct * 10 / cntfrq;
+	unsigned long cntpct = read_sysreg(cntpct_el0);
+	unsigned long cntfrq = read_sysreg(cntfrq_el0);
+	unsigned long tmp = cntpct * 10 / cntfrq;
 	uart_printf("--------------------\n");
 	uart_printf("Time Elapsed: %d.%ds\n", tmp/10, tmp%10);
 	uart_printf("--------------------\n");
+	write_sysreg(cntp_tval_el0, cntfrq << 1);
 	enable_interrupt();
 }
 
@@ -52,13 +49,12 @@ void error_handler() {
 }
 
 void dumpState() {
-	unsigned long esr,elr,spsr;
-	asm volatile("mrs %0, esr_el1	\n":"=r"(esr):);
-	asm volatile("mrs %0, elr_el1	\n":"=r"(elr):);
-	asm volatile("mrs %0, spsr_el1	\n":"=r"(spsr):);
+	unsigned long esr = read_sysreg(esr_el1);
+	unsigned long elr = read_sysreg(elr_el1);
+	unsigned long spsr = read_sysreg(spsr_el1);
 	uart_printf("--------------------\n");
-	uart_printf("SPSR: 0x%x\n",spsr);
-	uart_printf("ELR: 0x%x\n",elr);
-	uart_printf("ESR: 0x%x\n",esr);
+	uart_printf("SPSR: 0x%x\n", spsr);
+	uart_printf("ELR: 0x%x\n", elr);
+	uart_printf("ESR: 0x%x\n", esr);
 	uart_printf("--------------------\n");
 }

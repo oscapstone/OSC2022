@@ -10,7 +10,7 @@ void core_timer_enable() {
     */
     write_sysreg(cntp_ctl_el0, 1); // enable
     unsigned long frq = read_sysreg(cntfrq_el0);
-    write_sysreg(cntp_tval_el0, frq * 2); // set expired time
+    write_sysreg(cntp_tval_el0, frq << 1); // set expired time
     *CORE0_TIMER_IRQ_CTRL = 2;            // unmask timer interrupt
 }
 
@@ -19,3 +19,6 @@ void core_timer_disable() {
     *CORE0_TIMER_IRQ_CTRL = 0;     // unmask timer interrupt
 }
 
+void add_timer(unsigned int time, timer_call_back call_back, timer_data *data) {
+
+}
