@@ -1,10 +1,10 @@
 #ifndef __CPIO__
 #define __CPIO__
 
-#define CPIO_ADDR  (char *)0x8000000; // qemu
-// #define CPIO_ADDR  (char *)0x20000000; // raspi3
+#define CPIO_ADDR  ((char *)0x8000000) // qemu
+// #define CPIO_ADDR  ((char *)0x20000000) // raspi3
 
-typedef struct cpio_header 
+typedef struct
 {
     // uses 8-byte	hexadecimal fields for all numbers
     char magic[6];    //determine whether this archive is written with little-endian or big-endian integers.
@@ -26,5 +26,6 @@ typedef struct cpio_header
 void cpio_list();
 void cpio_cat(char *filename);
 char * findFile(char *name);
+void load_program();
 
 #endif

@@ -54,11 +54,16 @@ void parse_command() {
     else if (compare_string(buffer, "ls") == 0) {
         cpio_list();
     }
-    else if (compare_string(buffer, "cat") == 0)
-    {
+    else if (compare_string(buffer, "cat") == 0) {
         uart_send_string("Filename: \n");
         get_command();
         cpio_cat(buffer);
+    }
+    else if (compare_string(buffer, "load") == 0) {
+        load_program();
+    }
+    else if (compare_string(buffer, "async_uart") == 0) {
+        test_uart_async();
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
@@ -67,6 +72,7 @@ void parse_command() {
         uart_send_string("info               : print device info\n");
         uart_send_string("ls                 : print files in rootfs\n");
         uart_send_string("cat                : print file content\n");
+        uart_send_string("load               : load user program\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");

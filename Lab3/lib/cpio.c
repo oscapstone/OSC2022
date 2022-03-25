@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "shell.h"
 #include "cpio.h"
+#include "timer.h"
 
 void cpio_list() {
     /*
@@ -60,6 +61,36 @@ void cpio_cat(char *filename) {
             uart_send(file_content[i]); // print the file content
         }
         uart_send_string("\r\n");
+    }
+    else {
+        uart_send_string("File not found!\n");
+    }
+}
+
+void load_program() {
+    char *target = findFile("user.img");
+    if (target) {
+        cpio_header *header = (cpio_header *)target;
+        unsigned long pathname_size = hexToDec(header->namesize);
+        unsigned long file_size = hexToDec(header->filesize);
+        unsigned long headerPathname_size = sizeof(cpio_header) + pathname_size;
+
+        align_4(&headerPathname_size); 
+        align_4(&file_size);           
+        
+        unsigned char *addr = (unsigned char *) 0x400000;
+        char *file_content = target + headerPathname_size;
+        for (unsigned int i = 0; i < file_size; i++) {
+            *addr = file_content[i]; // print the file content
+            addr++;
+        }
+
+        core_timer_enable();
+        asm volatile("mov x0, 0x340  \n");
+        asm volatile("msr spsr_el1, x0   \n");
+        asm volatile("msr elr_el1, %0    \n" ::"r"(0x400000));
+        asm volatile("msr sp_el0, %0    \n" ::"r"(0x400000 + 10000));
+        asm volatile("eret   \n");
     }
     else {
         uart_send_string("File not found!\n");
