@@ -7,7 +7,6 @@
 extern char* dtb_place;
 
 void main(char * arg){
-
   dtb_place = arg;
   uart_init();
 
@@ -15,6 +14,6 @@ void main(char * arg){
 
   printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
-  
-  shell();
+  char input[20] = "";
+  shell(input);
 }
