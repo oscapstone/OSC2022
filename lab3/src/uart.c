@@ -2,20 +2,7 @@
 #include "uart.h"
 #include "sprintf.h"
 #include "registers.h"
-
-/* Auxilary mini UART registers */
-#define AUX_ENABLE ((volatile unsigned int *)(MMIO_BASE + 0x00215004))
-#define AUX_MU_IO ((volatile unsigned int *)(MMIO_BASE + 0x00215040))
-#define AUX_MU_IER ((volatile unsigned int *)(MMIO_BASE + 0x00215044))
-#define AUX_MU_IIR ((volatile unsigned int *)(MMIO_BASE + 0x00215048))
-#define AUX_MU_LCR ((volatile unsigned int *)(MMIO_BASE + 0x0021504C))
-#define AUX_MU_MCR ((volatile unsigned int *)(MMIO_BASE + 0x00215050))
-#define AUX_MU_LSR ((volatile unsigned int *)(MMIO_BASE + 0x00215054))
-#define AUX_MU_MSR ((volatile unsigned int *)(MMIO_BASE + 0x00215058))
-#define AUX_MU_SCRATCH ((volatile unsigned int *)(MMIO_BASE + 0x0021505C))
-#define AUX_MU_CNTL ((volatile unsigned int *)(MMIO_BASE + 0x00215060))
-#define AUX_MU_STAT ((volatile unsigned int *)(MMIO_BASE + 0x00215064))
-#define AUX_MU_BAUD ((volatile unsigned int *)(MMIO_BASE + 0x00215068))
+#include "exception.h"
 
 // get address from linker
 extern volatile unsigned char _end;
@@ -282,53 +269,38 @@ int uart_async_printf(char *fmt, ...)
     return count;
 }
 
-//https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf p13
-/*
- AUX_MU_IIR
- on read bits[2:1] :
- 00 : No interrupts
- 01 : Transmit holding register empty
- 10 : Receiver holds valid byte
- 11: <Not possible> 
-*/
-
-// buffer read, write
-void uart_interrupt_handler()
+void uart_interrupt_r_handler()
 {
+    //read buffer full
+    if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx)
+    {
+        disable_mini_uart_r_interrupt(); //disable read interrupt when read buffer full
+        return;
+    }
+    uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
+    if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
+        uart_rx_buffer_widx = 0;
 
-    if (*AUX_MU_IIR & (0b01 << 1)) //can write
+    enable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> unmask device line
+}
+
+void uart_interrupt_w_handler() //can write
+{
+    // buffer empty
+    if (uart_tx_buffer_ridx == uart_tx_buffer_widx)
     {
-        // buffer empty
-        if (uart_tx_buffer_ridx == uart_tx_buffer_widx)
-        {
-            disable_mini_uart_w_interrupt(); // disable w_interrupt to prevent interruption without any async output
-            return;
-        }
-        uart_putc(uart_tx_buffer[uart_tx_buffer_ridx++]);
-        if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
-            uart_tx_buffer_ridx = 0; // cycle pointer
+        disable_mini_uart_w_interrupt(); // disable w_interrupt to prevent interruption without any async output
+        return;
     }
-    else if (*AUX_MU_IIR & (0b10 << 1)) //can read
-    {
-        //read buffer full
-        if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx)
-        {
-            disable_mini_uart_r_interrupt(); //disable read interrupt when read buffer full
-            return;
-        }
-        uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
-        if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
-            uart_rx_buffer_widx = 0;
-    }
-    else
-    {
-        uart_printf("uart_interrupt_handler error!!\n");
-    }
+    uart_putc(uart_tx_buffer[uart_tx_buffer_ridx++]);
+    if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
+        uart_tx_buffer_ridx = 0; // cycle pointer
+
+    enable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> unmask device line
 }
 
 void uart_async_putc(char c)
 {
-
     // full buffer wait
     while ((uart_tx_buffer_widx + 1) % MAX_BUF_SIZE == uart_tx_buffer_ridx)
     {
@@ -336,32 +308,36 @@ void uart_async_putc(char c)
         enable_mini_uart_w_interrupt();
     }
 
+    
     // critical section
-    disable_mini_uart_w_interrupt();
+    disable_interrupt();
     uart_tx_buffer[uart_tx_buffer_widx++] = c;
     if (uart_tx_buffer_widx >= MAX_BUF_SIZE)
         uart_tx_buffer_widx = 0; // cycle pointer
 
     // start asynchronous transfer
+    enable_interrupt();
+    
+    // enable interrupt to transfer
     enable_mini_uart_w_interrupt();
 }
 
 char uart_async_getc()
 {
-
+    enable_mini_uart_r_interrupt();
     // while buffer empty
     // enable read interrupt to get some input into buffer
     while (uart_rx_buffer_ridx == uart_rx_buffer_widx)
         enable_mini_uart_r_interrupt();
 
     // critical section
-    disable_mini_uart_r_interrupt();
+    disable_interrupt();
     char r = uart_rx_buffer[uart_rx_buffer_ridx++];
 
     if (uart_rx_buffer_ridx >= MAX_BUF_SIZE)
         uart_rx_buffer_ridx = 0;
 
-    enable_mini_uart_r_interrupt();
+    enable_interrupt();
 
     return r;
 }
@@ -397,4 +373,14 @@ void disable_mini_uart_r_interrupt()
 void disable_mini_uart_w_interrupt()
 {
     *AUX_MU_IER &= ~(2);
+}
+
+int mini_uart_r_interrupt_is_enable()
+{
+    return *AUX_MU_IER & 1;
+}
+
+int mini_uart_w_interrupt_is_enable()
+{
+    return *AUX_MU_IER & 2;
 }

@@ -6,6 +6,7 @@
 #include "dtb.h"
 #include "cpio.h"
 #include "exception.h"
+#include "task.h"
 
 void init_cpio_default_place();
 
@@ -18,6 +19,7 @@ void main(char* dtb)
 
     //cannot use original input series after interrupt start (input is going to the buffer), use async input instead.
     //output series are not affected. (order is affected)
+    task_list_init();
     enable_mini_uart_interrupt();
     enable_interrupt();  // enable interrupt in EL1 -> EL1
 

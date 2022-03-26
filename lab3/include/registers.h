@@ -9,10 +9,4 @@
 #define STR(x) #x
 #define XSTR(s) STR(s)
 
-/*
-//https://github.com/HexRabbit/osc2021/blob/main/lab4/include/sysreg.h
-#define write_statereg(r, __val) ({                  \
-	asm volatile("msr " #r ", %0" :: "r" (__val)); \
-})*/
-
 #endif

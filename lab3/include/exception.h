@@ -33,6 +33,6 @@ void sync_64_router();
 void irq_router();
 void invalid_exception_router();
 void enable_interrupt();
-void disble_interrupt();
+void disable_interrupt();
 
 #endif

@@ -19,7 +19,6 @@ void shell()
         uart_async_gets(cmd);
         do_cmd(cmd);
     }
-    uart_printf("QQ");
 }
 
 void do_cmd(char *cmd)
@@ -88,12 +87,12 @@ void print_system_messages()
 {
     unsigned int board_revision;
     get_board_revision(&board_revision);
-    uart_async_printf("Board revision is : 0x%x\r\n", board_revision);
+    uart_printf("Board revision is : 0x%x\r\n", board_revision);
 
     unsigned int arm_mem_base_addr;
     unsigned int arm_mem_size;
 
     get_arm_memory_info(&arm_mem_base_addr, &arm_mem_size);
-    uart_async_printf("ARM memory base address in bytes : 0x%x\r\n", arm_mem_base_addr);
-    uart_async_printf("ARM memory size in bytes : 0x%x\r\n", arm_mem_size);
+    uart_printf("ARM memory base address in bytes : 0x%x\r\n", arm_mem_base_addr);
+    uart_printf("ARM memory size in bytes : 0x%x\r\n", arm_mem_size);
 }

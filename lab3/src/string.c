@@ -1,5 +1,6 @@
 #include "string.h"
 #include <stddef.h>
+#include "uart.h"
 
 int strcmp (const char *p1, const char *p2)
 {
@@ -79,7 +80,9 @@ char* memcpy (void *dest, const void *src, unsigned long long len)
   char *d = dest;
   const char *s = src;
   while (len--)
+  {
     *d++ = *s++;
+  }
   return dest;
 }
 
