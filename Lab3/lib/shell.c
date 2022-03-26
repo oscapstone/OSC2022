@@ -5,6 +5,8 @@
 #include "peripherals/mail_box.h"
 #include "mail_box.h"
 #include "cpio.h"
+#include "timer.h"
+
 
 char buffer[MAX_BUFFER_SIZE];
 
@@ -65,6 +67,9 @@ void parse_command() {
     else if (compare_string(buffer, "async_uart") == 0) {
         test_uart_async();
     }
+    else if (compare_string(buffer, "test_timer") == 0) {
+        test_timer();
+    }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
         uart_send_string("hello              : print Hello World!\n");
@@ -73,6 +78,7 @@ void parse_command() {
         uart_send_string("ls                 : print files in rootfs\n");
         uart_send_string("cat                : print file content\n");
         uart_send_string("load               : load user program\n");
+        uart_send_string("async_uart         : test async uart\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");

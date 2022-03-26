@@ -17,13 +17,7 @@ void lower_sync_handler() {
 
 void lower_iqr_handler() {
 	disable_interrupt();
-	unsigned long cntpct = read_sysreg(cntpct_el0);
-	unsigned long cntfrq = read_sysreg(cntfrq_el0);
-	unsigned long tmp = cntpct * 10 / cntfrq;
-	uart_printf("--------------------\n");
-	uart_printf("Time Elapsed: %d.%ds\n", tmp/10, tmp%10);
-	uart_printf("--------------------\n");
-	write_sysreg(cntp_tval_el0, cntfrq << 1);
+	pop_timer();
 	enable_interrupt();
 }
 
@@ -35,15 +29,16 @@ void curr_sync_handler() {
 
 void curr_iqr_handler() {
 	disable_interrupt();
-    unsigned int uart = (*IRQ_PENDING_1 & AUX_IRQ);
-    if (uart)
+    if (*IRQ_PENDING_1 & AUX_IRQ)
 		uart_handler();
+	else
+		pop_timer();
     enable_interrupt();
 }
 
 void error_handler() {
 	disable_interrupt();
-	uart_printf("[ERROR] unknown exception...\n");
+	uart_send_string("[ERROR] unknown exception...\n");
 	dumpState();
 	while(1){}
 }

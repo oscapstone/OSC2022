@@ -4,6 +4,9 @@
 #include "shell.h"
 #include "cpio.h"
 #include "timer.h"
+#include "sysreg.h"
+#include <stddef.h>
+
 
 void cpio_list() {
     /*
@@ -85,6 +88,7 @@ void load_program() {
             addr++;
         }
 
+        add_timer(read_sysreg(cntfrq_el0) << 1, show_time_elapsed, NULL);
         core_timer_enable();
         asm volatile("mov x0, 0x340  \n");
         asm volatile("msr spsr_el1, x0   \n");
