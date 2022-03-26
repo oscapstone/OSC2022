@@ -65,6 +65,55 @@ void cat_cpio(cpio_t* addr, char* target){
 	}
 }
 
+void load_cpio(cpio_t* addr, char* target){
+	while(1){
+		unsigned long nsize, fsize;
+		nsize=strtoi(addr->c_namesize);
+		fsize=strtoi(addr->c_filesize);
+
+		// total size of the fixed header plus pathname is a multiple of four
+		if((sizeof(cpio_t) + nsize) & 3)
+			nsize += 4 - ((sizeof(cpio_t) + nsize) & 3);
+		if(fsize & 3)
+			fsize += 4 - (fsize & 3);
+
+		// check filename and data
+		char* filename = (char*)(addr+1);
+		char* data = filename + nsize;
+		if(strcmp(filename,"TRAILER!!!") == 0) {
+			printf("load: %s: No such file or directory\n", target);
+			break;
+		}
+		if(strcmp(filename,target) == 0) {
+			char *load_addr = (char*)0x7000000;
+			for(int i=0; i<fsize; i++){
+				load_addr[i] = data[i];
+			}
+			// jump to the new kernel.
+			// asm volatile("mov x0, 0x3c0  \n"); //disable core timer interrupt (11 1100 0000)
+			asm volatile("mov x0, 0x340		\n"); // enable core timer interrupt (11 0100 0000)
+            asm volatile("msr spsr_el1, x0  \n");
+            asm volatile("msr elr_el1, %0   \n" ::"r"(0x7000000));
+            asm volatile("msr sp_el0, %0    \n" ::"r"(0x7000000));
+
+			// enable the core timer’s interrupt
+			asm volatile("mov x0, 1				\n");
+			asm volatile("msr cntp_ctl_el0, x0	\n"); // enable
+			asm volatile("mrs x0, cntfrq_el0	\n");
+			asm volatile("add x0, x0, x0		\n");
+			asm volatile("msr cntp_tval_el0, x0	\n"); // set expired time
+			asm volatile("mov x0, 2				\n");
+			asm volatile("ldr x1, =0x40000040	\n"); // CORE0_TIMER_IRQ_CTRL
+			asm volatile("str w0, [x1]			\n"); // unmask timer interrupt
+
+            asm volatile("eret              \n");
+
+			break;
+		}
+		addr=(cpio_t*)(data+fsize);
+	}
+}
+
 void getName(char* target){
 	uart_puts("Filename: ");
 	int buffer_counter = 0;
@@ -121,4 +170,16 @@ void list_file(){
 
 			addr=(cpio_t*)(data+fsize);
 		}
+}
+
+void load_file(){
+	cpio_t* addr = (cpio_t*)cpio_addr;//qemu: 0x8000000 ,raspi: 0x20000000
+	if (strcmp((char*)(addr+1), "."))
+		printf("error no cpio\n");
+	else {
+		char target[128];
+		getName(target);
+
+		load_cpio(addr,target);
+	}
 }

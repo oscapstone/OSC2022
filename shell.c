@@ -28,6 +28,13 @@ void shell() {
     char input_char;
     char buffer[MAX_BUFFER_LEN];
 
+    int el;
+    asm volatile("mrs x0, CurrentEL \n");
+    asm volatile("lsr x0, x0, #2	\n");
+    asm volatile("mov %0, x0	\n":"=r"(el):);
+	printf("Exception level: %d \n", el);
+    
+
     parse_command("mbox_board_revision");
     parse_command("mbox_arm_memory");
     // new line head

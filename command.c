@@ -54,6 +54,10 @@ void exec_cat() {
     cat_file();
 }
 
+void exec_load() {
+    load_file();
+}
+
 void exec_lsfdt() {
     if (fdt_traverse(initramfs_callback))
             printf("flattened devicetree error\n");
@@ -134,6 +138,8 @@ void parse_command(char* command_string) {
         exec_ls();
     else if (!strcmp(command_string, "cat"))
         exec_cat();
+    else if (!strcmp(command_string, "load"))
+        load_file();
     else if (!strcmp(command_string, "testmem"))
         exec_testmem();
     else if (!strcmp(command_string, "checkmem"))
