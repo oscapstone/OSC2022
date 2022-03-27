@@ -23,20 +23,23 @@
 #
 #
 
-SRCS = $(wildcard *.c)
-OBJS = $(SRCS:.c=.o)
+C_SRCS = $(wildcard *.c)
+S_SRCS = $(wildcard *.S)
+OBJS = $(C_SRCS:.c=_c.o)
+OBJS += $(S_SRCS:.S=_s.o)
+
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles -fno-stack-protector
 
 all: clean kernel8.img
 
-%.o: %.S
+%_s.o: %.S
 	aarch64-elf-gcc $(CFLAGS) -c $< -o $@
 
-%.o: %.c
+%_c.o: %.c
 	aarch64-elf-gcc $(CFLAGS) -c $< -o $@
 
-kernel8.img: start.o utils.o $(OBJS)
-	aarch64-elf-ld -nostdlib -nostartfiles start.o utils.o $(OBJS) -T link.ld -o kernel8.elf
+kernel8.img: $(OBJS)
+	aarch64-elf-ld -nostdlib -nostartfiles $(OBJS) -T link.ld -o kernel8.elf
 	aarch64-elf-objcopy -O binary kernel8.elf ../kernel8.img
 
 clean:
