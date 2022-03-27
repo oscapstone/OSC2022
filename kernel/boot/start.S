@@ -13,9 +13,10 @@ _start:
 
 // cpu id == 0
 // Set stack to start below the .text section
-2:  adr     x2, exception_vector_table
-    msr     vbar_el1, x2
-    bl      _from_el2_to_el1
+2:  bl      set_exception_vector_table
+    bl      from_el2_to_el1
+    
+    // bl      core_timer_handler
 
     ldr     x1, =_start
     mov     sp, x1
@@ -31,7 +32,8 @@ _start:
     cbnz    w2, 4b
 
 // Run main()
-5:  mov     x0, x10
+5:  bl      core_timer_enable
+    mov     x0, x10
     bl      main
     b       1b 
 
@@ -83,7 +85,6 @@ exception_handler:
     mrs     x1, esr_el1
     mrs     x2, elr_el1
     mrs     x3, spsr_el1
-    mrs     x4, far_el1
     bl      exception_entry
     load_all
     eret
@@ -91,65 +92,86 @@ exception_handler:
 
 .align 11 // vector table should be aligned to 0x800
 exception_vector_table:
-    mov     x5, #0
+    mov     x4, #0
     b exception_handler // branch to a handler function.
     .align 7 // entry size is 0x80, .align will pad 0
-    mov     x5, #1
+    mov     x4, #1
     b exception_handler
     .align 7
-    mov     x5, #2
+    mov     x4, #2
     b exception_handler
     .align 7
-    mov     x5, #3
-    b exception_handler
-    .align 7
-
-    mov     x5, #0
-    b exception_handler
-    .align 7
-    mov     x5, #1
-    b exception_handler
-    .align 7
-    mov     x5, #2
-    b exception_handler
-    .align 7
-    mov     x5, #3
+    mov     x4, #3
     b exception_handler
     .align 7
 
-    mov     x5, #0
+    mov     x4, #0
     b exception_handler
     .align 7
-    mov     x5, #1
+    mov     x4, #1
     b exception_handler
     .align 7
-    mov     x5, #2
+    mov     x4, #2
     b exception_handler
     .align 7
-    mov     x5, #3
-    b exception_handler
-    .align 7
-
-    mov     x5, #0
-    b exception_handler
-    .align 7
-    mov     x5, #1
-    b exception_handler
-    .align 7
-    mov     x5, #2
-    b exception_handler
-    .align 7
-    mov     x5, #3
+    mov     x4, #3
     b exception_handler
     .align 7
 
+    mov     x4, #0
+    b exception_handler
+    .align 7
+    mov     x4, #1
+    b exception_handler
+    .align 7
+    mov     x4, #2
+    b exception_handler
+    .align 7
+    mov     x4, #3
+    b exception_handler
+    .align 7
 
-_from_el2_to_el1:
+    mov     x4, #0
+    b exception_handler
+    .align 7
+    mov     x4, #1
+    b exception_handler
+    .align 7
+    mov     x4, #2
+    b exception_handler
+    .align 7
+    mov     x4, #3
+    b exception_handler
+    .align 7
+
+set_exception_vector_table:
+    adr x0, exception_vector_table
+    msr vbar_el1, x0
+    ret
+
+from_el2_to_el1:
     mov x0, (1 << 31) // EL1 uses aarch64
     msr hcr_el2, x0
     mov x0, 0x3c5 // EL1h (SPSel = 1) with interrupt disabled
     msr spsr_el2, x0
     msr elr_el2, lr
     eret // return to EL1
+
+#define CORE0_TIMER_IRQ_CTRL 0x40000040
+core_timer_enable:
+    mov x0, 1
+    msr cntp_ctl_el0, x0 // enable
+    mrs x0, cntfrq_el0
+    msr cntp_tval_el0, x0 // set expired time
+    mov x0, 2
+    ldr x1, =CORE0_TIMER_IRQ_CTRL
+    str x0, [x1] // unmask timer interrupt
+    ret
+
+.global core_timer_handler
+core_timer_handler:
+    mrs x0, cntfrq_el0
+    msr cntp_tval_el0, x0
+    ret
 
 

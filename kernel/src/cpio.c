@@ -74,7 +74,7 @@ unsigned long findDataAddr(char *thefilename) {
 void run(unsigned long runAddr){
     unsigned long *user_stack = (unsigned long*)simple_malloc(0x1000);
     asm volatile(
-        "mov x0, 0x3c0\n\t"
+        "mov x0, 0x0\n\t"
         "msr spsr_el1, x0\n\t"
         "msr elr_el1, %0\n\t"
         "msr sp_el0, %1\n\t"

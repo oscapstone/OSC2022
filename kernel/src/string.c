@@ -74,7 +74,7 @@ void reverse_string(char buf[MAX_SIZE]){
   }
 }
 
-/* int to char */
+/* int to string */
 void itoa(char buf[MAX_SIZE], int num){
   int i = 0;
   int sign = 0;
@@ -86,6 +86,16 @@ void itoa(char buf[MAX_SIZE], int num){
     buf[i++] = num % 10 + '0';
   }while((num /= 10) > 0);
   if(sign) buf[i++] = '-';
+  buf[i] = '\0';
+  reverse_string(buf);
+}
+
+/* uint to string */
+void uitoa(char buf[MAX_SIZE], int num){
+  unsigned int i = 0;
+  do{
+    buf[i++] = num % 10 + '0';
+  }while((num /= 10) > 0);
   buf[i] = '\0';
   reverse_string(buf);
 }

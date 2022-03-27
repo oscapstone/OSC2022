@@ -124,7 +124,12 @@ void Run(char buf[MAX_SIZE]){
 void ShellLoop(){
   char buf[MAX_SIZE];
   
+  // unsigned long long timer = 0;
+  // unsigned long long freq = 0;
+
+
   while(1){
+
     memset(buf, '\0', MAX_SIZE);
     unsigned int size = readline(buf, sizeof(buf));
     if (size == 0){
@@ -141,6 +146,17 @@ void ShellLoop(){
     else if(strcmp("cat", buf) == 0) Cat(buf);
     else if(strcmp("run", buf) == 0) Run(buf);
     else PrintUnknown(buf);
+
+    // asm volatile(
+    //   "mrs %0, cntpct_el0\n\t"
+    //   "mrs %1, cntfrq_el0\n\t"
+    //   :"=r"(timer), "=r"(freq)
+    // );
+
+    // uitoa(buf, timer/freq);
+    // uart_puts("[*] Time: ");
+    // uart_puts(buf);
+    // uart_puts("\n");
 
     uart_puts("# ");
   }
