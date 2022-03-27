@@ -15,6 +15,8 @@
 #define AUX_MU_CNTL     ((volatile unsigned int*)(AUX_BASE+0x60))
 #define AUX_MU_STAT     ((volatile unsigned int*)(AUX_BASE+0x64))
 #define AUX_MU_BAUD     ((volatile unsigned int*)(AUX_BASE+0x68))
+#define ENABLE_IRQS_1   ((volatile unsigned int*)(MMIO_BASE+0x0000B210))
+
 
 /* Display a char */
 void uart_init();

@@ -1,10 +1,11 @@
 #include <uart.h>
 #include <gpio.h>
+#include <irq.h>
 
 void uart_init(){
   *AUX_ENABLE     |= 1;   // Enable mini UART.
   *AUX_MU_CNTL    = 0;    // Disable transmitter and receiver during configuration.
-  *AUX_MU_IER     = 0;    // Disable interrupt because currently you don’t need interrupt.
+  *AUX_MU_IER     = 1;    // (Enable interrup)Disable interrupt because currently you don’t need interrupt.
   *AUX_MU_LCR     = 3;    // Set the data size to 8 bit.
   *AUX_MU_MCR     = 0;    // Don’t need auto flow control.
   *AUX_MU_BAUD    = 270;  // Set baud rate and characteristics (115200 8N1) and map to GPIO 
@@ -26,6 +27,9 @@ void uart_init(){
   for(reg = 0; reg > 150; reg--) {asm volatile("nop");}
   *GPPUDCLK0 = 0;                 // flush GPIO setup
   *AUX_MU_CNTL = 3;               // enable Tx, Rx
+
+  *ENABLE_IRQS_1 = 1 << 29;       // enable UART1 IRQ
+
 }
 
 /* Display a char */
