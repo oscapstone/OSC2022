@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "devicetree.h"
 #include "utils.h"
+#include "exception.h"
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -39,6 +40,7 @@ void exec_help() {
     uart_puts("ls\t: list all archives\n");
     uart_puts("cat\t: cat archive data\n");
     uart_puts("lsfdt\t: traverse fdt\n");
+    uart_puts("timeout\t: set timeout\n");
     uart_puts("reboot\t: reboot the device\n");
 }
 
@@ -61,6 +63,15 @@ void exec_load() {
 void exec_lsfdt() {
     if (fdt_traverse(initramfs_callback))
             printf("flattened devicetree error\n");
+}
+
+void exec_timeout() {
+	unsigned long timer;
+	timer = get_time10();
+	printf("executed time: %d.%ds\n", timer/10, timer%10);
+    printf("duration: 5\n");
+    set_time(5);
+    enable_timer_interrupt();
 }
 
 void exec_testmem() {
@@ -146,6 +157,8 @@ void parse_command(char* command_string) {
         exec_checkmem();
     else if (!strcmp(command_string, "lsfdt"))
         exec_lsfdt();
+    else if (!strcmp(command_string, "timeout"))
+        exec_timeout();    
     else if (!strcmp(command_string, "mbox_board_revision"))
         mbox_board_revision();
     else if (!strcmp(command_string, "mbox_arm_memory"))

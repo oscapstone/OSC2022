@@ -24,9 +24,9 @@ int parse(char input_char, int buffer_counter) {
 }
 
 void shell() {
-    int buffer_counter = 0;
-    char input_char;
-    char buffer[MAX_BUFFER_LEN];
+    // int buffer_counter = 0;
+    // char input_char;
+    // char buffer[MAX_BUFFER_LEN];
 
     int el;
     asm volatile("mrs x0, CurrentEL \n");
@@ -42,18 +42,18 @@ void shell() {
 
     // read input
     while (1) {
-        input_char = uart_getc();
+        // input_char = uart_getc();
 
-        buffer[buffer_counter] = input_char;
-        buffer_counter = parse(input_char, buffer_counter);
+        // buffer[buffer_counter] = input_char;
+        // buffer_counter = parse(input_char, buffer_counter);
 
-        if (input_char == '\n') {
-            // Enter
-            buffer[buffer_counter] = 0;
-            buffer_counter = 0;
+        // if (input_char == '\n') {
+        //     // Enter
+        //     buffer[buffer_counter] = 0;
+        //     buffer_counter = 0;
 
-            parse_command(buffer);
-            uart_puts("# ");
-        }
+        //     parse_command(buffer);
+        //     uart_puts("# ");
+        // }
     }
 }

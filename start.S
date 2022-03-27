@@ -113,7 +113,7 @@ exception_vector_table:
 	.align 7
 	b invalid_handler
 	.align 7
-	b invalid_handler
+	b current_irq_handler
 	.align 7
 	b invalid_handler
 	.align 7
@@ -154,5 +154,11 @@ lower_irq_handler:
 invalid_handler:
 	save_all
 	bl invalid_entry
+	load_all
+	eret
+
+current_irq_handler:
+	save_all
+	bl current_irq_entry
 	load_all
 	eret

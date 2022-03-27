@@ -4,6 +4,7 @@
 #include "uart.h"
 #include "utils.h"
 #include "shell.h"
+#include "exception.h"
 
 //Cpio New ASCII Format https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
 typedef struct{
@@ -93,18 +94,13 @@ void load_cpio(cpio_t* addr, char* target){
 			// asm volatile("mov x0, 0x3c0  \n"); //disable core timer interrupt (11 1100 0000)
 			asm volatile("mov x0, 0x340		\n"); // enable core timer interrupt (11 0100 0000)
             asm volatile("msr spsr_el1, x0  \n");
-            asm volatile("msr elr_el1, %0   \n" ::"r"(0x7000000));
-            asm volatile("msr sp_el0, %0    \n" ::"r"(0x7000000));
+            asm volatile("msr elr_el1, %0   \n" :: "r"(0x7000000));
+            asm volatile("msr sp_el0, %0    \n" :: "r"(0x7000000));
 
 			// enable the core timer’s interrupt
-			asm volatile("mov x0, 1				\n");
-			asm volatile("msr cntp_ctl_el0, x0	\n"); // enable
+			enable_timer_interrupt();
 			asm volatile("mrs x0, cntfrq_el0	\n");
-			asm volatile("add x0, x0, x0		\n");
 			asm volatile("msr cntp_tval_el0, x0	\n"); // set expired time
-			asm volatile("mov x0, 2				\n");
-			asm volatile("ldr x1, =0x40000040	\n"); // CORE0_TIMER_IRQ_CTRL
-			asm volatile("str w0, [x1]			\n"); // unmask timer interrupt
 
             asm volatile("eret              \n");
 
@@ -117,7 +113,7 @@ void load_cpio(cpio_t* addr, char* target){
 void getName(char* target){
 	uart_puts("Filename: ");
 	int buffer_counter = 0;
-
+	disable_uart_interrupt();
 	while (1) {
 		target[buffer_counter] = uart_getc();
 		buffer_counter = parse(target[buffer_counter], buffer_counter);
@@ -125,6 +121,7 @@ void getName(char* target){
 		if (target[buffer_counter] == '\n') {
 			// Enter
 			target[buffer_counter] = 0;
+			enable_uart_interrupt();
 			break;
 		}
 	}

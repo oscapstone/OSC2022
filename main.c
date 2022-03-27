@@ -1,6 +1,7 @@
 #include "uart.h"
 #include "devicetree.h"
 #include "shell.h"
+#include "exception.h"
 
 void main() {
     // set up serial console
@@ -12,6 +13,8 @@ void main() {
     // say hello
     // uart_puts("Hello World!\n");
 
+    enable_interrupt();
+    
     // start shell
     shell();
 }
