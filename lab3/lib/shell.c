@@ -5,6 +5,7 @@
 #include "mmio.h"
 #include "printf.h"
 #include "cpio.h"
+#include "timer.h"
 
 void shell(){
   char input[20] = "";
@@ -54,6 +55,8 @@ void shell(){
           cpio_cat(input+4);
         }else if((input[0] == 'e') && (input[1] == 'x') && (input[2] == 'e') && (input[3] == 'c') && (input[4] == 0x20)){
           cpio_exec(input+5);
+        }else if(!strcmp(input, "clock")){
+          core_timer_enable();
         }else{
           printf("Please use \"help\" to get information.\n\r");
         }

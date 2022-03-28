@@ -10,7 +10,9 @@ extern char* dtb_place;
 void main(char * arg){
   dtb_place = arg;
   uart_init();
-  core_timer_enable();
+  __asm__ __volatile__(
+    "msr daifclr, 0xf" // enable interrupt el1 -> el1
+  ); 
   fdt_traverse(initramfs_callback);
 
   printf("\n\r\n\rWelcome!!!\n\r");
