@@ -127,8 +127,8 @@ void async_uart_putc(unsigned int c){
 void uart_puts(char *s) {
   while(*s) {
       /* convert newline to carrige return + newline */
-      if(*s=='\n') async_uart_putc('\r');
-      async_uart_putc(*s++);
+      if(*s=='\n') uart_putc('\r');
+      uart_putc(*s++);
   }
 }
 

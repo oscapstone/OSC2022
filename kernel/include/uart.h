@@ -26,13 +26,17 @@ void uart_putc(unsigned int);
 
 /* Receive a character */
 char uart_getc();
-/* recv a new char in read buffer */
+/* Recv a new char in read buffer */
 void recv_interrupt_handler();
 /* Async receive a character */
 char async_uart_getc();
 
 /* Display a string */
 void uart_puts(char*);
+/* Transmit a character */
+void tran_interrupt_handler();
+/* Async send a character */
+void async_uart_putc(unsigned int);
 
 void uart_nbyte(char *, unsigned int);
 
