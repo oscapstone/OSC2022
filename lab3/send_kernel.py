@@ -22,7 +22,7 @@ def recv_and_print():
 device = '/dev/ttys005' if len(argv) == 1 else argv[1]
 print("[+]", device)
 baud_rate = 115200
-data = open('kernel.img', 'rb', buffering=0).read()
+data = open('kernel/kernel.img', 'rb', buffering=0).read()
 size = len(data)
 
 '''Start sending'''
