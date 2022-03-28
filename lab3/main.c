@@ -3,17 +3,17 @@
 #include "printf.h"
 #include "malloc.h"
 #include "dtb.h"
+#include "timer.h"
 
 extern char* dtb_place;
 
 void main(char * arg){
   dtb_place = arg;
   uart_init();
+  core_timer_enable();
+  fdt_traverse(initramfs_callback);
 
-  // fdt_traverse(initramfs_callback);
-
-  uart_puts("\n\r\n\rWelcome!!!\n\r");
+  printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
-  char input[20] = "";
-  shell(input);
+  shell();
 }

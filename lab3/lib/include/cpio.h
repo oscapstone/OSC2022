@@ -25,3 +25,4 @@ struct cpio_newc_header {
 
 void cpio_ls();
 void cpio_cat(char *str);
+void cpio_exec(char *str);

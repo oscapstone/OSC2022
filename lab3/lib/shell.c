@@ -52,6 +52,8 @@ void shell(){
           cpio_ls();
         }else if((input[0] == 'c') && (input[1] == 'a') && (input[2] == 't') && (input[3] == 0x20)){
           cpio_cat(input+4);
+        }else if((input[0] == 'e') && (input[1] == 'x') && (input[2] == 'e') && (input[3] == 'c') && (input[4] == 0x20)){
+          cpio_exec(input+5);
         }else{
           printf("Please use \"help\" to get information.\n\r");
         }
