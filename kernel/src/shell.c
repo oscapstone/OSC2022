@@ -126,7 +126,7 @@ void ShellLoop(){
   
   // unsigned long long timer = 0;
   // unsigned long long freq = 0;
-  while(1);
+  // while(1);
 
   while(1){
 

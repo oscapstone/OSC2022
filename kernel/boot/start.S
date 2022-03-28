@@ -168,10 +168,5 @@ core_timer_enable:
     str x0, [x1] // unmask timer interrupt
     ret
 
-.global core_timer_handler
-core_timer_handler:
-    mrs x10, cntfrq_el0
-    msr cntp_tval_el0, x10
-    ret
 
 

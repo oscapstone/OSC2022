@@ -1,11 +1,20 @@
 #include <uart.h>
 #include <gpio.h>
 #include <irq.h>
+#include <string.h>
+
+char read_buf[MAX_SIZE];
+char write_buf[MAX_SIZE];
+unsigned int read_set_idx = 0;
+unsigned int read_get_idx = 0;
+unsigned int write_set_idx = 0;
+unsigned int write_get_idx = 0;
+
 
 void uart_init(){
   *AUX_ENABLE     |= 1;   // Enable mini UART.
   *AUX_MU_CNTL    = 0;    // Disable transmitter and receiver during configuration.
-  *AUX_MU_IER     = 1;    // (Enable interrup)Disable interrupt because currently you don’t need interrupt.
+  *AUX_MU_IER     = 0;    // Disable interrupt because currently you don’t need interrupt.
   *AUX_MU_LCR     = 3;    // Set the data size to 8 bit.
   *AUX_MU_MCR     = 0;    // Don’t need auto flow control.
   *AUX_MU_BAUD    = 270;  // Set baud rate and characteristics (115200 8N1) and map to GPIO 
@@ -32,19 +41,6 @@ void uart_init(){
 
 }
 
-/* Display a char */
-void uart_send(unsigned int c){
-  /* 
-  wait until we can send
-  0x20/bit_6 is set if the transmit FIFO is empty and the
-  transmitter is idle. (Finished shifting out the last bit).
-  */
-  while(!(*AUX_MU_LSR & 0x20)) {asm volatile("nop");}
-
-  /* write the character to the buffer */
-  *AUX_MU_IO = c;
-}
-
 /* Receive a character */
 char uart_getc(){
   /* 
@@ -63,20 +59,104 @@ char uart_getc(){
   return r == '\r'?'\n':r;
 }
 
+void recv_interrupt_handler(){
+  /* buffer is full, discard the new char */
+  if((read_set_idx + 1) % MAX_SIZE == read_get_idx) return;
+
+  read_buf[read_set_idx++] = uart_getc();
+  read_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+
+  /* enable receive interrupt after set the new char */
+  enable_AUX_MU_IER_r(); 
+}
+
+char async_uart_getc(){
+  /* enable receive interrupt */
+  enable_AUX_MU_IER_r();
+
+  /* wait until something is in the read buffer (read_set_idx != read_get_idx) */
+  while(read_get_idx == read_set_idx) {asm volatile("nop");}
+
+  char r = read_buf[read_get_idx++]; /* read the char that set in read buffer already*/
+  read_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+
+  return r;
+}
+
+/* Display a char */
+void uart_putc(unsigned int c){
+  /* 
+  wait until we can send
+  0x20/bit_6 is set if the transmit FIFO is empty and the
+  transmitter is idle. (Finished shifting out the last bit).
+  */
+  while(!(*AUX_MU_LSR & 0x20)) {asm volatile("nop");}
+
+  /* write the character to the buffer */
+  *AUX_MU_IO = c;
+}
+
+void tran_interrupt_handler(){
+  if(write_get_idx == write_set_idx){
+    disable_AUX_MU_IER_w();
+    return;
+  } 
+
+  char c = write_buf[write_get_idx++];
+  uart_putc(c);
+  write_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+
+  enable_AUX_MU_IER_w();
+}
+
+void async_uart_putc(unsigned int c){
+  /* buffer is full, wait the printing char */
+  while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {
+    enable_AUX_MU_IER_w();
+  }
+
+  write_buf[write_set_idx++] = c;
+  write_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+
+  /* enable transmit interrupt after set the new char */
+  enable_AUX_MU_IER_w();
+}
+
+
 /* Display a string */
 void uart_puts(char *s) {
   while(*s) {
       /* convert newline to carrige return + newline */
-      if(*s=='\n') uart_send('\r');
-      uart_send(*s++);
+      if(*s=='\n') async_uart_putc('\r');
+      async_uart_putc(*s++);
   }
 }
 
 void uart_nbyte(char *s, unsigned int len) {
   while(len--) {
       /* convert newline to carrige return + newline */
-      if(*s=='\n') uart_send('\r');
-      uart_send(*s++);
+      if(*s=='\n') uart_putc('\r');
+      uart_putc(*s++);
   }
 }
 
+
+
+
+
+
+void enable_AUX_MU_IER_r(){
+  *AUX_MU_IER |= 1;
+}
+
+void enable_AUX_MU_IER_w(){
+  *AUX_MU_IER |= 2;
+}
+
+void disable_AUX_MU_IER_r(){
+  *AUX_MU_IER &= ~1;
+}
+
+void disable_AUX_MU_IER_w(){
+  *AUX_MU_IER &= ~2;
+}
