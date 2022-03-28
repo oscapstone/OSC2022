@@ -6,8 +6,8 @@ void irq_handler() {
 
     if (c0_int_src & SRC_CNTPNSIRQ_INT) {
         core_timer_handler();
-        async_printf("IRQ_PEND_1: 0x%lx" ENDL, mmio_read(IRQ_PEND_1));
-        async_printf("CORE0_IRQ_SRC: 0x%lx" ENDL, c0_int_src);
+        // async_printf("IRQ_PEND_1: 0x%lx" ENDL, mmio_read(IRQ_PEND_1));
+        // async_printf("CORE0_IRQ_SRC: 0x%lx" ENDL, c0_int_src);
     } else {
         uart_int_handler();
     }
