@@ -10,9 +10,9 @@ void main(char * arg){
   dtb_place = arg;
   uart_init();
 
-  fdt_traverse(initramfs_callback);
+  // fdt_traverse(initramfs_callback);
 
-  printf("\n\r\n\rWelcome!!!\n\r");
+  uart_puts("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
   char input[20] = "";
   shell(input);
