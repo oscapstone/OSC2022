@@ -31,6 +31,16 @@ set_exception_vector_table:
   bl      main
   b       1b
 
+.global from_el1_to_el0
+from_el1_to_el0:
+  mov x1,        xzr        // EL0t, all interrupts enabled, 0x3c0 for interrupts disabled
+  msr spsr_el1,  x1
+  // set elr_el1 to the user program’s address
+  msr elr_el1,   lr           // return address to the caller
+  // set the user program’s stack pointer to a proper position by setting sp_el0.
+  mov x1,        sp
+  msr sp_el0,    x1           // set stack of el0 as orinary stack pointer
+  eret                        // jump to user code (jump to elr_el1)
 
 from_el2_to_el1:
   mov x1, (0b11 << 20) // this fixes printf (printf use stdargs, which access register q0~q7, and those are SIMD registers)
@@ -44,7 +54,7 @@ from_el2_to_el1:
 
 // save general registers to stack
 .macro save_all
-  sub sp, sp, 32 * 12
+  sub sp, sp, 32 * 8
   stp x0, x1, [sp ,16 * 0]
   stp x2, x3, [sp ,16 * 1]
   stp x4, x5, [sp ,16 * 2]
@@ -61,17 +71,6 @@ from_el2_to_el1:
   stp x26, x27, [sp ,16 * 13]
   stp x28, x29, [sp ,16 * 14]
   str x30, [sp, 16 * 15]
-
-  //using for nested interrupt
-  mrs x0,  spsr_el1
-  str x0,  [sp, 16 * 16]
-  mrs x0,  elr_el1
-  str x0,  [sp, 16 * 17]
-  //mrs x0,  sp_el0
-  //str x0,  [sp, 16 * 18]
-  //mrs x0,  sp_el1
-  //str x0,  [sp, 16 * 19]
-  ldp x0, x1, [sp ,16 * 0]  // restore x0
 .endm
 
 // load general registers from stack
@@ -92,21 +91,9 @@ from_el2_to_el1:
   ldp x26, x27, [sp ,16 * 13]
   ldp x28, x29, [sp ,16 * 14]
   ldr x30, [sp, 16 * 15]
-
-  //using for nested interrupt
-  ldr x0, [sp, 16 * 16]
-  msr spsr_el1,x0
-  ldr x0,  [sp, 16 * 17]
-  msr elr_el1, x0
-  //ldr x0,  [sp, 16 * 18]
-  //msr sp_el0, x0
-  //ldr x0,  [sp, 16 * 19]
-  //msr sp_el1, x0
-
-  ldp x0, x1, [sp ,16 * 0]  // restore x0
-  
-  add sp, sp, 32 * 12
+  add sp, sp, 32 * 8
 .endm
+
 
 .macro    ventry    label
   .align    7
@@ -180,7 +167,7 @@ sync_el1h:
 irq_el1h:
   save_all
   mov x0,5
-  bl clock_alert
+  bl invalid_exception_router
   load_all
   eret
 fiq_invalid_el1h:
@@ -207,7 +194,7 @@ sync_el0_64:
 irq_el0_64:
   save_all
   mov x0,9
-  bl invalid_exception_router
+  bl irq_router
   load_all
   eret
 fiq_invalid_el0_64:

@@ -1,19 +1,5 @@
-#include "gpio.h"
-
-/* Auxilary mini UART registers */
-#define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
-#define AUX_MU_IO       ((volatile unsigned int*)(MMIO_BASE+0x00215040))
-#define AUX_MU_IER      ((volatile unsigned int*)(MMIO_BASE+0x00215044))
-#define AUX_MU_IIR      ((volatile unsigned int*)(MMIO_BASE+0x00215048))
-#define AUX_MU_LCR      ((volatile unsigned int*)(MMIO_BASE+0x0021504C))
-#define AUX_MU_MCR      ((volatile unsigned int*)(MMIO_BASE+0x00215050))
-#define AUX_MU_LSR      ((volatile unsigned int*)(MMIO_BASE+0x00215054))
-#define AUX_MU_MSR      ((volatile unsigned int*)(MMIO_BASE+0x00215058))
-#define AUX_MU_SCRATCH  ((volatile unsigned int*)(MMIO_BASE+0x0021505C))
-#define AUX_MU_CNTL     ((volatile unsigned int*)(MMIO_BASE+0x00215060))
-#define AUX_MU_STAT     ((volatile unsigned int*)(MMIO_BASE+0x00215064))
-#define AUX_MU_BAUD     ((volatile unsigned int*)(MMIO_BASE+0x00215068))
-
+#include "uart.h"
+#include "printf.h"
 
 void uart_init()
 {
@@ -39,7 +25,8 @@ void uart_init()
   *AUX_MU_CNTL = 0;
   *AUX_MU_LCR = 3;       // set 8 bits
   *AUX_MU_MCR = 0;
-  *AUX_MU_IER = 0;       // close interrupt
+  *AUX_MU_IER = 2;       // enalbe interrupt  // no use read interrupt so use 2, if want to enable read interrupt plz use 6
+  *IRQS1 |= 1 << 29;
   *AUX_MU_IIR = 0x06;    // disable interrupts
   *AUX_MU_BAUD = 270;    // 115200 baud, system clock freq = 250MHz
 
@@ -86,4 +73,70 @@ void uart_hex(unsigned int d) {
     n+=n>9?0x37:0x30;
     uart_send(n);
   }
+}
+
+char uart_tx_buffer[MAX_BUF_SIZE] = {};
+unsigned int uart_tx_buffer_widx = 0; //write index
+unsigned int uart_tx_buffer_ridx = 0; //read index
+char uart_rx_buffer[MAX_BUF_SIZE] = {};
+unsigned int uart_rx_buffer_widx = 0;
+unsigned int uart_rx_buffer_ridx = 0;
+
+void uart_interrupt_r_handler(){
+  if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx){
+    return;
+  }
+  uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
+  if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
+    uart_rx_buffer_widx = 0;
+  enable_uart_w_interrupt();
+}
+
+void uart_interrupt_w_handler() { //can write
+  if (uart_tx_buffer_ridx == uart_tx_buffer_widx){ // buffer empty
+    return;
+  }
+  // printf("%c", uart_tx_buffer[uart_tx_buffer_ridx]);
+  uart_send(uart_tx_buffer[uart_tx_buffer_ridx++]);
+  if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
+    uart_tx_buffer_ridx = 0; // cycle pointer
+  enable_uart_w_interrupt();
+}
+
+void async_uart_send(char c){
+  uart_tx_buffer[uart_tx_buffer_widx++] = c;
+  enable_uart_w_interrupt();
+  if (uart_tx_buffer_widx >= MAX_BUF_SIZE)
+    uart_tx_buffer_widx = 0;
+}
+
+void async_uart_puts(char *s){
+  while(*s) {
+    if(*s=='\n')
+      async_uart_send('\r');
+    async_uart_send(*s++);
+  }
+}
+
+char async_uart_getc(){
+  enable_uart_r_interrupt();
+  char r = uart_rx_buffer[uart_rx_buffer_ridx++];
+  if (uart_rx_buffer_ridx >= MAX_BUF_SIZE)
+    uart_rx_buffer_ridx = 0;
+  return r;
+
+}
+
+void enable_uart_r_interrupt(){
+  *AUX_MU_IER |= (1);  
+}
+void enable_uart_w_interrupt(){
+  *AUX_MU_IER |= (2);
+}
+
+void disable_uart_r_interrupt(){
+  *AUX_MU_IER &= ~(1);  
+}
+void disable_uart_w_interrupt(){
+  *AUX_MU_IER &= ~(2);  
 }

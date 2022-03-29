@@ -1,4 +1,7 @@
 #include "printf.h"
+#include "exception.h"
+#include "timer.h"
+#include "uart.h"
 
 void invalid_exception_router(unsigned long long x0){
   unsigned long long elr_el1, esr_el1, spsr_el1;
@@ -13,4 +16,18 @@ void invalid_exception_router(unsigned long long x0){
   printf("spsr_el1 : 0x%x\r\n", spsr_el1);
   printf("exception number: 0x%x\r\n",x0);
   while(1);
+}
+
+void irq_router(unsigned long long x0){
+  if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
+    clock_alert();
+  }else {
+    if (*AUX_MU_IIR & (0b01 << 1)) {  //can write
+      disable_uart_w_interrupt();
+      uart_interrupt_w_handler();
+    }else if (*AUX_MU_IIR & (0b10 << 1)) {  //can read
+      disable_uart_r_interrupt();
+      uart_interrupt_r_handler();
+    }
+  }
 }
