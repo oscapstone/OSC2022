@@ -60,7 +60,7 @@ char uart_getc(){
 }
 
 void recv_interrupt_handler(){
-  /* buffer is full, discard the new char */
+  /* read buffer is full, discard the new char */
   if((read_set_idx + 1) % MAX_SIZE == read_get_idx) return;
 
   read_buf[read_set_idx++] = uart_getc();
@@ -97,25 +97,22 @@ void uart_putc(unsigned int c){
 }
 
 void tran_interrupt_handler(){
-  if(write_get_idx == write_set_idx){
-    disable_AUX_MU_IER_w();
-    return;
-  } 
+  /* finished sending the last char */
+  if(write_get_idx == write_set_idx) return;
 
   char c = write_buf[write_get_idx++];
   uart_putc(c);
   write_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
 
+  /* enable transmit interrupt to expect print next char */
   enable_AUX_MU_IER_w();
 }
 
 void async_uart_putc(unsigned int c){
-  /* buffer is full, wait the printing char */
-  while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {
-    enable_AUX_MU_IER_w();
-  }
+  /* buffer is full, wait the sending char */
+  while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {asm volatile("nop");}
 
-  write_buf[write_set_idx++] = c;
+  write_buf[write_set_idx++] = (char)c;
   write_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
 
   /* enable transmit interrupt after set the new char */
@@ -125,11 +122,9 @@ void async_uart_putc(unsigned int c){
 
 /* Display a string */
 void uart_puts(char *s) {
-  while(*s) {
-      /* convert newline to carrige return + newline */
-      if(*s=='\n') uart_putc('\r');
-      uart_putc(*s++);
-  }
+  while(*s) async_uart_putc(*s++);
+  /* convert newline to carrige return + newline */
+  if(*(--s)=='\n') async_uart_putc('\r');
 }
 
 void uart_nbyte(char *s, unsigned int len) {
@@ -139,10 +134,6 @@ void uart_nbyte(char *s, unsigned int len) {
       uart_putc(*s++);
   }
 }
-
-
-
-
 
 
 void enable_AUX_MU_IER_r(){

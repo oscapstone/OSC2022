@@ -126,7 +126,10 @@ void ShellLoop(){
   
   // unsigned long long timer = 0;
   // unsigned long long freq = 0;
-  // while(1);
+  // while(1){
+  //   char c = async_uart_getc();
+  //   uart_puts("test\n");
+  // }
 
   while(1){
 

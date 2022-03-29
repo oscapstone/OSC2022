@@ -26,7 +26,7 @@ int readline(char buf[MAX_SIZE], int size){
     }
     /* otherwise, print and save the character */
     else{
-      uart_putc(c); // need to recv the echo back
+      async_uart_putc(c); // need to recv the echo back
       if( idx < size){
         buf[idx++] = c;
       }

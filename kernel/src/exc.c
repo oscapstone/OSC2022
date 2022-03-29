@@ -81,9 +81,9 @@ void GPU_interrupt(){
     // uart_puts(buf);
     // uart_puts("\n");
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
-        // disable_AUX_MU_IER_w();
+        disable_AUX_MU_IER_w();
         tran_interrupt_handler();
-        // uart_puts("[*] AUX_MU_IIR: Transmit holding register empty\n");
+        // uart_puto("[*] AUX_MU_IIR: Transmit holding register empty\n");
 
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
