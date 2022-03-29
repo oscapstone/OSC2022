@@ -26,8 +26,17 @@
 #define __UART_H__
 
 #include "mbox.h"
+#include "stddef.h"
 
-#define USE_UART0
+//#define USE_UART0
+#define READ_BUF_SIZE 64
+char read_buf[READ_BUF_SIZE];
+uint32_t read_buf_idx;
+
+#define WRITE_BUF_SIZE 128
+char write_buf[WRITE_BUF_SIZE];
+uint32_t write_buf_in;
+uint32_t write_buf_out;
 
 void uart_init();
 void uart_send(unsigned int c);
@@ -35,5 +44,7 @@ char uart_getc();
 void uart_puts(char *s);
 void uart_hex(unsigned int d);
 void uart_dec(int d);
+
+extern void cmd_handler();
 
 #endif
