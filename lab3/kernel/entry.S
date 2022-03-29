@@ -49,7 +49,7 @@ exception_handler:
 .global irq_handler
 irq_handler:
         save_all
-        bl core_timer_handler
+        bl c_irq_handler
         load_all
         eret
 

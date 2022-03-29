@@ -12,5 +12,5 @@ branch_to_address_in_el0:
         // Spsel 0b0000 = EL0t [3:0]
         msr spsr_el1, x2
         msr elr_el1, x0
-        mov sp, x1
+        msr sp_el0, x1
         eret

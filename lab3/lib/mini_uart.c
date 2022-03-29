@@ -1,18 +1,10 @@
 #include "mini_uart.h"
 
-#define AUX_ENABLE  ((volatile unsigned int *)(0x3F215004))
-#define AUX_MU_IO   ((volatile unsigned int *)(0x3F215040))
-#define AUX_MU_IER  ((volatile unsigned int *)(0x3F215044))
-#define AUX_MU_IIR  ((volatile unsigned int *)(0x3F215048))
-#define AUX_MU_LCR  ((volatile unsigned int *)(0x3F21504C))
-#define AUX_MU_MCR  ((volatile unsigned int *)(0x3F215050))
-#define AUX_MU_LSR  ((volatile unsigned int *)(0x3F215054))
-#define AUX_MU_CNTL ((volatile unsigned int *)(0x3F215060))
-#define AUX_MU_BAUD ((volatile unsigned int *)(0x3F215068))
-
 #define GPFSEL1 ((volatile unsigned int *)(0x3F200004))
 #define GPPUD ((volatile unsigned int *)(0x3F200094))
 #define GPPUDCLK0 ((volatile unsigned int *)(0x3F200098))
+
+#define ENABLE_IRQs1 ((volatile unsigned int *)(0x3F00B210))
 
 void mini_uart_init() {
   register volatile unsigned int rsel = *GPFSEL1;
@@ -32,13 +24,17 @@ void mini_uart_init() {
     
   *AUX_ENABLE |= 1;
   *AUX_MU_CNTL = 0;
-  *AUX_MU_IER = 0;
+  // *AUX_MU_IER = 0;
+  *AUX_MU_IER = 1; // enable receive interrupt (bit 1 is transmit interrupt)
   *AUX_MU_LCR = 3;
   *AUX_MU_MCR = 0;
   *AUX_MU_BAUD = 270;
   *AUX_MU_IIR = 6;
   *AUX_MU_CNTL = 3;
 
+  // enable uart irq
+  register volatile unsigned int eirqs1 = 1 << 29;
+  *ENABLE_IRQs1 = eirqs1;
 }
 
 void mini_uart_send(char c) {

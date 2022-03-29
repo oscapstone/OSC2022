@@ -4,6 +4,7 @@
 #include "cpio.h"
 #include "devtree.h"
 #include "user.h"
+#include "except.h"
 
 #define BUF_LEN 1024
 #define STR_LEN 256
@@ -102,6 +103,20 @@ void exe() {
   }
 }
 
+void test_async() {
+  static char buf[60];
+  while (1) {
+    uint32_t len = async_read(buf, 64);
+    if (strncmp(buf, "stop", len) == 0) break;
+    else {
+      async_print("recv ");
+      async_print(buf);
+      async_print("\n");
+    }
+  }
+  while (1) asm volatile("nop");
+}
+
 int kernel_main() {
   static char buf[BUF_LEN];
   mini_uart_init();
@@ -127,12 +142,15 @@ int kernel_main() {
       print("ls       : list all files in the initrd\n");
       print("cat      : print the content of a file\n");
       print("exe      : execute the program in EL0\n");
+      print("async    : test async uart io\n");
     } else if (strncmp(buf, "reboot", BUF_LEN) == 0) {
       print("reboot in 100 ticks\n");
       reset(100);
       while(1);
     } else if (strncmp(buf, "exe", BUF_LEN) == 0) {
       exe();
+    } else if (strncmp(buf, "async", BUF_LEN) == 0) {
+      branch_to_address_in_el0((uint64_t)test_async, 0x150000);
     } else {
       if (buf[0] != '\0') {
         print(buf);
