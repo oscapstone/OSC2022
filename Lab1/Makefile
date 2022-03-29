@@ -29,7 +29,7 @@ clean:
 	rm -f output/*
 
 run:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -S -serial null -serial stdio
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio
 
 pi: 
 	cp kernel8.img nctuos/kernel8.img
