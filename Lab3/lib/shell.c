@@ -79,6 +79,7 @@ void parse_command() {
         uart_send_string("cat                : print file content\n");
         uart_send_string("load               : load user program\n");
         uart_send_string("async_uart         : test async uart\n");
+        uart_send_string("test_timer         : test timer multiplexing\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");
