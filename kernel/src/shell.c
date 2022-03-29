@@ -5,6 +5,7 @@
 #include <reboot.h>
 #include <read.h>
 #include <cpio.h>
+#include <timer.h>
 
 /* print welcome message*/
 void PrintWelcome(){
@@ -120,6 +121,22 @@ void Run(char buf[MAX_SIZE]){
   run(fileDataAddr);
 }
 
+void SetTimeOut(char buf[MAX_SIZE]){
+  char *message = strchr(buf, ' ') + 1;
+  char *end_message = strchr(message, ' ');
+  *end_message = '\0';
+  int timeout = atoui(end_message + 1);
+  // add_timer(timeout_print, timeout, message);
+
+  uart_puts("message: ");
+  uart_puts(message);
+  uart_puts("\n");
+
+  uart_puts("Timeout: ");
+  uart_puts(end_message + 1);
+  uart_puts("\n");
+}
+
 /* Main Shell */
 void ShellLoop(){
   char buf[MAX_SIZE];
@@ -148,6 +165,7 @@ void ShellLoop(){
     else if(strcmp("ls", buf) == 0) Ls();
     else if(strcmp("cat", buf) == 0) Cat(buf);
     else if(strcmp("run", buf) == 0) Run(buf);
+    else if(strncmp("setTimeout", buf, strlen("setTimeout")) == 0) SetTimeOut(buf);
     else PrintUnknown(buf);
 
     // asm volatile(

@@ -32,8 +32,7 @@ _start:
     cbnz    w2, 4b
 
 // Run main()
-5:  bl      core_timer_enable
-    mov     x0, x10
+5:  mov     x0, x10
     bl      main
     b       1b 
 
@@ -152,11 +151,12 @@ set_exception_vector_table:
 from_el2_to_el1:
     mov x0, (1 << 31) // EL1 uses aarch64
     msr hcr_el2, x0
-    mov x0, 0x5 // EL1h (SPSel = 1) with interrupt disabled
+    mov x0, 0x3c5 // EL1h (SPSel = 1) with interrupt disabled
     msr spsr_el2, x0
     msr elr_el2, lr
     eret // return to EL1
 
+/* 
 #define CORE0_TIMER_IRQ_CTRL 0x40000040
 core_timer_enable:
     mov x0, 1
@@ -165,8 +165,8 @@ core_timer_enable:
     msr cntp_tval_el0, x0 // set expired time
     mov x0, 2
     ldr x1, =CORE0_TIMER_IRQ_CTRL
-    str x0, [x1] // unmask timer interrupt
+    str w0, [x1] // unmask timer interrupt
     ret
-
+*/
 
 

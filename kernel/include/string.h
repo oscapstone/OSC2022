@@ -27,6 +27,9 @@ void uitohex(char *, unsigned int);
 /* array to int */
 int atoi(const char *);
 
+/* array to uint */
+unsigned int atoui(const char *);
+
 /* hex string to unsigned int */
 unsigned int hextoui(const char *, unsigned int);
 
@@ -34,5 +37,6 @@ void memcpy(char *, const char *, unsigned int);
 void memset(char *, const char, unsigned int);
 void strcpy(char *, const char *);
 void strcat(char *, const char *);
+char *strchr(const char *, int);
 
 #endif 

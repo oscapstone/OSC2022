@@ -52,7 +52,7 @@ char uart_getc(){
   read. To do a non-destructive read of this overrun bit
   use the Mini Uart Extra Status register. 
   */
-  while(!(*AUX_MU_LSR & 0x01)) {asm volatile("nop");}
+  // while(!(*AUX_MU_LSR & 0x01)) {asm volatile("nop");}
   /* read it and return */
   char r = (char)(*AUX_MU_IO);
   /* convert carrige return to newline */
@@ -67,12 +67,12 @@ void recv_interrupt_handler(){
   read_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
 
   /* enable receive interrupt after set the new char */
-  enable_AUX_MU_IER_r(); 
+  // enable_AUX_MU_IER_r(); 
 }
 
 char async_uart_getc(){
   /* enable receive interrupt */
-  enable_AUX_MU_IER_r();
+  // enable_AUX_MU_IER_r();
 
   /* wait until something is in the read buffer (read_set_idx != read_get_idx) */
   while(read_get_idx == read_set_idx) {asm volatile("nop");}
@@ -90,7 +90,7 @@ void uart_putc(unsigned int c){
   0x20/bit_6 is set if the transmit FIFO is empty and the
   transmitter is idle. (Finished shifting out the last bit).
   */
-  while(!(*AUX_MU_LSR & 0x20)) {asm volatile("nop");}
+  // while(!(*AUX_MU_LSR & 0x20)) {asm volatile("nop");}
 
   /* write the character to the buffer */
   *AUX_MU_IO = c;
@@ -98,14 +98,17 @@ void uart_putc(unsigned int c){
 
 void tran_interrupt_handler(){
   /* finished sending the last char */
-  if(write_get_idx == write_set_idx) return;
+  if(write_get_idx == write_set_idx){
+    disable_AUX_MU_IER_w();
+    return;
+  } 
 
   char c = write_buf[write_get_idx++];
   uart_putc(c);
   write_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
 
   /* enable transmit interrupt to expect print next char */
-  enable_AUX_MU_IER_w();
+  // enable_AUX_MU_IER_w();
 }
 
 void async_uart_putc(unsigned int c){

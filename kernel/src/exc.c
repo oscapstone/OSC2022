@@ -81,37 +81,20 @@ void GPU_interrupt(){
     // uart_puts(buf);
     // uart_puts("\n");
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
-        disable_AUX_MU_IER_w();
+        
         tran_interrupt_handler();
         // uart_puto("[*] AUX_MU_IIR: Transmit holding register empty\n");
 
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
-        disable_AUX_MU_IER_r();
+        // disable_AUX_MU_IER_r();
         recv_interrupt_handler();
         // uart_puts("[*] AUX_MU_IIR: Receiver holds valid byte\n");
     }
     else{
         uart_puts("[*] AUX_MU_IIR: No interrupts\n");
     }
-    // while(!(*AUX_MU_LSR & 0x01)) {asm volatile("nop");}
-    /* read it and return */
-    // char r = (char)(*AUX_MU_IO);
-    // /* convert carrige return to newline */
-    // r == '\r'?'\n':r;
 
-//    char buf[10];
-    // uitohex(buf, *AUX_MU_IIR);
-    // uart_puts("[*] AUX_MU_IIR: 0x");
-    // uart_puts(buf);
-    // uart_puts("\n");
-    // if(*AUX_MU_IER & 0x01){
-    //     char r = (char)(*AUX_MU_IO);
-    //     r == '\r'?'\n':r;
-    // }
-
-  /* write the character to the buffer */
-    // *AUX_MU_IO = r;
 }
 
 void core_timer_handler(){

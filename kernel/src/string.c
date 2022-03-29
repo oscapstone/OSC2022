@@ -127,6 +127,15 @@ int atoi(const char buf[MAX_SIZE]){
   return num * sign;
 }
 
+/* array to uint */
+unsigned int atoui(const char buf[MAX_SIZE]){
+  unsigned int num = 0;
+  for(unsigned int i = 0; i < strlen(buf); i++){
+    num = num * 10 + (buf[i] - '0');
+  }
+  return num;
+}
+
 /* hex string to unsigned int */
 unsigned int hextoui(const char buf[MAX_SIZE], unsigned int size){
   unsigned int num = 0;
@@ -169,4 +178,11 @@ void strcat(char *d, const char *s){
   unsigned int slen = strlen(s);
   memcpy(d + len, s, slen);
   d[len + slen] = '\0';
+}
+
+char *strchr(const char *str, int c){
+  for(unsigned int i = 0; i < strlen(str); i++){
+    if(str[i] == c) return (char *)(str + i);
+  }
+  return 0;
 }
