@@ -4,6 +4,7 @@
 #include "mbox.h"
 #include "cpio.h"
 #include "stdint.h"
+#include "timer.h"
 // #include "device_tree.h"
 #define RAMFS_ADDR 0x8000000
 
@@ -239,14 +240,15 @@ void command_test()
 }
 
 void command_load_user_program() {
-  uint64_t spsr_el1 = 0x3c0; // EL0t with interrupt disabled
-  uint64_t target_addr = 0x30000000;
-  uint64_t target_sp = 0x31000000;
-  cpio_load_user_program("user_program.img", target_addr);
-  asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1));
-  asm volatile("msr elr_el1, %0" : : "r"(target_addr));
-  asm volatile("msr sp_el0, %0" : : "r"(target_sp));
-  asm volatile("eret");
+    uint64_t spsr_el1 = 0x0; // EL0t with interrupt enabled
+    uint64_t target_addr = 0x30000000;
+    uint64_t target_sp = 0x31000000;
+    cpio_load_user_program("user_program.img", target_addr);
+    core_timer_enable();
+    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1));
+    asm volatile("msr elr_el1, %0" : : "r"(target_addr));
+    asm volatile("msr sp_el0, %0" : : "r"(target_sp));
+    asm volatile("eret");
 }
 
 void parse_command(char * buffer)
@@ -267,12 +269,10 @@ void main()
 {
     // set up serial console
     uart_init();
-
     char buffer[64]={'\0'};
     int buffer_len=0;
     //clean buffer
     clean_buffer(buffer, 64);
-
     // echo everything back
     while(1) {
         uart_send('#');

@@ -121,3 +121,12 @@ void uart_hex(unsigned int d) {
     }
 }
 
+void uart_int(int x) {
+  if (x < 0) {
+    uart_send('-');
+    x = -x;
+  }
+  if (x >= 10) uart_int(x / 10);
+  uart_send(x % 10 + '0');
+}
+
