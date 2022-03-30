@@ -1,14 +1,15 @@
 #include "commands.h"
 
-#define BUF_LEN 100
+#define BUFFER_LEN 100
 
 
 void read_command(char* buffer){
     uart_puts("\r\n# ");
     int idx=0;
     while(1){
-        if(idx >= BUF_LEN) break;
-        char c = uart_getc();
+        if(idx >= BUFFER_LEN) break;
+        //char c = uart_getc();
+        char c = uart_async_getc();
         if(c=='\n') {
             uart_puts("\r\n"); // echo
             break;
@@ -16,7 +17,7 @@ void read_command(char* buffer){
         else {
             buffer[idx++] = c;
         }
-        uart_putc(c); // echo
+        uart_send(c); // echo
     }
 }
 
@@ -45,16 +46,18 @@ void execute_command(const char* cmd){
 
 void main()
 {
+    char input_buffer[BUFFER_LEN];
+
     // set up serial console
     uart_init();
     // say hello
     uart_puts("Wellcome!\r\n");
-    
-    char input_buffer[BUF_LEN];
+    // enables interrupt in EL1 (for uart async IO)
+    enable_interrupt(); // msr DAIFClr, 0xf
+
     while(1) {
-        // uart_puts("Wellcome!\r\n");
         // echo everything back
-        clear_buffer(input_buffer, BUF_LEN);
+        clear_buffer(input_buffer, BUFFER_LEN);
         // read command
         read_command(input_buffer);
         // uart_puts(input_buffer); // echo input

@@ -23,8 +23,12 @@ void shell_help();
 void shell_hello();
 void shell_mailbox();
 void shell_reboot();
-void shell_ls();
+void shell_cpio();
 void shell_alloc();
+void shell_user_program();
+void shell_ls();
+void shell_start_timer();
+void shell_async_puts();
 
 commads cmd_list[]=
 {
@@ -32,13 +36,17 @@ commads cmd_list[]=
     {.cmd="hello", .help="print Hello World!", .func=shell_hello},
     {.cmd="reboot", .help="reboot the device", .func=shell_reboot},
     {.cmd="mailbox", .help="get mailbox information", .func=shell_mailbox},
+    {.cmd="cpio", .help="cpio file system demo", .func=shell_cpio},
     {.cmd="ls", .help="list directory", .func=shell_ls},
-    {.cmd="alloc", .help="memory allocation test", .func=shell_alloc}
+    {.cmd="alloc", .help="memory allocation test", .func=shell_alloc},
+    {.cmd="user", .help="run user program", .func=shell_user_program}, 
+    {.cmd="timer-start", .help="start timer", .func=shell_start_timer},
+    {.cmd="async-puts", .help="uart async send test", .func=shell_async_puts}
 };
 
 
 
-void shell_ls(){
+void shell_cpio(){
     uint64_t cur_addr = CPIO_LOC;
     cpio_newc_header* cpio_ptr;
     uint64_t name_size, file_size;
@@ -68,8 +76,8 @@ void shell_ls(){
 
         for(uint64_t i=0; i<file_size; i++){
             if(file_content[i] == '\n')
-                uart_putc('\r');
-            uart_putc(file_content[i]);
+                uart_send('\r');
+            uart_send(file_content[i]);
         }
             
         // uart_puts(file_content);
@@ -219,5 +227,30 @@ void shell_alloc(){
 
 }
 
+void shell_user_program(){
+    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled
+    uint64_t target_addr = 0x30000000; // load your program here
+    uint64_t target_sp = 0x31000000;
+    cpio_load_user_program("user_program.img", target_addr);
+    core_timer_enable();
+    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // save processor's state, 
+                                                        // you're at EL1 now so it's spsr_el1
+    asm volatile("msr elr_el1, %0" : : "r"(target_addr));
+    asm volatile("msr sp_el0, %0" : : "r"(target_sp));
+    asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
+}
+
+void shell_ls(){
+    cpio_ls();
+}
+
+void shell_start_timer(){
+    uart_puts("timer enable\n");
+    core_timer_enable();
+}
+
+void shell_async_puts(){
+    uart_async_puts("async puts test\n");
+}
 #endif
 

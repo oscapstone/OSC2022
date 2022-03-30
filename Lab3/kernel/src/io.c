@@ -51,7 +51,7 @@ unsigned long long int read_h() {
   return hex2int(value + 2, 8);  // first two characters are '0x'
 }
 
-void print_c(char c) { uart_putc(c); }
+void print_c(char c) { uart_send(c); }
 
 void print_s(char *s) { uart_puts(s); }
 

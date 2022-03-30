@@ -1,6 +1,11 @@
 
 #pragma once
+#include "stdint.h"
 #define CPIO_LOC 0x8000000
+#define RAMFS_ADDR 0x8000000
+#define CPIO_MAGIC "070701"
+#define CPIO_END "TRAILER!!!"
+
 // https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
 typedef struct {
     char    c_magic[6];

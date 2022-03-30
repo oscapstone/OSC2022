@@ -1,100 +1,127 @@
-/*
- * Copyright (C) 2018 bzt (bztsrc@github)
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use, copy,
- * modify, merge, publish, distribute, sublicense, and/or sell copies
- * of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *
- */
+#include "mini_uart.h"
 
 #include "gpio.h"
-#include "mini_uart.h"
-#include "utils.h"
 
-/**
- * Set baud rate and characteristics (115200 8N1) and map to GPIO
- */
-void uart_init()
-{
-    register unsigned int r;
+void uart_init() {
+  register unsigned int r;
+  r = *GPFSEL1;
+  r &= ~((7 << 12) | (7 << 15));  // clean GPIO 14, GPIO 15
+  r |= (2 << 12) | (2 << 15);     // set ALT5 for GPIO 14, GPIO 15
+  *GPFSEL1 = r;
 
-    /* initialize UART */
-    *AUX_ENABLE |=1;       // enable UART1, AUX mini uart
-    *AUX_MU_CNTL = 0;
-    *AUX_MU_LCR = 3;       // 8 bits
-    *AUX_MU_MCR = 0;
-    *AUX_MU_IER = 0;
-    *AUX_MU_IIR = 0xc6;    // disable interrupts
-    *AUX_MU_BAUD = 270;    // 115200 baud
-    /* map UART1 to GPIO pins */
-    r=*GPFSEL1;
-    r&=~((7<<12)|(7<<15)); // gpio14, gpio15
-    r|=(2<<12)|(2<<15);    // alt5
-    *GPFSEL1 = r;
-    *GPPUD = 0;            // enable pins 14 and 15
-    r=150; while(r--) { asm volatile("nop"); }
-    *GPPUDCLK0 = (1<<14)|(1<<15);
-    r=150; while(r--) { asm volatile("nop"); }
-    *GPPUDCLK0 = 0;        // flush GPIO setup
-    *AUX_MU_CNTL = 3;      // enable Tx, Rx
+  *GPPUD = 0;  // disable GPIO pull up/down
+  r = 150;
+  while (r--) asm volatile("nop");     // delay 150 cycles
+  *GPPUDCLK0 = (1 << 14) | (1 << 15);  // clock the signal
+  r = 150;
+  while (r--) asm volatile("nop");  // delay 150 cycles
+  *GPPUDCLK0 = 0;                   // remove the clock
+
+  /* initialize Mini UART */
+  *AUXENB |= 1;          // enable mini UART
+  *AUX_MU_CNTL_REG = 0;  // disable transmitter, receiver during configuration
+  *AUX_MU_IER_REG = 1;   // enable receive interrupts
+  *AUX_MU_LCR_REG = 3;   // enable 8 bit mode
+  *AUX_MU_MCR_REG = 0;   // set RTS line to be always high
+  *AUX_MU_BAUD = 270;    // set baud rate to 115200
+  // comment this line to avoid weird character
+  // *AUX_MU_IIR_REG = 0xc6;  // no FIFO
+  *AUX_MU_CNTL_REG = 3;  // enable transmitter and receiver back
+
+  read_buf_start = read_buf_end = 0;
+  write_buf_start = write_buf_end = 0;
+  enable_uart_interrupt();
 }
 
-/**
- * Send a character
- */
-void uart_putc(unsigned int c) {
-    /* wait until we can send */
-    do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x20));
-    /* write the character to the buffer */
-    *AUX_MU_IO=c;
+void uart_send(unsigned int c) {
+  // wait until we can send
+  while (!(*AUX_MU_LSR_REG & 0x20)) {
+    asm volatile("nop");
+  }
+  // write the character to the buffer
+  *AUX_MU_IO_REG = c;
 }
 
-/**
- * Receive a character
- */
+char uart_getb() {
+  // wait until something is in the buffer
+  while (!(*AUX_MU_LSR_REG & 0x01)) {
+    asm volatile("nop");
+  }
+  // read character
+  char r = (char)(*AUX_MU_IO_REG);
+  // '\r' => '\n'
+  return r;
+}
+
 char uart_getc() {
-    char r;
-    /* wait until something is in the buffer */
-    do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x01));
-    /* read it and return */
-    r=(char)(*AUX_MU_IO);
-    /* convert carrige return to newline */
-    return r=='\r'?'\n':r;
+  // wait until something is in the buffer
+  while (!(*AUX_MU_LSR_REG & 0x01)) {
+    asm volatile("nop");
+  }
+  // read character
+  char r = (char)(*AUX_MU_IO_REG);
+  // '\r' => '\n'
+  return r == '\r' ? '\n' : r;
 }
 
-/**
- * Display a string
- */
 void uart_puts(char *s) {
-    while(*s) {
-        /* convert newline to carrige return + newline */
-        if(*s=='\n')
-            uart_putc('\r');
-        uart_putc(*s++);
-    }
+  while (*s) {
+    // convert '\n' to carrige '\r' and '\n'
+    if (*s == '\n') uart_send('\r');
+    uart_send(*s++);
+  }
 }
 
-//void uart_putc(char c){
-//    while(!(get32(AUX_MU_LSR)&0x20));
-//    put32(AUX_MU_IO, c);
-//}
+void enable_uart_interrupt() { *ENABLE_IRQS_1 = AUX_IRQ; }
 
+void disable_uart_interrupt() { *DISABLE_IRQS_1 = AUX_IRQ; }
+
+void assert_transmit_interrupt() { *AUX_MU_IER_REG |= 0x2; }
+
+void clear_transmit_interrupt() { *AUX_MU_IER_REG &= ~(0x2); }
+
+void uart_handler() {
+  disable_uart_interrupt();
+  int is_read = (*AUX_MU_IIR_REG & 0x4);
+  int is_write = (*AUX_MU_IIR_REG & 0x2);
+
+  if (is_read) {
+    char c = (char)(*AUX_MU_IO_REG);
+    read_buf[read_buf_end++] = c;
+    if (read_buf_end == UART_BUFFER_SIZE) read_buf_end = 0;
+  } else if (is_write) {
+    while (*AUX_MU_LSR_REG & 0x20) {
+      if (write_buf_start == write_buf_end) {
+        clear_transmit_interrupt();
+        break;
+      }
+      char c = write_buf[write_buf_start++];
+      *AUX_MU_IO_REG = c;
+      if (write_buf_start == UART_BUFFER_SIZE) write_buf_start = 0;
+    }
+  }
+  enable_uart_interrupt();
+}
+
+char uart_async_getc() {
+  // wait until there are new data
+  while (read_buf_start == read_buf_end) {
+    asm volatile("nop");
+  }
+  char c = read_buf[read_buf_start++];
+  if (read_buf_start == UART_BUFFER_SIZE) read_buf_start = 0;
+  // '\r' => '\n'
+  return c == '\r' ? '\n' : c;
+}
+
+void uart_async_puts(char *str) {
+  for (int i = 0; str[i]; i++) {
+    if (str[i] == '\n') write_buf[write_buf_end++] = '\r';
+    write_buf[write_buf_end++] = str[i];
+    if (write_buf_end == UART_BUFFER_SIZE) write_buf_end = 0;
+  }
+  assert_transmit_interrupt();
+}
 /**
  * Display a binary value in hexadecimal
  */
@@ -106,17 +133,6 @@ void uart_hex(unsigned int d) {
         n=(d>>c)&0xF;
         // 0-9 => '0'-'9', 10-15 => 'A'-'F'
         n+=n>9?0x37:0x30;
-        uart_putc(n);
+        uart_send(n);
     }
-}
-
-char uart_getb() {
-  // wait until something is in the buffer
-  while (!(*AUX_MU_LSR& 0x01)) {
-    asm volatile("nop");
-  }
-  // read character
-  char r = (char)(*AUX_MU_IO);
-  // '\r' => '\n'
-  return r;
 }
