@@ -14,7 +14,6 @@
 #define AUX_MU_STAT     ((volatile unsigned int*)(MMIO_BASE+0x00215064))
 #define AUX_MU_BAUD     ((volatile unsigned int*)(MMIO_BASE+0x00215068))
 #define IRQS1           ((volatile unsigned int*)(MMIO_BASE+0x0000b210))
-#define IRQS1_PENDING   ((volatile unsigned int*)(MMIO_BASE+0x0000b204))
 
 #define MAX_BUF_SIZE 0x100
 

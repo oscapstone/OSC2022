@@ -27,7 +27,7 @@ void clock_alert(void){
     "mrs %0, cntfrq_el0\n\t"
     : "=r"(cntfrq_el0)
   ); //tick frequency
-  printf("seconds after booting : %d\r\n", cntpct_el0 / cntfrq_el0);
+  printf("seconds after booting : %d\n", cntpct_el0 / cntfrq_el0);
   set_core_timer_interrupt(2);
 }
 
@@ -39,4 +39,9 @@ void set_core_timer_interrupt(unsigned long long expired_time){
     "msr cntp_tval_el0, x1\n\t" // set expired time
     : "=r"(expired_time)
   );
+}
+
+void add_timer(callback_typ callback, int time, char *msg) {
+  callback(msg);
+  printf("%d", time);
 }

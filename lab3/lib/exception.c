@@ -19,7 +19,6 @@ void invalid_exception_router(unsigned long long x0){
 }
 
 void irq_router(unsigned long long x0){
-  // uart_puts("asd\n");
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
     clock_alert();
   }else if(*IRQS1_PENDING & (0x01 << 29)){

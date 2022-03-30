@@ -1,11 +1,6 @@
-
-// #define CPIO_DEFAULT_PLACE 0x8000000
-// #define CPIO_DEFAULT_PLACE 0x20000000
-
 char * CPIO_DEFAULT_PLACE ;
 
 typedef struct cpio_newc_header cpio_header;
-
 struct cpio_newc_header {
   char	   c_magic[6];
   char	   c_ino[8];

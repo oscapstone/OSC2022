@@ -14,9 +14,9 @@ void main(char * arg){
     "msr daifclr, 0xf" // enable interrupt el1 -> el1
   ); 
   fdt_traverse(initramfs_callback);
-
   async_uart_puts("\n\r\n\rWelcome!!!\n\r");
   async_uart_puts("raspberryPi: ");
-  
+  // add_timer(uart_puts, 7, "haha");
+
   shell();
 }
