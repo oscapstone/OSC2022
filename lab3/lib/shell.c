@@ -19,7 +19,8 @@ void welcome_msg() {
 void read_cmd() {
     char tmp;
     async_printf("# ");
-    for (buf_idx = 0; async_uart_read(&tmp, 1);) {
+    for (buf_idx = 0;;) {
+        async_uart_read(&tmp, 1);
         // _async_putchar(tmp);
         switch (tmp) {
             case '\r':
@@ -131,7 +132,6 @@ void shell() {
     cpio_init();
     timer_list_init();
     enable_core_timer();
-    cmd_timer("COOl");
     welcome_msg();
     do {
         read_cmd();

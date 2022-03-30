@@ -64,7 +64,7 @@ OUT_ELF = ./$(PROJ).elf
 OUT_IMG = ./$(PROJ).img
 LINKER_FILE = linker.ld
 
-CCFLAGS = -Wall -O0
+CCFLAGS = -Wall -O0 -fno-builtin
 LDFLAGS = -T$(LINKER_FILE) -nostdlib -nostartfiles
 
 .PHONY: clean directories out_elf run

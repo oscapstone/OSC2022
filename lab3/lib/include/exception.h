@@ -1,5 +1,5 @@
-#ifndef __REGS_H__
-#define __REGS_H__
+#ifndef __EXCEPTIONS_H__
+#define __EXCEPTIONS_H__
 
 #include "mmio.h"
 #include "printf.h"

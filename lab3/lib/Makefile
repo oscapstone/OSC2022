@@ -38,7 +38,7 @@ BUILD_DIRECTORIES = \
 
 PROJ = lib
 
-CCFLAGS = -Wall -O0
+CCFLAGS = -Wall -O0 -fno-builtin
 LDFLAGS = -T$(LINKER_FILE) -nostdlib -nostartfiles
 
 .PHONY: clean directories out_elf run

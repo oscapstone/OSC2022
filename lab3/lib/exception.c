@@ -3,8 +3,8 @@
 void irq_handler() {
     uint64_t c0_int_src = mmio_read(CORE0_IRQ_SRC),
              irq_pend_1 = mmio_read(IRQ_PEND_1);
-    // async_printf("IRQ_PEND_1: 0x%lx" ENDL, mmio_read(IRQ_PEND_1));
-    // async_printf("CORE0_IRQ_SRC: 0x%lx" ENDL, c0_int_src);
+    // async_printf("IRQ_PEND_1: 0x%lX" ENDL, mmio_read(IRQ_PEND_1));
+    // async_printf("CORE0_IRQ_SRC: 0x%lX" ENDL, c0_int_src);
 
     // 1. masks the device’s interrupt line,
     disable_interrupt();
