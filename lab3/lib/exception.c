@@ -20,7 +20,9 @@ void invalid_exception_router(unsigned long long x0){
 
 void irq_router(unsigned long long x0){
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
-    clock_alert();
+    // core_timer_interrupt_disable();
+    pop_timer();
+    // core_timer_interrupt_enable();
   }else if(*IRQS1_PENDING & (0x01 << 29)){
     if (*AUX_MU_IIR & (0b01 << 1)) {  //can write
       disable_uart_w_interrupt();

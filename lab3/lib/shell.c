@@ -15,6 +15,7 @@ void shell(){
   int args_num = 0;
   char read = 0;
   while(1){
+    // read = uart_getc();
     read = async_uart_getc();
     if(read != '\n' && read != 0x7f){
       append_str(input, read);
@@ -28,7 +29,7 @@ void shell(){
     }else{
       args_num = spilt_strings(args, input, " ");
       if(args_num != 0){
-        printf("%c", read);
+        printf("\n\r");
         if(!strcmp(args[0], "help")){
           printf("help      : print this help menu\n\r");
           printf("hello     : print Hello World!\n\r");
@@ -63,13 +64,16 @@ void shell(){
           if(args_num == 2)
             cpio_exec(args[1]);
         }else if(!strcmp(input, "clock")){
-          core_timer_enable();
+          // set_core_timer_interrupt(2);
+          // core_timer_interrupt_enable();
+          add_timer(clock_alert, args[1], 2);
+          // core_timer_enable();
           // asm(
           //   "bl from_el1_to_el0\n\t"
           // );
         }else if(!strcmp(input, "setTimeout")){
           if (args_num == 3)
-            add_timer(uart_puts, atoi(args[1]), args[2]);
+            add_timer(timeout_print, args[1], atoi(args[2]));
         }else{
           printf("Please use \"help\" to get information.\n\r");
         }
