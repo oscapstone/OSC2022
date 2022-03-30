@@ -23,7 +23,7 @@ user.o: user.S
 entry.o: entry.S
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-timer.o: timer.S
+asm.o: asm.S
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 $(LIB):

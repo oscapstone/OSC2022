@@ -1,3 +1,22 @@
+#define CORE0_TIMER_IRQ_CTRL 0x40000040
+
+.globl core_timer_enable
+core_timer_enable:
+        mov x0, 1
+        msr cntp_ctl_el0, x0 // enable
+        mov x0, #0xffff
+        movk x0, #0x7fff, lsl #16
+        msr cntp_tval_el0, x0 // set expired time
+        mov x0, 2
+        ldr x1, =CORE0_TIMER_IRQ_CTRL
+        str w0, [x1] // unmask timer interrupt
+        ret
+
+.globl reset_timer
+reset_timer:
+        msr cntp_tval_el0, x0
+        ret
+
 .globl branch_to_address_in_el0
 branch_to_address_in_el0:
         // save return address and other status

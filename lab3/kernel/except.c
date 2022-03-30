@@ -1,6 +1,7 @@
 #include "mini_uart.h"
-#include "user.h"
 #include "except.h"
+#include "timer.h"
+#include <stdint.h>
 
 #define CORE0_IRQ_SOURCE ((volatile unsigned int *)(0x40000060))
 #define GPU_PENDING1 ((volatile unsigned int *)(0x3F00B204))
@@ -66,11 +67,12 @@ void print_exception_info() {
 
 void core_timer_handler() {
   print("received timer interrupt!\n");
-  uint64_t freq;
-  asm volatile("mrs %0, cntfrq_el0"
-               : "=r" (freq));
-  print("reset timer to ");
-  print_num(2*freq);
+  uint64_t freq = get_cpu_freq();
+  uint64_t cur = get_current_time();
+  print("cpu freq: ");
+  print_num(freq);
+  print("\nLive time: ");
+  print_num(cur/freq);
   print_char('\n');
   reset_timer(2*freq);
 }
@@ -113,6 +115,7 @@ void gpu_interrupt_handler() {
         uart_send_from_buf();
         // print("Transmit holding register empty\n");
       } else if (iir & 4) {
+        // print("recv interrupt\n");
         uart_recv_to_buf();
       }
     } else {
@@ -135,4 +138,23 @@ void c_irq_handler() {
     print_hex(irq_src);
     print_char('\n');
   }
+}
+
+void el1h_c_irq_handler() {
+  volatile uint64_t irq_src = *CORE0_IRQ_SOURCE;
+  if (irq_src & (1<<1)) {
+    print("receive core timer interrupt\n");
+    // bit 1 indicates cntpnsirq interrupt
+    handle_timer_interrupt();
+  } else if (irq_src & (1<<8)) {
+    print("receive gpu interrupt\n");
+  } else {
+    print("Invalid interrupt source ");
+    print_hex(irq_src);
+    print_char('\n');
+  }
+}
+
+void c_invalid_exception() {
+  print("Invalid exception\n");
 }

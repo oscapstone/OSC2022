@@ -25,7 +25,8 @@ void mini_uart_init() {
   *AUX_ENABLE |= 1;
   *AUX_MU_CNTL = 0;
   // *AUX_MU_IER = 0;
-  *AUX_MU_IER = 1; // enable receive interrupt (bit 1 is transmit interrupt)
+  // *AUX_MU_IER = 1; // enable receive interrupt (bit 1 is transmit interrupt)
+  *AUX_MU_IER = 0;
   *AUX_MU_LCR = 3;
   *AUX_MU_MCR = 0;
   *AUX_MU_BAUD = 270;

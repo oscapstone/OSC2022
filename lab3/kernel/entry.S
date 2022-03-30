@@ -46,6 +46,13 @@ exception_handler:
         load_all
         eret
 
+.global invalid_exception_handler
+invalid_exception_handler:
+        save_all
+        bl c_invalid_exception
+        load_all
+        eret
+        
 .global irq_handler
 irq_handler:
         save_all
@@ -53,43 +60,50 @@ irq_handler:
         load_all
         eret
 
+.global el1h_irq_handler
+el1h_irq_handler:
+        save_all
+        bl el1h_c_irq_handler
+        load_all
+        eret
+
 .align 11 // vector table should be aligned to 0x800
 .global exception_vector_table
 exception_vector_table:
-        b exception_handler // branch to a handler function.
+        b invalid_exception_handler // branch to a handler function.
         .align 7 // entry size is 0x80, .align will pad 0
-        b exception_handler
+        b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
 
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b el1h_irq_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
         
 	b exception_handler
 	.align 7
 	b irq_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
         
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
-	b exception_handler
+	b invalid_exception_handler
 	.align 7
 
 .global set_exception_vector_table

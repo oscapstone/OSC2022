@@ -35,3 +35,9 @@ void* memcpy(void *dst, const void *src, uint32_t len) {
   }
   return dst;
 }
+
+uint32_t strlen(char *s) {
+  uint32_t l = 0;
+  while (*s++) l++;
+  return l;
+}

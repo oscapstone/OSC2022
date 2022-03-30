@@ -37,8 +37,10 @@ _from_el2_to_el1:
         msr hcr_el2, x0
         // The Execution state for EL1 is AArch64.
         // The Execution state for EL0 is determined by the current value of PSTATE.nRW when executing at EL0.
-        mov x0, 0x3c5
+        // mov x0, 0x3c5
+        mov x0, 0x345
         // 3c5 = 0011 1100 0101
+        // 345 = 0011 0100 0101
         // 0011 : branch type indicator. debug mask, SError interrupt mask.
         // 1100 : irq interrupt mask, fiq interrupt mask, reserved. exec state (0 = aarch64)
         // 0101 : sp_el1h

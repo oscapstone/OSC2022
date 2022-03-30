@@ -9,5 +9,6 @@ SECTIONS
   .bss : { *(.bss*) }
   . = ALIGN(8);
   __bss_end = .;
+  heap_begin = .;
 }
 

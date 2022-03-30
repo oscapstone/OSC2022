@@ -3,8 +3,8 @@
 #include "reboot.h"
 #include "cpio.h"
 #include "devtree.h"
-#include "user.h"
 #include "except.h"
+#include "timer.h"
 
 #define BUF_LEN 1024
 #define STR_LEN 256
@@ -12,6 +12,10 @@
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define NULL 0
+
+extern void branch_to_address_in_el0(uint64_t instr_addr, uint64_t stack_addr);
+extern void set_exception_vector_table();
+extern int heap_begin;
 
 uint64_t initrd_addr;
 
@@ -26,6 +30,22 @@ struct cpio_newc_header* find_file(char *target, uint32_t name_len) {
     p_header = cpio_nextfile(p_header);
   }
   return NULL;
+}
+
+void* smalloc(uint32_t size) {
+  static uint64_t offset;
+  void* ptr = (void*)((&heap_begin) + offset);
+  offset += size;
+  for (int i = 0; i < size; i++) {
+    ((char*)ptr)[i] = 0;
+  }
+  return ptr;
+}
+
+void print_message(void *data) {
+  print("Timeout: ");
+  print((char*)(data));
+  print_char('\n');
 }
 
 void cat() {
@@ -96,7 +116,7 @@ void exe() {
     }
     uint64_t stack_addr = (uint64_t)target_addr + USER_STACK_SIZE;
     print("Load the program to the specified address space\n");
-    core_timer_enable();
+    reset_timer(2*get_cpu_freq());
     branch_to_address_in_el0(begin_addr, stack_addr);
   } else {
     print("File not found!\n");
@@ -105,8 +125,11 @@ void exe() {
 
 void test_async() {
   static char buf[60];
+  *AUX_MU_IER = 1;
   while (1) {
+    async_print("async shell> ");
     uint32_t len = async_read(buf, 64);
+    if (len == 0) continue;
     if (strncmp(buf, "stop", len) == 0) break;
     else {
       async_print("recv ");
@@ -119,10 +142,15 @@ void test_async() {
 
 int kernel_main() {
   static char buf[BUF_LEN];
+  set_exception_vector_table();
   mini_uart_init();
   print("Hello Basic Shell!\n");
   fdt_traverse(set_initrd_addr);
-  set_exception_vector_table();
+  core_timer_enable();
+  uint64_t inf = 0x7fffffffffffffffll;
+  asm volatile("msr cntp_cval_el0, %0"
+               :
+               : "r" (inf));
   while (1) {
     print("# ");
     read(buf, BUF_LEN);
@@ -149,6 +177,37 @@ int kernel_main() {
       while(1);
     } else if (strncmp(buf, "exe", BUF_LEN) == 0) {
       exe();
+    } else if (strncmp(buf, "setTimeout", strlen("setTimeout")) == 0) {
+      print("setTimeout ");
+      int s_num = 0;
+      char *p = buf+1;
+      int sec = 0;
+      char *msg = (char*)smalloc(strlen(buf)+1);
+      print("msg addr: ");
+      print_hex((uint32_t)msg);
+      char *msgp = msg;
+      while (*p) {
+        char ch = *p;
+        if (*(p-1) == ' ' && ch != ' ') {
+          s_num++;
+          if (s_num == 2) *msgp = 0;
+        }
+        if (s_num == 1) {
+          *msgp = ch;
+          msgp++;
+        } else if (s_num == 2) {
+          if (ch < '0' || ch > '9') break;
+          sec *= 10;
+          sec += ch - '0';
+        }
+        p++;
+      }
+      print(" msg: ");
+      print(msg);
+      print(" sec: ");
+      print_num(sec);
+      print_char('\n');
+      add_timer(print_message, msg, sec * get_cpu_freq());
     } else if (strncmp(buf, "async", BUF_LEN) == 0) {
       branch_to_address_in_el0((uint64_t)test_async, 0x150000);
     } else {
