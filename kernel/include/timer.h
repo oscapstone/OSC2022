@@ -31,5 +31,6 @@ typedef struct _Timer{
 
 void add_timer(TimerTask, unsigned long long, void *);
 void timeout_print(void *);
+void timer_interrupt_handler();
 
 #endif

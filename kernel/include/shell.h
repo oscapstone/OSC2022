@@ -30,4 +30,7 @@ void Ls();
 void Cat(char [MAX_SIZE]);
 void Run(char [MAX_SIZE]);
 
+void SetTimeOut(char [MAX_SIZE]);
+void TestTimeOut(char [MAX_SIZE]);
+
 #endif

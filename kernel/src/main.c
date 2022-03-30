@@ -6,12 +6,14 @@
 #include <fdt.h>
 #include <irq.h>
 
+
+
 int main(unsigned long dtb_base){
     uart_init();
-    enable_irq(); // DAIF set to 0b0000
     enable_timer_irq();
-    disable_timer_irq();
     enable_AUX_MU_IER_r();
+    enable_irq(); // DAIF set to 0b0000
+    // disable_timer_irq();
     char buf[15];
     // register unsigned long x0 asm("x0");
     // unsigned long DTB_BASE = x0;
@@ -39,6 +41,7 @@ int main(unsigned long dtb_base){
     uart_puts("\n");
 
     PrintWelcome();
+
     ShellLoop();
     
     return 0;

@@ -2,6 +2,7 @@
 #include <uart.h>
 #include <string.h>
 #include <malloc.h>
+#include <irq.h>
 
 /*
 The pathname is followed by NUL bytes so that the total size of the fixed
@@ -73,6 +74,7 @@ unsigned long findDataAddr(char *thefilename) {
 
 void run(unsigned long runAddr){
     unsigned long *user_stack = (unsigned long*)simple_malloc(0x1000);
+    set_period_timer_irq();
     asm volatile(
         "mov x0, 0x0\n\t"
         "msr spsr_el1, x0\n\t"

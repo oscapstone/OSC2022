@@ -25,6 +25,9 @@
 
 void enable_timer_irq();
 void disable_timer_irq();
+void reset_timer_irq(unsigned long long);
+void set_long_timer_irq();
+void set_period_timer_irq();
 void enable_irq();
 void disable_irq();
 

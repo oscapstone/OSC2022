@@ -12,8 +12,6 @@ void Time_interrupt(unsigned long long);
 
 void GPU_interrupt();
 
-void core_timer_handler();
-
 #define TRANSMIT_HOLDING 0b10
 #define RECEIVE_VALID 0b100
 

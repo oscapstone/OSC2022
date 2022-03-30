@@ -6,6 +6,7 @@
 #include <read.h>
 #include <cpio.h>
 #include <timer.h>
+#include <malloc.h>
 
 /* print welcome message*/
 void PrintWelcome(){
@@ -122,31 +123,27 @@ void Run(char buf[MAX_SIZE]){
 }
 
 void SetTimeOut(char buf[MAX_SIZE]){
-  char *message = strchr(buf, ' ') + 1;
-  char *end_message = strchr(message, ' ');
+  char *message_tmp = strchr(buf, ' ') + 1;
+  char *end_message = strchr(message_tmp, ' ');
   *end_message = '\0';
-  int timeout = atoui(end_message + 1);
-  // add_timer(timeout_print, timeout, message);
+  char *message = (char *)simple_malloc(strlen(message_tmp) + 1);
+  strcpy(message, message_tmp);
+  unsigned int timeout = atoui(end_message + 1);
 
-  uart_puts("message: ");
-  uart_puts(message);
-  uart_puts("\n");
+  add_timer(timeout_print, timeout, message);
+}
 
-  uart_puts("Timeout: ");
-  uart_puts(end_message + 1);
-  uart_puts("\n");
+void TestTimeOut(char buf[MAX_SIZE]){
+  add_timer(timeout_print, 2, "[*] timeout: 2\n");
+  add_timer(timeout_print, 1, "[*] timeout: 1\n");
+  add_timer(timeout_print, 5, "[*] timeout: 5\n");
+  add_timer(timeout_print, 4, "[*] timeout: 4\n");
+  add_timer(timeout_print, 3, "[*] timeout: 3\n");
 }
 
 /* Main Shell */
 void ShellLoop(){
   char buf[MAX_SIZE];
-  
-  // unsigned long long timer = 0;
-  // unsigned long long freq = 0;
-  // while(1){
-  //   char c = async_uart_getc();
-  //   uart_puts("test\n");
-  // }
 
   while(1){
 
@@ -166,18 +163,8 @@ void ShellLoop(){
     else if(strcmp("cat", buf) == 0) Cat(buf);
     else if(strcmp("run", buf) == 0) Run(buf);
     else if(strncmp("setTimeout", buf, strlen("setTimeout")) == 0) SetTimeOut(buf);
+    else if(strcmp("test_timeout", buf) == 0) TestTimeOut(buf);
     else PrintUnknown(buf);
-
-    // asm volatile(
-    //   "mrs %0, cntpct_el0\n\t"
-    //   "mrs %1, cntfrq_el0\n\t"
-    //   :"=r"(timer), "=r"(freq)
-    // );
-
-    // uitoa(buf, timer/freq);
-    // uart_puts("[*] Time: ");
-    // uart_puts(buf);
-    // uart_puts("\n");
 
     uart_puts("# ");
   }

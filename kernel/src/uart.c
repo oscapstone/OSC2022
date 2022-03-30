@@ -67,12 +67,12 @@ void recv_interrupt_handler(){
   read_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
 
   /* enable receive interrupt after set the new char */
-  // enable_AUX_MU_IER_r(); 
+  enable_AUX_MU_IER_r(); 
 }
 
 char async_uart_getc(){
   /* enable receive interrupt */
-  // enable_AUX_MU_IER_r();
+  enable_AUX_MU_IER_r();
 
   /* wait until something is in the read buffer (read_set_idx != read_get_idx) */
   while(read_get_idx == read_set_idx) {asm volatile("nop");}
@@ -108,7 +108,7 @@ void tran_interrupt_handler(){
   write_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
 
   /* enable transmit interrupt to expect print next char */
-  // enable_AUX_MU_IER_w();
+  enable_AUX_MU_IER_w();
 }
 
 void async_uart_putc(unsigned int c){
@@ -128,13 +128,14 @@ void uart_puts(char *s) {
   while(*s) async_uart_putc(*s++);
   /* convert newline to carrige return + newline */
   if(*(--s)=='\n') async_uart_putc('\r');
+  
 }
 
 void uart_nbyte(char *s, unsigned int len) {
   while(len--) {
-      /* convert newline to carrige return + newline */
-      if(*s=='\n') uart_putc('\r');
-      uart_putc(*s++);
+    /* convert newline to carrige return + newline */
+    if(*s=='\n') uart_putc('\r');
+    uart_putc(*s++);
   }
 }
 

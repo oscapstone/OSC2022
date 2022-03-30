@@ -2,6 +2,7 @@
 #include <irq.h>
 #include <string.h>
 #include <exc.h>
+#include <timer.h>
 
 void exception_entry(unsigned long long what, 
                     unsigned long long esr, 
@@ -49,13 +50,16 @@ void Sync_exception(unsigned long long esr, unsigned long long elr, unsigned lon
 }
 
 void Time_interrupt(unsigned long long spsr){
+    unsigned long long frq = 0;
+    asm volatile("mrs %0, cntfrq_el0\n\t" :"=r"(frq));
     spsr &= 0b1111;
     if(spsr == 0x0){
         uart_puts("Time interrupt\n");
+        set_period_timer_irq();
     }
-
-    /* reset timer */
-    core_timer_handler();
+    else{
+        timer_interrupt_handler();
+    }
 }
 
 
@@ -75,19 +79,14 @@ void Time_interrupt(unsigned long long spsr){
 
 
 void GPU_interrupt(){
-    //    char buf[10];
-    // uitohex(buf, *AUX_MU_IIR);
-    // uart_puts("[*] AUX_MU_IIR: 0x");
-    // uart_puts(buf);
-    // uart_puts("\n");
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
-        
+        disable_AUX_MU_IER_w();
         tran_interrupt_handler();
         // uart_puto("[*] AUX_MU_IIR: Transmit holding register empty\n");
 
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
-        // disable_AUX_MU_IER_r();
+        disable_AUX_MU_IER_r();
         recv_interrupt_handler();
         // uart_puts("[*] AUX_MU_IIR: Receiver holds valid byte\n");
     }
@@ -97,10 +96,3 @@ void GPU_interrupt(){
 
 }
 
-void core_timer_handler(){
-    asm volatile(
-        "mrs x0, cntfrq_el0\n\t"
-        "msr cntp_tval_el0, x0\n\t"
-        ::: "x0"
-    );
-}
