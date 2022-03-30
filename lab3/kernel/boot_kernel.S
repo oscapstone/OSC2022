@@ -8,7 +8,7 @@ _start:
     cbnz   x0, proc_hang     // Hang for all non-primary CPU
     bl     from_el2_to_el1
     bl     set_exception_vector_table
-    bl     core_timer_enable
+    //bl     core_timer_enable
 
 master:
     ldr    x0, =__bss_begin

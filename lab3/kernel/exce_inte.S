@@ -1,4 +1,3 @@
-#define CORE0_TIMER_IRQ_CTRL 0x40000040
 
 .section ".text"
 
@@ -106,13 +105,3 @@ from_el2_to_el1:
     msr spsr_el2, x0
     msr elr_el2, lr
     eret // return to EL1
-
-core_timer_enable:
-    mov x0, 1
-    msr cntp_ctl_el0, x0 // enable
-    mrs x0, cntfrq_el0
-    msr cntp_tval_el0, x0 // set expired time
-    mov x0, 2
-    ldr x1, =CORE0_TIMER_IRQ_CTRL
-    str w0, [x1] // unmask timer interrupt
-    ret

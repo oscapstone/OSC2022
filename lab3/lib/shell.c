@@ -6,6 +6,7 @@
 #include "string.h"
 #include "cpio.h"
 #include "memory.h"
+#include "timer.h"
 
 
 #define MAX_BUFFER_SIZE 256u
@@ -66,6 +67,11 @@ void parse_cmd()
         uart_send('\n');
     }
     else if (stringcmp(buffer, "execute") == 0) {
+        core_timer_enable();
+        asm volatile(
+            "mrs x0, cntfrq_el0\n\t"
+            "msr cntp_tval_el0, x0\n\t"
+        );
         cpio_exec();
     }
     else if (stringcmp(buffer, "test_async") == 0) {
