@@ -26,6 +26,7 @@ void core_timer_handler() {
     // remove first event
     list_rotate_left(timer_event_list);
     list_del(timer_event_list->prev);
+    free();
 
     // if there is next event, set next timeout
     if (list_empty(timer_event_list)) {
@@ -62,7 +63,7 @@ void add_timer(void* callback, char* args, uint64_t timeout) {
     bool inserted = false;
     list_for_each(curr, timer_event_list) {
         if (new_timer_event->tval < ((timer_event_t*)curr)->tval) {
-            list_add(&new_timer_event->node, curr->prev);  // TODO: maybe wrong?
+            list_add(&new_timer_event->node, curr->prev);
             inserted = true;
         }
     }

@@ -15,8 +15,8 @@ def readline():
 
 
 def recv_and_print():
+    sleep(1)
     print(readline().decode())
-    # sleep(1)
 
 
 device = '/dev/ttys005' if len(argv) == 1 else argv[1]
