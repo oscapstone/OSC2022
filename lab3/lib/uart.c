@@ -25,7 +25,7 @@ void uart_init()
   *AUX_MU_CNTL = 0;
   *AUX_MU_LCR = 3;       // set 8 bits
   *AUX_MU_MCR = 0;
-  *AUX_MU_IER = 2;       // enalbe interrupt  // no use read interrupt so use 2, if want to enable read interrupt plz use 6
+  *AUX_MU_IER = 3;       // enalbe interrupt  // no use read interrupt so use 2, if want to enable read interrupt plz use 3
   *IRQS1 |= 1 << 29;
   *AUX_MU_IIR = 0x06;    // disable interrupts
   *AUX_MU_BAUD = 270;    // 115200 baud, system clock freq = 250MHz
@@ -34,11 +34,9 @@ void uart_init()
 }
 
 void uart_send(unsigned int c) {
-  
   do{
     asm volatile("nop");
   }while(!(*AUX_MU_LSR&0x20)); // wait until we can send
-
   *AUX_MU_IO=c; // write the character to the buffer
 }
 
@@ -84,20 +82,24 @@ unsigned int uart_rx_buffer_ridx = 0;
 
 void uart_interrupt_r_handler(){
   if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx){
+    enable_uart_r_interrupt();
     return;
   }
-  uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
+  // uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
+  char r = (char)(*AUX_MU_IO);
+  uart_rx_buffer[uart_rx_buffer_widx++] = r=='\r'?'\n':r;
   if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
     uart_rx_buffer_widx = 0;
-  enable_uart_w_interrupt();
+  enable_uart_r_interrupt();
 }
 
 void uart_interrupt_w_handler() { //can write
   if (uart_tx_buffer_ridx == uart_tx_buffer_widx){ // buffer empty
+    disable_uart_w_interrupt();
     return;
   }
-  // printf("%c", uart_tx_buffer[uart_tx_buffer_ridx]);
-  uart_send(uart_tx_buffer[uart_tx_buffer_ridx++]);
+  // uart_send(uart_tx_buffer[uart_tx_buffer_ridx++]);
+  *AUX_MU_IO = uart_tx_buffer[uart_tx_buffer_ridx++];
   if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
     uart_tx_buffer_ridx = 0; // cycle pointer
   enable_uart_w_interrupt();
@@ -119,12 +121,13 @@ void async_uart_puts(char *s){
 }
 
 char async_uart_getc(){
-  enable_uart_r_interrupt();
+  if (uart_rx_buffer_ridx == uart_rx_buffer_widx){
+    return 0;
+  }
   char r = uart_rx_buffer[uart_rx_buffer_ridx++];
   if (uart_rx_buffer_ridx >= MAX_BUF_SIZE)
     uart_rx_buffer_ridx = 0;
   return r;
-
 }
 
 void enable_uart_r_interrupt(){

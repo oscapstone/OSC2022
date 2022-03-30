@@ -10,8 +10,9 @@
 void shell(){
   char input[20] = "";
   while(1){
-    char read = 0;
-    read = uart_getc();
+    char read = async_uart_getc();
+    if (read == 0)
+      continue;
     if(read != '\n' && read != 0x7f){
       append_str(input, read);
       printf("%c", read);

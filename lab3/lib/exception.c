@@ -5,7 +5,7 @@
 
 void invalid_exception_router(unsigned long long x0){
   unsigned long long elr_el1, esr_el1, spsr_el1;
-  __asm__ __volatile__("mrs %[output0], ELR_EL1\n\t"
+  __asm__ __volatile__("mrs %[output0], elr_el1\n\t"
                        "mrs %[output1], ESR_EL1\n\t"
                        "mrs %[output2], SPSR_EL1\n\t"
                        : [output0] "=r" (elr_el1), [output1] "=r" (esr_el1), [output2] "=r" (spsr_el1)
@@ -19,6 +19,7 @@ void invalid_exception_router(unsigned long long x0){
 }
 
 void irq_router(unsigned long long x0){
+  // uart_puts("asd\n");
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
     clock_alert();
   }else {
