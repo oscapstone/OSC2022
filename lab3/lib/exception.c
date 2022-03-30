@@ -22,7 +22,7 @@ void irq_router(unsigned long long x0){
   // uart_puts("asd\n");
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
     clock_alert();
-  }else {
+  }else if(*IRQS1_PENDING & (0x01 << 29)){
     if (*AUX_MU_IIR & (0b01 << 1)) {  //can write
       disable_uart_w_interrupt();
       uart_interrupt_w_handler();
