@@ -58,9 +58,9 @@ void shell(){
           cpio_exec(input+5);
         }else if(!strcmp(input, "clock")){
           core_timer_enable();
-          asm(
-            "bl from_el1_to_el0\n\t"
-          );
+          // asm(
+          //   "bl from_el1_to_el0\n\t"
+          // );
         }else{
           printf("Please use \"help\" to get information.\n\r");
         }
