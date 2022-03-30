@@ -56,6 +56,8 @@ void pop_timer() {
     timer->call_back(timer->args);
     if (!timer_list)
         core_timer_disable();
+    else
+        write_sysreg(cntp_tval_el0, timer_list->expire_time - read_sysreg(cntpct_el0));
 }
 
 void test_timer() {
