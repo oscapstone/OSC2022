@@ -161,20 +161,17 @@ kernel_irq_source_determine:
 
     bl exit  // other irq not handle
 
-// usr_irq_source_determine:
-//     save_all
-//     //bl enable_uart_irq
-//     ldr x2, =CORE0_IRQ_SOURCE
-//     ldr x3, [x2]
-//     and x4, x3, #256
-//     cmp x4, #256
-//     beq gpu_irq_handler
-// 
-//     and x4, x3, #2
-//     cmp x4, #2
-//     beq core_timer_handler
-// 
-//     bl exit  // other irq not handle
+usr_irq_source_determine:
+    save_all
+    //bl enable_uart_irq
+    ldr x2, =CORE0_IRQ_SOURCE
+    ldr x3, [x2]
+
+    and x4, x3, #2
+    cmp x4, #2
+    beq core_timer_handler
+
+    bl exit  // other irq not handle
 
 
 
@@ -201,7 +198,7 @@ exception_vector_table:
 
   b exception_handler // svc 0, Exception from a lower EL and at least one lower EL is AARCH64, Synchronnous
   .align 7
-  b exit
+  b usr_irq_source_determine
   .align 7
   b exit
   .align 7

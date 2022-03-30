@@ -39,6 +39,6 @@ int atoi(const char *s)
 }
 
 void exit(){
-    uart_puts("\nexit\n");
+    sync_uart_puts("\nexit\n");
     while(1) ;
 }

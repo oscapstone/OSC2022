@@ -292,3 +292,10 @@ void disable_transmit_irq()
     *AUX_MU_IER = value;
 }
 
+void disable_recieve_irq()
+{
+    uint32_t value = *AUX_MU_IER;
+    value &= ~(0x1);
+    *AUX_MU_IER = value;
+}
+

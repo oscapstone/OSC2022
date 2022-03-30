@@ -26,7 +26,7 @@
 #include "gpio.h"
 #include "mbox.h"
 
-#define USE_UART0
+// #define USE_UART0
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))

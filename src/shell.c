@@ -35,9 +35,10 @@ void jump2usr_prog(cpio_fp_t *fp)
     char *prog_addr = simple_alloc(prog_size);
 
     copy_prog_from_cpio(prog_addr, fp->data, prog_size);
-    spsr_value = 0x3c0;
+    spsr_value = 0x340;
     sp_value = simple_alloc(0x8000);
     sp_value += 0x8000;
+    disable_recieve_irq();
 
     // for (int i=0;i<prog_size;i++) {
     //     uart_send(prog_addr[i]);
