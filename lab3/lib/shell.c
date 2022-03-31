@@ -16,6 +16,7 @@ void shell(){
   char read = 0;
   while(1){
     // read = uart_getc();
+    pop_task();
     read = async_uart_getc();
     if(read != '\n' && read != 0x7f){
       append_str(input, read);

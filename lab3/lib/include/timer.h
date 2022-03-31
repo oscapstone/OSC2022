@@ -11,9 +11,12 @@ void core_timer_interrupt_disable(void);
 unsigned long clock_time(void);
 void clock_alert(char *str);
 void timeout_print(char *str);
+void print_time(void);
 void set_core_timer_interrupt(unsigned long long expired_time);
 void add_timer(callback_typ callback, char *msg, int time);
 void pop_timer(void);
+void add_task(callback_typ callback, char *msg);
+void pop_task(void);
 
 typedef struct timer_list timer_list;
 
@@ -22,5 +25,12 @@ struct timer_list{
   callback_typ call_back;
   char msg[100];
   struct timer_list *next;
+};
+
+typedef struct task_list task_list;
+struct task_list{
+  callback_typ task_call_back;
+  char *arg;
+  struct task_list *next;
 };
 

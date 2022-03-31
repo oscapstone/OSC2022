@@ -5,6 +5,8 @@
 
 static timer_list *timer_queue = NULL;
 
+task_list *task_queue = NULL;
+
 void core_timer_enable(void){
   __asm__ __volatile__(
     "mov x1, 1\n\t"
@@ -63,7 +65,23 @@ void clock_alert(char *str){
 
 void timeout_print(char *str){
   printf("This is form timeout function.\n\r");
+  print_time();
   printf("Message: %s.\n\r", str);
+}
+
+void print_time(void){
+  unsigned long long cntpct_el0;
+  __asm__ __volatile__(
+    "mrs %0, cntpct_el0\n\t"
+    : "=r"(cntpct_el0)
+  ); //tick now
+
+  unsigned long long cntfrq_el0;
+  __asm__ __volatile__(
+    "mrs %0, cntfrq_el0\n\t"
+    : "=r"(cntfrq_el0)
+  ); //tick frequency
+  printf("seconds after booting : %d\n\r", cntpct_el0 / cntfrq_el0);
 }
 
 void set_core_timer_interrupt(unsigned long long expired_time){
@@ -108,9 +126,35 @@ void add_timer(callback_typ callback, char *msg, int time) {
 void pop_timer(void){
   timer_list *timer = timer_queue;
   timer_queue = timer_queue->next;
-  timer->call_back(timer->msg);
+  // timer->call_back(timer->msg);
+  add_task(timer->call_back, timer->msg);
   if (!timer_queue)
     core_timer_interrupt_disable();
   else
     set_core_timer_interrupt(timer_queue->expired_time - clock_time());
+}
+
+void add_task(callback_typ callback, char *msg){
+  task_list *task = (task_list*)simple_malloc(sizeof(task_list));
+  task->task_call_back = callback;
+  task->arg = msg;
+  task->next = NULL;
+  if(!task_queue)
+    task_queue = task;
+  else{
+    task_list *pre = task_queue, *next = task_queue->next;
+    while (next) {
+      pre = next;
+      next = next->next;
+    }
+    pre->next = task;
+  }
+}
+
+void pop_task(void){
+  task_list *task = task_queue;
+  if(task_queue){
+    task_queue = task_queue->next;
+    task->task_call_back(task->arg);
+  }
 }
