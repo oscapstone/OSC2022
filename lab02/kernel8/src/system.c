@@ -15,7 +15,8 @@ struct cmd cmd_list[SYS_CMD_NUM] = {
     {.input = "ls", .description="List rootfs."},
     {.input = "cat", .description="Show content of file."},
     {.input = "dtb_ls",. description="List device tree."},
-    {.input = "dtb_cat",. description="Parse device tree."}
+    {.input = "dtb_cat",. description="Parse device tree."},
+    {.input = "malloc",. description="Simple allocator."}
 };
 
 void system_command(char* buf){

@@ -7,7 +7,7 @@
 #include "dtb_parser.h"
 
 
-#define SYS_CMD_NUM 8
+#define SYS_CMD_NUM 9
 
 void system_command(char*);
 
