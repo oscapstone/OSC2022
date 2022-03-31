@@ -10,36 +10,26 @@ void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
 void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void lower_sync_handler() {
-	disable_interrupt();
 	dumpState();
-	enable_interrupt();
 }
 
 void lower_iqr_handler() {
-	disable_interrupt();
 	pop_timer();
-	enable_interrupt();
 }
 
 void curr_sync_handler() {
-	disable_interrupt();
 	error_handler();
-	enable_interrupt();
 }
 
 void curr_iqr_handler() {
-	disable_interrupt();
     if (*IRQ_PENDING_1 & AUX_IRQ)
 		uart_handler();
 	else
 		pop_timer();
-    enable_interrupt();
 }
 
 void error_handler() {
-	disable_interrupt();
 	uart_send_string("[ERROR] unknown exception...\n");
-	dumpState();
 	while(1){}
 }
 
