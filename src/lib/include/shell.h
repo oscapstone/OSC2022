@@ -5,6 +5,8 @@
 #include "reboot.h"
 #include "mbox.h"
 #include "cpio.h"
+#include "exec.h"
+#include "timer.h"
 #define MAX_BUFFER_SIZE 256u
 
 void print_sys_info();

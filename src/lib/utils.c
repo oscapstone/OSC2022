@@ -15,3 +15,19 @@ void* simple_malloc(size_t size) {
     top += size;
     return buttom;
 }
+
+void unsignedlonglongToStrHex(unsigned long long num, char *buf)
+{
+	unsigned int n;
+    int size=0;
+    for(int c=60; c>=0; c-=4,size++) 
+	{
+        // get highest tetrad
+        n=(num>>c)&0xF;
+        // 0-9 => '0'-'9', 10-15 => 'A'-'F'
+        n+=n>9?0x37:0x30;
+        buf[size] = (char)n;
+    }
+    buf[16] = '\0';
+    
+}

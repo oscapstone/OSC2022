@@ -24,12 +24,16 @@ void welcome_msg() {
 
 void helper() {
     uart_puts("*************************************************\n");
-    uart_puts("* help    : print this help menu\n");
-    uart_puts("* hello   : print hello world!\n");
-    uart_puts("* reboot  : reboot the device\n");
-    uart_puts("* hwinfo  : print the hardware information\n");
-    uart_puts("* ls      : print files in cpio archieve\n");
-    uart_puts("* cat     : print content in cpio archieve\n");
+    uart_puts("* help       : print this help menu\n");
+    uart_puts("* hello      : print hello world!\n");
+    uart_puts("* reboot     : reboot the device\n");
+    uart_puts("* hwinfo     : print the hardware information\n");
+    uart_puts("* ls         : print files in cpio archieve\n");
+    uart_puts("* cat        : print content in cpio archieve\n");
+    uart_puts("* exec       : execute user program\n");
+    uart_puts("* core time  : print seconds after booting\n");
+    uart_puts("* async send : async print message\n");
+    uart_puts("* async getc : print the hex ascii we get\n");
     uart_puts("*************************************************\n");
 }
 
@@ -61,6 +65,26 @@ void cmd_handler(char *cmd) {
         cmd_reader(input);
         uart_puts("\r\n");
         cpio_cat((cpio_new_header *)CPIO_BASE, input);
+    }
+    else if (strcmp(cmd, "exec") == 0) {
+        uart_puts("Filename: ");
+        char input[MAX_BUFFER_SIZE];
+        cmd_reader(input);
+        uart_puts("\r\n");
+        exec((cpio_new_header *)CPIO_BASE, input, 0);
+    }
+    else if (strcmp(cmd, "core time") == 0) {
+        exec((cpio_new_header *)CPIO_BASE, "user_program.img", 1);
+    }
+    else if (strcmp(cmd, "async send") == 0) {
+        uart_async_puts("async send finish!");
+        uart_puts("\r\n");
+    }
+    else if (strcmp(cmd, "async getc") == 0) {
+        char c = uart_async_getc();
+        uart_puts("the ascii of char we get: 0x");
+        uart_hex(c);
+        uart_puts("\r\n");
     }
     else {
         uart_puts("invalid command!");

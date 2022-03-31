@@ -11,6 +11,9 @@ LIB_SRC = \
 	$(LIB_SRC_DIR)/cpio.c \
 	$(LIB_SRC_DIR)/utils.c \
 	$(LIB_SRC_DIR)/dtb.c \
+	$(LIB_SRC_DIR)/exec.c \
+	$(LIB_SRC_DIR)/exception.c \
+	$(LIB_SRC_DIR)/timer.c \
 
 LIB_INCLUDES = \
 	-I $(LIB_SRC_DIR)/include \
@@ -62,7 +65,8 @@ OUT_ELF = ./$(PROJ).elf
 OUT_IMG = ./$(PROJ).img
 LINKER_FILE = linker.ld
 
-CCFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
+#CCFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
+CCFLAGS = -Wall -O0 -ffreestanding -nostdinc -nostdlib -nostartfiles -g
 LDFLAGS = -T$(LINKER_FILE)
 
 .PHONY: clean directories out_elf
@@ -97,7 +101,7 @@ $(OUT_ELF): $(OUT_OBJS)
 	@echo '--------------------------------'
 	$(LD) $(LDFLAGS) -o $@ $(OUT_OBJS)
 	$(OD) -d $@ > $(BUILD_DIR)/$(PROJ).objdump
-	$(SP) $@
+	# $(SP) $@
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -10,7 +10,7 @@ int cpio_header_parser(cpio_new_header *header, char **file_name, unsigned long 
     *file_size = hexStr2int(header->c_filesize, 8);
     *file_name = ((char *)header) + HEADER_SIZE;
 
-    // check if it is the end of the cpio archieve
+    // check if it is the end of the cpio archive
     if (!strncmp(*file_name, END_OF_CPIO, sizeof(END_OF_CPIO)))
         return 1;
     
@@ -39,7 +39,7 @@ void cpio_ls(cpio_new_header *header) {
     cpio_new_header *nxt_header;
     int header_info;
 
-    // read content in cpio archieve
+    // read content in cpio archive
     while (1) {
         header_info = cpio_header_parser(cur_header, &file_name, &file_size, &data, &nxt_header);
         // uart_send((unsigned int)header_info);
@@ -57,7 +57,6 @@ void cpio_cat(cpio_new_header *header, char *input) {
     char *file_name;
     int header_info = 0;
     unsigned long file_size;
-    unsigned long file_name_size;
     char *data;
     cpio_new_header *cur_header = header;
     cpio_new_header *nxt_header;
@@ -81,6 +80,6 @@ void cpio_cat(cpio_new_header *header, char *input) {
         }
         cur_header = nxt_header;
     }
-    uart_puts('no such file');
+    uart_puts("no such file");
     return;
 }
