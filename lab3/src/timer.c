@@ -25,7 +25,7 @@ void core_timer_enable()
         "mov x2, 2\n\t"
         "ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n\t"
         "str w2, [x1]\n\t" // unmask timer interrupt
-    );
+    :::"x1","x2");
 }
 
 void core_timer_disable()
@@ -34,7 +34,7 @@ void core_timer_disable()
         "mov x2, 0\n\t"
         "ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n\t"
         "str w2, [x1]\n\t" // unmask timer interrupt
-    );
+    :::"x1","x2");
 }
 
 void timer_event_callback(timer_event_t *timer_event)
@@ -138,7 +138,7 @@ void set_core_timer_interrupt(unsigned long long expired_time)
         "mrs x1, cntfrq_el0\n\t" //cntfrq_el0 -> relative time
         "mul x1, x1, %0\n\t"
         "msr cntp_tval_el0, x1\n\t" // set expired time
-        : "=r"(expired_time));
+        :: "r"(expired_time):"x1");
 }
 
 // directly set timer interrupt time to a cpu tick  (directly)
@@ -146,7 +146,7 @@ void set_core_timer_interrupt_by_tick(unsigned long long tick)
 {
     __asm__ __volatile__(
         "msr cntp_cval_el0, %0\n\t" //cntp_cval_el0 -> absolute time
-        : "=r"(tick));
+        :: "r"(tick));
 }
 
 int timer_list_get_size()

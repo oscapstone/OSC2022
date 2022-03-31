@@ -67,8 +67,20 @@ void do_cmd(char *cmd)
     }
     else if (strncmp(cmd, "setTimeout", sizeof("setTimeout") - 1) == 0)
     {
-        char *message = strchr(cmd, ' ') + 1;
+        strchr(cmd, ' ');
+        char *message = strchr(cmd, ' ');
+        if (!message)
+        {
+            uart_async_printf("setTimeout wrong format");
+            return;
+        }
+        message += 1;
         char *end_message = strchr(message, ' ');
+        if (!end_message)
+        {
+            uart_async_printf("setTimeout wrong format");
+            return;
+        }
         *end_message = '\0';
         char *seconds = end_message + 1;
         add_timer(uart_puts, atoi(seconds), message);

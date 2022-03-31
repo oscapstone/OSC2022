@@ -274,6 +274,7 @@ void uart_interrupt_r_handler()
     //read buffer full
     if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx)
     {
+        *AUX_MU_IIR = 0xC6; /* clear the fifos */ // I dont know why need this but it can prevent big input to cause infinite run here (disable_r_interrupt never work)
         disable_mini_uart_r_interrupt(); //disable read interrupt when read buffer full
         return;
     }

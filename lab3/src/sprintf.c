@@ -28,6 +28,7 @@
  */
 
 #include "uart.h"
+#include "string.h"
 
 unsigned int vsprintf(char *dst, char* fmt, __builtin_va_list args)
 {
@@ -43,10 +44,11 @@ unsigned int vsprintf(char *dst, char* fmt, __builtin_va_list args)
     // main loop
     arg = 0;
     while(*fmt) {
-        if(dst-orig > MAX_BUF_SIZE-0x10)
+        if (strlen(fmt) > MAX_BUF_SIZE - 0x10 || dst - orig > MAX_BUF_SIZE - 0x10)
         {
             uart_puts("Error!!! format string too long!!!!");
-            return -1;
+            *dst = 0;
+            return dst - orig;
         }
         // argument access
         if(*fmt=='%') {
