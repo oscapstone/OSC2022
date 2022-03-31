@@ -130,7 +130,6 @@ void cmd_unknown() {
 
 void shell() {
     cpio_init();
-    timer_list_init();
     enable_core_timer();
     welcome_msg();
     do {

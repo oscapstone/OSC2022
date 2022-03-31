@@ -17,7 +17,11 @@ typedef struct timer_event {
 } timer_event_t;
 
 void enable_core_timer();
+void disable_core_timer();
+
 void core_timer_handler();
+void core_timer_callback();
+
 void timer_list_init();
 uint64_t get_absolute_time(uint64_t offset);
 void add_timer(void* callback, char* args, uint64_t timeout);

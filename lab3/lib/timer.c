@@ -12,18 +12,29 @@ void enable_core_timer() {
     struct list_head* curr;
 }
 
+void disable_core_timer() {
+    *(uint32_t*)CORE0_TIMER_IRQ_CTRL = 0;  // disable rip3 timer interrupt
+}
+
 void core_timer_handler() {
+    disable_core_timer();  // [ Lab3 - AD2 ] 1. masks the device’s interrupt line,
+    add_task(core_timer_callback, PRIORITY_NORMAL);
+}
+
+void core_timer_callback() {
+    // return;
     // if there is no timer event, set a huge expire time
     if (list_empty(timer_event_list)) {
         printf("[+] timer_event_list is empty" ENDL);
         set_relative_timeout(65535);
+        enable_core_timer();
         return;
     }
 
-    // trigger first callback
+    // trigger the first callback
     ((void (*)(char*))((timer_event_t*)timer_event_list->next)->callback)(((timer_event_t*)timer_event_list->next)->args);
 
-    // remove first event
+    // remove the first event
     list_rotate_left(timer_event_list);
     list_del(timer_event_list->prev);
     free();
@@ -34,9 +45,13 @@ void core_timer_handler() {
     } else {
         set_absolute_timeout(((timer_event_t*)timer_event_list->next)->tval);
     }
+
+    // [ Lab3 - AD2 ] 5. unmasks the interrupt line to get the next interrupt at the end of the task.
+    enable_core_timer();
 }
 
 void timer_list_init() {
+    timer_event_list = malloc(sizeof(struct list_head));
     INIT_LIST_HEAD(timer_event_list);
 }
 
@@ -84,14 +99,16 @@ void sleep(uint64_t timeout) {
 }
 
 void show_msg_callback(char* args) {
-    async_printf("[+] show_msg_callback(%s)" ENDL, args);
+    // async_printf("[+] show_msg_callback(%s)" ENDL, args);
+    printf("[+] show_msg_callback(%s)" ENDL, args);
 }
 
 void show_time_callback(char* args) {
     uint64_t cntpct_el0, cntfrq_el0;
     get_reg(cntpct_el0, cntpct_el0);
     get_reg(cntfrq_el0, cntfrq_el0);
-    async_printf("[+] show_time_callback() -> %02ds" ENDL, cntpct_el0 / cntfrq_el0);
+    // async_printf("[+] show_time_callback() -> %02ds" ENDL, cntpct_el0 / cntfrq_el0);
+    printf("[+] show_time_callback() -> %02ds" ENDL, cntpct_el0 / cntfrq_el0);
 
     add_timer(show_time_callback, args, 2);
 }

@@ -6,27 +6,25 @@ void irq_handler() {
     // async_printf("IRQ_PEND_1: 0x%lX" ENDL, mmio_read(IRQ_PEND_1));
     // async_printf("CORE0_IRQ_SRC: 0x%lX" ENDL, c0_int_src);
 
-    // 1. masks the device’s interrupt line,
-    disable_interrupt();
-
-    // 2. move data from the device’s buffer through DMA, or manually copy,
+    // [ Lab3 - AD2 ] 2. move data from the device’s buffer through DMA, or manually copy,
     // TODO: necessary???
 
-    // 3. enqueues the processing task to the event queue,
+    // [ Lab3 - AD2 ] 3. enqueues the processing task to the event queue,
+    // classify the interrupt type, and call add_task()
     if (c0_int_src & SRC_CNTPNSIRQ_INT) {
         core_timer_handler();
     } else {  // TODO: better condition
         uart_int_handler();
     }
 
-    // 4. do the tasks with interrupts enabled,
-
-    // 5. unmasks the interrupt line to get the next interrupt at the end of the task.
-    enable_interrupt();
+    // [ Lab3 - AD2 ] 4. do the tasks with interrupts enabled,
+    run_task();
 }
 
 void invalid_handler(uint32_t x0) {
     printf("[Invalid Exception] %d" ENDL, x0);
+    while (1) {
+    };
 }
 
 void sync_handler() {
