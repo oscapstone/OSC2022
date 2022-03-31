@@ -1,4 +1,4 @@
-# My OSC 2021
+# My OSC 2022
 
 ## Author
 
@@ -8,20 +8,13 @@
 
 ## How to build
 
-**WIP**
+make
 
 ## How to run
 
-**WIP**
+make run
 
 ## How to burn it into pi3
 
-**WIP**
+use a sd card reader and copy kernel8.img into boot/
 
-## Architecture
-
-**WIP**
-
-## Directory structure
-
-**WIP**
