@@ -1,5 +1,16 @@
+#include "uart.h"
 #include "address.h"
 #include "utils.h"
+#include "type.h"
+#include "interrupt.h"
+
+
+char tx_buffer[MAX_BUF_SIZE] = {};
+unsigned long long tx_buffer_widx = 0; //write index
+unsigned long long tx_buffer_ridx = 0; //read index
+char rx_buffer[MAX_BUF_SIZE] = {};
+unsigned long long rx_buffer_widx = 0;
+unsigned long long rx_buffer_ridx = 0;
 
 void uart_init() {
     register unsigned int r;
@@ -189,4 +200,180 @@ char* uart_img_receiver(char* address) {
     delay_ms(2000); // wait message to be sent before restart new kernel
         
     return address;
+}
+
+// ############## Asynchronize ############## 
+
+void uart_interrupt_r_handler()
+{
+    //read buffer full
+    if ((rx_buffer_widx + 1) % MAX_BUF_SIZE == rx_buffer_ridx)
+    {
+        disable_uart_r_interrupt(); //disable read interrupt when read buffer full
+        return;
+    }
+    rx_buffer[rx_buffer_widx++] = uart_getc();
+    if (rx_buffer_widx >= MAX_BUF_SIZE)
+        rx_buffer_widx = 0;
+
+    enable_uart_r_interrupt();
+}
+
+void uart_interrupt_w_handler() //can write
+{
+    // buffer empty
+    if (tx_buffer_ridx == tx_buffer_widx)
+    {
+        disable_uart_w_interrupt(); // disable w_interrupt to prevent interruption without any async output
+        return;
+    }
+    uart_putc(tx_buffer[tx_buffer_ridx++]);
+    if (tx_buffer_ridx >= MAX_BUF_SIZE)
+        tx_buffer_ridx = 0; // cycle pointer
+
+    enable_uart_w_interrupt();
+}
+
+void uart_async_puts(char *s) {
+    while(*s) {
+        /* convert newline to carrige return + newline */
+        if(*s == '\n') {
+            uart_async_putc('\r');
+        }
+
+        uart_async_putc(*s++);
+    }
+}
+
+unsigned int uart_async_putc(char c)
+{
+    // full buffer wait
+    while((tx_buffer_widx + 1) % MAX_BUF_SIZE == tx_buffer_ridx)
+    {
+        // start asynchronous transfer
+        enable_uart_w_interrupt();
+        // uart_puts("\n TX fails, uart async tx buffer is full\n");
+        // return 1;
+    }
+
+    
+    // critical section
+    disable_interrupt();
+    tx_buffer[tx_buffer_widx++] = c;
+    if (tx_buffer_widx >= MAX_BUF_SIZE)
+        tx_buffer_widx = 0; // cycle pointer
+
+    // start asynchronous transfer
+    enable_interrupt();
+    
+    // enable interrupt to transfer
+    enable_uart_w_interrupt();
+    return 0;
+}
+
+// Show new line
+void uart_async_newline() {
+    uart_async_puts("\n");
+}
+
+// Show split line
+void uart_async_dem() {
+    uart_async_puts("\n=================================\n");
+}
+
+// show prefix >>
+void uart_async_prefix() {
+    uart_async_puts("\n>> ");
+}
+
+// Show hex value
+void uart_async_hex(unsigned int d) {
+    unsigned int n;
+    int c;
+    uart_async_puts("0x");
+    for(c = 28; c >= 0; c -= 4) {
+        // get highest tetrad
+        n = (d >> c) & 0xF;
+        // 0-9 => '0'-'9', 10-15 => 'A'-'F'
+        n += n > 9 ? 0x37 : 0x30;
+        uart_async_putc(n);
+    }
+}
+
+
+void uart_async_num(unsigned int d) {
+    unsigned int n;
+    unsigned int s[16];
+    int i;
+    for(i = 0; d > 0; i++) {
+        n = d % 10 + 0x30;
+        s[i] = n;
+        d /= 10;
+    }
+
+    if(i == 0) {
+        uart_async_putc('0');
+    }
+    else {
+        while(i--) {
+            uart_async_putc(s[i]);
+        }
+    }
+}
+
+char uart_async_getc()
+{
+    enable_uart_r_interrupt();
+    // while buffer empty
+    if (rx_buffer_ridx == rx_buffer_widx) 
+    {
+        return NULL;
+    }
+
+    // critical section
+    disable_interrupt();
+    char r = rx_buffer[rx_buffer_ridx++];
+
+    if (rx_buffer_ridx >= MAX_BUF_SIZE)
+        rx_buffer_ridx = 0;
+
+    enable_interrupt();
+
+    return r;
+}
+
+// enable uart interrupt
+
+void enable_uart_interrupt()
+{
+    enable_uart_r_interrupt();
+    enable_uart_w_interrupt();
+    *IRQS1 |= 1 << 29;
+}
+
+void enable_uart_r_interrupt()
+{
+    *AUX_MU_IER |= 1; // read interrupt
+}
+
+void enable_uart_w_interrupt() {
+    *AUX_MU_IER |= 2; // write interrupt
+}
+
+// disable uart interrupt
+
+void disable_uart_interrupt()
+{
+    disable_uart_r_interrupt();
+    disable_uart_w_interrupt();
+}
+
+void disable_uart_r_interrupt()
+{
+    *AUX_MU_IER &= ~(1);
+}
+
+void disable_uart_w_interrupt()
+{
+    *AUX_MU_IER &= ~(2);
 }

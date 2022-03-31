@@ -56,3 +56,41 @@ void extract_cpio(char* address, int ls, int cat, char* name) {
         }
     } while(strcmp(filename, "TRAILER!!!") == 0);
 }
+
+char* load_user_program(char* address, char* program_address, char* name) {
+    char filename[256];
+    char* p = address;
+    uint64 filesize;
+        
+    do {
+        filesize = str2num(p + 54, 8);
+        p = extract_section(filename, p + 110, address, 1000); // read filename
+        
+        if(strcmp(filename, "TRAILER!!!")) { // ending string
+            break;
+        }
+        else if(strcmp(filename, ".")) { // always the first file without any content
+            continue;
+        }
+        else if(strcmp(filename, name)) {
+            // uart_puts("Start loading file, size = ");
+            // uart_num(filesize);
+            // uart_newline();
+            // char* kernel = program_address;
+            // while(filesize--) {
+            //     *(kernel++) = *(p++);
+            // }
+
+            // uart_puts("Loading done\n");
+            // delay_ms(10);
+
+            break;
+        }
+        else {
+            p += filesize;
+        }
+    } while(strcmp(filename, "TRAILER!!!") == 0);
+
+    uart_async_puts("Get user program\n");
+    return p;
+}
