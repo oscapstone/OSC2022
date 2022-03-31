@@ -60,23 +60,25 @@ void add_timer(TimerTask task, unsigned long long expired_time, void *args){
 
 
 void timer_interrupt_handler(){
-  
-    if(head != NULL){
+
+    while(head != NULL){
         if(head->next != NULL){
             head->task(head->args);
             head = head->next;
             head->prev = NULL;
-            reset_timer_irq(head->expired_time);
+            unsigned long long system_timer = 0;
+            asm volatile("mrs %0, cntpct_el0\n\t" :"=r"(system_timer));
+            if(head->expired_time > system_timer){
+                reset_timer_irq(head->expired_time);
+                break;
+            }
         } 
         else{
             head->task(head->args);
             head = NULL;
-            set_long_timer_irq();
-        } 
+        }
     }
-    else{
-        set_long_timer_irq();
-    }
+    if(head == NULL) set_long_timer_irq();
 }
 
 void timeout_print(void *args){

@@ -19,13 +19,15 @@ void PrintWelcome(){
 /* print help message*/
 void PrintHelp(){
   uart_puts("-------------------------- Help Message --------------------------\n");
-  uart_puts("help     : print this help menu\n");
-  uart_puts("hello    : print Hello World!\n");
-  uart_puts("revision : print board_revision\n");
-  uart_puts("memory   : print memory info\n");
-  uart_puts("reboot   : reboot the device\n");
-  uart_puts("ls       : list directory contents\n");
-  uart_puts("cat      : concatenate files and print on the standard output\n");
+  uart_puts("help         : print this help menu\n");
+  uart_puts("hello        : print Hello World!\n");
+  uart_puts("revision     : print board_revision\n");
+  uart_puts("memory       : print memory info\n");
+  uart_puts("reboot       : reboot the device\n");
+  uart_puts("ls           : list directory contents\n");
+  uart_puts("cat          : concatenate files and print on the standard output\n");
+  uart_puts("setTimeout   : set timeout for read\n");
+  uart_puts("test_timeout : test timeout for read\n");
 }
 
 /* print unknown command message*/
@@ -139,6 +141,7 @@ void TestTimeOut(char buf[MAX_SIZE]){
   add_timer(timeout_print, 5, "[*] timeout: 5\n");
   add_timer(timeout_print, 4, "[*] timeout: 4\n");
   add_timer(timeout_print, 3, "[*] timeout: 3\n");
+  add_timer(timeout_print, 2, "[*] timeout: 2.1\n"); // test short expired time
 }
 
 /* Main Shell */

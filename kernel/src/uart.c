@@ -77,9 +77,11 @@ char async_uart_getc(){
   /* wait until something is in the read buffer (read_set_idx != read_get_idx) */
   while(read_get_idx == read_set_idx) {asm volatile("nop");}
 
+  // disable_irq();
   char r = read_buf[read_get_idx++]; /* read the char that set in read buffer already*/
   read_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
-
+  // enable_irq();
+  
   return r;
 }
 
@@ -90,7 +92,7 @@ void uart_putc(unsigned int c){
   0x20/bit_6 is set if the transmit FIFO is empty and the
   transmitter is idle. (Finished shifting out the last bit).
   */
-  // while(!(*AUX_MU_LSR & 0x20)) {asm volatile("nop");}
+  while(!(*AUX_MU_LSR & 0x20)) {asm volatile("nop");}
 
   /* write the character to the buffer */
   *AUX_MU_IO = c;
@@ -115,8 +117,10 @@ void async_uart_putc(unsigned int c){
   /* buffer is full, wait the sending char */
   while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {asm volatile("nop");}
 
+  // disable_irq();
   write_buf[write_set_idx++] = (char)c;
   write_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+  // enable_irq();
 
   /* enable transmit interrupt after set the new char */
   enable_AUX_MU_IER_w();
