@@ -57,8 +57,6 @@ void uart_init ( void )
     put32(AUX_MU_IIR_REG, 6);               //Interrupt identify no fifo
     put32(AUX_MU_CNTL_REG,3);               //Finally, enable transmitter and receiver
 
-    put32(ENABLE_IRQS_1, (1<<29));
-
 }
 
 char async_read_buf[256];
@@ -66,20 +64,25 @@ char async_write_buf[256];
 int read_s, read_e;
 int write_s, write_e;
 
-void async_uart_handler() {
+void enable_uart_interrupt() { put32(ENABLE_IRQS_1, (1<<29)); }
+void disable_uart_interrupt() { put32(DISABLE_IRQS_1, (1<<29)); }
+void set_transmit_interrupt() { put32(AUX_MU_IER_REG, 0x2); } // ????
+void clear_transmit_interrupt() { put32(AUX_MU_IER_REG, 0x1); } // ????
 
-    if (get32(AUX_MU_IIR_REG)&0b100) {
+void async_uart_handler() {
+    disable_uart_interrupt();
+    if (get32(AUX_MU_IIR_REG)&0x4) {
         
         char c = (char)get32(AUX_MU_IO_REG);
         async_read_buf[read_e++] = c;
         if (read_e == 256) read_e = 0;
 
-    } else if (get32(AUX_MU_IIR_REG)&0b010) {
+    } else if (get32(AUX_MU_IIR_REG)&0x2) {
         
         while (get32(AUX_MU_LSR_REG)&0x20) {
             
             if (write_s == write_e) {
-                put32(AUX_MU_IER_REG, 1);
+                put32(AUX_MU_IER_REG, 0x1);
                 break;
             }
             char c = async_write_buf[write_s++];
@@ -89,12 +92,13 @@ void async_uart_handler() {
         }
 
     }
-
+    enable_uart_interrupt();
 }
 
 char async_uart_recv() {
 
-    while (read_s == read_e);
+    while (read_s == read_e)
+        asm volatile("nop");
 
     char c = async_read_buf[read_s++];
     if (read_s == 256) read_s = 0;
@@ -117,11 +121,16 @@ void async_uart_send_string(char *str) {
 
 	}
 
-    put32(AUX_MU_IER_REG, 3);
+    set_transmit_interrupt();
 
 }
 
 void async_uart_test() {
+
+    enable_uart_interrupt();
+
+    for (int i = 0; i < 10000; i++)
+        asm volatile("nop");
 
     char buffer[256];
     unsigned int i = 0;
@@ -133,5 +142,6 @@ void async_uart_test() {
     buffer[i+1] = '\n';
     buffer[i+2] = '\0';
     async_uart_send_string(buffer);
+    disable_uart_interrupt();
 
 }

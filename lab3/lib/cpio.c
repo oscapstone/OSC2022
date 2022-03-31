@@ -210,10 +210,9 @@ void cpio_exec() {
                 "msr elr_el1, %0\n\t"
                 "msr spsr_el1, xzr\n\t"
                 "msr sp_el0, %1\n\t"
-                "eret"
+                "eret\n\t"
                 :: 
                 "r" (code_loc),
-                //"r" (spsr_val),
                 "r" (sp_val)
             );
 

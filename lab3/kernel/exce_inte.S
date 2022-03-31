@@ -65,7 +65,7 @@ exception_vector_table:
 	vt_entry	exception_handler			// FIQ EL1h
 	vt_entry	exception_handler			// Error EL1h
 
-	vt_entry	exception_handler			// Synchronous 64-bit EL0
+	vt_entry	sync_64_EL0_handler			// Synchronous 64-bit EL0
 	vt_entry	irq_64_EL0_handler			// IRQ 64-bit EL0
 	vt_entry	exception_handler			// FIQ 64-bit EL0
 	vt_entry	exception_handler   		// Error 64-bit EL0
@@ -87,9 +87,15 @@ irq_EL1h_handler:
     load_all
     eret
 
+sync_64_EL0_handler:
+    save_all
+    bl sync_64_router
+    load_all
+    eret
+
 irq_64_EL0_handler:
     save_all
-    bl irq_exc_router
+    bl two_btime_handler
     load_all
     eret
 

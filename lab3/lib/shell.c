@@ -7,6 +7,7 @@
 #include "cpio.h"
 #include "memory.h"
 #include "timer.h"
+#include "exception.h"
 
 
 #define MAX_BUFFER_SIZE 256u
@@ -67,17 +68,23 @@ void parse_cmd()
         uart_send('\n');
     }
     else if (stringcmp(buffer, "execute") == 0) {
-        core_timer_enable();
-        asm volatile(
-            "mrs x0, cntfrq_el0\n\t"
-            "msr cntp_tval_el0, x0\n\t"
-        );
+        // EL0
         cpio_exec();
     }
+    else if (stringcmp(buffer, "two_btime") == 0) {
+        // EL1
+        two_test();
+    }
     else if (stringcmp(buffer, "test_async") == 0) {
-        asm volatile("msr DAIFClr, 0xf");
+        // EL1
         async_uart_test();
-        asm volatile("msr DAIFSet, 0xf");
+        // disable_interrupt();
+    }
+    else if (stringcmp(buffer, "test_multiplex") == 0) {
+        // EL1
+        // enable_interrupt();
+        test_multiplex();
+        //disable_interrupt();
     }
     else if (stringcmp(buffer, "help") == 0) {
         uart_send_string("help:\t\tprint list of available commands\n");
@@ -88,7 +95,9 @@ void parse_cmd()
         uart_send_string("cat:\t\tprint file content in initramfs\n");
         uart_send_string("test_smalloc:\ttest simple malloc\n");
         uart_send_string("execute:\trun program from cpio\n");
+        uart_send_string("two_btime:\tshow time since boot per two seconds\n");
         uart_send_string("test_async:\ttest async uart\n");
+        uart_send_string("test_multiplex:\ttest timer multiplexing\n");
     }
     else 
         uart_send_string("Command not found! Type help for commands.\n");
