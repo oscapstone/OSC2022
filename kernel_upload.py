@@ -1,16 +1,20 @@
 from pwn import *
+import sys
 
-kernel = open("kernel8.img", "rb").read()
-#r = serialtube("/dev/pts/11", convert_newlines=False)
-r = serialtube("/dev/ttyS5", convert_newlines=False)
+pty = int(sys.argv[1])
+load_kernel = (len(sys.argv) >= 3) and sys.argv[2] == "upload"
 
+#r = serialtube("/dev/pts/%d"%pty, convert_newlines=False)
+r = serialtube("/dev/ttyS%d"%pty, convert_newlines=False)
 
-input("@")
-r.send(str(len(kernel))+"\n")
-#print(r.recv())
-#r.interactive()
-print(r.recvuntil(b") : "))
-r.send(kernel)
+if load_kernel:
+    kernel = open("kernel8.img", "rb").read()
+    input("@")
+    r.send(str(len(kernel))+"\n")
+    #print(r.recv())
+    #r.interactive()
+    print(r.recvuntil(b") : "))
+    r.send(kernel)
 
 
 r.interactive()

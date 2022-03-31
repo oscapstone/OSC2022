@@ -3,15 +3,12 @@
 #include <uart.h>
 #include <mmio.h>
 #include <string.h>
-#include <interrupt.h>
-#include <ringbuffer.h>
 #define RECEIVER_ENABLE_BIT (1<<0)
 #define TRANSMITTER_ENABLE_BIT (1<<1)
 #define NEWLINE '\n'
 #define NEWLINE_OUT "\n\r"
-#define UART_BUF_LEN 0x200
+#define UART_BUF_LEN 0x40
 
-RingBuffer *uart_buffer;
 
 void uart_init()
 {
@@ -34,28 +31,10 @@ void uart_init()
     mmio_set(GPPUDCLK0, 0);        // flush GPIO setup
     mmio_set(AUX_MU_CNTL_REG, 3);
     
-    // enable interrupt
-    //mmio_set(AUX_MU_IER_REG, 0b0);
-    mmio_set(AUX_MU_IER_REG, 0b01);
-    mmio_set(ARMINT_En_IRQs1_REG, mmio_load(ARMINT_En_IRQs1_REG) | (1<<29));
-
-    uart_buffer = RingBuffer_new(UART_BUF_LEN);
+    mmio_set(AUX_MU_IER_REG, 0b0);
 }
 
-void uart_interrupt_handler()
-{
-    interrupt_disable();
-    while((mmio_load(AUX_MU_LSR_REG) & 1) && !RingBuffer_Full(uart_buffer)){
-        RingBuffer_writeb(uart_buffer, mmio_load(AUX_MU_IO_REG)&0xff);
-    }
-    // uart_putshex(uart_buffer->len);
-    // uart_putshex(uart_buffer->lbound);
-    // uart_putshex(uart_buffer->rbound);
-    // uart_puts(uart_buffer->buf);
-    interrupt_enable();
-}
-
-size_t uart_read_sync(char* buf, size_t len)
+size_t uart_read(char* buf, size_t len)
 {
     //*AUX_MU_CNTL_REG = 0xffffffff & RECEIVER_ENABLE_BIT;
     //unsigned int oldcntl = mmio_load(AUX_MU_CNTL_REG);
@@ -69,17 +48,6 @@ size_t uart_read_sync(char* buf, size_t len)
     }
     //*AUX_MU_CNTL_REG &= ~RECEIVER_ENABLE_BIT;
     //mmio_set(AUX_MU_CNTL_REG, oldcntl);
-    return recvlen;
-}
-
-size_t uart_read_async(char* buf, size_t len)
-{
-    size_t recvlen = 0;
-    while(recvlen < len){
-        while(RingBuffer_Empty(uart_buffer));
-        if(RingBuffer_readb(uart_buffer, &buf[recvlen]) == 1) recvlen++;
-        //uart_puts("recv");
-    }
     return recvlen;
 }
 

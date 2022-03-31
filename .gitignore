@@ -1,3 +1,8 @@
 *.elf
 *.img
+*.o
 build
+rpi3/*.img
+rpi3/initramfs.cpio
+initramfs.cpio
+.vscode/

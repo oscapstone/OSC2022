@@ -7,6 +7,9 @@
 #include <kmalloc.h>
 #include <initrd.h>
 #include <dtb.h>
+#include <exception.h>
+#include <interrupt.h>
+#include <timer.h>
 
 #define PM_PASSWORD 0x5a000000
 
@@ -15,6 +18,8 @@ int test[0x10];
 extern uint32_t _bss_start;
 extern uint32_t _bss_end;
 extern uint32_t _stack_end;
+extern uint32_t _userspace_start;
+extern uint32_t _userspace_end;
 
 void main();
 
@@ -42,6 +47,8 @@ void help()
     uart_puts("hello        : print Hello World!");
     uart_puts("ls           : list files in initrd.");
     uart_puts("cat          : read a file.");
+    uart_puts("run <file>   : execute a file.");
+    uart_puts("setTimeout   : set a timer.");
     uart_puts("reboot       : reboot the device");
 }
 
@@ -71,6 +78,48 @@ void dtb_print()
     struct dtb_print_data data;
     data.depth = 0;
     fdt_traverse(dtb_print_callback, (void *)&data);
+}
+
+void exec(const char *filename)
+{
+    INITRD_FILE* file = initrd_get(filename);
+    memcpy(&_userspace_start, file->filecontent, file->filesize);
+    coretimer_el0_enable();
+    asm("msr spsr_el1, %0"::"r"((uint64_t)0x0)); // 0x0 enable all interrupt
+    asm("msr elr_el1, %0"::"r"(&_userspace_start));
+    asm("msr sp_el0, %0"::"r"(&_userspace_end));
+    asm("eret");
+}
+
+void print_boottime(void *arg)
+{
+    uint32_t cntfrq_el0;
+    uint64_t cntpct_el0;
+    asm("mrs %0, cntfrq_el0":"=r"(cntfrq_el0));
+    asm("mrs %0, cntpct_el0":"=r"(cntpct_el0));
+    uint64_t sec_from_boot = cntpct_el0 / cntfrq_el0;
+    uart_print("Seconds From Booting: 0x");
+    uart_putshex(sec_from_boot);
+    add_timer(10, &print_boottime, 0);
+}
+
+void Timeout(void *arg)
+{
+    uart_print("Timeout: ");
+    uart_puts((char *)arg);
+}
+
+void setTimeout()
+{
+    int time;
+    char *msg = (char *)kmalloc(0x20);
+    char time_inp[0x20];
+    uart_print("Time (secs): ");
+    uart_gets(time_inp);
+    time = atoi(time_inp);
+    uart_print("Msg: ");
+    uart_gets(msg);
+    add_timer(time, &Timeout, (void *)msg);
 }
 
 void main()
@@ -111,6 +160,16 @@ void main()
     uart_print("Test Simple Allocator 2: 0x");
     uart_puts(buf);
 
+    exception_vector_table_init();
+    coretimer_el0_enable();
+    interrupt_enable();
+
+    uint64_t spsr_el1=0;
+    asm("mrs %0, spsr_el1":"=r"(spsr_el1));
+    uart_print("spsr_el1: 0x");
+    uart_putshex(spsr_el1);
+    add_timer(10, &print_boottime, 0);
+
     while(1){
         uart_print("# ");
         uart_gets(buf);
@@ -144,6 +203,13 @@ void main()
         }
         else if(strncmp(buf, "dtb", 3) == 0){
             dtb_print();
+        }
+        else if(strncmp(buf, "run", 3) == 0){
+            exec(&buf[4]);
+        }
+        else if(strncmp(buf, "setTimeout", 10) == 0){
+            //exec(&buf[4]);
+            setTimeout();
         }
         else if(strncmp(buf, "reboot", 5) == 0){
             uart_puts("reboot!!");
