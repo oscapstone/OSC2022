@@ -42,51 +42,29 @@ void init_dtb(){
 }
 
 void print_header_info(char * dtb_base, fdt_header_type * fdt_header){
-    uart_send_string("dtb_base: ");
-    uart_print_long(dtb_base);
-    uart_send_string("\r\n");
+	uart_printf("dtb_base: %d \n", dtb_base);
     
-    uart_send_string("magic: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->magic));
-    uart_send_string("\r\n");
-    
-    uart_send_string("totalsize: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->totalsize));
-    uart_send_string("\r\n");
-    
-    uart_send_string("off_dt_struct: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->off_dt_struct));
-    uart_send_string("\r\n");
-   
-    uart_send_string("off_dt_string: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->off_dt_string));
-    uart_send_string("\r\n");
-  
-	uart_send_string("off_mem_rsvmap: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->off_mem_rsvmap));
-    uart_send_string("\r\n");
-    
-    uart_send_string("version: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->version));
-    uart_send_string("\r\n");
-    
-    uart_send_string("last_comp_version: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->last_comp_version));
-    uart_send_string("\r\n");
-    
-    uart_send_string("boot_cpuid_phys: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->boot_cpuid_phys));
-    uart_send_string("\r\n");
-    
-    uart_send_string("size_dt_strings: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->size_dt_strings));
-    uart_send_string("\r\n");
-    
-    uart_send_string("size_dt_struct: ");
-    uart_print_uint(swap_endian_uint32(fdt_header->size_dt_struct));
-    uart_send_string("\r\n");
-
-}
+    //should be unsigned int
+    uart_printf("magic: %d \n", swap_endian_uint32(fdt_header->magic));
+    //should be unsigned int
+    uart_printf("totalsize: %d \n", swap_endian_uint32(fdt_header->totalsize));
+    //should be unsigned int
+    uart_printf("off_dt_struct: %d \n", swap_endian_uint32(fdt_header->off_dt_struct));
+    //should be unsigned int
+   	uart_printf("off_dt_string: %d \n", swap_endian_uint32(fdt_header->off_dt_string));
+  	//should be unsigned int
+  	uart_printf("off_mem_rsvmap: %d \n", swap_endian_uint32(fdt_header->off_mem_rsvmap));
+    //should be unsigned int
+    uart_printf("version: %d \n", swap_endian_uint32(fdt_header->version));
+    //should be unsigned int
+    uart_printf("last_comp_version: %d \n", swap_endian_uint32(fdt_header->last_comp_version));
+    //should be unsigned int
+    uart_printf("boot_cpuid_phys: %d \n", swap_endian_uint32(fdt_header->boot_cpuid_phys));
+    //should be unsigned int
+    uart_printf("size_dt_strings: %d \n", swap_endian_uint32(fdt_header->size_dt_strings));
+    //should be unsigned int
+    uart_printf("size_dt_struct: %d \n", swap_endian_uint32(fdt_header->size_dt_struct));
+}	
 
 void fdt_traverse(){
     char * t_address = (char *)dtb_base;
@@ -97,7 +75,7 @@ void fdt_traverse(){
 	char * dt_struct_address = dtb_base + swap_endian_uint32(fdt_header->off_dt_struct) ;
 	
 	char * dt_string_address = dtb_base + swap_endian_uint32(fdt_header->off_dt_string) ;
-	int re = 5, i=0;
+	int i=0;
 	int * begin_node = (int *) dt_struct_address;
 	uint32_t cpio_start_address;
 		while(swap_endian_uint32(*begin_node++)==FDT_BEGIN_NODE){
@@ -105,8 +83,8 @@ void fdt_traverse(){
 				if(swap_endian_uint32(*begin_node++)==FDT_PROP){
 					uint32_t len = swap_endian_uint32(*begin_node++);
 					uint32_t nameoff = swap_endian_uint32(*begin_node++);
-					uart_send_string(dt_string_address + nameoff);
-					uart_send_string("\r\n");
+					uart_printf("??\n");
+					uart_printf("%s\n", dt_string_address + nameoff);
 					delay(150000);
 				}
 			}		
@@ -122,7 +100,7 @@ char * initramfs_callback(){
 	char * dt_struct_address = dtb_base + swap_endian_uint32(fdt_header->off_dt_struct) ;
 	
 	char * dt_string_address = dtb_base + swap_endian_uint32(fdt_header->off_dt_string) ;
-	int re = 5, i=0;
+	int i=0;
 	int * begin_node = (int *) dt_struct_address;
 	uint32_t cpio_start_address, cpio_end_address;
 		while(swap_endian_uint32(*begin_node++)==FDT_BEGIN_NODE){
@@ -132,23 +110,15 @@ char * initramfs_callback(){
 					uint32_t nameoff = swap_endian_uint32(*begin_node++);
 					if(!strcmp((dt_string_address + nameoff),"linux,initrd-start")){
 						cpio_start_address = swap_endian_uint32(*begin_node);
-						//uart_print_uint(swap_endian_uint32(*begin_node++));					
-						//uart_send_string("\r\n");
 						
 					}
 					if(!strcmp((dt_string_address + nameoff),"linux,initrd-end")){
 						cpio_end_address = swap_endian_uint32(*begin_node);
-						//uart_print_uint(swap_endian_uint32(*begin_node++));					
-						//uart_send_string("\r\n");
-						
 					}
 				}
 			}		
 		}
-	uart_send_string("# cpio address start at: ");
-	uart_print_uint(cpio_start_address);
-	uart_send_string(" cpio address end at: ");
-	uart_print_uint(cpio_end_address);	
-	uart_send_string("\r\n");
+	//should both be unsigned int
+	uart_printf("# cpio address start at: %d cpio address end at: %d \n",cpio_start_address,cpio_end_address);
 	return (char *)cpio_start_address;
 }

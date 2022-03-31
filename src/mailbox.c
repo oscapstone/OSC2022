@@ -38,9 +38,7 @@ void mailbox_board_revision(){
     mailbox[6] = 0x0;
     // tags end
     mailbox_call(mailbox, 8);
-    uart_send_string("# Board Revision:    ");
-    uart_send_string_int2hex(mailbox[5]);
-    uart_send_string("\r\n");
+    uart_printf("# Board Revision:\t %x\n",mailbox[5]);
 }
 
 
@@ -58,10 +56,5 @@ void mailbox_vc_memory(){
     mailbox[7] = 0x0;
     // tags end
     mailbox_call(mailbox, 8);
-    uart_send_string("# VC Core base address: 0x");
-    uart_send_string_int2hex(mailbox[5]);
-    uart_send_string(" size: 0x");
-    uart_send_string_int2hex(mailbox[6]);
-    uart_send_string("\r\n");
-    
+    uart_printf("# VC Core base address: 0x%x size: 0x%x \n", mailbox[5], mailbox[6]);
 }

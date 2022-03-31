@@ -49,10 +49,9 @@ char *strcpy(char *dest, const char *src)
     if(dest==NULL){
         return NULL;
     }
-    
     char *ptr = dest;
     
-    while( *src =='\0' ){
+    while( *src !='\0' ){
         *dest = *src;
         dest++;
         src++;
@@ -74,6 +73,16 @@ char *strcat(char *dest, const char *src)
     *ptr = '\0';
 
     return dest; 
+
+}
+
+char *strchr(register const char *s, int c){
+	do{
+		if(*s == c){
+			return (char *)s;
+		}
+	}while(*s++);
+	return 0;
 
 }
 
@@ -99,9 +108,11 @@ int strcmp(const char *str1, const char *str2){
 
 int strcmp_len(const char * str1, const char *str2, int n){
     int i;
-    for(i = 0; i < strlen(str1) && i < n; i++){
+    if (strlen(str1)<n)
+    	return 1;
+    for(i = 0; i < n; i++){
         if( *(str1+i) != *(str2+i) ){
-            return *(str1+i) - *(str2+i);
+        	return *(str1+i) - *(str2+i);
         }
     }
     return 0;
@@ -184,4 +195,13 @@ void itoxstr(int x, char str[]){
 	reverse_str(str);
 	str[i] = '\0';
 	return;
+}
+
+int atoi(char *str){
+	int res = 0;
+	for(int i=0; str[i]!='\0'; i++){
+		if(str[i]>'9'||str[i]<'0') return res;
+		res = res * 10 + str[i] - '0';
+	}
+	return res;
 }

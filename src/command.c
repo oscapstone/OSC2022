@@ -5,37 +5,40 @@
 #include "devicetree.h"
  
 void input_buffer_overflow_message(char *str){
-    uart_send_string("input buffer overflow message\n");
+
+    uart_printf("input buffer overflow message\n");
 }
 void command_help(){
-    uart_send_string("\r\n");
-    uart_send_string("# help\r\n");
-    uart_send_string("help\t: print this help menu\r\n");
-    uart_send_string("hello\t: print Hello World!\r\n");
-    uart_send_string("reboot\t: reboot the device\r\n");
-    uart_send_string("cancel reboot\t: cancel reboot\r\n");
-    uart_send_string("ls\t: list\r\n");
-    uart_send_string("cat\t: cat\r\n");
-    uart_send_string("test alloc\t: test alloc\r\n");
-    uart_send_string("fdt_traverse\t: fdt_traverse\r\n");
-    uart_send_string("\r\n");
+    uart_printf("\n");
+    uart_printf("# help\n");
+    uart_printf("help\t: print this help menu\n");
+    uart_printf("hello\t: print Hello World!\n");
+    uart_printf("reboot\t: reboot the device\n");
+    uart_printf("cancel reboot\t: cancel reboot\n");
+    uart_printf("ls\t: list\n");
+    uart_printf("cat\t: cat\n");
+    uart_printf("test alloc\t: test alloc\n");
+    uart_printf("fdt_traverse\t: fdt_traverse\n");
+    uart_printf("exec\t: exec FILENAME\n");
+    uart_printf("settimeout\t: settimeout MESSAGE SECONDS\n");
+    uart_printf("\n");
 }
 
 void command_hello(){
-    uart_send_string("Hello I'm kernel!\r\n");
+    uart_printf("Hello I'm kernel!\n");
 }
 void command_reboot(){
-    uart_send_string("rebooting...\r\n");
+    uart_printf("rebooting...\n");
     reset();
 }
 
 void command_cancel_reboot(){
-    uart_send_string("cancel reboot\r\n");
+    uart_printf("cancel reboot\n");
     cancel_reset();
 }
 
 void command_not_found(){
-    uart_send_string("shell: command not found\r\n");
+    uart_printf("shell: command not found\n");
 }
 
 void command_ls(){
@@ -52,4 +55,16 @@ void command_test_alloc(){
 
 void command_fdt_traverse(){
 	fdt_traverse();
+}
+
+void command_lab3_basic_1(char *str){
+	exec(str);
+}
+
+void command_settimeout(char *str){
+	char *message = strchr(str, ' ') + 1;
+	char *end_message = strchr(message, ' ');
+	*end_message = '\0';
+	char *second = end_message + 1;
+	add_timer(uart_send_string, atoi(second) ,message);
 }

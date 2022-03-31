@@ -55,8 +55,7 @@ void shell_input(char *str){
         }
         uart_send(c);
     }
-    uart_send_string("\r\n");
-
+    uart_printf("\n");
 }
 
 void shell_command(char* str){
@@ -86,6 +85,12 @@ void shell_command(char* str){
     }
     else if(!strcmp(str,"fdt_traverse")){
     	command_fdt_traverse();
+    }
+    else if(!strcmp_len(str,"exec",4)){
+    	command_lab3_basic_1(str);
+    }
+    else if(!strcmp_len(str, "settimeout", 10)){
+    	command_settimeout(str);
     }
     else{
         command_not_found();

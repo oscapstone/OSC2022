@@ -3,4 +3,5 @@
 
 void test_alloc();
 
+void get_el_value();
 #endif
