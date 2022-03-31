@@ -66,13 +66,31 @@ void exec_lsfdt() {
             printf("flattened devicetree error\n");
 }
 
-void exec_timeout() {
-	unsigned long timer;
-	timer = get_time10();
-	printf("executed time: %d.%ds\n", timer/10, timer%10);
-    printf("duration: 5\n");
-    set_time(5);
+void exec_timeout(char *command_string) {
+    char message[100]; 
+    unsigned int duration = 0;
+    int i = 8;
+    while (command_string[i]) {
+        duration = duration*10 + (int)command_string[i] - (int)'0';
+        i++;
+    }
+    i++;
+    int j = 0;
+    while (command_string[i]) {
+        message[j] = command_string[i];
+        i++;
+        j++;
+    }
+    message[j++] = '\n';
+    message[j] = 0;
+	// unsigned long timer;
+	// timer = get_time10();
+	// printf("executed time: %d.%ds\n", timer/10, timer%10);
+    // printf("duration: 5\n");
+    async_uart_puts(message);
+    set_time(duration);
     enable_timer_interrupt();
+
 }
 
 void exec_testmem() {
@@ -163,7 +181,7 @@ void parse_command(char* command_string) {
     else if (!strcmp(command_string, "lsfdt"))
         exec_lsfdt();
     else if (!strcmp(command_string, "timeout"))
-        exec_timeout(); 
+        exec_timeout(command_string);
     else if (!strcmp(command_string, "testasync"))
         exec_testasync();   
     else if (!strcmp(command_string, "mbox_board_revision"))

@@ -2,6 +2,7 @@
 
 #include "gpio.h"
 #include "uart.h"
+#include "utils.h"
 
 #define AUX_IRQ (1 << 29)
 #define IRQ_PENDING_1			((volatile unsigned int*)(MMIO_BASE+0x0000b204))
@@ -62,10 +63,12 @@ void handle_timer0_irq() {
 }
 
 void handle_timer1_irq() {
-	unsigned long timer;
-	timer = get_time10();
-	printf("current time: %d.%ds\n", timer/10, timer%10);
-	printf("MESSAGE\n");
+	// unsigned long timer;
+	// timer = get_time10();
+	// char *tmp;
+	// tmp = scanf("current time: %d.%ds\nMESSAGE\n", timer/10, timer%10);
+	
+	enable_transmit_interrupt();
 	disable_timer_interrupt();
 }
 
@@ -74,7 +77,7 @@ void lower_sync_entry() {
 }
 
 void lower_irq_entry() {
-	disable_current_interrupt();
+	// disable_current_interrupt();
 	if (*CORE0_INTERRUPT_SOURCE & 0x2) {
 		// Lower Core Timer Interrupt
 		handle_timer0_irq();
@@ -83,7 +86,7 @@ void lower_irq_entry() {
 		// Lower mini UART’s Interrupt
 		handle_uart_irq();
 	}
-	enable_current_interrupt();
+	// enable_current_interrupt();
 }
 
 void invalid_entry() {
@@ -94,7 +97,7 @@ void invalid_entry() {
 }
 
 void current_irq_entry() {
-	disable_current_interrupt();
+	// disable_current_interrupt();
 	if (*CORE0_INTERRUPT_SOURCE & 0x2) {
 		// current Core Timer Interrupt
 		handle_timer1_irq();
@@ -103,5 +106,5 @@ void current_irq_entry() {
 		// current mini UART’s Interrupt
 		handle_uart_irq();
 	}
-	enable_current_interrupt();
+	// enable_current_interrupt();
 }

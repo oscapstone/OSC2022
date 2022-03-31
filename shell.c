@@ -48,6 +48,11 @@ void shell() {
         if (input_char == '\n') {
             // Enter
             buffer[buffer_counter] = 0;
+            while (buffer_counter--) {
+                if (buffer[buffer_counter] == ' ') {
+                    buffer[buffer_counter] = 0;
+                }
+            }
             buffer_counter = 0;
             
             parse_command(buffer);
