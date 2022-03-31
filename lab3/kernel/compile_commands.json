@@ -1,0 +1,171 @@
+[
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "mem.o",
+      "mem.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/mem.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/mem.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "mailbox.o",
+      "mailbox.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/mailbox.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/mailbox.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "shell.o",
+      "shell.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/shell.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/shell.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "cpio.o",
+      "cpio.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/cpio.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/cpio.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "devtree.o",
+      "devtree.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/devtree.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/devtree.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "reboot.o",
+      "reboot.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/reboot.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/reboot.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-c",
+      "-o",
+      "start.o",
+      "start.S"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/start.S",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/start.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib64/llvm/11/bin/clang-11",
+      "-c",
+      "-cc1as",
+      "-triple",
+      "aarch64-unknown-unknown-elf",
+      "-filetype",
+      "obj",
+      "-main-file-name",
+      "-target-cpu",
+      "cortex-a53",
+      "-target-feature",
+      "+fp-armv8",
+      "-target-feature",
+      "+crc",
+      "-target-feature",
+      "+crypto",
+      "-target-feature",
+      "-neon",
+      "-target-feature",
+      "+sha2",
+      "-target-feature",
+      "+aes",
+      "-I",
+      "../lib",
+      "-fdebug-compilation-dir",
+      "/home/marvin/homework/osc2022/lab3/kernel",
+      "-dwarf-debug-producer",
+      "clang version 11.0.0",
+      "-I",
+      "../lib",
+      "-dwarf-version=4",
+      "-mrelocation-model",
+      "static",
+      "-o",
+      "start.o",
+      "start.S"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/start.S",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab3/kernel/start.o"
+  }
+]
