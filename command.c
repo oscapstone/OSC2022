@@ -40,6 +40,7 @@ void exec_help() {
     uart_puts("ls\t: list all archives\n");
     uart_puts("cat\t: cat archive data\n");
     uart_puts("lsfdt\t: traverse fdt\n");
+    uart_puts("load\t: load archive data\n");
     uart_puts("timeout\t: set timeout\n");
     uart_puts("reboot\t: reboot the device\n");
 }
@@ -80,6 +81,10 @@ void exec_testmem() {
 
 void exec_checkmem() {
     printf(mem);
+}
+
+void exec_testasync() {
+    test_async_write();
 }
 
 void command_not_found(char* s) {
@@ -158,7 +163,9 @@ void parse_command(char* command_string) {
     else if (!strcmp(command_string, "lsfdt"))
         exec_lsfdt();
     else if (!strcmp(command_string, "timeout"))
-        exec_timeout();    
+        exec_timeout(); 
+    else if (!strcmp(command_string, "testasync"))
+        exec_testasync();   
     else if (!strcmp(command_string, "mbox_board_revision"))
         mbox_board_revision();
     else if (!strcmp(command_string, "mbox_arm_memory"))

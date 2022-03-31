@@ -1,7 +1,6 @@
 #include "gpio.h"
 #include "utils.h"
 #include "command.h"
-#include "shell.h"
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
@@ -22,13 +21,18 @@
 #define AUX_IRQ (1 << 29)
 
 #define ASYNC_BUFFER_SIZE 128
-static char async_uart_buffer[ASYNC_BUFFER_SIZE];
-static unsigned int wr_buffer_index = 0;
-static unsigned int rd_buffer_index = 0;
+char async_read_buffer[ASYNC_BUFFER_SIZE];
+char async_write_buffer[ASYNC_BUFFER_SIZE];
+unsigned int async_read_start, async_read_end;
+unsigned int async_write_start, async_write_end;
 
 void enable_uart_interrupt() { *ENB_IRQS1 = AUX_IRQ; }
 
 void disable_uart_interrupt() { *DISABLE_IRQS1 = AUX_IRQ; }
+
+void enable_transmit_interrupt() { *AUX_MU_IER |= 0x2; }
+
+void disable_transmit_interrupt() { *AUX_MU_IER &= ~(0x2); }
 
 /**
  * Set baud rate and characteristics (115200 8N1) and map to GPIO
@@ -40,9 +44,8 @@ void uart_init()
     /* initialize UART */
     *AUX_ENABLE |=1;       // Set AUXENB register to enable mini UART. Then mini UART register can be accessed
     *AUX_MU_CNTL = 0;      // Set AUX_MU_CNTL_REG to 0. Disable transmitter and receiver during configuration
-    
-    *AUX_MU_IER = 1;       // Set AUX_MU_IER_REG to 0. Disable interrupt because currently you don’t need interrupt
-
+    // *AUX_MU_IER = 0;       // Set AUX_MU_IER_REG to 0. Disable interrupt because currently you don’t need interrupt
+    *AUX_MU_IER = 1;       // Set AUX_MU_IER_REG to 1. enable interrupt
     *AUX_MU_LCR = 3;       // Set AUX_MU_LCR_REG to 3. Set the data size to 8 bit
     *AUX_MU_MCR = 0;       // Set AUX_MU_MCR_REG to 0. Don’t need auto flow control
     *AUX_MU_BAUD = 270;    // Set AUX_MU_BAUD to 270. Set baud rate to 115200
@@ -142,37 +145,52 @@ void printf(char *fmt, ...) {
 }
 
 void handle_uart_irq() {
-    // printf("irq_interrupt\n");
     disable_uart_interrupt();
 	if((*AUX_MU_IIR&0x06) == 0x04) {
+        // uart read interrupt handler
 		while(*AUX_MU_LSR&0x01) {
-            char async_input_char = *AUX_MU_IO;
-            // async_input_char = *AUX_MU_IO;
-			async_uart_buffer[wr_buffer_index] = async_input_char;
-            wr_buffer_index = parse(async_input_char, wr_buffer_index);
-
-            if (async_input_char == '\r') {
-                // Enter
-                async_uart_buffer[wr_buffer_index] = 0;
-                wr_buffer_index = 0;
-
-                parse_command(async_uart_buffer);
-                uart_puts("# ");
-            }
-            // wr_buffer_index++;
-			// if(wr_buffer_index == ASYNC_BUFFER_SIZE)
-			// 	wr_buffer_index = 0;
+            char r = *AUX_MU_IO;
+			async_read_buffer[async_read_end++] = r;
+			if(async_read_end == ASYNC_BUFFER_SIZE)
+				async_read_end = 0;
 		}
 	}
 	else if((*AUX_MU_IIR&0x06) == 0x02) {
+        // uart write interrupt handler
 		while(*AUX_MU_LSR&0x20) {
-			if(rd_buffer_index == wr_buffer_index)
+			if(async_write_start == async_write_end) {
+                disable_transmit_interrupt();
 			    break;
-			char c = async_uart_buffer[rd_buffer_index++];
-			*AUX_MU_IO = c;
-			if(rd_buffer_index == ASYNC_BUFFER_SIZE)
-				rd_buffer_index = 0;
+            }
+			char r = async_write_buffer[async_write_start++];
+			*AUX_MU_IO = r;
+			if(async_write_start == ASYNC_BUFFER_SIZE)
+				async_write_start = 0;
 		}
 	}
     enable_uart_interrupt();
+}
+
+char async_uart_getc() {
+    while (async_read_start == async_read_end) {
+        delay(1);
+    }
+    char r = async_read_buffer[async_read_start++];
+    if (async_read_start == ASYNC_BUFFER_SIZE)
+        async_read_start = 0;
+    return r=='\r'?'\n':r;
+}
+
+void async_uart_puts(char *str) {
+    for (int i = 0; str[i]; i++) {
+        async_write_buffer[async_write_end++] = str[i];
+        if (str[i] == '\n')
+            async_write_buffer[async_write_end++] = '\r';
+        if (async_write_end == ASYNC_BUFFER_SIZE) async_write_end = 0;
+    }
+}
+
+void test_async_write(){
+	async_uart_puts("test\n");
+    enable_transmit_interrupt();
 }

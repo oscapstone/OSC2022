@@ -13,7 +13,7 @@ void main() {
     // say hello
     // uart_puts("Hello World!\n");
 
-    enable_interrupt();
+    enable_current_interrupt();
     
     // start shell
     shell();

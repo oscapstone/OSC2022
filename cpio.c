@@ -98,9 +98,9 @@ void load_cpio(cpio_t* addr, char* target){
             asm volatile("msr sp_el0, %0    \n" :: "r"(0x7000000));
 
 			// enable the core timer’s interrupt
+			set_time(2);
 			enable_timer_interrupt();
-			asm volatile("mrs x0, cntfrq_el0	\n");
-			asm volatile("msr cntp_tval_el0, x0	\n"); // set expired time
+
 
             asm volatile("eret              \n");
 
@@ -113,15 +113,13 @@ void load_cpio(cpio_t* addr, char* target){
 void getName(char* target){
 	uart_puts("Filename: ");
 	int buffer_counter = 0;
-	disable_uart_interrupt();
 	while (1) {
-		target[buffer_counter] = uart_getc();
+		target[buffer_counter] = async_uart_getc();
 		buffer_counter = parse(target[buffer_counter], buffer_counter);
 
 		if (target[buffer_counter] == '\n') {
 			// Enter
 			target[buffer_counter] = 0;
-			enable_uart_interrupt();
 			break;
 		}
 	}

@@ -8,9 +8,9 @@
 #define CORE0_INTERRUPT_SOURCE	((volatile unsigned int *)(0x40000060))
 
 
-void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
+void enable_current_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
 
-void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
+void disable_current_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void enable_timer_interrupt() {
 	asm volatile("mov x0, 1				\n");
@@ -66,7 +66,6 @@ void handle_timer1_irq() {
 	timer = get_time10();
 	printf("current time: %d.%ds\n", timer/10, timer%10);
 	printf("MESSAGE\n");
-	printf("\n");
 	disable_timer_interrupt();
 }
 
@@ -75,7 +74,7 @@ void lower_sync_entry() {
 }
 
 void lower_irq_entry() {
-	disable_interrupt();
+	disable_current_interrupt();
 	if (*CORE0_INTERRUPT_SOURCE & 0x2) {
 		// Lower Core Timer Interrupt
 		handle_timer0_irq();
@@ -84,7 +83,7 @@ void lower_irq_entry() {
 		// Lower mini UART’s Interrupt
 		handle_uart_irq();
 	}
-	enable_interrupt();
+	enable_current_interrupt();
 }
 
 void invalid_entry() {
@@ -95,7 +94,7 @@ void invalid_entry() {
 }
 
 void current_irq_entry() {
-	disable_interrupt();
+	disable_current_interrupt();
 	if (*CORE0_INTERRUPT_SOURCE & 0x2) {
 		// current Core Timer Interrupt
 		handle_timer1_irq();
@@ -104,5 +103,5 @@ void current_irq_entry() {
 		// current mini UART’s Interrupt
 		handle_uart_irq();
 	}
-	enable_interrupt();
+	enable_current_interrupt();
 }

@@ -1,5 +1,5 @@
-void enable_interrupt();
-void disable_interrupt();
+void enable_current_interrupt();
+void disable_current_interrupt();
 
 void enable_timer_interrupt();
 void disable_timer_interrupt();
