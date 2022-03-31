@@ -16,7 +16,6 @@ void shell(){
   char read = 0;
   while(1){
     // read = uart_getc();
-    pop_task();
     read = async_uart_getc();
     if(read != '\n' && read != 0x7f){
       append_str(input, read);
@@ -38,6 +37,10 @@ void shell(){
           printf("sysinfo   : print the system information\n\r");
           printf("ls        : list the file\n\r");
           printf("cat <file>: print the content of the file\n\r");
+          printf("asyncUartTest: test the async uart_print\n\r");
+          printf("exec <file>: exec the content of the file\n\r");
+          printf("clock      : print the core timer time every 2 seconds\n\r");
+          printf("setTimeout <MESSAGE> <TIME>: Print the message when timeout\n\r");
         }else if(!strcmp(args[0], "hello")){
           printf("Hello World!\n\r");
         }else if(!strcmp(args[0], "reboot")){
@@ -65,8 +68,6 @@ void shell(){
           if(args_num == 2)
             cpio_exec(args[1]);
         }else if(!strcmp(input, "clock")){
-          // set_core_timer_interrupt(2);
-          // core_timer_interrupt_enable();
           add_timer(clock_alert, args[1], 2);
           // core_timer_enable();
           // asm(
@@ -75,6 +76,10 @@ void shell(){
         }else if(!strcmp(input, "setTimeout")){
           if (args_num == 3)
             add_timer(timeout_print, args[1], atoi(args[2]));
+        }else if(!strcmp(input, "asyncUartTest")){
+          async_uart_puts("Test1\n\r");
+          async_uart_puts("Test2\n\r");
+          async_uart_puts("Test3\n\r");
         }else{
           printf("Please use \"help\" to get information.\n\r");
         }

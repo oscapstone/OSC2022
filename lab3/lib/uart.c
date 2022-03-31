@@ -1,5 +1,6 @@
 #include "uart.h"
 #include "printf.h"
+#include "timer.h"
 
 void uart_init()
 {

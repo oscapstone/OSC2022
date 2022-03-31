@@ -20,16 +20,20 @@ void invalid_exception_router(unsigned long long x0){
 
 void irq_router(unsigned long long x0){
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
-    // core_timer_interrupt_disable();
+    core_timer_interrupt_disable();
     pop_timer();
-    // core_timer_interrupt_enable();
+    pop_task();
   }else if(*IRQS1_PENDING & (0x01 << 29)){
     if (*AUX_MU_IIR & (0b01 << 1)) {  //can write
       disable_uart_w_interrupt();
-      uart_interrupt_w_handler();
+      add_task(uart_interrupt_w_handler, "TX", 0);
+      pop_task();
+      // uart_interrupt_w_handler();
     }else if (*AUX_MU_IIR & (0b10 << 1)) {  //can read
       disable_uart_r_interrupt();
-      uart_interrupt_r_handler();
+      add_task(uart_interrupt_r_handler, "RX", 0);
+      pop_task();
+      // uart_interrupt_r_handler();
     }
   }
 }

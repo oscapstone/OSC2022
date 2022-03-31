@@ -10,7 +10,7 @@ task_list *task_queue = NULL;
 void core_timer_enable(void){
   __asm__ __volatile__(
     "mov x1, 1\n\t"
-    "msr cntp_ctl_el0, x1\n\t" // enable
+    "msr cntp_ctl_el0, x1\n\t" // enable Counter-timer Physical Timer Control
   );
 }
 
@@ -127,17 +127,20 @@ void pop_timer(void){
   timer_list *timer = timer_queue;
   timer_queue = timer_queue->next;
   // timer->call_back(timer->msg);
-  add_task(timer->call_back, timer->msg);
+  add_task(timer->call_back, timer->msg, 1);
   if (!timer_queue)
     core_timer_interrupt_disable();
-  else
+  else{
     set_core_timer_interrupt(timer_queue->expired_time - clock_time());
+    core_timer_interrupt_enable();
+  }
 }
 
-void add_task(callback_typ callback, char *msg){
+void add_task(callback_typ callback, char *msg, int piority){
   task_list *task = (task_list*)simple_malloc(sizeof(task_list));
   task->task_call_back = callback;
   task->arg = msg;
+  task->piority = piority;
   task->next = NULL;
   if(!task_queue)
     task_queue = task;

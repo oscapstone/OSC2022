@@ -11,13 +11,12 @@ void main(char * arg){
   dtb_place = arg;
   uart_init();
   __asm__ __volatile__(
-    "msr daifclr, 0xf" // enable interrupt el1 -> el1
+    "msr DAIFClr, 0xf" // enable interrupt el1 -> el1
   ); 
   core_timer_enable();
   fdt_traverse(initramfs_callback);
   async_uart_puts("\n\r\n\rWelcome!!!\n\r");
   async_uart_puts("raspberryPi: ");
-  // add_timer(uart_puts, 7, "haha");
 
   shell();
 }

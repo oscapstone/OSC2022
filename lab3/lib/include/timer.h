@@ -15,7 +15,7 @@ void print_time(void);
 void set_core_timer_interrupt(unsigned long long expired_time);
 void add_timer(callback_typ callback, char *msg, int time);
 void pop_timer(void);
-void add_task(callback_typ callback, char *msg);
+void add_task(callback_typ callback, char *msg, int piority);
 void pop_task(void);
 
 typedef struct timer_list timer_list;
@@ -31,6 +31,7 @@ typedef struct task_list task_list;
 struct task_list{
   callback_typ task_call_back;
   char *arg;
+  int piority;
   struct task_list *next;
 };
 
