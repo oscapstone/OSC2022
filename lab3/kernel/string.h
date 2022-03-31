@@ -7,6 +7,6 @@ void _itoa       ( int x, char str[], int d);
 void ftoa       ( float n, char* res, int afterpoint ); 
 void reverse    ( char *s );
 int strcmp(char*, char*);
-
+int strncmp(const char *s1, const char *s2, unsigned n);
 
 #endif

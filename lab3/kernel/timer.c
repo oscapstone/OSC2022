@@ -14,15 +14,16 @@ void core_timer_enable() {
 }
 
 void core_timer_handler() {
-  uint64_t cntpct_el0, cntfrq_el0;
-  asm volatile("mrs %0, cntpct_el0" : "=r"(cntpct_el0));
-  asm volatile("mrs %0, cntfrq_el0" : "=r"(cntfrq_el0));
-  asm volatile("mrs x0, cntfrq_el0");
-  asm volatile("mov x1, 2");
-  asm volatile("mul x0, x0, x1");
-  asm volatile("msr cntp_tval_el0, x0");
-  uart_puts("Time elapsed after booting: ");
-  // char c = cntpct_el0 / cntfrq_el0;
-  uart_int(cntpct_el0 / cntfrq_el0);
-  uart_puts("s\n");
+    uart_puts("===== timer handler =====\n");
+    uint64_t cntpct_el0, cntfrq_el0;
+    asm volatile("mrs %0, cntpct_el0" : "=r"(cntpct_el0));
+    asm volatile("mrs %0, cntfrq_el0" : "=r"(cntfrq_el0));
+    asm volatile("mrs x0, cntfrq_el0");
+    asm volatile("mov x1, 2");
+    asm volatile("mul x0, x0, x1");
+    asm volatile("msr cntp_tval_el0, x0");
+    uart_puts("Time elapsed after booting: ");
+    // char c = cntpct_el0 / cntfrq_el0;
+    uart_int(cntpct_el0 / cntfrq_el0);
+    uart_puts("s\n");
 }

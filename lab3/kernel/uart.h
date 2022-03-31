@@ -22,6 +22,23 @@
  * DEALINGS IN THE SOFTWARE.
  *
  */
+ 
+#pragma once
+#include "gpio.h"
+#define ARM_IRQ_REG_BASE (MMIO_BASE + 0x0000b000)
+
+#define IRQ_PENDING_1 ((volatile unsigned int *)(ARM_IRQ_REG_BASE + 0x00000204))
+#define ENABLE_IRQS_1 ((volatile unsigned int *)(ARM_IRQ_REG_BASE + 0x00000210))
+#define DISABLE_IRQS_1 \
+  ((volatile unsigned int *)(ARM_IRQ_REG_BASE + 0x0000021c))
+
+#define AUX_IRQ (1 << 29)
+
+#define UART_BUFFER_SIZE 20
+char read_buf[UART_BUFFER_SIZE];
+char write_buf[UART_BUFFER_SIZE];
+int read_buf_start, read_buf_end;
+int write_buf_start, write_buf_end;
 
 void uart_init();
 void uart_send(unsigned int c);
@@ -29,4 +46,12 @@ char uart_getc();
 void uart_puts(char *s);
 void uart_hex(unsigned int d);
 void uart_putc(char c);
-void uart_int(char c);
+void uart_int(int x);
+
+void enable_uart_interrupt();
+void disable_uart_interrupt();
+void assert_transmit_interrupt();
+void clear_transmit_interrupt();
+void uart_handler();
+char uart_async_getc();
+void uart_async_puts(char *str);

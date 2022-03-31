@@ -5,6 +5,7 @@
 #include "cpio.h"
 #include "stdint.h"
 #include "timer.h"
+#include "exception.h"
 // #include "device_tree.h"
 #define RAMFS_ADDR 0x8000000
 
@@ -17,14 +18,17 @@ void clean_buffer(char * buffer, int buffer_len)
 void command_help()
 {
     uart_puts("\n");
-    uart_puts("help\t: print this help menu\n");
-    uart_puts("hello\t: print Hello World!\n");
-    uart_puts("reboot\t: reboot the device\n");
-    uart_puts("mailbox\t: show information through mailbox\n");
-    uart_puts("ls\t: show all files\n");
-    uart_puts("cat\t: show file info\n");
-    uart_puts("test\t: test simple allocator\n");
-    uart_puts("user\t: load and run a user program in the initramfs\n");    
+    uart_puts("help\t\t: print this help menu\n");
+    uart_puts("hello\t\t: print Hello World!\n");
+    uart_puts("reboot\t\t: reboot the device\n");
+    uart_puts("mailbox\t\t: show information through mailbox\n");
+    uart_puts("ls\t\t: show all files\n");
+    uart_puts("cat\t\t: show file info\n");
+    uart_puts("test\t\t: test simple allocator\n");
+    uart_puts("user\t\t: load and run a user program in the initramfs\n");    
+    uart_puts("timer\t\t: core_timer_enable\n");    
+    uart_puts("async_puts\t: async_puts Test Message\n");    
+
 }
 
 void command_hello()
@@ -97,21 +101,7 @@ void cpio_load_user_program(char *target_program, uint64_t target_addr) {
     uart_puts("No such file\n");
 }
 
-void command_cat(){
-    uart_send('\r');
-    uart_puts("Filename: ");
-    char file[64]={'\0'};
-    int file_idx=0;
-    while(1){
-        char c = uart_getc();
-        if(c=='\n') {
-            uart_send('\r');
-            uart_send(c);
-            break;
-        }
-        uart_send(c);
-        file[file_idx++] =c;
-    }
+void command_cat(char* pathname){
     uint64_t cur_addr = RAMFS_ADDR;
     cpio_newc_header* cpio_ptr;
     uint64_t name_size, file_size;
@@ -130,7 +120,7 @@ void command_cat(){
         }
        
         cur_addr = (uint64_t)((cur_addr + name_size + 3) & (~3));
-        if(!strcmp(file_name, file)){
+        if(!strcmp(file_name, pathname)){
             char *file_content = (char *)cur_addr;
             for(uint64_t i=0; i<file_size; i++){
                 if(file_content[i] == '\n')
@@ -257,10 +247,12 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "hello")) command_hello();
     else if ( !strcmp(buffer, "mailbox")) command_mailbox();
     else if ( !strcmp(buffer, "ls")) command_ls();
-    else if ( !strcmp(buffer, "cat")) command_cat();
+    else if ( !strncmp(buffer, "cat", 3)) command_cat(&buffer[4]);
     else if ( !strcmp(buffer, "test")) command_test();
     else if ( !strcmp(buffer, "reboot")) reset();
     else if ( !strcmp(buffer, "user")) command_load_user_program();
+    else if ( !strcmp(buffer, "async_puts")) uart_async_puts("Test Message!\n");
+    else if ( !strcmp(buffer, "timer")) core_timer_enable();
     else command_not_found(buffer);
 }
 
@@ -269,6 +261,8 @@ void main()
 {
     // set up serial console
     uart_init();
+
+    enable_interrupt();
     char buffer[64]={'\0'};
     int buffer_len=0;
     //clean buffer
@@ -277,7 +271,8 @@ void main()
     while(1) {
         uart_send('#');
         while(1){
-            char c = uart_getc();
+            char c = uart_async_getc();
+            if(c=='\n')uart_send('\r');
             uart_send(c);
             if(c=='\n'){
                 //parse buffer
