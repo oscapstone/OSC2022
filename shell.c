@@ -25,8 +25,14 @@ int parse(char input_char, int buffer_counter) {
 
 void shell() {
     int buffer_counter = 0;
-    char input_char;
     char buffer[MAX_BUFFER_LEN];
+
+    int el;
+    asm volatile("mrs x0, CurrentEL \n");
+    asm volatile("lsr x0, x0, #2	\n");
+    asm volatile("mov %0, x0	\n":"=r"(el):);
+	printf("Exception level: %d \n", el);
+    
 
     parse_command("mbox_board_revision");
     parse_command("mbox_arm_memory");
@@ -35,16 +41,20 @@ void shell() {
 
     // read input
     while (1) {
-        input_char = uart_getc();
-
+        char input_char = async_uart_getc();
         buffer[buffer_counter] = input_char;
         buffer_counter = parse(input_char, buffer_counter);
 
         if (input_char == '\n') {
             // Enter
             buffer[buffer_counter] = 0;
+            while (buffer_counter--) {
+                if (buffer[buffer_counter] == ' ') {
+                    buffer[buffer_counter] = 0;
+                }
+            }
             buffer_counter = 0;
-
+            
             parse_command(buffer);
             uart_puts("# ");
         }

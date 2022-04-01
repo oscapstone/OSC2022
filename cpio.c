@@ -1,7 +1,10 @@
 #include "cpio.h"
+
+#include "devicetree.h"
 #include "uart.h"
 #include "utils.h"
 #include "shell.h"
+#include "exception.h"
 
 //Cpio New ASCII Format https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
 typedef struct{
@@ -63,12 +66,55 @@ void cat_cpio(cpio_t* addr, char* target){
 	}
 }
 
+void load_cpio(cpio_t* addr, char* target){
+	while(1){
+		unsigned long nsize, fsize;
+		nsize=strtoi(addr->c_namesize);
+		fsize=strtoi(addr->c_filesize);
+
+		// total size of the fixed header plus pathname is a multiple of four
+		if((sizeof(cpio_t) + nsize) & 3)
+			nsize += 4 - ((sizeof(cpio_t) + nsize) & 3);
+		if(fsize & 3)
+			fsize += 4 - (fsize & 3);
+
+		// check filename and data
+		char* filename = (char*)(addr+1);
+		char* data = filename + nsize;
+		if(strcmp(filename,"TRAILER!!!") == 0) {
+			printf("load: %s: No such file or directory\n", target);
+			break;
+		}
+		if(strcmp(filename,target) == 0) {
+			char *load_addr = (char*)0x7000000;
+			for(int i=0; i<fsize; i++){
+				load_addr[i] = data[i];
+			}
+			// jump to the new kernel.
+			// asm volatile("mov x0, 0x3c0  \n"); //disable core timer interrupt (11 1100 0000)
+			asm volatile("mov x0, 0x340		\n"); // enable core timer interrupt (11 0100 0000)
+            asm volatile("msr spsr_el1, x0  \n");
+            asm volatile("msr elr_el1, %0   \n" :: "r"(0x7000000));
+            asm volatile("msr sp_el0, %0    \n" :: "r"(0x7000000));
+
+			// enable the core timer’s interrupt
+			set_time(2);
+			enable_timer_interrupt();
+
+
+            asm volatile("eret              \n");
+
+			break;
+		}
+		addr=(cpio_t*)(data+fsize);
+	}
+}
+
 void getName(char* target){
 	uart_puts("Filename: ");
 	int buffer_counter = 0;
-
 	while (1) {
-		target[buffer_counter] = uart_getc();
+		target[buffer_counter] = async_uart_getc();
 		buffer_counter = parse(target[buffer_counter], buffer_counter);
 
 		if (target[buffer_counter] == '\n') {
@@ -80,9 +126,9 @@ void getName(char* target){
 }
 
 void cat_file(){
-	cpio_t* addr = (cpio_t*)0x20000000;//qemu: 0x8000000 ,raspi: 0x20000000
+	cpio_t* addr = (cpio_t*)cpio_addr;//qemu: 0x8000000 ,raspi: 0x20000000
 	if (strcmp((char*)(addr+1), "."))
-		printf("error no cpio (qemu: 0x8000000 ,raspi: 0x20000000)\n");
+		printf("error no cpio\n");
 	else {
 		char target[128];
 		getName(target);
@@ -92,9 +138,9 @@ void cat_file(){
 }
 
 void list_file(){
-	cpio_t* addr = (cpio_t*)0x20000000;//qemu: 0x8000000 ,raspi: 0x20000000
+	cpio_t* addr = (cpio_t*)cpio_addr;//qemu: 0x8000000 ,raspi: 0x20000000
 	if (strcmp((char*)(addr+1), "."))
-		printf("error no cpio (qemu: 0x8000000 ,raspi: 0x20000000)\n");
+		printf("error no cpio\n");
 	else
 		while(1){
 			unsigned long nsize, fsize;
@@ -119,4 +165,16 @@ void list_file(){
 
 			addr=(cpio_t*)(data+fsize);
 		}
+}
+
+void load_file(){
+	cpio_t* addr = (cpio_t*)cpio_addr;//qemu: 0x8000000 ,raspi: 0x20000000
+	if (strcmp((char*)(addr+1), "."))
+		printf("error no cpio\n");
+	else {
+		char target[128];
+		getName(target);
+
+		load_cpio(addr,target);
+	}
 }

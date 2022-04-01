@@ -23,17 +23,17 @@ void test_malloc() {
     delay(1);
     string1[4] = 't';
 
-    char* string2 = simple_malloc(6);
+    // char* string2 = simple_malloc(6);
 
-    string2[0] = '1';
-    delay(1);
-    string2[1] = '2';
-    delay(1);
-    string2[2] = '3';
-    delay(1);
-    string2[3] = '4';
-    delay(1);
-    string2[4] = '5';
-    delay(1);
-    string2[4] = '\0';
+    // string2[0] = '1';
+    // delay(1);
+    // string2[1] = '2';
+    // delay(1);
+    // string2[2] = '3';
+    // delay(1);
+    // string2[3] = '4';
+    // delay(1);
+    // string2[4] = '5';
+    // delay(1);
+    // string2[4] = '\0';
 }
