@@ -16,36 +16,6 @@ unsigned long cpio_align (unsigned long v) {
     return v;
 }
 
-unsigned long htoin (char *s, unsigned int n) {
-
-    unsigned long v = 0;
-
-    while (n > 0 && *s != '\0' && *s != '\n')
-    {
-        v = v << 4;
-
-        if (*s >= '0' && *s <= '9') 
-        {
-            v = v + (*s - '0');
-        }
-        else if (*s >= 'a' && *s <= 'f')
-        {
-            v = v + 10 + (*s - 'a');
-        }
-        else if (*s >= 'A' && *s <= 'F')
-        {
-            v = v + 10 + (*s - 'A');
-        }
-        else
-        {
-            return -1;
-        }
-        s++; n--;
-    }
-
-    return v;
-}
-
 int cpio_header_parser (cpio_header_t *header, char** file_name, unsigned long* file_size, char** data, cpio_header_t **next_header) {
     
     unsigned long file_name_size;
@@ -121,11 +91,11 @@ int cpio_cat (cpio_header_t *header, char* file_name) {
         {
             for (int i = 0; i < file_size; i++) 
             {
-                uart_putc(data[i]);
+                uart_put(data[i]);
                 
                 if (data[i] == '\n')
                 {
-                    uart_putc('\r');
+                    uart_put('\r');
                 }
             }
             return 0;
@@ -133,6 +103,40 @@ int cpio_cat (cpio_header_t *header, char* file_name) {
     }
 
     return -1;
+}
+
+void *cpio_load (cpio_header_t *header, char *file_name) {
+    
+    char *prog_base;
+    char *header_file_name;
+    char *data;
+    unsigned long file_size;
+    unsigned int  end_of_cpio = 0;
+    cpio_header_t *current_header;
+    cpio_header_t *next_header;
+
+    current_header = header;
+
+    while (1) 
+    {
+        end_of_cpio = cpio_header_parser(current_header, &header_file_name, &file_size, &data, &next_header);
+        if (end_of_cpio) break;
+
+        current_header = next_header;
+        if (strcmp(file_name, header_file_name) == 0) 
+        {
+            prog_base = malloc(file_size);
+
+            for (int i = 0; i < file_size; i++) 
+            {
+                prog_base[i] = data[i];
+            }
+
+            return (void *) prog_base;
+        }   
+    }
+
+    return 0;
 }
 
 void cpio_init () {

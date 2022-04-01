@@ -2,6 +2,7 @@
 
 extern unsigned long DTB_BASE;
 extern unsigned long CPIO_BASE;
+extern void from_EL1_to_EL0(unsigned long prog, unsigned long sp);
 
 void print_system_info () {
     unsigned int board_revision;
@@ -10,57 +11,59 @@ void print_system_info () {
     unsigned int mem_size;
 
     get_board_revision(&board_revision);
-    uart_puts("Board revision   : 0x");
-    uart_puth(board_revision);
+    asyn_uart_puts("Board revision   : 0x");
+    asyn_uart_puth(board_revision);
 
     get_board_serial(&board_serial_msb, &board_serial_lsb);
-    uart_puts("\nBoard serial     : 0x");
-    uart_puth(board_serial_msb);
-    uart_puth(board_serial_lsb);
+    asyn_uart_puts("\nBoard serial     : 0x");
+    asyn_uart_puth(board_serial_msb);
+    asyn_uart_puth(board_serial_lsb);
 
     get_memory_info(&mem_base, &mem_size);
-    uart_puts("\nMem base address : 0x");
-    uart_puth(mem_base);
-    uart_puts("\nMem size         : 0x");
-    uart_puth(mem_size);
+    asyn_uart_puts("\nMem base address : 0x");
+    asyn_uart_puth(mem_base);
+    asyn_uart_puts("\nMem size         : 0x");
+    asyn_uart_puth(mem_size);
 
     return;
 }
 
 void welcome () {
-    uart_puts("   ____   _____  _____    ___   ___ ___  ___     /\\      /\\    __         _ _         __  \n");
-    uart_puts("  / __ \\ / ____|/ ____|  |__ \\ / _ \\__ \\|__ \\   |/\\|    |/\\|  / /        | | |        \\ \\ \n");
-    uart_puts(" | |  | | (___ | |          ) | | | | ) |  ) |      _   _    | |_   _  __| | | ___  ___| |\n");
-    uart_puts(" | |  | |\\___ \\| |         / /| | | |/ /  / /      | | | |   | | | | |/ _` | |/ _ \\/ _ \\ |\n");
-    uart_puts(" | |__| |____) | |____    / /_| |_| / /_ / /_      | |_| |   | | |_| | (_| | |  __/  __/ |\n");
-    uart_puts("  \\____/|_____/ \\_____|  |____|\\___/____|____|      \\__,_|   | |\\__, |\\__,_|_|\\___|\\___| |\n");
-    uart_puts("                                                              \\_\\__/ |                /_/ \n");
-    uart_puts("                                                                |___/                     \n");
-    uart_puts("------------------------------------------------------------------------------------------\n");
-    uart_puts("[Welcom to simple shell, type 'help' for a list of commands]\n");
+    asyn_uart_puts("   ____   _____  _____    ___   ___ ___  ___     /\\      /\\    __         _ _         __  \n");
+    asyn_uart_puts("  / __ \\ / ____|/ ____|  |__ \\ / _ \\__ \\|__ \\   |/\\|    |/\\|  / /        | | |        \\ \\ \n");
+    asyn_uart_puts(" | |  | | (___ | |          ) | | | | ) |  ) |      _   _    | |_   _  __| | | ___  ___| |\n");
+    asyn_uart_puts(" | |  | |\\___ \\| |         / /| | | |/ /  / /      | | | |   | | | | |/ _` | |/ _ \\/ _ \\ |\n");
+    asyn_uart_puts(" | |__| |____) | |____    / /_| |_| / /_ / /_      | |_| |   | | |_| | (_| | |  __/  __/ |\n");
+    asyn_uart_puts("  \\____/|_____/ \\_____|  |____|\\___/____|____|      \\__,_|   | |\\__, |\\__,_|_|\\___|\\___| |\n");
+    asyn_uart_puts("                                                              \\_\\__/ |                /_/ \n");
+    asyn_uart_puts("                                                                |___/                     \n");
+    asyn_uart_puts("------------------------------------------------------------------------------------------\n");
+    asyn_uart_puts("[Welcom to simple shell, type 'help' for a list of commands]\n");
     return;
 }
 
 void help () {
-    uart_puts("----------------Memory Allocator---------------\n");
-    uart_puts("* salloc : allocate memory for the string.\n");
-    uart_puts("* mdump  : dump content of memory.\n");
-    uart_puts("------------------File system------------------\n");
-    uart_puts("* cat     : display the file contents.\n");
-    uart_puts("* ls      : list the files in cpio archive.\n");
-    uart_puts("* lsdev   : list the device tree in dtb file.\n");
-    uart_puts("---------------------Other---------------------\n");
-    uart_puts("* clear   : clear the screen.\n");
-    uart_puts("* help    : print help menu.\n");
-    uart_puts("* hello   : print Hello World!\n");
-    uart_puts("* sysinfo : print system infomations.\n");
-    uart_puts("* reboot  : reboot the device.\n");
-    uart_puts("-----------------------------------------------");
+    asyn_uart_puts("----------------Memory Allocator---------------\n");
+    asyn_uart_puts("* salloc     : allocate memory for the string.\n");
+    asyn_uart_puts("* mdump      : dump content of memory.\n");
+    asyn_uart_puts("------------------File system------------------\n");
+    asyn_uart_puts("* cat        : display the file contents.\n");
+    asyn_uart_puts("* exec       : load and execute user program.\n");
+    asyn_uart_puts("* ls         : list the files in cpio archive.\n");
+    asyn_uart_puts("* lsdev      : list the device tree in dtb file.\n");
+    asyn_uart_puts("---------------------Other---------------------\n");
+    asyn_uart_puts("* clear      : clear the screen.\n");
+    asyn_uart_puts("* help       : print help menu.\n");
+    asyn_uart_puts("* hello      : print Hello World!\n");
+    asyn_uart_puts("* hwinfo     : print hardware infomations.\n");
+    asyn_uart_puts("* setTimeout : add a timer task.\n");
+    asyn_uart_puts("* reboot     : reboot the device.\n");
+    asyn_uart_puts("-----------------------------------------------");
     return;
 }
 
 void clear () {
-    uart_putc(0x0C);
+    asyn_uart_put(0x0C);
     return;
 }
 
@@ -77,11 +80,11 @@ void salloc (char *s) {
     strcpy(mptr, s);
 
     /* Print prompt */
-    uart_puts("Allocated address : 0x");
-    uart_puth((unsigned long)mptr & 0xFFFFFFFF);
-    uart_puts("\n");
-    uart_puts("Allocated size    : 0x");
-    uart_puth(sz);
+    asyn_uart_puts("Allocated address : 0x");
+    asyn_uart_puth((unsigned long)mptr & 0xFFFFFFFF);
+    asyn_uart_puts("\n");
+    asyn_uart_puts("Allocated size    : 0x");
+    asyn_uart_puth(sz);
 
     return;
 }
@@ -94,7 +97,7 @@ void mdump (char *s1, char *s2) {
 
     if (s1[0] != '0' || s1[1] != 'x' || s2[0] != '0' || s2[1] != 'x')
     {
-        uart_puts("Wrong input, address should start with 0x\n");
+        asyn_uart_puts("Wrong input, address should start with 0x\n");
     }
     else
     {
@@ -103,14 +106,14 @@ void mdump (char *s1, char *s2) {
         addr = htoin(s1, strlen(s1));
         len  = htoin(s2, strlen(s2));
         len  = (len + 3) >> 2;
-        uart_puts("  Address    Content (Hex)    ASCII\n");
+        asyn_uart_puts("  Address    Content (Hex)    ASCII\n");
         for (int i = 0; i < len; i++)
         {
-            uart_puts("0x");
-            uart_puth(addr);
-            uart_puts("    0x");
-            uart_puth(*(unsigned int *)addr);
-            uart_puts("     ");
+            asyn_uart_puts("0x");
+            asyn_uart_puth(addr);
+            asyn_uart_puts("    0x");
+            asyn_uart_puth(*(unsigned int *)addr);
+            asyn_uart_puts("     ");
 
             for (int j = 0; j < 4; j++) {
 
@@ -118,18 +121,18 @@ void mdump (char *s1, char *s2) {
 
                 if (c >= 32 && c <= 126)
                 {
-                    uart_putc(c);
+                    asyn_uart_put(c);
                 }
                 else
                 {
-                    uart_putc(' ');
+                    asyn_uart_put(' ');
                 }
 
-                uart_putc(' ');
+                asyn_uart_put(' ');
 
             }
 
-            uart_puts("\n");
+            asyn_uart_puts("\n");
             addr += 4;
         }
     }
@@ -137,34 +140,108 @@ void mdump (char *s1, char *s2) {
     return;
 }
 
+void exec (cpio_header_t *header, char *file_name)
+{
+    void (*prog)();
+    unsigned int current_el;
+    char *stack_top;
+    
+    stack_top = malloc(0x2000);
+    stack_top = stack_top + 0x2000;
+
+    prog = cpio_load(header, file_name);
+
+    if (prog == 0)
+    {
+        asyn_uart_puts("User program not found!\n");
+        return;
+    }
+
+    // Get current EL
+    asm volatile ("mrs %0, CurrentEL" : "=r" (current_el));
+    current_el = current_el >> 2;
+
+    // Print prompt
+    uart_puts("Current EL: 0x");
+    uart_puth(current_el);
+    uart_puts("\n");
+    uart_puts("User program name: ");
+    uart_put('"');
+    uart_puts(file_name);
+    uart_put('"');
+    uart_puts(" (at 0x");
+    uart_puth((unsigned long) prog);
+    uart_puts(")");
+    uart_puts("\n");
+    uart_puts("User program stack top: 0x");
+    uart_puth((unsigned long) stack_top);
+    uart_puts("\n");
+    uart_puts("-----------------Entering user program-----------------\n");
+
+    from_EL1_to_EL0((unsigned long)prog, (unsigned long)stack_top);
+
+    return;
+}
+
+void setTimeout (char *msg, char *ascii_after) {
+
+    char *data;
+    unsigned int i, len, after;
+
+    len = strlen(msg);
+    after = atou(ascii_after);
+
+    if (after == -1 )
+    {
+        return;
+    }
+
+    /* Copy message into data buffer */
+    data = malloc(len + 2);
+
+    for (i = 0; i < len; i++)
+    {
+        data[i] = msg[i];
+    }
+
+    /* Add a change line */
+    data[i]   = '\n';
+    data[i+1] = '\0';
+
+    /* Add timer task */
+    add_timer(uart_puts, data, after);
+
+    return;
+}
+
 //-----------------------------------------------------------------
 
 void put_left () {
-    uart_putc(0x1B);
-    uart_putc(0x5B);
-    uart_putc(0x44);
+    asyn_uart_put(0x1B);
+    asyn_uart_put(0x5B);
+    asyn_uart_put(0x44);
     return;
 }
 
 void put_right () {
-    uart_putc(0x1B);
-    uart_putc(0x5B);
-    uart_putc(0x43);
+    asyn_uart_put(0x1B);
+    asyn_uart_put(0x5B);
+    asyn_uart_put(0x43);
     return;
 }
 
 void echo_back (char c) {
 
-    uart_putc(c);
+    asyn_uart_put(c);
 
     if (c == '\n')
     {
-        uart_putc('\r');
+        asyn_uart_put('\r');
     }
     else if (c == '\b')
     {
-        uart_putc(' ');
-        uart_putc('\b');
+        asyn_uart_put(' ');
+        asyn_uart_put('\b');
     }
 
     return;
@@ -177,24 +254,16 @@ void read_cmd (char *cmd) {
     int tail = 0;
     int tmp  = 0;
 
-    uart_puts("> ");
+    asyn_uart_puts("> ");
 
     do {
 
-        c = uart_getc();
+        c = asyn_uart_getc();
         cmd[tail] = '\0';
+
         /* Deal with special operation */
         if (c == '\n') 
         {
-
-            // Debug
-            // uart_puts("\n  ");
-            // uart_puts(cmd);
-            // uart_puts("\n  pos: ");
-            // uart_puth(pos);
-            // uart_puts("\n  tail: ");
-            // uart_puth(tail);
-
             echo_back(c);
             break;
         } 
@@ -207,10 +276,10 @@ void read_cmd (char *cmd) {
                 {
                     strpullout(cmd, pos - 1);
                     tmp = tail - pos;
-                    uart_putc('\b');
-                    for (int i = 0; i < tmp; i++) uart_putc(cmd[pos - 1 + i]);
-                    uart_putc(' ');
-                    for (int i = 0; i < tmp + 1; i++) uart_putc('\b');
+                    asyn_uart_put('\b');
+                    for (int i = 0; i < tmp; i++) asyn_uart_put(cmd[pos - 1 + i]);
+                    asyn_uart_put(' ');
+                    for (int i = 0; i < tmp + 1; i++) asyn_uart_put('\b');
                 }
                 else
                 {
@@ -224,11 +293,11 @@ void read_cmd (char *cmd) {
         else if (c == 0x1B)
         {
             /* ESCAPE */
-            c = uart_getc();
+            c = asyn_uart_getc();
 
             if (c == 0x5B) 
             {
-                c = uart_getc();
+                c = asyn_uart_getc();
                 /* Deal with up, down, left, right */
                 if (c == 0x41) 
                 {
@@ -259,19 +328,19 @@ void read_cmd (char *cmd) {
                 else
                 {
                     /* not special operation */
-                    uart_putc(0x5B);
-                    uart_putc(c);
+                    asyn_uart_put(0x5B);
+                    asyn_uart_put(c);
                 }
             }
             else
             {
-                uart_puts("[assert] unknown input.\n");
+                asyn_uart_puts("[assert] unknown input.\n");
             }
         }
         else if (c == 0x01)
         {
             /* Go to head */
-            for (int i = 0; i < pos; i++) uart_putc('\b');
+            for (int i = 0; i < pos; i++) asyn_uart_put('\b');
             pos = 0;
         }
         else if (c == 0x05)
@@ -286,8 +355,8 @@ void read_cmd (char *cmd) {
         {
             /* Erase till end of line */
             tmp = tail - pos;
-            for (int i = 0; i < tmp; i++) uart_putc(' ');
-            for (int i = 0; i < tmp; i++) uart_putc('\b');
+            for (int i = 0; i < tmp; i++) asyn_uart_put(' ');
+            for (int i = 0; i < tmp; i++) asyn_uart_put('\b');
             cmd[pos] = '\0';
             tail = pos;
         }
@@ -297,8 +366,8 @@ void read_cmd (char *cmd) {
             {
                 strinsert(cmd, c, pos);
                 tmp = tail - pos;
-                for (int i = 0; i < tmp + 1; i++) uart_putc(cmd[pos + i]);
-                for (int i = 0; i < tmp; i++) uart_putc('\b');
+                for (int i = 0; i < tmp + 1; i++) asyn_uart_put(cmd[pos + i]);
+                for (int i = 0; i < tmp; i++) asyn_uart_put('\b');
             }
             else
             {
@@ -320,6 +389,13 @@ void do_cmd (char *cmd) {
     unsigned int argc = 0;
     unsigned int cmd_len = strlen(cmd);
     bool skipping_space = true;
+
+    /* Zero length command */
+    if (cmd_len == 0)
+    {
+        asyn_uart_puts("\n\n");
+        return;
+    }
 
     /* Parsing argv */
     for (int i = 0; i < cmd_len; i++) 
@@ -349,9 +425,9 @@ void do_cmd (char *cmd) {
     }
     else if ( strcmp(argv[0], "hello") == 0 ) 
     {
-        uart_puts("Hello World!");
+        asyn_uart_puts("Hello World!");
     }
-    else if ( strcmp(argv[0], "sysinfo") == 0 ) 
+    else if ( strcmp(argv[0], "hwinfo") == 0 ) 
     {
         print_system_info();
     }
@@ -367,7 +443,7 @@ void do_cmd (char *cmd) {
     {
         if (argc < 2) 
         {
-            uart_puts("Usage: cat <path to file>\n");
+            asyn_uart_puts("Usage: cat <path to file>\n");
         }
         else
         {
@@ -378,7 +454,7 @@ void do_cmd (char *cmd) {
     {
         if (argc < 2) 
         {
-            uart_puts("Usage: salloc <string>\n");
+            asyn_uart_puts("Usage: salloc <string>\n");
         }
         else
         {
@@ -389,7 +465,7 @@ void do_cmd (char *cmd) {
     {
         if (argc < 3) 
         {
-            uart_puts("Usage: mdump <address> <length>\n");
+            asyn_uart_puts("Usage: mdump <address> <length>\n");
         }
         else
         {
@@ -400,12 +476,34 @@ void do_cmd (char *cmd) {
     {
         fdt_traverse((struct fdt_header *)DTB_BASE, lsdev_callback);
     }
+    else if ( strcmp(argv[0], "exec") == 0 )
+    {
+        if (argc < 2) 
+        {
+            asyn_uart_puts("Usage: exec <file name>\n");
+        }
+        else
+        {
+            exec((cpio_header_t *)CPIO_BASE, argv[1]);
+        }
+    }
+    else if ( strcmp(argv[0], "setTimeout") == 0 )
+    {
+        if (argc < 3) 
+        {
+            asyn_uart_puts("Usage: setTimeout <msg> <after>\n");
+        }
+        else
+        {
+            setTimeout(argv[1], argv[2]);
+        }
+    }
     else 
     {
-        uart_puts("invalid command.");
+        asyn_uart_puts("invalid command.");
     }
 
-    uart_puts("\n\n");
+    asyn_uart_puts("\n\n");
 
     return;
 }
@@ -414,7 +512,11 @@ void shell_start () {
 
     char cmd[CMD_BUF_SIZE];
 
+    // System init
+    asyn_uart_init();
     cpio_init();
+
+    // Print prompt
     clear();
     welcome();
 
