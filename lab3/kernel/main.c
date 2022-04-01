@@ -6,6 +6,8 @@
 #include "stdint.h"
 #include "timer.h"
 #include "exception.h"
+#include "alloc.h"
+
 // #include "device_tree.h"
 #define RAMFS_ADDR 0x8000000
 
@@ -27,8 +29,8 @@ void command_help()
     uart_puts("test\t\t: test simple allocator\n");
     uart_puts("user\t\t: load and run a user program in the initramfs\n");    
     uart_puts("timer\t\t: core_timer_enable\n");    
-    uart_puts("async_puts\t: async_puts Test Message\n");    
-
+    uart_puts("puts\t\t: async_puts Test Message\n");    
+    uart_puts("setTimeout [MESSAGE] [SECONDS]\t: prints MESSAGE after SECONDS\n");
 }
 
 void command_hello()
@@ -194,33 +196,19 @@ void command_mailbox()
     }
 }
 
-uint64_t allocate_end = 0x6000000;
-void* simple_allocate(int size)
-{
-    uint64_t location = allocate_end;
-    allocate_end += size;
-    uart_puts("allocate memory at:");
-    uart_hex(location);
-    uart_puts(", with size:");
-    uart_hex(size);
-    uart_puts("\r\n");
-
-    return (void *)location;
-}
-
 void command_test()
 {
-    // test simple_allocate
+    // test malloc
     uart_puts("\r");
-    uart_puts("test simple_allocate\n");
-    char * c = simple_allocate(30);
+    uart_puts("test malloc\n");
+    char * c = malloc(30);
     c[0]='a';
     c[1]='b';
     c[2]='\0';
     uart_puts("c:");
     uart_puts(c);
     uart_puts("\r\n");
-    char * d = simple_allocate(30);
+    char * d = malloc(30);
     d[0]='x';
     d[1]='y';
     d[2]='\0';
@@ -241,6 +229,20 @@ void command_load_user_program() {
     asm volatile("eret");
 }
 
+void command_set_timeout(char *args) {
+  uint32_t duration = 0;
+  for (int i = 0; args[i]; i++) {
+    if (args[i] == ' ') {
+      for (int j = i + 1; args[j]; j++) {
+        duration = duration * 10 + (args[j] - '0');
+      }
+      args[i] = '\0';
+      break;
+    }
+  }
+  add_timer(timer_callback, args, duration);
+}
+
 void parse_command(char * buffer)
 {
     if ( !strcmp(buffer, "help")) command_help();
@@ -251,8 +253,10 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "test")) command_test();
     else if ( !strcmp(buffer, "reboot")) reset();
     else if ( !strcmp(buffer, "user")) command_load_user_program();
-    else if ( !strcmp(buffer, "async_puts")) uart_async_puts("Test Message!\n");
+    else if ( !strcmp(buffer, "puts")) uart_async_puts("Test Message!\n");
     else if ( !strcmp(buffer, "timer")) core_timer_enable();
+    else if ( !strcmp(buffer, "timer")) core_timer_enable();
+    else if ( !strncmp(buffer, "setTimeout", 10)) command_set_timeout(&buffer[11]);
     else command_not_found(buffer);
 }
 
@@ -261,7 +265,11 @@ void main()
 {
     // set up serial console
     uart_init();
-
+    //welcome message
+    uart_puts("*****************************\r\n");
+    uart_puts("*       welcome OSC2022     *\r\n");
+    uart_puts("*****************************\r\n");
+    timeout_event_init();
     enable_interrupt();
     char buffer[64]={'\0'};
     int buffer_len=0;
