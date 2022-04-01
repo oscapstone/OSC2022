@@ -1,0 +1,1261 @@
+
+kernel.elf:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+0000000000080000 <__start>:
+   80000:	d53800a1 	mrs	x1, mpidr_el1
+   80004:	92400421 	and	x1, x1, #0x3
+   80008:	f100003f 	cmp	x1, #0x0
+   8000c:	540003a1 	b.ne	80080 <hang>  // b.any
+   80010:	58007bc1 	ldr	x1, 80f88 <vector+0x788>
+   80014:	d280b622 	mov	x2, #0x5b1                 	// #1457
+   80018:	d51e1102 	msr	scr_el3, x2
+   8001c:	d2807922 	mov	x2, #0x3c9                 	// #969
+   80020:	d51e4002 	msr	spsr_el3, x2
+   80024:	10000062 	adr	x2, 80030 <start_el2>
+   80028:	d51e4022 	msr	elr_el3, x2
+   8002c:	d69f03e0 	eret
+
+0000000000080030 <start_el2>:
+   80030:	d51c4101 	msr	sp_el1, x1
+   80034:	d2b00000 	mov	x0, #0x80000000            	// #2147483648
+   80038:	b27f0000 	orr	x0, x0, #0x2
+   8003c:	d51c1100 	msr	hcr_el2, x0
+   80040:	d53c1100 	mrs	x0, hcr_el2
+   80044:	58007a60 	ldr	x0, 80f90 <vector+0x790>
+   80048:	d518c000 	msr	vbar_el1, x0
+   8004c:	d2807882 	mov	x2, #0x3c4                 	// #964
+   80050:	d51c4002 	msr	spsr_el2, x2
+   80054:	10000062 	adr	x2, 80060 <start_el1>
+   80058:	d51c4022 	msr	elr_el2, x2
+   8005c:	d69f03e0 	eret
+
+0000000000080060 <start_el1>:
+   80060:	9100003f 	mov	sp, x1
+   80064:	580079a1 	ldr	x1, 80f98 <vector+0x798>
+   80068:	180078e2 	ldr	w2, 80f84 <vector+0x784>
+   8006c:	34000082 	cbz	w2, 8007c <start_el1+0x1c>
+   80070:	f800843f 	str	xzr, [x1], #8
+   80074:	51000442 	sub	w2, w2, #0x1
+   80078:	35ffffa2 	cbnz	w2, 8006c <start_el1+0xc>
+   8007c:	940003fd 	bl	81070 <kernel_main>
+
+0000000000080080 <hang>:
+   80080:	d503207f 	wfi
+   80084:	17ffffff 	b	80080 <hang>
+
+0000000000080088 <enable_irq>:
+   80088:	d50342ff 	msr	daifclr, #0x2
+   8008c:	d65f03c0 	ret
+
+0000000000080090 <disable_irq>:
+   80090:	d50342df 	msr	daifset, #0x2
+   80094:	d65f03c0 	ret
+   80098:	d503201f 	nop
+   8009c:	d503201f 	nop
+   800a0:	d503201f 	nop
+   800a4:	d503201f 	nop
+   800a8:	d503201f 	nop
+   800ac:	d503201f 	nop
+   800b0:	d503201f 	nop
+   800b4:	d503201f 	nop
+   800b8:	d503201f 	nop
+   800bc:	d503201f 	nop
+   800c0:	d503201f 	nop
+   800c4:	d503201f 	nop
+   800c8:	d503201f 	nop
+   800cc:	d503201f 	nop
+   800d0:	d503201f 	nop
+   800d4:	d503201f 	nop
+   800d8:	d503201f 	nop
+   800dc:	d503201f 	nop
+   800e0:	d503201f 	nop
+   800e4:	d503201f 	nop
+   800e8:	d503201f 	nop
+   800ec:	d503201f 	nop
+   800f0:	d503201f 	nop
+   800f4:	d503201f 	nop
+   800f8:	d503201f 	nop
+   800fc:	d503201f 	nop
+   80100:	d503201f 	nop
+   80104:	d503201f 	nop
+   80108:	d503201f 	nop
+   8010c:	d503201f 	nop
+   80110:	d503201f 	nop
+   80114:	d503201f 	nop
+   80118:	d503201f 	nop
+   8011c:	d503201f 	nop
+   80120:	d503201f 	nop
+   80124:	d503201f 	nop
+   80128:	d503201f 	nop
+   8012c:	d503201f 	nop
+   80130:	d503201f 	nop
+   80134:	d503201f 	nop
+   80138:	d503201f 	nop
+   8013c:	d503201f 	nop
+   80140:	d503201f 	nop
+   80144:	d503201f 	nop
+   80148:	d503201f 	nop
+   8014c:	d503201f 	nop
+   80150:	d503201f 	nop
+   80154:	d503201f 	nop
+   80158:	d503201f 	nop
+   8015c:	d503201f 	nop
+   80160:	d503201f 	nop
+   80164:	d503201f 	nop
+   80168:	d503201f 	nop
+   8016c:	d503201f 	nop
+   80170:	d503201f 	nop
+   80174:	d503201f 	nop
+   80178:	d503201f 	nop
+   8017c:	d503201f 	nop
+   80180:	d503201f 	nop
+   80184:	d503201f 	nop
+   80188:	d503201f 	nop
+   8018c:	d503201f 	nop
+   80190:	d503201f 	nop
+   80194:	d503201f 	nop
+   80198:	d503201f 	nop
+   8019c:	d503201f 	nop
+   801a0:	d503201f 	nop
+   801a4:	d503201f 	nop
+   801a8:	d503201f 	nop
+   801ac:	d503201f 	nop
+   801b0:	d503201f 	nop
+   801b4:	d503201f 	nop
+   801b8:	d503201f 	nop
+   801bc:	d503201f 	nop
+   801c0:	d503201f 	nop
+   801c4:	d503201f 	nop
+   801c8:	d503201f 	nop
+   801cc:	d503201f 	nop
+   801d0:	d503201f 	nop
+   801d4:	d503201f 	nop
+   801d8:	d503201f 	nop
+   801dc:	d503201f 	nop
+   801e0:	d503201f 	nop
+   801e4:	d503201f 	nop
+   801e8:	d503201f 	nop
+   801ec:	d503201f 	nop
+   801f0:	d503201f 	nop
+   801f4:	d503201f 	nop
+   801f8:	d503201f 	nop
+   801fc:	d503201f 	nop
+   80200:	d503201f 	nop
+   80204:	d503201f 	nop
+   80208:	d503201f 	nop
+   8020c:	d503201f 	nop
+   80210:	d503201f 	nop
+   80214:	d503201f 	nop
+   80218:	d503201f 	nop
+   8021c:	d503201f 	nop
+   80220:	d503201f 	nop
+   80224:	d503201f 	nop
+   80228:	d503201f 	nop
+   8022c:	d503201f 	nop
+   80230:	d503201f 	nop
+   80234:	d503201f 	nop
+   80238:	d503201f 	nop
+   8023c:	d503201f 	nop
+   80240:	d503201f 	nop
+   80244:	d503201f 	nop
+   80248:	d503201f 	nop
+   8024c:	d503201f 	nop
+   80250:	d503201f 	nop
+   80254:	d503201f 	nop
+   80258:	d503201f 	nop
+   8025c:	d503201f 	nop
+   80260:	d503201f 	nop
+   80264:	d503201f 	nop
+   80268:	d503201f 	nop
+   8026c:	d503201f 	nop
+   80270:	d503201f 	nop
+   80274:	d503201f 	nop
+   80278:	d503201f 	nop
+   8027c:	d503201f 	nop
+   80280:	d503201f 	nop
+   80284:	d503201f 	nop
+   80288:	d503201f 	nop
+   8028c:	d503201f 	nop
+   80290:	d503201f 	nop
+   80294:	d503201f 	nop
+   80298:	d503201f 	nop
+   8029c:	d503201f 	nop
+   802a0:	d503201f 	nop
+   802a4:	d503201f 	nop
+   802a8:	d503201f 	nop
+   802ac:	d503201f 	nop
+   802b0:	d503201f 	nop
+   802b4:	d503201f 	nop
+   802b8:	d503201f 	nop
+   802bc:	d503201f 	nop
+   802c0:	d503201f 	nop
+   802c4:	d503201f 	nop
+   802c8:	d503201f 	nop
+   802cc:	d503201f 	nop
+   802d0:	d503201f 	nop
+   802d4:	d503201f 	nop
+   802d8:	d503201f 	nop
+   802dc:	d503201f 	nop
+   802e0:	d503201f 	nop
+   802e4:	d503201f 	nop
+   802e8:	d503201f 	nop
+   802ec:	d503201f 	nop
+   802f0:	d503201f 	nop
+   802f4:	d503201f 	nop
+   802f8:	d503201f 	nop
+   802fc:	d503201f 	nop
+   80300:	d503201f 	nop
+   80304:	d503201f 	nop
+   80308:	d503201f 	nop
+   8030c:	d503201f 	nop
+   80310:	d503201f 	nop
+   80314:	d503201f 	nop
+   80318:	d503201f 	nop
+   8031c:	d503201f 	nop
+   80320:	d503201f 	nop
+   80324:	d503201f 	nop
+   80328:	d503201f 	nop
+   8032c:	d503201f 	nop
+   80330:	d503201f 	nop
+   80334:	d503201f 	nop
+   80338:	d503201f 	nop
+   8033c:	d503201f 	nop
+   80340:	d503201f 	nop
+   80344:	d503201f 	nop
+   80348:	d503201f 	nop
+   8034c:	d503201f 	nop
+   80350:	d503201f 	nop
+   80354:	d503201f 	nop
+   80358:	d503201f 	nop
+   8035c:	d503201f 	nop
+   80360:	d503201f 	nop
+   80364:	d503201f 	nop
+   80368:	d503201f 	nop
+   8036c:	d503201f 	nop
+   80370:	d503201f 	nop
+   80374:	d503201f 	nop
+   80378:	d503201f 	nop
+   8037c:	d503201f 	nop
+   80380:	d503201f 	nop
+   80384:	d503201f 	nop
+   80388:	d503201f 	nop
+   8038c:	d503201f 	nop
+   80390:	d503201f 	nop
+   80394:	d503201f 	nop
+   80398:	d503201f 	nop
+   8039c:	d503201f 	nop
+   803a0:	d503201f 	nop
+   803a4:	d503201f 	nop
+   803a8:	d503201f 	nop
+   803ac:	d503201f 	nop
+   803b0:	d503201f 	nop
+   803b4:	d503201f 	nop
+   803b8:	d503201f 	nop
+   803bc:	d503201f 	nop
+   803c0:	d503201f 	nop
+   803c4:	d503201f 	nop
+   803c8:	d503201f 	nop
+   803cc:	d503201f 	nop
+   803d0:	d503201f 	nop
+   803d4:	d503201f 	nop
+   803d8:	d503201f 	nop
+   803dc:	d503201f 	nop
+   803e0:	d503201f 	nop
+   803e4:	d503201f 	nop
+   803e8:	d503201f 	nop
+   803ec:	d503201f 	nop
+   803f0:	d503201f 	nop
+   803f4:	d503201f 	nop
+   803f8:	d503201f 	nop
+   803fc:	d503201f 	nop
+   80400:	d503201f 	nop
+   80404:	d503201f 	nop
+   80408:	d503201f 	nop
+   8040c:	d503201f 	nop
+   80410:	d503201f 	nop
+   80414:	d503201f 	nop
+   80418:	d503201f 	nop
+   8041c:	d503201f 	nop
+   80420:	d503201f 	nop
+   80424:	d503201f 	nop
+   80428:	d503201f 	nop
+   8042c:	d503201f 	nop
+   80430:	d503201f 	nop
+   80434:	d503201f 	nop
+   80438:	d503201f 	nop
+   8043c:	d503201f 	nop
+   80440:	d503201f 	nop
+   80444:	d503201f 	nop
+   80448:	d503201f 	nop
+   8044c:	d503201f 	nop
+   80450:	d503201f 	nop
+   80454:	d503201f 	nop
+   80458:	d503201f 	nop
+   8045c:	d503201f 	nop
+   80460:	d503201f 	nop
+   80464:	d503201f 	nop
+   80468:	d503201f 	nop
+   8046c:	d503201f 	nop
+   80470:	d503201f 	nop
+   80474:	d503201f 	nop
+   80478:	d503201f 	nop
+   8047c:	d503201f 	nop
+   80480:	d503201f 	nop
+   80484:	d503201f 	nop
+   80488:	d503201f 	nop
+   8048c:	d503201f 	nop
+   80490:	d503201f 	nop
+   80494:	d503201f 	nop
+   80498:	d503201f 	nop
+   8049c:	d503201f 	nop
+   804a0:	d503201f 	nop
+   804a4:	d503201f 	nop
+   804a8:	d503201f 	nop
+   804ac:	d503201f 	nop
+   804b0:	d503201f 	nop
+   804b4:	d503201f 	nop
+   804b8:	d503201f 	nop
+   804bc:	d503201f 	nop
+   804c0:	d503201f 	nop
+   804c4:	d503201f 	nop
+   804c8:	d503201f 	nop
+   804cc:	d503201f 	nop
+   804d0:	d503201f 	nop
+   804d4:	d503201f 	nop
+   804d8:	d503201f 	nop
+   804dc:	d503201f 	nop
+   804e0:	d503201f 	nop
+   804e4:	d503201f 	nop
+   804e8:	d503201f 	nop
+   804ec:	d503201f 	nop
+   804f0:	d503201f 	nop
+   804f4:	d503201f 	nop
+   804f8:	d503201f 	nop
+   804fc:	d503201f 	nop
+   80500:	d503201f 	nop
+   80504:	d503201f 	nop
+   80508:	d503201f 	nop
+   8050c:	d503201f 	nop
+   80510:	d503201f 	nop
+   80514:	d503201f 	nop
+   80518:	d503201f 	nop
+   8051c:	d503201f 	nop
+   80520:	d503201f 	nop
+   80524:	d503201f 	nop
+   80528:	d503201f 	nop
+   8052c:	d503201f 	nop
+   80530:	d503201f 	nop
+   80534:	d503201f 	nop
+   80538:	d503201f 	nop
+   8053c:	d503201f 	nop
+   80540:	d503201f 	nop
+   80544:	d503201f 	nop
+   80548:	d503201f 	nop
+   8054c:	d503201f 	nop
+   80550:	d503201f 	nop
+   80554:	d503201f 	nop
+   80558:	d503201f 	nop
+   8055c:	d503201f 	nop
+   80560:	d503201f 	nop
+   80564:	d503201f 	nop
+   80568:	d503201f 	nop
+   8056c:	d503201f 	nop
+   80570:	d503201f 	nop
+   80574:	d503201f 	nop
+   80578:	d503201f 	nop
+   8057c:	d503201f 	nop
+   80580:	d503201f 	nop
+   80584:	d503201f 	nop
+   80588:	d503201f 	nop
+   8058c:	d503201f 	nop
+   80590:	d503201f 	nop
+   80594:	d503201f 	nop
+   80598:	d503201f 	nop
+   8059c:	d503201f 	nop
+   805a0:	d503201f 	nop
+   805a4:	d503201f 	nop
+   805a8:	d503201f 	nop
+   805ac:	d503201f 	nop
+   805b0:	d503201f 	nop
+   805b4:	d503201f 	nop
+   805b8:	d503201f 	nop
+   805bc:	d503201f 	nop
+   805c0:	d503201f 	nop
+   805c4:	d503201f 	nop
+   805c8:	d503201f 	nop
+   805cc:	d503201f 	nop
+   805d0:	d503201f 	nop
+   805d4:	d503201f 	nop
+   805d8:	d503201f 	nop
+   805dc:	d503201f 	nop
+   805e0:	d503201f 	nop
+   805e4:	d503201f 	nop
+   805e8:	d503201f 	nop
+   805ec:	d503201f 	nop
+   805f0:	d503201f 	nop
+   805f4:	d503201f 	nop
+   805f8:	d503201f 	nop
+   805fc:	d503201f 	nop
+   80600:	d503201f 	nop
+   80604:	d503201f 	nop
+   80608:	d503201f 	nop
+   8060c:	d503201f 	nop
+   80610:	d503201f 	nop
+   80614:	d503201f 	nop
+   80618:	d503201f 	nop
+   8061c:	d503201f 	nop
+   80620:	d503201f 	nop
+   80624:	d503201f 	nop
+   80628:	d503201f 	nop
+   8062c:	d503201f 	nop
+   80630:	d503201f 	nop
+   80634:	d503201f 	nop
+   80638:	d503201f 	nop
+   8063c:	d503201f 	nop
+   80640:	d503201f 	nop
+   80644:	d503201f 	nop
+   80648:	d503201f 	nop
+   8064c:	d503201f 	nop
+   80650:	d503201f 	nop
+   80654:	d503201f 	nop
+   80658:	d503201f 	nop
+   8065c:	d503201f 	nop
+   80660:	d503201f 	nop
+   80664:	d503201f 	nop
+   80668:	d503201f 	nop
+   8066c:	d503201f 	nop
+   80670:	d503201f 	nop
+   80674:	d503201f 	nop
+   80678:	d503201f 	nop
+   8067c:	d503201f 	nop
+   80680:	d503201f 	nop
+   80684:	d503201f 	nop
+   80688:	d503201f 	nop
+   8068c:	d503201f 	nop
+   80690:	d503201f 	nop
+   80694:	d503201f 	nop
+   80698:	d503201f 	nop
+   8069c:	d503201f 	nop
+   806a0:	d503201f 	nop
+   806a4:	d503201f 	nop
+   806a8:	d503201f 	nop
+   806ac:	d503201f 	nop
+   806b0:	d503201f 	nop
+   806b4:	d503201f 	nop
+   806b8:	d503201f 	nop
+   806bc:	d503201f 	nop
+   806c0:	d503201f 	nop
+   806c4:	d503201f 	nop
+   806c8:	d503201f 	nop
+   806cc:	d503201f 	nop
+   806d0:	d503201f 	nop
+   806d4:	d503201f 	nop
+   806d8:	d503201f 	nop
+   806dc:	d503201f 	nop
+   806e0:	d503201f 	nop
+   806e4:	d503201f 	nop
+   806e8:	d503201f 	nop
+   806ec:	d503201f 	nop
+   806f0:	d503201f 	nop
+   806f4:	d503201f 	nop
+   806f8:	d503201f 	nop
+   806fc:	d503201f 	nop
+   80700:	d503201f 	nop
+   80704:	d503201f 	nop
+   80708:	d503201f 	nop
+   8070c:	d503201f 	nop
+   80710:	d503201f 	nop
+   80714:	d503201f 	nop
+   80718:	d503201f 	nop
+   8071c:	d503201f 	nop
+   80720:	d503201f 	nop
+   80724:	d503201f 	nop
+   80728:	d503201f 	nop
+   8072c:	d503201f 	nop
+   80730:	d503201f 	nop
+   80734:	d503201f 	nop
+   80738:	d503201f 	nop
+   8073c:	d503201f 	nop
+   80740:	d503201f 	nop
+   80744:	d503201f 	nop
+   80748:	d503201f 	nop
+   8074c:	d503201f 	nop
+   80750:	d503201f 	nop
+   80754:	d503201f 	nop
+   80758:	d503201f 	nop
+   8075c:	d503201f 	nop
+   80760:	d503201f 	nop
+   80764:	d503201f 	nop
+   80768:	d503201f 	nop
+   8076c:	d503201f 	nop
+   80770:	d503201f 	nop
+   80774:	d503201f 	nop
+   80778:	d503201f 	nop
+   8077c:	d503201f 	nop
+   80780:	d503201f 	nop
+   80784:	d503201f 	nop
+   80788:	d503201f 	nop
+   8078c:	d503201f 	nop
+   80790:	d503201f 	nop
+   80794:	d503201f 	nop
+   80798:	d503201f 	nop
+   8079c:	d503201f 	nop
+   807a0:	d503201f 	nop
+   807a4:	d503201f 	nop
+   807a8:	d503201f 	nop
+   807ac:	d503201f 	nop
+   807b0:	d503201f 	nop
+   807b4:	d503201f 	nop
+   807b8:	d503201f 	nop
+   807bc:	d503201f 	nop
+   807c0:	d503201f 	nop
+   807c4:	d503201f 	nop
+   807c8:	d503201f 	nop
+   807cc:	d503201f 	nop
+   807d0:	d503201f 	nop
+   807d4:	d503201f 	nop
+   807d8:	d503201f 	nop
+   807dc:	d503201f 	nop
+   807e0:	d503201f 	nop
+   807e4:	d503201f 	nop
+   807e8:	d503201f 	nop
+   807ec:	d503201f 	nop
+   807f0:	d503201f 	nop
+   807f4:	d503201f 	nop
+   807f8:	d503201f 	nop
+   807fc:	d503201f 	nop
+
+0000000000080800 <vector>:
+   80800:	17fffe20 	b	80080 <hang>
+   80804:	d503201f 	nop
+   80808:	d503201f 	nop
+   8080c:	d503201f 	nop
+   80810:	d503201f 	nop
+   80814:	d503201f 	nop
+   80818:	d503201f 	nop
+   8081c:	d503201f 	nop
+   80820:	d503201f 	nop
+   80824:	d503201f 	nop
+   80828:	d503201f 	nop
+   8082c:	d503201f 	nop
+   80830:	d503201f 	nop
+   80834:	d503201f 	nop
+   80838:	d503201f 	nop
+   8083c:	d503201f 	nop
+   80840:	d503201f 	nop
+   80844:	d503201f 	nop
+   80848:	d503201f 	nop
+   8084c:	d503201f 	nop
+   80850:	d503201f 	nop
+   80854:	d503201f 	nop
+   80858:	d503201f 	nop
+   8085c:	d503201f 	nop
+   80860:	d503201f 	nop
+   80864:	d503201f 	nop
+   80868:	d503201f 	nop
+   8086c:	d503201f 	nop
+   80870:	d503201f 	nop
+   80874:	d503201f 	nop
+   80878:	d503201f 	nop
+   8087c:	d503201f 	nop
+   80880:	a9bf07e0 	stp	x0, x1, [sp, #-16]!
+   80884:	a9bf0fe2 	stp	x2, x3, [sp, #-16]!
+   80888:	a9bf17e4 	stp	x4, x5, [sp, #-16]!
+   8088c:	a9bf1fe6 	stp	x6, x7, [sp, #-16]!
+   80890:	a9bf27e8 	stp	x8, x9, [sp, #-16]!
+   80894:	a9bf2fea 	stp	x10, x11, [sp, #-16]!
+   80898:	a9bf37ec 	stp	x12, x13, [sp, #-16]!
+   8089c:	a9bf3fee 	stp	x14, x15, [sp, #-16]!
+   808a0:	a9bf47f0 	stp	x16, x17, [sp, #-16]!
+   808a4:	a9bf4ff2 	stp	x18, x19, [sp, #-16]!
+   808a8:	940001da 	bl	81010 <c_irq_handler>
+   808ac:	a8c14ff2 	ldp	x18, x19, [sp], #16
+   808b0:	a8c147f0 	ldp	x16, x17, [sp], #16
+   808b4:	a8c13fee 	ldp	x14, x15, [sp], #16
+   808b8:	a8c137ec 	ldp	x12, x13, [sp], #16
+   808bc:	a8c12fea 	ldp	x10, x11, [sp], #16
+   808c0:	a8c127e8 	ldp	x8, x9, [sp], #16
+   808c4:	a8c11fe6 	ldp	x6, x7, [sp], #16
+   808c8:	a8c117e4 	ldp	x4, x5, [sp], #16
+   808cc:	a8c10fe2 	ldp	x2, x3, [sp], #16
+   808d0:	a8c107e0 	ldp	x0, x1, [sp], #16
+   808d4:	d69f03e0 	eret
+   808d8:	d503201f 	nop
+   808dc:	d503201f 	nop
+   808e0:	d503201f 	nop
+   808e4:	d503201f 	nop
+   808e8:	d503201f 	nop
+   808ec:	d503201f 	nop
+   808f0:	d503201f 	nop
+   808f4:	d503201f 	nop
+   808f8:	d503201f 	nop
+   808fc:	d503201f 	nop
+   80900:	17fffde0 	b	80080 <hang>
+   80904:	d503201f 	nop
+   80908:	d503201f 	nop
+   8090c:	d503201f 	nop
+   80910:	d503201f 	nop
+   80914:	d503201f 	nop
+   80918:	d503201f 	nop
+   8091c:	d503201f 	nop
+   80920:	d503201f 	nop
+   80924:	d503201f 	nop
+   80928:	d503201f 	nop
+   8092c:	d503201f 	nop
+   80930:	d503201f 	nop
+   80934:	d503201f 	nop
+   80938:	d503201f 	nop
+   8093c:	d503201f 	nop
+   80940:	d503201f 	nop
+   80944:	d503201f 	nop
+   80948:	d503201f 	nop
+   8094c:	d503201f 	nop
+   80950:	d503201f 	nop
+   80954:	d503201f 	nop
+   80958:	d503201f 	nop
+   8095c:	d503201f 	nop
+   80960:	d503201f 	nop
+   80964:	d503201f 	nop
+   80968:	d503201f 	nop
+   8096c:	d503201f 	nop
+   80970:	d503201f 	nop
+   80974:	d503201f 	nop
+   80978:	d503201f 	nop
+   8097c:	d503201f 	nop
+   80980:	17fffdc0 	b	80080 <hang>
+   80984:	d503201f 	nop
+   80988:	d503201f 	nop
+   8098c:	d503201f 	nop
+   80990:	d503201f 	nop
+   80994:	d503201f 	nop
+   80998:	d503201f 	nop
+   8099c:	d503201f 	nop
+   809a0:	d503201f 	nop
+   809a4:	d503201f 	nop
+   809a8:	d503201f 	nop
+   809ac:	d503201f 	nop
+   809b0:	d503201f 	nop
+   809b4:	d503201f 	nop
+   809b8:	d503201f 	nop
+   809bc:	d503201f 	nop
+   809c0:	d503201f 	nop
+   809c4:	d503201f 	nop
+   809c8:	d503201f 	nop
+   809cc:	d503201f 	nop
+   809d0:	d503201f 	nop
+   809d4:	d503201f 	nop
+   809d8:	d503201f 	nop
+   809dc:	d503201f 	nop
+   809e0:	d503201f 	nop
+   809e4:	d503201f 	nop
+   809e8:	d503201f 	nop
+   809ec:	d503201f 	nop
+   809f0:	d503201f 	nop
+   809f4:	d503201f 	nop
+   809f8:	d503201f 	nop
+   809fc:	d503201f 	nop
+   80a00:	17fffda0 	b	80080 <hang>
+   80a04:	d503201f 	nop
+   80a08:	d503201f 	nop
+   80a0c:	d503201f 	nop
+   80a10:	d503201f 	nop
+   80a14:	d503201f 	nop
+   80a18:	d503201f 	nop
+   80a1c:	d503201f 	nop
+   80a20:	d503201f 	nop
+   80a24:	d503201f 	nop
+   80a28:	d503201f 	nop
+   80a2c:	d503201f 	nop
+   80a30:	d503201f 	nop
+   80a34:	d503201f 	nop
+   80a38:	d503201f 	nop
+   80a3c:	d503201f 	nop
+   80a40:	d503201f 	nop
+   80a44:	d503201f 	nop
+   80a48:	d503201f 	nop
+   80a4c:	d503201f 	nop
+   80a50:	d503201f 	nop
+   80a54:	d503201f 	nop
+   80a58:	d503201f 	nop
+   80a5c:	d503201f 	nop
+   80a60:	d503201f 	nop
+   80a64:	d503201f 	nop
+   80a68:	d503201f 	nop
+   80a6c:	d503201f 	nop
+   80a70:	d503201f 	nop
+   80a74:	d503201f 	nop
+   80a78:	d503201f 	nop
+   80a7c:	d503201f 	nop
+   80a80:	17fffd80 	b	80080 <hang>
+   80a84:	d503201f 	nop
+   80a88:	d503201f 	nop
+   80a8c:	d503201f 	nop
+   80a90:	d503201f 	nop
+   80a94:	d503201f 	nop
+   80a98:	d503201f 	nop
+   80a9c:	d503201f 	nop
+   80aa0:	d503201f 	nop
+   80aa4:	d503201f 	nop
+   80aa8:	d503201f 	nop
+   80aac:	d503201f 	nop
+   80ab0:	d503201f 	nop
+   80ab4:	d503201f 	nop
+   80ab8:	d503201f 	nop
+   80abc:	d503201f 	nop
+   80ac0:	d503201f 	nop
+   80ac4:	d503201f 	nop
+   80ac8:	d503201f 	nop
+   80acc:	d503201f 	nop
+   80ad0:	d503201f 	nop
+   80ad4:	d503201f 	nop
+   80ad8:	d503201f 	nop
+   80adc:	d503201f 	nop
+   80ae0:	d503201f 	nop
+   80ae4:	d503201f 	nop
+   80ae8:	d503201f 	nop
+   80aec:	d503201f 	nop
+   80af0:	d503201f 	nop
+   80af4:	d503201f 	nop
+   80af8:	d503201f 	nop
+   80afc:	d503201f 	nop
+   80b00:	17fffd60 	b	80080 <hang>
+   80b04:	d503201f 	nop
+   80b08:	d503201f 	nop
+   80b0c:	d503201f 	nop
+   80b10:	d503201f 	nop
+   80b14:	d503201f 	nop
+   80b18:	d503201f 	nop
+   80b1c:	d503201f 	nop
+   80b20:	d503201f 	nop
+   80b24:	d503201f 	nop
+   80b28:	d503201f 	nop
+   80b2c:	d503201f 	nop
+   80b30:	d503201f 	nop
+   80b34:	d503201f 	nop
+   80b38:	d503201f 	nop
+   80b3c:	d503201f 	nop
+   80b40:	d503201f 	nop
+   80b44:	d503201f 	nop
+   80b48:	d503201f 	nop
+   80b4c:	d503201f 	nop
+   80b50:	d503201f 	nop
+   80b54:	d503201f 	nop
+   80b58:	d503201f 	nop
+   80b5c:	d503201f 	nop
+   80b60:	d503201f 	nop
+   80b64:	d503201f 	nop
+   80b68:	d503201f 	nop
+   80b6c:	d503201f 	nop
+   80b70:	d503201f 	nop
+   80b74:	d503201f 	nop
+   80b78:	d503201f 	nop
+   80b7c:	d503201f 	nop
+   80b80:	17fffd40 	b	80080 <hang>
+   80b84:	d503201f 	nop
+   80b88:	d503201f 	nop
+   80b8c:	d503201f 	nop
+   80b90:	d503201f 	nop
+   80b94:	d503201f 	nop
+   80b98:	d503201f 	nop
+   80b9c:	d503201f 	nop
+   80ba0:	d503201f 	nop
+   80ba4:	d503201f 	nop
+   80ba8:	d503201f 	nop
+   80bac:	d503201f 	nop
+   80bb0:	d503201f 	nop
+   80bb4:	d503201f 	nop
+   80bb8:	d503201f 	nop
+   80bbc:	d503201f 	nop
+   80bc0:	d503201f 	nop
+   80bc4:	d503201f 	nop
+   80bc8:	d503201f 	nop
+   80bcc:	d503201f 	nop
+   80bd0:	d503201f 	nop
+   80bd4:	d503201f 	nop
+   80bd8:	d503201f 	nop
+   80bdc:	d503201f 	nop
+   80be0:	d503201f 	nop
+   80be4:	d503201f 	nop
+   80be8:	d503201f 	nop
+   80bec:	d503201f 	nop
+   80bf0:	d503201f 	nop
+   80bf4:	d503201f 	nop
+   80bf8:	d503201f 	nop
+   80bfc:	d503201f 	nop
+   80c00:	17fffd20 	b	80080 <hang>
+   80c04:	d503201f 	nop
+   80c08:	d503201f 	nop
+   80c0c:	d503201f 	nop
+   80c10:	d503201f 	nop
+   80c14:	d503201f 	nop
+   80c18:	d503201f 	nop
+   80c1c:	d503201f 	nop
+   80c20:	d503201f 	nop
+   80c24:	d503201f 	nop
+   80c28:	d503201f 	nop
+   80c2c:	d503201f 	nop
+   80c30:	d503201f 	nop
+   80c34:	d503201f 	nop
+   80c38:	d503201f 	nop
+   80c3c:	d503201f 	nop
+   80c40:	d503201f 	nop
+   80c44:	d503201f 	nop
+   80c48:	d503201f 	nop
+   80c4c:	d503201f 	nop
+   80c50:	d503201f 	nop
+   80c54:	d503201f 	nop
+   80c58:	d503201f 	nop
+   80c5c:	d503201f 	nop
+   80c60:	d503201f 	nop
+   80c64:	d503201f 	nop
+   80c68:	d503201f 	nop
+   80c6c:	d503201f 	nop
+   80c70:	d503201f 	nop
+   80c74:	d503201f 	nop
+   80c78:	d503201f 	nop
+   80c7c:	d503201f 	nop
+   80c80:	17fffd00 	b	80080 <hang>
+   80c84:	d503201f 	nop
+   80c88:	d503201f 	nop
+   80c8c:	d503201f 	nop
+   80c90:	d503201f 	nop
+   80c94:	d503201f 	nop
+   80c98:	d503201f 	nop
+   80c9c:	d503201f 	nop
+   80ca0:	d503201f 	nop
+   80ca4:	d503201f 	nop
+   80ca8:	d503201f 	nop
+   80cac:	d503201f 	nop
+   80cb0:	d503201f 	nop
+   80cb4:	d503201f 	nop
+   80cb8:	d503201f 	nop
+   80cbc:	d503201f 	nop
+   80cc0:	d503201f 	nop
+   80cc4:	d503201f 	nop
+   80cc8:	d503201f 	nop
+   80ccc:	d503201f 	nop
+   80cd0:	d503201f 	nop
+   80cd4:	d503201f 	nop
+   80cd8:	d503201f 	nop
+   80cdc:	d503201f 	nop
+   80ce0:	d503201f 	nop
+   80ce4:	d503201f 	nop
+   80ce8:	d503201f 	nop
+   80cec:	d503201f 	nop
+   80cf0:	d503201f 	nop
+   80cf4:	d503201f 	nop
+   80cf8:	d503201f 	nop
+   80cfc:	d503201f 	nop
+   80d00:	17fffce0 	b	80080 <hang>
+   80d04:	d503201f 	nop
+   80d08:	d503201f 	nop
+   80d0c:	d503201f 	nop
+   80d10:	d503201f 	nop
+   80d14:	d503201f 	nop
+   80d18:	d503201f 	nop
+   80d1c:	d503201f 	nop
+   80d20:	d503201f 	nop
+   80d24:	d503201f 	nop
+   80d28:	d503201f 	nop
+   80d2c:	d503201f 	nop
+   80d30:	d503201f 	nop
+   80d34:	d503201f 	nop
+   80d38:	d503201f 	nop
+   80d3c:	d503201f 	nop
+   80d40:	d503201f 	nop
+   80d44:	d503201f 	nop
+   80d48:	d503201f 	nop
+   80d4c:	d503201f 	nop
+   80d50:	d503201f 	nop
+   80d54:	d503201f 	nop
+   80d58:	d503201f 	nop
+   80d5c:	d503201f 	nop
+   80d60:	d503201f 	nop
+   80d64:	d503201f 	nop
+   80d68:	d503201f 	nop
+   80d6c:	d503201f 	nop
+   80d70:	d503201f 	nop
+   80d74:	d503201f 	nop
+   80d78:	d503201f 	nop
+   80d7c:	d503201f 	nop
+   80d80:	17fffcc0 	b	80080 <hang>
+   80d84:	d503201f 	nop
+   80d88:	d503201f 	nop
+   80d8c:	d503201f 	nop
+   80d90:	d503201f 	nop
+   80d94:	d503201f 	nop
+   80d98:	d503201f 	nop
+   80d9c:	d503201f 	nop
+   80da0:	d503201f 	nop
+   80da4:	d503201f 	nop
+   80da8:	d503201f 	nop
+   80dac:	d503201f 	nop
+   80db0:	d503201f 	nop
+   80db4:	d503201f 	nop
+   80db8:	d503201f 	nop
+   80dbc:	d503201f 	nop
+   80dc0:	d503201f 	nop
+   80dc4:	d503201f 	nop
+   80dc8:	d503201f 	nop
+   80dcc:	d503201f 	nop
+   80dd0:	d503201f 	nop
+   80dd4:	d503201f 	nop
+   80dd8:	d503201f 	nop
+   80ddc:	d503201f 	nop
+   80de0:	d503201f 	nop
+   80de4:	d503201f 	nop
+   80de8:	d503201f 	nop
+   80dec:	d503201f 	nop
+   80df0:	d503201f 	nop
+   80df4:	d503201f 	nop
+   80df8:	d503201f 	nop
+   80dfc:	d503201f 	nop
+   80e00:	17fffca0 	b	80080 <hang>
+   80e04:	d503201f 	nop
+   80e08:	d503201f 	nop
+   80e0c:	d503201f 	nop
+   80e10:	d503201f 	nop
+   80e14:	d503201f 	nop
+   80e18:	d503201f 	nop
+   80e1c:	d503201f 	nop
+   80e20:	d503201f 	nop
+   80e24:	d503201f 	nop
+   80e28:	d503201f 	nop
+   80e2c:	d503201f 	nop
+   80e30:	d503201f 	nop
+   80e34:	d503201f 	nop
+   80e38:	d503201f 	nop
+   80e3c:	d503201f 	nop
+   80e40:	d503201f 	nop
+   80e44:	d503201f 	nop
+   80e48:	d503201f 	nop
+   80e4c:	d503201f 	nop
+   80e50:	d503201f 	nop
+   80e54:	d503201f 	nop
+   80e58:	d503201f 	nop
+   80e5c:	d503201f 	nop
+   80e60:	d503201f 	nop
+   80e64:	d503201f 	nop
+   80e68:	d503201f 	nop
+   80e6c:	d503201f 	nop
+   80e70:	d503201f 	nop
+   80e74:	d503201f 	nop
+   80e78:	d503201f 	nop
+   80e7c:	d503201f 	nop
+   80e80:	17fffc80 	b	80080 <hang>
+   80e84:	d503201f 	nop
+   80e88:	d503201f 	nop
+   80e8c:	d503201f 	nop
+   80e90:	d503201f 	nop
+   80e94:	d503201f 	nop
+   80e98:	d503201f 	nop
+   80e9c:	d503201f 	nop
+   80ea0:	d503201f 	nop
+   80ea4:	d503201f 	nop
+   80ea8:	d503201f 	nop
+   80eac:	d503201f 	nop
+   80eb0:	d503201f 	nop
+   80eb4:	d503201f 	nop
+   80eb8:	d503201f 	nop
+   80ebc:	d503201f 	nop
+   80ec0:	d503201f 	nop
+   80ec4:	d503201f 	nop
+   80ec8:	d503201f 	nop
+   80ecc:	d503201f 	nop
+   80ed0:	d503201f 	nop
+   80ed4:	d503201f 	nop
+   80ed8:	d503201f 	nop
+   80edc:	d503201f 	nop
+   80ee0:	d503201f 	nop
+   80ee4:	d503201f 	nop
+   80ee8:	d503201f 	nop
+   80eec:	d503201f 	nop
+   80ef0:	d503201f 	nop
+   80ef4:	d503201f 	nop
+   80ef8:	d503201f 	nop
+   80efc:	d503201f 	nop
+   80f00:	17fffc60 	b	80080 <hang>
+   80f04:	d503201f 	nop
+   80f08:	d503201f 	nop
+   80f0c:	d503201f 	nop
+   80f10:	d503201f 	nop
+   80f14:	d503201f 	nop
+   80f18:	d503201f 	nop
+   80f1c:	d503201f 	nop
+   80f20:	d503201f 	nop
+   80f24:	d503201f 	nop
+   80f28:	d503201f 	nop
+   80f2c:	d503201f 	nop
+   80f30:	d503201f 	nop
+   80f34:	d503201f 	nop
+   80f38:	d503201f 	nop
+   80f3c:	d503201f 	nop
+   80f40:	d503201f 	nop
+   80f44:	d503201f 	nop
+   80f48:	d503201f 	nop
+   80f4c:	d503201f 	nop
+   80f50:	d503201f 	nop
+   80f54:	d503201f 	nop
+   80f58:	d503201f 	nop
+   80f5c:	d503201f 	nop
+   80f60:	d503201f 	nop
+   80f64:	d503201f 	nop
+   80f68:	d503201f 	nop
+   80f6c:	d503201f 	nop
+   80f70:	d503201f 	nop
+   80f74:	d503201f 	nop
+   80f78:	d503201f 	nop
+   80f7c:	d503201f 	nop
+   80f80:	17fffc40 	b	80080 <hang>
+   80f84:	00000000 	.word	0x00000000
+   80f88:	00080000 	.word	0x00080000
+   80f8c:	00000000 	.word	0x00000000
+   80f90:	00080800 	.word	0x00080800
+   80f94:	00000000 	.word	0x00000000
+   80f98:	00083000 	.word	0x00083000
+   80f9c:	00000000 	.word	0x00000000
+
+0000000000080fa0 <uart_putc>:
+   80fa0:	12001c00 	and	w0, w0, #0xff
+   80fa4:	d28a0a82 	mov	x2, #0x5054                	// #20564
+   80fa8:	f2a7e422 	movk	x2, #0x3f21, lsl #16
+   80fac:	d503201f 	nop
+   80fb0:	b9400041 	ldr	w1, [x2]
+   80fb4:	362fffe1 	tbz	w1, #5, 80fb0 <uart_putc+0x10>
+   80fb8:	d28a0801 	mov	x1, #0x5040                	// #20544
+   80fbc:	f2a7e421 	movk	x1, #0x3f21, lsl #16
+   80fc0:	b9000020 	str	w0, [x1]
+   80fc4:	d65f03c0 	ret
+   80fc8:	d503201f 	nop
+   80fcc:	d503201f 	nop
+
+0000000000080fd0 <uart_puts>:
+   80fd0:	a9be7bfd 	stp	x29, x30, [sp, #-32]!
+   80fd4:	910003fd 	mov	x29, sp
+   80fd8:	f9000bf3 	str	x19, [sp, #16]
+   80fdc:	aa0003f3 	mov	x19, x0
+   80fe0:	39400000 	ldrb	w0, [x0]
+   80fe4:	340000c0 	cbz	w0, 80ffc <uart_puts+0x2c>
+   80fe8:	91000673 	add	x19, x19, #0x1
+   80fec:	d503201f 	nop
+   80ff0:	97ffffec 	bl	80fa0 <uart_putc>
+   80ff4:	38401660 	ldrb	w0, [x19], #1
+   80ff8:	35ffffc0 	cbnz	w0, 80ff0 <uart_puts+0x20>
+   80ffc:	f9400bf3 	ldr	x19, [sp, #16]
+   81000:	a8c27bfd 	ldp	x29, x30, [sp], #32
+   81004:	d65f03c0 	ret
+   81008:	d503201f 	nop
+   8100c:	d503201f 	nop
+
+0000000000081010 <c_irq_handler>:
+   81010:	d2800c00 	mov	x0, #0x60                  	// #96
+   81014:	f2a80000 	movk	x0, #0x4000, lsl #16
+   81018:	b9400000 	ldr	w0, [x0]
+   8101c:	36400120 	tbz	w0, #8, 81040 <c_irq_handler+0x30>
+   81020:	d2964000 	mov	x0, #0xb200                	// #45568
+   81024:	f2a7e000 	movk	x0, #0x3f00, lsl #16
+   81028:	b9400000 	ldr	w0, [x0]
+   8102c:	364000a0 	tbz	w0, #8, 81040 <c_irq_handler+0x30>
+   81030:	d2964080 	mov	x0, #0xb204                	// #45572
+   81034:	f2a7e000 	movk	x0, #0x3f00, lsl #16
+   81038:	b9400000 	ldr	w0, [x0]
+   8103c:	37e80040 	tbnz	w0, #29, 81044 <c_irq_handler+0x34>
+   81040:	d65f03c0 	ret
+   81044:	a9bf7bfd 	stp	x29, x30, [sp, #-16]!
+   81048:	d28a0800 	mov	x0, #0x5040                	// #20544
+   8104c:	f2a7e420 	movk	x0, #0x3f21, lsl #16
+   81050:	910003fd 	mov	x29, sp
+   81054:	b9400000 	ldr	w0, [x0]
+   81058:	97ffffd2 	bl	80fa0 <uart_putc>
+   8105c:	a8c17bfd 	ldp	x29, x30, [sp], #16
+   81060:	90000000 	adrp	x0, 81000 <uart_puts+0x30>
+   81064:	91054000 	add	x0, x0, #0x150
+   81068:	17ffffda 	b	80fd0 <uart_puts>
+   8106c:	d503201f 	nop
+
+0000000000081070 <kernel_main>:
+   81070:	a9bf7bfd 	stp	x29, x30, [sp, #-16]!
+   81074:	90000000 	adrp	x0, 81000 <uart_puts+0x30>
+   81078:	91058000 	add	x0, x0, #0x160
+   8107c:	910003fd 	mov	x29, sp
+   81080:	97ffffd4 	bl	80fd0 <uart_puts>
+   81084:	90000000 	adrp	x0, 81000 <uart_puts+0x30>
+   81088:	91064000 	add	x0, x0, #0x190
+   8108c:	97ffffd1 	bl	80fd0 <uart_puts>
+   81090:	d28a0083 	mov	x3, #0x5004                	// #20484
+   81094:	f2a7e423 	movk	x3, #0x3f21, lsl #16
+   81098:	d28a0882 	mov	x2, #0x5044                	// #20548
+   8109c:	f2a7e422 	movk	x2, #0x3f21, lsl #16
+   810a0:	52800020 	mov	w0, #0x1                   	// #1
+   810a4:	d2964201 	mov	x1, #0xb210                	// #45584
+   810a8:	f2a7e001 	movk	x1, #0x3f00, lsl #16
+   810ac:	b9000060 	str	w0, [x3]
+   810b0:	b9000040 	str	w0, [x2]
+   810b4:	d2800180 	mov	x0, #0xc                   	// #12
+   810b8:	f2a80000 	movk	x0, #0x4000, lsl #16
+   810bc:	52a40002 	mov	w2, #0x20000000            	// #536870912
+   810c0:	b9000022 	str	w2, [x1]
+   810c4:	b900001f 	str	wzr, [x0]
+   810c8:	97fffbf0 	bl	80088 <enable_irq>
+   810cc:	d503207f 	wfi
+   810d0:	d503207f 	wfi
+   810d4:	17fffffe 	b	810cc <kernel_main+0x5c>
+
+Disassembly of section .interp:
+
+00000000000810d8 <.interp>:
+   810d8:	62696c2f 	.inst	0x62696c2f ; undefined
+   810dc:	2d646c2f 	ldp	s15, s27, [x1, #-224]
+   810e0:	756e696c 	.inst	0x756e696c ; undefined
+   810e4:	61612d78 	.inst	0x61612d78 ; undefined
+   810e8:	36686372 	tbz	w18, #13, 81d54 <kernel_main+0xce4>
+   810ec:	6f732e34 	.inst	0x6f732e34 ; undefined
+   810f0:	Address 0x00000000000810f0 is out of bounds.
+
+
+Disassembly of section .dynsym:
+
+00000000000810f8 <.dynsym>:
+	...
+   81114:	00010003 	.inst	0x00010003 ; undefined
+   81118:	00080000 	.inst	0x00080000 ; undefined
+	...
+
+Disassembly of section .dynstr:
+
+0000000000081128 <.dynstr>:
+	...
+
+Disassembly of section .gnu.hash:
+
+0000000000081130 <.gnu.hash>:
+   81130:	00000001 	.inst	0x00000001 ; undefined
+   81134:	00000001 	.inst	0x00000001 ; undefined
+   81138:	00000001 	.inst	0x00000001 ; undefined
+	...
+
+Disassembly of section .rodata.str1.8:
+
+0000000000081150 <.rodata.str1.8>:
+   81150:	695f6320 	.word	0x695f6320
+   81154:	685f7172 	.word	0x685f7172
+   81158:	6c646e61 	.word	0x6c646e61
+   8115c:	000a7265 	.word	0x000a7265
+   81160:	756d6571 	.word	0x756d6571
+   81164:	69786520 	.word	0x69786520
+   81168:	43203a74 	.word	0x43203a74
+   8116c:	2d6c7274 	.word	0x2d6c7274
+   81170:	20782041 	.word	0x20782041
+   81174:	6571202f 	.word	0x6571202f
+   81178:	6d20756d 	.word	0x6d20756d
+   8117c:	74696e6f 	.word	0x74696e6f
+   81180:	203a726f 	.word	0x203a726f
+   81184:	6c727443 	.word	0x6c727443
+   81188:	6320412d 	.word	0x6320412d
+   8118c:	0000000a 	.word	0x0000000a
+   81190:	30746e69 	.word	0x30746e69
+   81194:	00000a32 	.word	0x00000a32
+
+Disassembly of section .rela.dyn:
+
+0000000000081198 <.rela.dyn>:
+   81198:	00080f88 	.inst	0x00080f88 ; undefined
+   8119c:	00000000 	.inst	0x00000000 ; undefined
+   811a0:	00000403 	.inst	0x00000403 ; undefined
+   811a4:	00000000 	.inst	0x00000000 ; undefined
+   811a8:	00080000 	.inst	0x00080000 ; undefined
+   811ac:	00000000 	.inst	0x00000000 ; undefined
+   811b0:	00080f90 	.inst	0x00080f90 ; undefined
+   811b4:	00000000 	.inst	0x00000000 ; undefined
+   811b8:	00000403 	.inst	0x00000403 ; undefined
+   811bc:	00000000 	.inst	0x00000000 ; undefined
+   811c0:	00080800 	.inst	0x00080800 ; undefined
+   811c4:	00000000 	.inst	0x00000000 ; undefined
+   811c8:	00080f98 	.inst	0x00080f98 ; undefined
+   811cc:	00000000 	.inst	0x00000000 ; undefined
+   811d0:	00000403 	.inst	0x00000403 ; undefined
+   811d4:	00000000 	.inst	0x00000000 ; undefined
+   811d8:	00083000 	.inst	0x00083000 ; undefined
+   811dc:	00000000 	.inst	0x00000000 ; undefined
+
+Disassembly of section .dynamic:
+
+0000000000082000 <__data_start>:
+   82000:	6ffffef5 	.inst	0x6ffffef5 ; undefined
+   82004:	00000000 	.inst	0x00000000 ; undefined
+   82008:	00081130 	.inst	0x00081130 ; undefined
+   8200c:	00000000 	.inst	0x00000000 ; undefined
+   82010:	00000005 	.inst	0x00000005 ; undefined
+   82014:	00000000 	.inst	0x00000000 ; undefined
+   82018:	00081128 	.inst	0x00081128 ; undefined
+   8201c:	00000000 	.inst	0x00000000 ; undefined
+   82020:	00000006 	.inst	0x00000006 ; undefined
+   82024:	00000000 	.inst	0x00000000 ; undefined
+   82028:	000810f8 	.inst	0x000810f8 ; undefined
+   8202c:	00000000 	.inst	0x00000000 ; undefined
+   82030:	0000000a 	.inst	0x0000000a ; undefined
+   82034:	00000000 	.inst	0x00000000 ; undefined
+   82038:	00000001 	.inst	0x00000001 ; undefined
+   8203c:	00000000 	.inst	0x00000000 ; undefined
+   82040:	0000000b 	.inst	0x0000000b ; undefined
+   82044:	00000000 	.inst	0x00000000 ; undefined
+   82048:	00000018 	.inst	0x00000018 ; undefined
+   8204c:	00000000 	.inst	0x00000000 ; undefined
+   82050:	00000015 	.inst	0x00000015 ; undefined
+	...
+   82060:	00000007 	.inst	0x00000007 ; undefined
+   82064:	00000000 	.inst	0x00000000 ; undefined
+   82068:	00081198 	.inst	0x00081198 ; undefined
+   8206c:	00000000 	.inst	0x00000000 ; undefined
+   82070:	00000008 	.inst	0x00000008 ; undefined
+   82074:	00000000 	.inst	0x00000000 ; undefined
+   82078:	00000048 	.inst	0x00000048 ; undefined
+   8207c:	00000000 	.inst	0x00000000 ; undefined
+   82080:	00000009 	.inst	0x00000009 ; undefined
+   82084:	00000000 	.inst	0x00000000 ; undefined
+   82088:	00000018 	.inst	0x00000018 ; undefined
+   8208c:	00000000 	.inst	0x00000000 ; undefined
+   82090:	00000016 	.inst	0x00000016 ; undefined
+	...
+   820a0:	0000001e 	.inst	0x0000001e ; undefined
+   820a4:	00000000 	.inst	0x00000000 ; undefined
+   820a8:	0000000c 	.inst	0x0000000c ; undefined
+   820ac:	00000000 	.inst	0x00000000 ; undefined
+   820b0:	6ffffffb 	.inst	0x6ffffffb ; undefined
+   820b4:	00000000 	.inst	0x00000000 ; undefined
+   820b8:	08000001 	stxrb	w0, w1, [x0]
+   820bc:	00000000 	.inst	0x00000000 ; undefined
+   820c0:	6ffffff9 	.inst	0x6ffffff9 ; undefined
+   820c4:	00000000 	.inst	0x00000000 ; undefined
+   820c8:	00000003 	.inst	0x00000003 ; undefined
+	...
+
+Disassembly of section .got:
+
+0000000000082120 <.got>:
+   82120:	00082000 	.inst	0x00082000 ; undefined
+   82124:	00000000 	.inst	0x00000000 ; undefined
+
+Disassembly of section .got.plt:
+
+0000000000082128 <__bss_end-0xed8>:
+	...
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	3a434347 	ccmn	w26, w3, #0x7, mi  // mi = first
+   4:	62552820 	.inst	0x62552820 ; undefined
+   8:	75746e75 	.inst	0x75746e75 ; undefined
+   c:	6e694c2f 	uqshl	v15.8h, v1.8h, v9.8h
+  10:	206f7261 	.inst	0x206f7261 ; undefined
+  14:	2e352e37 	uqsub	v23.8b, v17.8b, v21.8b
+  18:	75332d30 	.inst	0x75332d30 ; undefined
+  1c:	746e7562 	.inst	0x746e7562 ; undefined
+  20:	317e3175 	adds	w21, w11, #0xf8c, lsl #12
+  24:	34302e38 	cbz	w24, 605e8 <__bss_size+0x605e8>
+  28:	2e372029 	usubl	v9.8h, v1.8b, v23.8b
+  2c:	00302e35 	.inst	0x00302e35 ; NYI

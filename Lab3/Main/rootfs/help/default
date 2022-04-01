@@ -1,0 +1,7 @@
+Command    | Description
+-----------|--------------------------------------------
+hello      | print Hello World
+help       | print all avaiable commands
+exec       | "exec <image file>"
+timer      | use "help timer" for detail
+setTimeout | setTimeout <MESSAGE> <SECONDS>
