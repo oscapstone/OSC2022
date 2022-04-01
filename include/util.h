@@ -45,6 +45,7 @@
 #define NULL 0
 
 int strcmp(const char *s1, const char *s2);
+int strncmp(const char *s1, const char *s2, uint32_t cnt);
 int strcpy(char *s1, const char *s2);
 int strlen(const char *s1);
 
@@ -70,6 +71,15 @@ uint8_t log_2(uint64_t value);
                               ((val<<24)&0xff0000000000)     | \
                               ((val<<40)&0xff000000000000)   | \
                               ((val<<56)&0xff00000000000000) )
+
+/* REGISTER OPERATION */
+#define read_sysreg(reg) ({          \
+    uint64_t _val;                   \
+    __asm__ volatile("mrs x0, " #reg \
+                     : "=r"(_val));  \
+                    _val; })
+
+#define write_sysreg(reg, _val) ({ __asm__ volatile("msr " #reg ", %0" ::"rZ"(_val)); })
 
 /* OTHER HELPER */
 void sleep(int cycles);
