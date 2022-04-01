@@ -1,8 +1,6 @@
 #ifndef MEMORY
 #define MEMORY
 
-#define NULL 0x00000000;
-
 extern unsigned long _heap_start; // linker script symbol
 extern unsigned long _heap_end;  // linker script symbol
 static char* heap = (char*)&_heap_start;

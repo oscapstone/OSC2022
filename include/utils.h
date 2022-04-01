@@ -9,6 +9,5 @@
 
 void delay_cycle(unsigned int n);
 void delay_ms(unsigned int n);
-unsigned int str2num(char* str, int len);
 
 #endif

@@ -59,4 +59,7 @@
 #define MBOX_FULL       0x80000000
 #define MBOX_EMPTY      0x40000000
 
+// Interrupt
+#define IRQS1  ((volatile unsigned int*)(0x3f00b210))
+
 #endif

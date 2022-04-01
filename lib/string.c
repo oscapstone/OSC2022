@@ -9,6 +9,15 @@ int strcmp (const char* str1, const char* str2) {
     }
 }
 
+void strcpy(char* dst, const char* src) {
+    while(*src)
+    {
+        *(dst++) = *(src++);
+    }
+
+    *(dst) = '\0';
+}
+
 int startwith(const char* str1, const char* str2) {
     for(int i = 0; ; i++) {
         if(str2[i] == '\0') {
@@ -30,4 +39,22 @@ int strlen(const char* str1) {
         len++;
     }
     return len;
+}
+
+unsigned int str2num(char* str, int len) {
+    int num = 0;
+    char c;
+
+    while(len--) {
+        c = *(str++);
+        num = num * 10 + c - '0';
+    } 
+
+    return num;
+}
+
+char* find_token(const char* str, char sep)
+{
+    while(*(str++) != sep);
+    return (char*)str;
 }
