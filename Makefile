@@ -11,10 +11,10 @@ LIB_DIR := $(SRC_DIR)/lib
 KERNEL_SRCS := $(shell cd src; find kernel lib -name '*.[cS]')
 KERNEL_OBJS := $(KERNEL_SRCS:%=$(BUILD_DIR)/%.o)
 
-BOOTLOADER_SRCS := $(shell cd src; find bootloader lib -name '*.[cS]')
+BOOTLOADER_SRCS := $(shell cd src; find bootloader -name '*.[cS]')
 BOOTLOADER_OBJS := $(BOOTLOADER_SRCS:%=$(BUILD_DIR)/%.o)
 
-CFLAGS := -O0 -I $(SRC_DIR)/include -fno-stack-protector -ffreestanding -fdata-sections -ffunction-sections
+CFLAGS := -O0 -I $(SRC_DIR)/include -I $(KERNEL_DIR)/include -fno-stack-protector -ffreestanding -fdata-sections -ffunction-sections -ggdb
 
 .PHONY: clean all rootfs
 
@@ -51,11 +51,11 @@ $(BUILD_DIR)/kernel/%.S.o: $(KERNEL_DIR)/%.S
 
 $(BUILD_DIR)/bootloader/%.c.o: $(BOOTLOADER_DIR)/%.c
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DBOOTLOADER -c $< -o $@
 
 $(BUILD_DIR)/bootloader/%.S.o: $(BOOTLOADER_DIR)/%.S
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DBOOTLOADER -c $< -o $@
 
 $(BUILD_DIR)/lib/%.c.o: $(LIB_DIR)/%.c
 	mkdir -p $(dir $@)
