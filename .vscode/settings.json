@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "uart.h": "c",
+    "shell.h": "c",
+    "malloc.h": "c"
+  }
+}
