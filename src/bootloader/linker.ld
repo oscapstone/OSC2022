@@ -1,6 +1,6 @@
 SECTIONS
 {
-    . = 0x80000;
+    . = 0x60000;
     PROVIDE(_code = .);
     .text :
     {
