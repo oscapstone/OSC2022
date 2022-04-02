@@ -35,7 +35,7 @@ void main()
     // read device tree address from x0
     register int *reg_x0 asm("x0");
     DTB_BASE = reg_x0;
-
+    
     // set up serial console
     uart_init();
 

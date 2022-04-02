@@ -49,6 +49,8 @@
 #define UART0_IMSC      ((volatile unsigned int*)(MMIO_BASE+0x00201038))
 #define UART0_ICR       ((volatile unsigned int*)(MMIO_BASE+0x00201044))
 
+#define ENABLE_IRQ_S1   ((volatile unsigned int*)(MMIO_BASE+0x0000B210))
+
 /**
  * Set baud rate and characteristics (115200 8N1) and map to GPIO
  */
@@ -100,17 +102,28 @@ void uart_init()
     r=150; while(r--) { asm volatile("nop"); }
     *GPPUDCLK0 = 0;        // flush GPIO setup
 
+    // enable aux int
+    *ENABLE_IRQ_S1 = (1<<29);
+
     /* initialize UART */
     *AUX_ENABLE |=1;       // enable UART1, AUX mini uart
     *AUX_MU_IER = 0;
     *AUX_MU_CNTL = 0;
     *AUX_MU_LCR = 3;       // 8 bits
     *AUX_MU_MCR = 0;
-    *AUX_MU_IER = 0;
-    *AUX_MU_IIR = 0xc6;    // disable interrupts
+    *AUX_MU_IER = 0x1;     // enable receive interrupt
+    *AUX_MU_IIR = 0xc6;    // clear FIFO
     *AUX_MU_BAUD = 270;    // 115200 baud
     *AUX_MU_CNTL = 3;      // enable Tx, Rx
 #endif
+
+    for (read_buf_idx = 0; read_buf_idx < READ_BUF_SIZE; read_buf_idx++)
+        read_buf[read_buf_idx] = '\0';
+    
+    read_buf_idx = 0;
+    
+    write_buf_in = 0;
+    write_buf_out = 0;
 }
 
 /**
@@ -124,7 +137,7 @@ void uart_send(unsigned int c) {
     /* write the character to the buffer */
     *UART0_DR=c;
 #else
-    /* wait until we can send */
+    // /* wait until we can send */
     do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x20));
     /* write the character to the buffer */
     *AUX_MU_IO=c;
@@ -157,7 +170,26 @@ char uart_getc() {
 /**
  * Display a string
  */
-void uart_puts(char *s) {
+void uart_puts(char *s)
+{
+    while(*s) {
+        /* convert newline to carrige return + newline */
+        if(*s == '\n') {
+            write_buf[write_buf_in] = '\r';
+            write_buf_in = (write_buf_in + 1) & (WRITE_BUF_SIZE - 1);
+        }
+        write_buf[write_buf_in] = *s++;
+        write_buf_in = (write_buf_in + 1) & (WRITE_BUF_SIZE - 1);
+    }
+
+    enable_transmit_irq();
+    do{asm volatile("nop");}while(write_buf_in != write_buf_out);
+
+    write_buf_in = 0;
+    write_buf_out = 0;
+}
+
+void sync_uart_puts(char *s) {
     while(*s) {
         /* convert newline to carrige return + newline */
         if(*s=='\n')
@@ -206,3 +238,64 @@ void uart_dec(int num) {
     } while (divisor);
 
 }
+
+void uart_irq_handler()
+{
+    uint32_t value;
+    value = *AUX_MU_IIR;
+    value = value & 0x00000006;
+
+    if (value == 0x4)
+        receive_handler();
+    else if (value == 0x2)
+        transmit_handler();
+    else
+        exit();
+}
+
+void receive_handler()
+{
+    char c = *AUX_MU_IO;
+    read_buf[read_buf_idx++] = c;
+    if (c == '\r') {
+        uart_send('\n');
+    }
+    uart_send(c);
+}
+
+void transmit_handler()
+{
+    while (write_buf_out != write_buf_in) {
+        do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x20));
+        *AUX_MU_IO = write_buf[write_buf_out];
+
+        if (write_buf_out == WRITE_BUF_SIZE - 1)
+            write_buf_out = 0;
+        else
+            write_buf_out++;
+    }
+
+    disable_transmit_irq();
+}
+
+void enable_transmit_irq()
+{
+    uint32_t value = *AUX_MU_IER;
+    value |= 0x2;
+    *AUX_MU_IER = value;
+}
+
+void disable_transmit_irq()
+{
+    uint32_t value = *AUX_MU_IER;
+    value &= ~(0x2);
+    *AUX_MU_IER = value;
+}
+
+void disable_recieve_irq()
+{
+    uint32_t value = *AUX_MU_IER;
+    value &= ~(0x1);
+    *AUX_MU_IER = value;
+}
+

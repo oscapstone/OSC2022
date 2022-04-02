@@ -39,6 +39,21 @@ void cpio_ls()
     }
 }
 
+void cpio_get_file_info(char *filename, cpio_fp_t *fp)
+{
+    char *fs = (char *) CPIO_BASE;
+
+    while (1) {
+        cpio_read_file(&fs, fp);
+
+        if (strncmp(fp->filename, filename, ascii2int(fp->header->c_namesize, 8)) == 0) {
+            return;
+        }
+        if (strncmp(fp->filename, "TRAILER!!!", 10) == 0) break;
+    }
+    uart_puts("file not found!\n");
+}
+
 void cpio_read_file(void **addr, cpio_fp_t *fp)
 {
     char *fs = (char *) *addr;

@@ -25,6 +25,70 @@ void PrintHelp()
     uart_puts("cat <filename>     : show content stored in the file\n");
     uart_puts("lshw               : print device tree structure\n");
     uart_puts("alloc              : alloc test\n");
+    uart_puts("run                : run user program\n");
+}
+
+void jump2usr_prog(cpio_fp_t *fp)
+{
+    uint64_t spsr_value, sp_value;
+    size_t prog_size = ascii2int(fp->header->c_filesize, 8);
+    char *prog_addr = simple_alloc(prog_size);
+
+    copy_prog_from_cpio(prog_addr, fp->data, prog_size);
+    spsr_value = 0x340;
+    sp_value = simple_alloc(0x8000);
+    sp_value += 0x8000;
+    disable_recieve_irq();
+
+    // for (int i=0;i<prog_size;i++) {
+    //     uart_send(prog_addr[i]);
+    //     if (prog_addr[i] == 'h') {
+    //         uart_puts("\nprog_addr = 0x");
+    //         uart_hex(i);
+    //         exit();
+    //     }
+    // }
+    // uart_puts(fp->filename);
+    // uart_puts("\n");
+    // for (int i=0;i<prog_size;i++) {
+    //     uart_send(prog_addr[i]);
+    //     if (prog_addr[i] == 'h') {
+    //         uart_puts("\ni = 0x");
+    //         uart_hex(i);
+    //         uart_puts("\ni = ");
+    //         uart_dec(i);
+    //         uart_puts("\nfp->data[i] = 0x");
+    //         uart_send(prog_addr[i]);
+    //         uart_puts("\n&fp->data[i] = 0x");
+    //         uart_hex(&(prog_addr[i]));
+    //         uart_puts("\nfp->data = 0x");
+    //         uart_hex(prog_addr);
+    //         exit();
+    //     }
+    // }
+    // uart_puts("\nEND\n");
+    // uart_hex((prog_addr+0x4fc));
+    // exit();
+    // uart_puts("prog_size = 0x");
+    // uart_hex(prog_size);
+    // uart_puts("\nprog_addr = 0x");
+    // uart_hex(prog_addr);
+    // uart_puts("\nsp_value = 0x");
+    // uart_hex(sp_value);
+    // uart_puts("\nfp->data = 0x");
+    // uart_hex(prog_addr);
+    // uart_puts("\nprog = 0x");
+    // uart_hex(prog);
+    // uart_puts("\n");
+    asm volatile ("msr spsr_el1, %0" : : "r"(spsr_value));
+    asm volatile ("msr elr_el1, %0"  : : "r"(prog_addr));
+    asm volatile ("msr sp_el0, %0"   : : "r"(sp_value));
+    asm volatile ("eret");
+}
+
+void copy_prog_from_cpio(char *dst_addr, const char *src_addr, size_t prog_size)
+{
+    memcpy(dst_addr, src_addr, prog_size);
 }
 
 void PrintHello()
@@ -103,56 +167,70 @@ void alloc_test(char *str_num)
     
 }
 
+void svc_handler()
+{
+    uint32_t value;
+    asm volatile ("mrs %0, spsr_el1": "=r"(value));
+    sync_uart_puts("spsr_el1: 0x");
+    uart_hex(value);
+
+    asm volatile ("mrs %0, elr_el1": "=r"(value));
+    sync_uart_puts("\nelr_el1:  0x");
+    uart_hex(value);
+
+    asm volatile ("mrs %0, esr_el1": "=r"(value));
+    sync_uart_puts("\nesr_el1:  0x");
+    uart_hex(value);
+    sync_uart_puts("\n");
+}
+
 void shell()
 {
-    int idx;
-    char c;
-    int buf_size = sizeof(cmd_buf) / 8;
-    char *tok;
-
     dtb_parse(cpio_init);
+    set_start_time();
     PrintHelp();
 
-    for (idx = 0; idx < buf_size; idx++)
-		cmd_buf[idx] = '\0';
-
     while (1) {
+        if (read_buf_idx > 0)
+            if (read_buf[read_buf_idx-1] == '\r')
+                cmd_handler();
 
-        idx = 0;
-
-        // get the whole command
-        while (1) {
-            c = uart_getc();
-            if (c == '\r') {
-                uart_send('\n');
-				uart_send('\r');
-				cmd_buf[idx++] = '\0';
-				break;
-            }
-            uart_send(c);
-            cmd_buf[idx++] = c;
-        }
-
-        // parse the command
-        tok = strtok(cmd_buf, ' ');
-        if (strcmp(tok, "help") == 0) PrintHelp();
-        else if (strcmp(tok, "hello") == 0) PrintHello();
-        else if (strcmp(tok, "sysinfo") == 0) PrintInfo();
-        else if (strcmp(tok, "reboot") == 0) reset(1000);
-        else if (strcmp(tok, "clear") == 0) clear_screen();
-        else if (strcmp(tok, "ls") == 0) {
-            //if (CPIO_BASE == NULL) dtb_parse(cpio_init);
-            cpio_ls();
-        }
-        else if (strcmp(tok, "cat") == 0) {
-            //if (CPIO_BASE == NULL) dtb_parse(cpio_init);
-            cpio_cat(strtok(NULL, ' '));
-        }
-        else if (strcmp(tok, "lshw") == 0) dtb_parse(NULL);
-        else if (strcmp(tok, "alloc") == 0) alloc_test(strtok(NULL, ' '));
-        else if (tok != NULL) uart_puts("Command not found\n");
-
-        for (; idx >= 0; idx--)
-		    cmd_buf[idx] = '\0';
+        // do something
+        asm volatile("nop");
+        asm volatile("nop");
     }
+}
+
+void cmd_handler()
+{
+    char *tok;
+    cpio_fp_t fp;
+    int idx;
+
+    for (idx = 0; idx < read_buf_idx; idx++) {
+        cmd_buf[idx] = read_buf[idx];
+        read_buf[idx] = '\0';
+    }
+    
+    cmd_buf[--idx] = '\0';
+    read_buf_idx = 0;
+    tok = strtok(cmd_buf, ' ');
+    
+    if (strcmp(tok, "help") == 0) PrintHelp();
+    else if (strcmp(tok, "hello") == 0) PrintHello();
+    else if (strcmp(tok, "sysinfo") == 0) PrintInfo();
+    else if (strcmp(tok, "reboot") == 0) reset(100);
+    else if (strcmp(tok, "clear") == 0) clear_screen();
+    else if (strcmp(tok, "ls") == 0) cpio_ls();
+    else if (strcmp(tok, "cat") == 0) cpio_cat(strtok(NULL, ' '));
+    else if (strcmp(tok, "lshw") == 0) dtb_parse(NULL);
+    else if (strcmp(tok, "alloc") == 0) alloc_test(strtok(NULL, ' '));
+    else if (strcmp(tok, "run") == 0) {
+        cpio_get_file_info("user_program", &fp);
+        jump2usr_prog(&fp);
+    }
+    else if (tok != NULL) uart_puts("Command not found\n");
+
+    for (idx = 0; idx < CMD_BUF_SIZE; idx++)
+		cmd_buf[idx] = '\0';
 }
