@@ -80,13 +80,13 @@ void Time_interrupt(unsigned long long spsr){
 
 void GPU_interrupt(){
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
-        disable_AUX_MU_IER_w();
+        // disable_AUX_MU_IER_w();
         tran_interrupt_handler();
         // uart_puto("[*] AUX_MU_IIR: Transmit holding register empty\n");
 
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
-        disable_AUX_MU_IER_r();
+        // disable_AUX_MU_IER_r();
         recv_interrupt_handler();
         // uart_puts("[*] AUX_MU_IIR: Receiver holds valid byte\n");
     }
