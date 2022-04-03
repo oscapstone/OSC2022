@@ -15,8 +15,8 @@ void exception_entry(unsigned long long what,
             Sync_exception(esr, elr, spsr);
             break;
         case 1: 
-            if(*CORE0_IRQ_SOURCE == 0x2) Time_interrupt(spsr);
-            else if(*CORE0_IRQ_SOURCE == 0x100) GPU_interrupt();
+            if(*CORE0_IRQ_SOURCE &= 0x2) Time_interrupt(spsr);
+            if(*CORE0_IRQ_SOURCE &= 0x100) GPU_interrupt();
             break;
         case 2: uart_puts("FIQ"); break;
         case 3: uart_puts("SError"); break;
