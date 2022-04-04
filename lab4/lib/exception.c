@@ -28,12 +28,12 @@ void irq_router(unsigned long long x0){
       disable_uart_w_interrupt();
       add_task(uart_interrupt_w_handler, "TX", 0);
       pop_task();
-      // uart_interrupt_w_handler();
+      uart_interrupt_w_handler();
     }else if (*AUX_MU_IIR & (0b10 << 1)) {  //can read
       disable_uart_r_interrupt();
       add_task(uart_interrupt_r_handler, "RX", 0);
       pop_task();
-      // uart_interrupt_r_handler();
+      uart_interrupt_r_handler();
     }
   }
 }
