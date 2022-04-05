@@ -6,12 +6,15 @@
 #include "mail_box.h"
 #include "cpio.h"
 #include "timer.h"
+#include "memory.h"
 
 
 char buffer[MAX_BUFFER_SIZE];
 
 void get_command();
 void parse_command();
+uint64_t test_page_malloc();
+void test_page_free(uint64_t addr);
 
 void get_board_revision();
 
@@ -70,6 +73,14 @@ void parse_command() {
     else if (compare_string(buffer, "test_timer") == 0) {
         test_timer();
     }
+    else if (compare_string(buffer, "test_page") == 0) {
+        const int test_size = 9;
+        uint64_t page_addrs[test_size];
+        for (int i = 0; i < test_size; ++i)
+            page_addrs[i] = test_page_malloc();
+        for (int i = 0; i < test_size; ++i)
+            test_page_free(page_addrs[i]);
+    }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
         uart_send_string("hello              : print Hello World!\n");
@@ -80,7 +91,26 @@ void parse_command() {
         uart_send_string("load               : load user program\n");
         uart_send_string("async_uart         : test async uart\n");
         uart_send_string("test_timer         : test timer multiplexing\n");
+        uart_send_string("test_page          : test buddy system\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");
+}
+
+uint64_t test_page_malloc() {
+    uart_printf("\n========= [Test Page Malloc] =========\n");
+    uint64_t addr = page_malloc();
+    uart_printf("return addr: 0x%x\n", addr);
+    print_frame_array();
+    print_frame_free_lists();
+    uart_printf("======================================\n");
+    return addr;
+}
+
+void test_page_free(uint64_t addr) {
+    uart_printf("\n========== [Test Page Free] ==========\n");
+    page_free(addr, 0);
+    print_frame_array();
+    print_frame_free_lists();
+    uart_printf("======================================\n");
 }
