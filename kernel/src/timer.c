@@ -60,7 +60,9 @@ void add_timer(TimerTask task, unsigned long long expired_time, void *args){
 
 
 void timer_interrupt_handler(){
-
+    // while(1){
+        // uart_puts("abcdefghijklmnopqrstuvwxyz\n");
+    // }
     while(head != NULL){
         if(head->next != NULL){
             head->task(head->args);
@@ -79,6 +81,7 @@ void timer_interrupt_handler(){
         }
     }
     if(head == NULL) set_long_timer_irq();
+    enable_timer_irq();
 }
 
 void timeout_print(void *args){

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <exc.h>
 #include <timer.h>
+#include <task.h>
 
 void exception_entry(unsigned long long what, 
                     unsigned long long esr, 
@@ -15,8 +16,8 @@ void exception_entry(unsigned long long what,
             Sync_exception(esr, elr, spsr);
             break;
         case 1: 
-            if(*CORE0_IRQ_SOURCE &= 0x2) Time_interrupt(spsr);
-            if(*CORE0_IRQ_SOURCE &= 0x100) GPU_interrupt();
+            if(*CORE0_IRQ_SOURCE & 0x2) Time_interrupt(spsr);
+            else if(*CORE0_IRQ_SOURCE & 0x100) GPU_interrupt();
             break;
         case 2: uart_puts("FIQ"); break;
         case 3: uart_puts("SError"); break;
@@ -58,7 +59,13 @@ void Time_interrupt(unsigned long long spsr){
         set_period_timer_irq();
     }
     else{
-        timer_interrupt_handler();
+        // char buf[10];
+        // uitohex(buf, (unsigned int)spsr);
+        // uart_puts(buf);
+        disable_timer_irq();
+        add_task(timer_interrupt_handler, 1);
+        do_task();
+        //timer_interrupt_handler();
     }
 }
 
@@ -80,19 +87,24 @@ void Time_interrupt(unsigned long long spsr){
 
 void GPU_interrupt(){
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
-        // disable_AUX_MU_IER_w();
-        tran_interrupt_handler();
+        disable_AUX_MU_IER_w();
+        add_task(tran_interrupt_handler, 2);
+        do_task();
+
+        //tran_interrupt_handler();
         // uart_puto("[*] AUX_MU_IIR: Transmit holding register empty\n");
 
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
-        // disable_AUX_MU_IER_r();
-        recv_interrupt_handler();
+        disable_AUX_MU_IER_r();
+        add_task(recv_interrupt_handler, 2);
+        do_task();
+
+        //recv_interrupt_handler();
         // uart_puts("[*] AUX_MU_IIR: Receiver holds valid byte\n");
     }
     else{
         uart_puts("[*] AUX_MU_IIR: No interrupts\n");
     }
-
 }
 

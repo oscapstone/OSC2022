@@ -77,10 +77,10 @@ char async_uart_getc(){
   /* wait until something is in the read buffer (read_set_idx != read_get_idx) */
   while(read_get_idx == read_set_idx) {asm volatile("nop");}
 
-  // disable_irq();
+  disable_irq();
   char r = read_buf[read_get_idx++]; /* read the char that set in read buffer already*/
   read_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
-  // enable_irq();
+  enable_irq();
 
   enable_AUX_MU_IER_r();
   
@@ -119,8 +119,10 @@ void async_uart_putc(unsigned int c){
   /* buffer is full, wait the sending char */
   while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {asm volatile("nop");}
 
+  disable_irq();
   write_buf[write_set_idx++] = (char)c;
   write_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+  enable_irq();
 
   /* enable transmit interrupt after set the new char */
   enable_AUX_MU_IER_w();
@@ -132,6 +134,13 @@ void uart_puts(char *s) {
   while(*s) async_uart_putc(*s++);
   /* convert newline to carrige return + newline */
   if(*(--s)=='\n') async_uart_putc('\r');
+  
+}
+
+void uart_tputs(char *s) {
+  while(*s) uart_putc(*s++);
+  /* convert newline to carrige return + newline */
+  if(*(--s)=='\n') uart_putc('\r');
   
 }
 
