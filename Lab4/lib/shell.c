@@ -73,13 +73,28 @@ void parse_command() {
     else if (compare_string(buffer, "test_timer") == 0) {
         test_timer();
     }
-    else if (compare_string(buffer, "test_page") == 0) {
+    else if (compare_string(buffer, "test_page1") == 0) {
         const int test_size = 9;
         uint64_t page_addrs[test_size];
         for (int i = 0; i < test_size; ++i)
             page_addrs[i] = test_page_malloc();
         for (int i = 0; i < test_size; ++i)
             test_page_free(page_addrs[i]);
+    }
+    else if (compare_string(buffer, "test_page2") == 0) {
+        const int test_size = 9;
+        uint64_t page_addrs[test_size];
+        for (int i = 0; i < test_size; ++i)
+            page_addrs[i] = test_page_malloc();
+        test_page_free(page_addrs[7]);
+        test_page_free(page_addrs[8]);
+        test_page_free(page_addrs[1]);
+        test_page_free(page_addrs[4]);
+        test_page_free(page_addrs[0]);
+        test_page_free(page_addrs[5]);
+        test_page_free(page_addrs[3]);
+        test_page_free(page_addrs[2]);
+        test_page_free(page_addrs[6]);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
@@ -91,7 +106,8 @@ void parse_command() {
         uart_send_string("load               : load user program\n");
         uart_send_string("async_uart         : test async uart\n");
         uart_send_string("test_timer         : test timer multiplexing\n");
-        uart_send_string("test_page          : test buddy system\n");
+        uart_send_string("test_page1         : test buddy system\n");
+        uart_send_string("test_page2         : test buddy system\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");
