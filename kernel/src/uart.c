@@ -137,7 +137,7 @@ void uart_puts(char *s) {
   
 }
 
-void uart_tputs(char *s) {
+void uart_sputs(char *s) {
   while(*s) uart_putc(*s++);
   /* convert newline to carrige return + newline */
   if(*(--s)=='\n') uart_putc('\r');

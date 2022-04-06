@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include <irq.h>
 
+int printAfter2Second = 1;
 Timer *head = NULL;
 void add_timer(TimerTask task, unsigned long long expired_time, void *args){
     unsigned int change_time = 0;
@@ -81,9 +82,13 @@ void timer_interrupt_handler(){
         }
     }
     if(head == NULL) set_long_timer_irq();
+    if(printAfter2Second) {
+        add_timer(timeout_print, 2, "[*] After two second\n# ");
+        printAfter2Second = 0;
+    }
     enable_timer_irq();
 }
 
 void timeout_print(void *args){
-    uart_puts((char*)args);
+    uart_sputs((char*)args);
 }

@@ -142,6 +142,11 @@ void TestTimeOut(char buf[MAX_SIZE]){
   add_timer(timeout_print, 4, "[*] timeout: 4\n");
   add_timer(timeout_print, 3, "[*] timeout: 3\n");
   add_timer(timeout_print, 2, "[*] timeout: 2.1\n"); // test short expired time
+  add_timer(timeout_print, 9, "[*] timeout: 9\n");
+  add_timer(timeout_print, 7, "[*] timeout: 7\n");
+  add_timer(timeout_print, 6, "[*] timeout: 6\n");
+  add_timer(timeout_print, 8, "[*] timeout: 8\n");
+
 }
 
 /* Main Shell */
