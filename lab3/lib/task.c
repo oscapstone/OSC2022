@@ -49,8 +49,9 @@ void add_task(void* callback, uint32_t priority) {
 void show_task_list() {
     struct list_head* curr;
     bool inserted = false;
+    printf("show_task_list()" ENDL);
     list_for_each(curr, task_event_list) {
-        printf("%u -> ", ((timer_event_t*)curr)->tval);
+        printf("0x%lX -> ", ((task_event_t*)curr)->priority);
     }
     printf(ENDL);
 }

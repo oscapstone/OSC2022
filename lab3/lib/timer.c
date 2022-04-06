@@ -100,7 +100,7 @@ void sleep(uint64_t timeout) {
 
 void show_msg_callback(char* args) {
     // async_printf("[+] show_msg_callback(%s)" ENDL, args);
-    printf("[+] show_msg_callback(%s)" ENDL, args);
+    printf("[+] show_msg_callback() -> %s" ENDL, args);
 }
 
 void show_time_callback(char* args) {

@@ -33,7 +33,7 @@ void cmd_cat(char* param);
 void cmd_dtb(char* param);
 void cmd_exec(char* param);
 void cmd_timer(char* param);
-void cmd_setTimeout(char* param);
+void cmd_delay(char* param);
 void cmd_unknown();
 
 struct func func_list[] = {
@@ -46,6 +46,6 @@ struct func func_list[] = {
     {.name = "dtb", .ptr = cmd_dtb, .desc = "show device tree"},
     {.name = "exec", .ptr = cmd_exec, .desc = "execute a file"},
     {.name = "timer", .ptr = cmd_timer, .desc = "start timer notification"},
-    {.name = "setTimeout", .ptr = cmd_setTimeout, .desc = "setTimeout MESSAGE SECONDS"}};
+    {.name = "delay", .ptr = cmd_delay, .desc = "Usage: delay <MESSAGE> <SECONDS>"}};
 
 #endif

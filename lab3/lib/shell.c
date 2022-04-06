@@ -116,7 +116,7 @@ void cmd_timer(char* param) {
     add_timer(show_time_callback, param, 2);
 }
 
-void cmd_setTimeout(char* param) {
+void cmd_delay(char* param) {
     // TODO: better parameter handling
     char *arg1 = param,
          *arg2 = strchr(param, ' ') + 1;

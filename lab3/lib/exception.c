@@ -8,7 +8,7 @@ void irq_handler() {
 
     // [ Lab3 - AD2 ] 2. move data from the device’s buffer through DMA, or manually copy,
     // TODO: necessary???
-
+    printf("[START] irq_handler()" ENDL);
     // [ Lab3 - AD2 ] 3. enqueues the processing task to the event queue,
     // classify the interrupt type, and call add_task()
     if (c0_int_src & SRC_CNTPNSIRQ_INT) {
@@ -19,16 +19,23 @@ void irq_handler() {
 
     // [ Lab3 - AD2 ] 4. do the tasks with interrupts enabled,
     run_task();
+    printf("[END] irq_handler()" ENDL);
 }
 
 void invalid_handler(uint32_t x0) {
     printf("[Invalid Exception] %d" ENDL, x0);
-    while (1) {
-    };
+    while (1)
+        ;
 }
 
-void sync_handler() {
+void sync_handler() {  // handle svc0
     printf("sync_handler()" ENDL);
+    uint64_t spsr_el1, elr_el1, esr_el1;
+    get_reg(spsr_el1, spsr_el1);
+    get_reg(elr_el1, elr_el1);
+    get_reg(esr_el1, esr_el1);
+
+    printf("0x%lX, 0x%lX, 0x%lX\r\n", spsr_el1, elr_el1, esr_el1);
 }
 
 void enable_interrupt() {
