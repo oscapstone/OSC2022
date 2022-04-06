@@ -7,8 +7,11 @@
 #include "cpio.h"
 #include "timer.h"
 #include "memory.h"
+#include "allocator.h"
+#include "printf.h"
 
 
+int debug_mode = 0;
 char buffer[MAX_BUFFER_SIZE];
 
 void get_command();
@@ -43,6 +46,18 @@ void get_command() {
     }
 }
 
+unsigned int debug_printf(char* fmt,...) {
+   if (debug_mode) {
+       char dst[100];
+        __builtin_va_list args;
+        __builtin_va_start(args,fmt);
+        unsigned int ret=vsprintf(dst,fmt,args);
+        uart_send_string(dst);
+        return ret;
+   }
+   return 0;
+}
+
 void parse_command() {
     if (compare_string(buffer, "\0") == 0) {}
     else if (compare_string(buffer, "hello") == 0)
@@ -74,14 +89,17 @@ void parse_command() {
         test_timer();
     }
     else if (compare_string(buffer, "test_page1") == 0) {
+        debug_mode = 1;
         const int test_size = 9;
         uint64_t page_addrs[test_size];
         for (int i = 0; i < test_size; ++i)
             page_addrs[i] = test_page_malloc();
         for (int i = 0; i < test_size; ++i)
             test_page_free(page_addrs[i]);
+        debug_mode = 0;
     }
     else if (compare_string(buffer, "test_page2") == 0) {
+        debug_mode = 1;
         const int test_size = 9;
         uint64_t page_addrs[test_size];
         for (int i = 0; i < test_size; ++i)
@@ -95,6 +113,24 @@ void parse_command() {
         test_page_free(page_addrs[3]);
         test_page_free(page_addrs[2]);
         test_page_free(page_addrs[6]);
+        debug_mode = 0;
+    }
+    else if (compare_string(buffer, "test_dyn") == 0) {
+        debug_mode = 1;
+        const int test_size = 10;
+        int test_cases[] = {31, 2, 32, 63, 120, 256, 129, 155, 240, 250};
+        void *addrs[test_size];
+        for (int i = 0; i < test_size; ++i) {
+            addrs[i] = kmalloc(test_cases[i]);
+            print_slot_record(find_page(addrs[i]));
+            uart_printf("\n");
+        }
+        for (int i = 0; i < test_size; ++i) {
+            kfree(addrs[i]);
+            print_slot_record(find_page(addrs[i]));
+            uart_printf("\n");
+        }
+        debug_mode = 0;
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
@@ -108,6 +144,7 @@ void parse_command() {
         uart_send_string("test_timer         : test timer multiplexing\n");
         uart_send_string("test_page1         : test buddy system\n");
         uart_send_string("test_page2         : test buddy system\n");
+        uart_send_string("test_dyn           : test dynamic allocator\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");

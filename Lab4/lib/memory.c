@@ -1,5 +1,6 @@
 #include "memory.h"
 #include "mini_uart.h"
+#include "shell.h"
 
 
 frame_free_node *frame_free_lists[4];   // 4K, 8K, 16K, 32K
@@ -41,12 +42,12 @@ void memory_init() {
 
 uint64_t page_malloc() {
     uint64_t index = request_page(0);
-    return MEMORY_BASE_ADDR + (index << 12);
+    return GET_PAGE_ADDR(index);
 }
 
 uint64_t request_page(int size) {
     if (size < 0 || size > 3) {
-        uart_printf("[ERROR] request_page(%d): illegal argument!\n", size);
+        uart_printf("[ERROR][request_page] request_page(%d): illegal argument!\n", size);
         return 0;
     }
 
@@ -56,7 +57,7 @@ uint64_t request_page(int size) {
         index = free_node->index;
         pop_front(&frame_free_lists[size]);
         frame_array[index] = 0xAA;
-        uart_printf("[Page malloc] index: %ld, size: %dK\n", index, 4 << size);
+        debug_printf("[DEBUG][request_page] index: %ld, size: %dK\n", index, 4 << size);
     }
     else {
         index = request_page(size + 1);
@@ -66,10 +67,8 @@ uint64_t request_page(int size) {
             frame_array[i] = 0xBB;
         frame_array[mid + 1] = size;
         frame_array[index] = 0xAA;
-        if (!node_pool_head)
-            uart_printf("[ERROR] request_page(%d): no more nodes!\n", size);
         add_to_list(&frame_free_lists[size], mid + 1);
-        uart_printf("[Page malloc] release redundant memory, index: %ld, size: %ldK\n", mid + 1, 4 * (1 << size));
+        debug_printf("[DEBUG][request_page] release redundant memory, index: %ld, size: %ldK\n", mid + 1, 4 * (1 << size));
     }
 
     return index;
@@ -78,9 +77,9 @@ uint64_t request_page(int size) {
 void page_free(uint64_t addr, int size) {
     uint64_t index = getIndex(addr, size);
     if (index >= FRAME_ARRAY_SIZE || frame_array[index] != 0xAA)
-        uart_printf("[ERROR] page_free: illegal index!\n");
+        uart_printf("[ERROR][page_free] page_free: illegal index!\n");
     
-    uart_printf("[Page free] free %ldK page, index: %ld\n", 4 << size, index);
+    debug_printf("[DEBUG][page_free] free %ldK page, index: %ld\n", 4 << size, index);
     frame_array[index] = 0x0;
     add_to_list(&frame_free_lists[size], index);
     merge_page(index, size + 1);
@@ -104,7 +103,7 @@ void merge_page(uint64_t index, int size) {
     if (!mergable)
         return;
 
-    uart_printf("[Merge page] merge into %ldK page\n", 4 << size);
+    debug_printf("[DEBUG][merge_page] merge into %ldK page\n", 4 << size);
     for (uint64_t i = start + 1; i <= end; ++i)
         frame_array[i] = 0xBB;
     frame_array[start] = size;
@@ -122,8 +121,7 @@ void pop_front(frame_free_node **list) {
     frame_free_node *free_node = *list;
     *list = (*list)->next;
     (*list)->prev = NULL;
-    free_node->next = node_pool_head;
-    node_pool_head = free_node;
+    return_free_node(free_node);
 }
 
 /* remove the free node holding specify index from a list, if exits */
@@ -138,14 +136,12 @@ void remove_from_list(frame_free_node **list, uint64_t index) {
         target->next->prev = target->prev;
         target->prev->next = target->next;
     }
-    target->next = node_pool_head;
-    node_pool_head = target;
+    return_free_node(target);
 }
 
 /* add a free node holding specify index to a list */
 void add_to_list(frame_free_node **list, uint64_t index) {
-    frame_free_node *new_node = node_pool_head;
-    node_pool_head = node_pool_head->next;
+    frame_free_node *new_node = get_free_node();
     free_node_table[index] = new_node;
     new_node->index = index;
     new_node->prev = NULL;
@@ -159,8 +155,21 @@ uint64_t getIndex(uint64_t addr, int size) {
     uint64_t _addr = addr - MEMORY_BASE_ADDR;
     int page_size = (1 << size) << 12;
     if (_addr % page_size != 0)
-        uart_printf("[ERROR] getIndex: illegal address!\n");
+        uart_printf("[ERROR][getIndex] getIndex: illegal address!\n");
     return _addr / page_size;
+}
+
+frame_free_node *get_free_node() {
+    frame_free_node *node = node_pool_head;
+    if (!node)
+        uart_printf("[ERROR][get_free_node] get_free_node: no more nodes!\n");
+    node_pool_head = node_pool_head->next;
+    return node;
+}
+
+void return_free_node(frame_free_node *node) {
+    node->next = node_pool_head;
+    node_pool_head = node;
 }
 
 void print_frame_array() {

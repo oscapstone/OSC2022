@@ -11,6 +11,8 @@
 #define FRAME_ARRAY_SIZE (1 << INIT_VAL)
 #define MAX_32K_NUM (FRAME_ARRAY_SIZE / 8)
 #define MEMORY_BASE_ADDR 0x10000000
+#define GET_PAGE_ADDR(index) (MEMORY_BASE_ADDR + (index << 12))
+#define GET_PAGE_INDEX(addr) ((addr - MEMORY_BASE_ADDR) >> 12)
 
 typedef struct frame_free_node {
     uint64_t index;
@@ -27,6 +29,8 @@ void pop_front(frame_free_node **list);
 void remove_from_list(frame_free_node **list, uint64_t index);
 void add_to_list(frame_free_node **list, uint64_t index);
 uint64_t getIndex(uint64_t addr, int size);
+frame_free_node *get_free_node();
+void return_free_node(frame_free_node *node);
 
 void print_frame_array();
 void print_frame_free_lists();
