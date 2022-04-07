@@ -31,4 +31,10 @@ void clear_page(frame_free_node *page);
 void print_slot_record(frame_free_node *page);
 void free_page_if_empty(frame_free_node *page);
 
+/*
+    memory reservation
+*/
+void memory_reserve(uint64_t start, uint64_t end);
+void init_reserve();
+
 #endif

@@ -18,12 +18,7 @@ master:
     ldr x0, =exception_table	// setup interrupt vector base
     msr vbar_el1, x0
 
-	adr	x0, bss_begin	// Load a label's relative address into the target register
-	adr	x1, bss_end		// bss_begin and bss_end are defined in the linker script
-	sub	x1, x1, x0		// Sets the condition register for branch
-	bl 	memzero			// In ARMv8 architecture, the first seven arguments are passed to the called function via registers x0–x6.
-
-	mov sp, #0x400000
+	mov sp, #0x800000
 	bl	kernel_main		// Perform an unconditional branch and store the return address in x30
 	b 	proc_hang		// Should never come here
 

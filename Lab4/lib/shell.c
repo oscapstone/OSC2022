@@ -16,8 +16,6 @@ char buffer[MAX_BUFFER_SIZE];
 
 void get_command();
 void parse_command();
-uint64_t test_page_malloc();
-void test_page_free(uint64_t addr);
 
 void get_board_revision();
 
@@ -89,37 +87,26 @@ void parse_command() {
         test_timer();
         print_frame_array();
     }
-    else if (compare_string(buffer, "test_page1") == 0) {
+    else if (compare_string(buffer, "test_page") == 0) {
         debug_mode = 1;
-        const int test_size = 9;
-        uint64_t page_addrs[test_size];
-        for (int i = 0; i < test_size; ++i)
-            page_addrs[i] = test_page_malloc();
-        for (int i = 0; i < test_size; ++i)
-            test_page_free(page_addrs[i]);
-        debug_mode = 0;
-    }
-    else if (compare_string(buffer, "test_page2") == 0) {
-        debug_mode = 1;
-        const int test_size = 9;
-        uint64_t page_addrs[test_size];
-        for (int i = 0; i < test_size; ++i)
-            page_addrs[i] = test_page_malloc();
-        test_page_free(page_addrs[7]);
-        test_page_free(page_addrs[8]);
-        test_page_free(page_addrs[1]);
-        test_page_free(page_addrs[4]);
-        test_page_free(page_addrs[0]);
-        test_page_free(page_addrs[5]);
-        test_page_free(page_addrs[3]);
-        test_page_free(page_addrs[2]);
-        test_page_free(page_addrs[6]);
+        const int test_size = 3;
+        const uint64_t test_address[] = {0x2001, 0x3010, 0x5100};    // covered index 2, 3, 5
+        for (int i = 0; i < test_size; ++i) {
+            reserve_page(0, test_address[i]);  
+            print_frame_array();
+            uart_printf("\n");
+        }
+        for (int i = 0; i < test_size; ++i) {
+            page_free(test_address[i] & ~(uint64_t)0x111, 0);
+            print_frame_array();
+            uart_printf("\n");
+        }
         debug_mode = 0;
     }
     else if (compare_string(buffer, "test_dyn") == 0) {
         debug_mode = 1;
         const int test_size = 10;
-        int test_cases[] = {31, 2, 32, 63, 120, 256, 129, 155, 240, 250};
+        const int test_cases[] = {31, 2, 32, 63, 120, 256, 129, 155, 240, 250};
         void *addrs[test_size];
         for (int i = 0; i < test_size; ++i) {
             addrs[i] = kmalloc(test_cases[i]);
@@ -143,28 +130,9 @@ void parse_command() {
         uart_send_string("load               : load user program\n");
         uart_send_string("async_uart         : test async uart\n");
         uart_send_string("test_timer         : test timer multiplexing\n");
-        uart_send_string("test_page1         : test buddy system\n");
-        uart_send_string("test_page2         : test buddy system\n");
+        uart_send_string("test_page         : test buddy system\n");
         uart_send_string("test_dyn           : test dynamic allocator\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");
-}
-
-uint64_t test_page_malloc() {
-    uart_printf("\n========= [Test Page Malloc] =========\n");
-    uint64_t addr = page_malloc();
-    uart_printf("return addr: 0x%x\n", addr);
-    print_frame_array();
-    print_frame_free_lists();
-    uart_printf("======================================\n");
-    return addr;
-}
-
-void test_page_free(uint64_t addr) {
-    uart_printf("\n========== [Test Page Free] ==========\n");
-    page_free(addr, 0);
-    print_frame_array();
-    print_frame_free_lists();
-    uart_printf("======================================\n");
 }

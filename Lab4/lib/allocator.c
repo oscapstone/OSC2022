@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "mini_uart.h"
 #include "shell.h"
+#include "cpio.h"
 
 
 /* record the usage of each slot */
@@ -159,4 +160,19 @@ void free_page_if_empty(frame_free_node *page) {
     }
     remove_from_list(&allocated_pages, page->index);
     page_free(GET_PAGE_ADDR(page->index), 0);
+}
+
+
+void memory_reserve(uint64_t start, uint64_t end) {
+    for (uint64_t i = start; i < end + PAGE_SIZE_4K; i += PAGE_SIZE_4K)
+        reserve_page(0, i);
+}
+
+void init_reserve() {
+    memory_reserve(0x0000, 0x1000);     // spin tables for multicore boot
+    memory_reserve(0x80000, 0x800000);  // kernel and heap/stack space
+    memory_reserve((uint64_t)CPIO_ADDR, (uint64_t)CPIO_ADDR + MAX_INITRAMFS_SIZE);  // initramfs
+    debug_mode = 1;
+    debug_printf("[DEBUG][init_reserve] reserves 0X%x 4K pages\n", get_allocated_num());
+    debug_mode = 0;
 }

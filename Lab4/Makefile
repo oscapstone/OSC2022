@@ -2,7 +2,7 @@
 
 ARMGNU ?= aarch64-linux-gnu
 
-FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g
+FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g -fPIC
 INC = include
 LIB = lib
 CPIO = archive/initramfs.cpio
@@ -13,7 +13,7 @@ kernel8.img: kernel/*.S kernel/*.c $(LIB)/*.S $(LIB)/*.c rd.o
 	$(ARMGNU)-gcc $(FLAGS) -Tkernel/linker.ld $^ -o kernel8.elf -I$(INC)
 	$(ARMGNU)-objcopy -O binary kernel8.elf kernel8.img
 
-bootloader.img: bootloader/*.S bootloader/*.c $(LIB)/*.S $(LIB)/*.c
+bootloader.img: bootloader/*.S bootloader/*.c $(LIB)/*.S $(LIB)/mini_uart.c $(LIB)/utils.c
 	$(ARMGNU)-gcc $(FLAGS) -Tbootloader/linker.ld $^ -o bootloader.elf -I$(INC)
 	$(ARMGNU)-objcopy -O binary bootloader.elf bootloader.img
 

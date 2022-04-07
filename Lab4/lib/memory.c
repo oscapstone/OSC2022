@@ -26,6 +26,7 @@ void memory_init() {
     node_pool[0].prev = NULL;
     for (int i = 0; i < MAX_32K_NUM; ++i) {
         node_pool[i].index = i << 3;
+        node_pool[i].list_addr = &frame_free_lists[3];
         free_node_table[i << 3] = &node_pool[i];
     }
     
@@ -45,6 +46,7 @@ uint64_t page_malloc() {
     return GET_PAGE_ADDR(index);
 }
 
+/* currently support 4K page request only, the value of frame array may be wrong otherwise */
 uint64_t request_page(int size) {
     if (size < 0 || size > 3) {
         uart_printf("[ERROR][request_page] request_page(%d): illegal argument!\n", size);
@@ -57,7 +59,7 @@ uint64_t request_page(int size) {
         index = free_node->index;
         pop_front(&frame_free_lists[size]);
         frame_array[index] = 0xAA;
-        debug_printf("[DEBUG][request_page] index: %ld, size: %dK\n", index, 4 << size);
+        debug_printf("[DEBUG][request_page] allocate memory, index: %ld, size: %dK\n", index, 4 << size);
     }
     else {
         index = request_page(size + 1);
@@ -72,6 +74,45 @@ uint64_t request_page(int size) {
     }
 
     return index;
+}
+
+/* same as request_page but guarantees to cover specified address */
+uint64_t reserve_page(int size, uint64_t addr) {
+    if (size < 0 || size > 3) {
+        uart_printf("[ERROR][reserve_page] reserve_page(%d): illegal argument!\n", size);
+        return 0;
+    }
+
+    uint64_t index = GET_PAGE_INDEX(addr);
+    uint64_t aligned_index = index & (~(uint64_t)0 << size);
+    frame_free_node *free_node = free_node_table[aligned_index];
+    if (free_node && free_node->list_addr == &frame_free_lists[size]) {
+        remove_from_list(&frame_free_lists[size], aligned_index);
+        frame_array[index] = 0xAA;
+        debug_printf("[DEBUG][reserve_page] allocate memory, index: %ld, size: %dK\n", aligned_index, 4 << size);
+    }
+    else {
+        aligned_index = reserve_page(size + 1, addr);
+        int end = aligned_index + (2 << size) - 1;
+        int mid = (aligned_index + end) / 2;
+        if (index <= mid) {
+            for (int i = mid + 2; i <= end; ++i)
+                frame_array[i] = 0xBB;
+            frame_array[mid + 1] = size;
+            add_to_list(&frame_free_lists[size], mid + 1);
+            debug_printf("[DEBUG][reserve_page] release redundant memory, index: %ld, size: %ldK\n", mid + 1, 4 * (1 << size));
+        }
+        else {
+            for (int i = aligned_index + 1; i <= mid; ++i)
+                frame_array[i] = 0xBB;
+            frame_array[aligned_index] = size;
+            add_to_list(&frame_free_lists[size], aligned_index);
+            debug_printf("[DEBUG][reserve_page] release redundant memory, index: %ld, size: %ldK\n", aligned_index, 4 * (1 << size));
+        }
+        frame_array[index] = 0xAA;
+    }
+
+    return aligned_index;
 }
 
 void page_free(uint64_t addr, int size) {
@@ -128,6 +169,9 @@ void pop_front(frame_free_node **list) {
 void remove_from_list(frame_free_node **list, uint64_t index) {
     frame_free_node *target = free_node_table[index];
     free_node_table[index] = NULL;
+    if (target->list_addr != list)
+        uart_printf("[ERROR][remove_from_list] list address not matched!\n");
+    target->list_addr = NULL;
     if (target == *list) {
         *list = (*list)->next;
         (*list)->prev = NULL;
@@ -143,6 +187,7 @@ void remove_from_list(frame_free_node **list, uint64_t index) {
 void add_to_list(frame_free_node **list, uint64_t index) {
     frame_free_node *new_node = get_free_node();
     free_node_table[index] = new_node;
+    new_node->list_addr = list;
     new_node->index = index;
     new_node->prev = NULL;
     new_node->next = *list;
@@ -155,7 +200,7 @@ uint64_t getIndex(uint64_t addr, int size) {
     uint64_t _addr = addr - MEMORY_BASE_ADDR;
     int page_size = (1 << size) << 12;
     if (_addr % page_size != 0)
-        uart_printf("[ERROR][getIndex] getIndex: illegal address!\n");
+        uart_printf("[ERROR][getIndex] getIndex: illegal address: %x\n", _addr);
     return _addr / page_size;
 }
 
@@ -170,6 +215,15 @@ frame_free_node *get_free_node() {
 void return_free_node(frame_free_node *node) {
     node->next = node_pool_head;
     node_pool_head = node;
+}
+
+uint64_t get_allocated_num() {
+    uint64_t cnt = 0;
+    for (uint64_t i = 0; i < FRAME_ARRAY_SIZE; ++i) {
+        if (frame_array[i] == 0xAA)
+            ++cnt;
+    }
+    return cnt;
 }
 
 void print_frame_array() {

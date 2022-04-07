@@ -1,8 +1,15 @@
 #ifndef __CPIO__
 #define __CPIO__
 
+#define __USE_QEMU__
+
+#ifdef __USE_QEMU__
 #define CPIO_ADDR  ((char *)0x8000000) // qemu
-// #define CPIO_ADDR  ((char *)0x20000000) // raspi3
+#else
+#define CPIO_ADDR  ((char *)0x20000000) // raspi3
+#endif
+
+#define MAX_INITRAMFS_SIZE 0x100000  // 1M
 
 typedef struct
 {
