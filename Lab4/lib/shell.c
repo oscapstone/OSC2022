@@ -87,6 +87,7 @@ void parse_command() {
     }
     else if (compare_string(buffer, "test_timer") == 0) {
         test_timer();
+        print_frame_array();
     }
     else if (compare_string(buffer, "test_page1") == 0) {
         debug_mode = 1;

@@ -31,6 +31,4 @@ void clear_page(frame_free_node *page);
 void print_slot_record(frame_free_node *page);
 void free_page_if_empty(frame_free_node *page);
 
-void *malloc(size_t size);
-
 #endif

@@ -3,8 +3,6 @@
 #include "mini_uart.h"
 #include "shell.h"
 
-#define MEM_SIZE 0x10000000 // 0.25G
-#define MEM_START 0x10000000
 
 /* record the usage of each slot */
 const int slot_size = 4;
@@ -161,16 +159,4 @@ void free_page_if_empty(frame_free_node *page) {
     }
     remove_from_list(&allocated_pages, page->index);
     page_free(GET_PAGE_ADDR(page->index), 0);
-}
-
-
-
-unsigned long *malloc_cur = (unsigned long *)MEM_START;
-
-void *malloc(size_t size)
-{
-    align_4(&size);//allocated the memory size is mutiple of 4 byte;
-    unsigned long *malloc_ret = malloc_cur;
-    malloc_cur += (unsigned int)size;
-    return malloc_ret;
 }

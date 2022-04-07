@@ -18,7 +18,7 @@ void core_timer_disable() {
 }
 
 void add_timer(unsigned int time, timer_call_back call_back, void *args) {
-    struct Timer *timer = (struct Timer*)malloc(sizeof(struct Timer));
+    struct Timer *timer = (struct Timer*)kmalloc(sizeof(struct Timer));
     timer->expire_time = read_sysreg(cntpct_el0) + time;
     timer->call_back = call_back;
     timer->args = args;
@@ -61,9 +61,9 @@ void pop_timer() {
 }
 
 void test_timer() {
-    char* msg1 = (char *)malloc(20);
-    char* msg2 = (char *)malloc(20);
-    char* msg3 = (char *)malloc(20);
+    char* msg1 = (char *)kmalloc(20);
+    char* msg2 = (char *)kmalloc(20);
+    char* msg3 = (char *)kmalloc(20);
     msg1 = "\nThis is timer 1!\n";
     msg2 = "This is timer 2!\n";
     msg3 = "This is timer 3!\n";
