@@ -7,7 +7,6 @@
 int printAfter2Second = 1;
 Timer *head = NULL;
 void add_timer(TimerTask task, unsigned long long expired_time, void *args){
-    unsigned int change_time = 0;
     unsigned long long system_timer = 0;
     unsigned long long frq = 0;
 
@@ -79,7 +78,7 @@ void timer_interrupt_handler(){
     }
     if(head == NULL) set_long_timer_irq();
     if(printAfter2Second) {
-        add_timer(timeout_print, 2, "[*] After two second\n# ");
+        add_timer(timeout_print, 2, "[*] After Two Second, Hello User\n# ");
         printAfter2Second = 0;
     }
     enable_timer_irq();

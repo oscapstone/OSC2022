@@ -62,6 +62,7 @@ void Time_interrupt(unsigned long long spsr){
         disable_timer_irq();
         add_task(timer_interrupt_handler, 1);
         do_task();
+        // timer_interrupt_handler();
     }
 }
 
@@ -86,12 +87,14 @@ void GPU_interrupt(){
         disable_AUX_MU_IER_w();
         add_task(tran_interrupt_handler, 3);
         do_task();
+        // tran_interrupt_handler();
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
         disable_AUX_MU_IER_r();
         disable_AUX_MU_IER_w();
         add_task(recv_interrupt_handler, 2);
         do_task();
+        // recv_interrupt_handler();
     }
     else{
         uart_puts("[*] AUX_MU_IIR: No interrupts\n");

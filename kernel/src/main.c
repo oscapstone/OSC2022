@@ -10,10 +10,10 @@
 
 int main(unsigned long dtb_base){
     uart_init();
-    enable_timer_irq();
+    // uart_getc();
     enable_AUX_MU_IER_r();
+    enable_timer_irq();
     enable_irq(); // DAIF set to 0b0000
-    // disable_timer_irq();
     char buf[15];
     // register unsigned long x0 asm("x0");
     // unsigned long DTB_BASE = x0;

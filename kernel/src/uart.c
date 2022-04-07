@@ -78,8 +78,8 @@ char async_uart_getc(){
   while(read_get_idx == read_set_idx) {asm volatile("nop");}
 
   disable_irq();
-  char r = read_buf[read_get_idx++]; /* read the char that set in read buffer already*/
-  read_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+  char r = read_buf[read_get_idx]; /* read the char that set in read buffer already*/
+  read_get_idx = (read_get_idx + 1) % MAX_SIZE; /* reset the index if it reaches the end */
   enable_irq();
   
   return r;
@@ -124,8 +124,8 @@ void async_uart_putc(unsigned int c){
   while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {enable_AUX_MU_IER_w();}
 
   disable_irq();
-  write_buf[write_set_idx++] = (char)c;
-  write_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+  write_buf[write_set_idx] = (char)c;
+  write_set_idx = (write_set_idx + 1) % MAX_SIZE; /* reset the index if it reaches the end */
   enable_irq();
 
   /* enable transmit interrupt after set the new char */
