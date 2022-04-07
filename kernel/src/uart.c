@@ -61,19 +61,19 @@ char uart_getc(){
 
 void recv_interrupt_handler(){
   /* read buffer is full, discard the new char */
-  if((read_set_idx + 1) % MAX_SIZE == read_get_idx) return;
+  if((read_set_idx + 1) % MAX_SIZE == read_get_idx){
+    disable_AUX_MU_IER_r();
+    return;
+  } 
 
-  read_buf[read_set_idx++] = uart_getc();
-  read_set_idx %= MAX_SIZE; /* reset the index if it reaches the end */
-
+  read_buf[read_set_idx] = uart_getc();
+  read_set_idx = (read_set_idx + 1) % MAX_SIZE; /* reset the index if it reaches the end */
   /* enable receive interrupt after set the new char */
   enable_AUX_MU_IER_r(); 
 }
 
 char async_uart_getc(){
-  /* enable receive interrupt */
-  enable_AUX_MU_IER_r();
-
+  // enable_AUX_MU_IER_r();
   /* wait until something is in the read buffer (read_set_idx != read_get_idx) */
   while(read_get_idx == read_set_idx) {asm volatile("nop");}
 
@@ -81,8 +81,6 @@ char async_uart_getc(){
   char r = read_buf[read_get_idx++]; /* read the char that set in read buffer already*/
   read_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
   enable_irq();
-
-  enable_AUX_MU_IER_r();
   
   return r;
 }
@@ -107,9 +105,15 @@ void tran_interrupt_handler(){
     return;
   } 
 
-  char c = write_buf[write_get_idx++];
+  char c = write_buf[write_get_idx];
   uart_putc(c);
-  write_get_idx %= MAX_SIZE; /* reset the index if it reaches the end */
+  write_get_idx = (write_get_idx + 1) % MAX_SIZE; /* reset the index if it reaches the end */
+
+  /* finished sending the last char */
+  if(write_get_idx == write_set_idx){
+    disable_AUX_MU_IER_w();
+    return;
+  } 
 
   /* enable transmit interrupt to expect print next char */
   enable_AUX_MU_IER_w();
@@ -117,7 +121,7 @@ void tran_interrupt_handler(){
 
 void async_uart_putc(unsigned int c){
   /* buffer is full, wait the sending char */
-  while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {asm volatile("nop");}
+  while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {enable_AUX_MU_IER_w();}
 
   disable_irq();
   write_buf[write_set_idx++] = (char)c;

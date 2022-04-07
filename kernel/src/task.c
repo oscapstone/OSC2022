@@ -7,15 +7,6 @@
 unsigned int curr_poriority = 100;
 Task *task_head = NULL;
 void add_task(Handler handler, unsigned int priority){
-    // unsigned long long system_timer = 0;
-    // unsigned long long frq = 0;
-
-    // asm volatile(
-    //     "mrs %0, cntpct_el0\n\t"
-    //     "mrs %1, cntfrq_el0\n\t" 
-    //     :"=r"(system_timer), "=r"(frq)
-    // );
-
     Task *task = (Task*)simple_malloc(sizeof(Task));
     task->handler = handler;
     task->priority = priority;
@@ -24,42 +15,42 @@ void add_task(Handler handler, unsigned int priority){
 
     if(task_head == NULL){
         task_head = task;
+        return;
     }
-    else{
-        Task *tmp = task_head;
-        while(tmp->next != NULL && task->priority >= tmp->priority){
-            tmp = tmp->next;
-        }
+    
+    Task *tmp = task_head;
+    while(tmp->next != NULL && task->priority > tmp->priority){
+        tmp = tmp->next;
+    }
 
-        if(task->priority < tmp->priority){
-            if(tmp == task_head){
-                task_head = task;
-                task_head->next = tmp;
-                tmp->prev = task_head;
-            }
-            else{
-                task->next = tmp;
-                task->prev = tmp->prev;
-                tmp->prev->next = task;
-                tmp->prev = task;
-            }
+    if(task->priority <= tmp->priority){
+        if(tmp == task_head){
+            task_head = task;
+            task_head->next = tmp;
+            tmp->prev = task_head;
         }
         else{
-            tmp->next = task;
-            task->prev = tmp;
+            task->next = tmp;
+            task->prev = tmp->prev;
+            tmp->prev->next = task;
+            tmp->prev = task;
         }
-
     }
+    else{
+        tmp->next = task;
+        task->prev = tmp;
+    }
+
 }
 
 
 void do_task(){
     // for(Task *tmp = task_head; tmp != NULL; tmp = tmp->next){
-    //     uart_tputs("->");
-    //     if(tmp->priority == 1) uart_tputs("time");
-    //     else uart_tputs("uart");
+    //     uart_sputs("->");
+    //     if(tmp->priority == 1) uart_sputs("time");
+    //     else uart_sputs("uart");
     // }
-    // uart_tputs("\n");
+    // uart_sputs("\n");
 
     // NO PREEMPTION
     // while(task_head != NULL){
@@ -81,7 +72,7 @@ void do_task(){
     while(task_head != NULL){
         // curr_task is highest priority task, return it and finish the curr_task.
         if(curr_poriority <= task_head->priority){
-            // uart_tputs("curr_task is highest priority task, return it.\n");
+            // uart_sputs("curr_task is highest priority task, return it.\n");
             return;
         } 
         
@@ -96,7 +87,7 @@ void do_task(){
         handler();
         disable_irq();
 
-        // new_task must be the low priority task / null
+        // new_task should be the low priority task / me / null
         task_head = task_head->next;
 
         /*
@@ -106,4 +97,5 @@ void do_task(){
         */
         curr_poriority = prev_poriority; 
     }
+    curr_poriority = 100;
 }

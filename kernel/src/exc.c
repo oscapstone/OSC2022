@@ -84,11 +84,12 @@ void Time_interrupt(unsigned long long spsr){
 void GPU_interrupt(){
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
         disable_AUX_MU_IER_w();
-        add_task(tran_interrupt_handler, 2);
+        add_task(tran_interrupt_handler, 3);
         do_task();
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
         disable_AUX_MU_IER_r();
+        disable_AUX_MU_IER_w();
         add_task(recv_interrupt_handler, 2);
         do_task();
     }

@@ -26,43 +26,39 @@ void add_timer(TimerTask task, unsigned long long expired_time, void *args){
 
     if(head == NULL){
         head = timer;
-        change_time = 1;
+        reset_timer_irq(head->expired_time);
+        return;
     }
-    else{
-        Timer *tmp = head;
-        while(tmp->next != NULL && timer->expired_time > tmp->expired_time){
-            tmp = tmp->next;
-        }
+    Timer *tmp = head;
+    while(tmp->next != NULL && timer->expired_time > tmp->expired_time){
+        tmp = tmp->next;
+    }
 
-        if(timer->expired_time < tmp->expired_time){
-            if(tmp == head){
-                head = timer;
-                head->next = tmp;
-                tmp->prev = head;
-                change_time = 1;
-            }
-            else{
-                timer->next = tmp;
-                timer->prev = tmp->prev;
-                tmp->prev->next = timer;
-                tmp->prev = timer;
-            }
+    if(timer->expired_time <= tmp->expired_time){
+        if(tmp == head){
+            head = timer;
+            head->next = tmp;
+            tmp->prev = head;
+            reset_timer_irq(head->expired_time);
         }
         else{
-            tmp->next = timer;
-            timer->prev = tmp;
+            timer->next = tmp;
+            timer->prev = tmp->prev;
+            tmp->prev->next = timer;
+            tmp->prev = timer;
         }
-
     }
-
-    if(change_time) reset_timer_irq(head->expired_time);
+    else{
+        tmp->next = timer;
+        timer->prev = tmp;
+    }
 
 }
 
 
 void timer_interrupt_handler(){
     // while(1){
-        // uart_puts("abcdefghijklmnopqrstuvwxyz\n");
+    //     uart_puts("abcdefghijklmnopqrstuvwxyz\n");
     // }
     while(head != NULL){
         if(head->next != NULL){
@@ -90,5 +86,5 @@ void timer_interrupt_handler(){
 }
 
 void timeout_print(void *args){
-    uart_sputs((char*)args);
+    uart_puts((char*)args);
 }
