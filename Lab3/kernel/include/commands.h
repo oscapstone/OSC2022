@@ -234,7 +234,7 @@ void shell_user_program(){
     cpio_load_user_program("user_program.img", target_addr);
     core_timer_enable();
     asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // save processor's state, 
-                                                        // you're at EL1 now so it's spsr_el1
+                                                  // you're at EL1 now so it's spsr_el1
     asm volatile("msr elr_el1, %0" : : "r"(target_addr));
     asm volatile("msr sp_el0, %0" : : "r"(target_sp));
     asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.

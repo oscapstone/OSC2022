@@ -72,6 +72,7 @@ void uart_puts(char *s) {
   }
 }
 
+// #define AUX_IRQ (1 << 29)
 void enable_uart_interrupt() { *ENABLE_IRQS_1 = AUX_IRQ; }
 
 void disable_uart_interrupt() { *DISABLE_IRQS_1 = AUX_IRQ; }

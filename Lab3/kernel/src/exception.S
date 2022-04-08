@@ -43,6 +43,7 @@
 .align 11 // vector table should be aligned to 0x800
 .global exception_vector_table
 exception_vector_table:
+    // https://developer.arm.com/documentation/100933/0100/AArch64-exception-vector-table
     b _default_handler    // branch to a handler function.
     .align 7              // entry size is 0x80, .align will pad 0
     b _default_handler
@@ -51,19 +52,21 @@ exception_vector_table:
     .align 7
     b _default_handler
     .align 7
-
-    b _sync_handler
+    
+    // EL1 -> EL1 
+    b _sync_handler // basically not used???
     .align 7
-    b _irq_handler
+    b _irq_handler // uart and EL1 timer
     .align 7
     b _default_handler
     .align 7
     b _default_handler
     .align 7
 
-    b _sync_handler
+    // EL0 -> EL1
+    b _sync_handler // user program
     .align 7
-    b _irq_handler
+    b _irq_handler  // user (EL0) timer interrupt
     .align 7
     b _default_handler
     .align 7
