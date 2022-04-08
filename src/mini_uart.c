@@ -176,19 +176,19 @@ void init_uart_buf(){
     uart_buf_write[0] = '\0';
 }
 void uart_buf_read_push(char c){
-    if(uart_read_i_r<256)
+    if(uart_read_i_r<1024)
     {
         uart_buf_read[uart_read_i_r++] = c;
-        uart_read_i_r= uart_read_i_r % 256;
+        uart_read_i_r= uart_read_i_r % 1024;
         // uart_buf_read[uart_read_i_r] = '\0';
     }    
 }
 void uart_buf_write_push(char c){
 
-    if(uart_write_i_r<256)
+    if(uart_write_i_r<1024)
     {
         uart_buf_write[uart_write_i_r++] = c;
-        uart_write_i_r = uart_write_i_r % 256;
+        uart_write_i_r = uart_write_i_r % 1024;
         // uart_buf_write[uart_write_i_r] = '\0';
         
         // if(*AUX_MU_IER_REG != 3)
@@ -215,7 +215,7 @@ char uart_buf_read_pop(){
     if(uart_read_i_l != uart_read_i_r){
         
         c = uart_buf_read[uart_read_i_l++];
-        uart_read_i_l=uart_read_i_l%256;
+        uart_read_i_l=uart_read_i_l%1024;
         
     }
     return c;
@@ -225,7 +225,7 @@ char uart_buf_write_pop(){
     if(uart_write_i_l != uart_write_i_r){
         
         c = uart_buf_write[uart_write_i_l++];
-        uart_write_i_l= uart_write_i_l % 256;
+        uart_write_i_l= uart_write_i_l % 1024;
         
     }
     return c;
