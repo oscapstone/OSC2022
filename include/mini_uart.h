@@ -1,3 +1,4 @@
+#include "utils.h"
 #define MMIO_BASE   0x3F000000
 
 #define AUXENB      ((volatile unsigned int*)(MMIO_BASE+0x00215004))
@@ -18,8 +19,10 @@ int read_int();
 void writec_uart(unsigned int s);
 void writes_uart(char *s);
 void writes_n_uart(char *s, unsigned int size);
-void writehex_uart(unsigned int h);
-void writeint_uart(unsigned int);
+void writes_nl_uart(char *s);
+void writehex_uart(unsigned int h,int newline);
+void write_int_uart(unsigned int,bool newline);
+
 //void writeaddr_uart(unsigned int*);
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
 #define GPFSEL1         ((volatile unsigned int*)(MMIO_BASE+0x00200004))
@@ -39,3 +42,19 @@ void writeint_uart(unsigned int);
 #define GPPUD           ((volatile unsigned int*)(MMIO_BASE+0x00200094))
 #define GPPUDCLK0       ((volatile unsigned int*)(MMIO_BASE+0x00200098))
 #define GPPUDCLK1       ((volatile unsigned int*)(MMIO_BASE+0x0020009C))
+
+#define IRQ_ENABLE1 ((volatile unsigned *)(0x3F00B210))
+char uart_buf_read[256];
+char uart_buf_write[256];
+int uart_read_i_l;
+int uart_read_i_r;
+int uart_write_i_l;
+int uart_write_i_r;
+void init_uart_buf();
+void uart_buf_read_push(char c);
+void uart_buf_write_push(char c);
+void uart_buf_writes_push(char *s);
+char uart_buf_read_pop();
+char uart_buf_write_pop();
+int is_empty_write();
+int is_empty_read();

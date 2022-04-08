@@ -43,3 +43,13 @@ int strlen(char *s){
     }
     return count;
 }
+
+unsigned int str2int(char *s){
+  unsigned int n=0;
+  for (int i = 0; i < strlen(s); i++)
+  {
+    n*=10;
+    n+=s[i]-'0';
+  }
+  return n;
+}

@@ -7,8 +7,7 @@
 void fdt_traverse(void (*f)()){
     register unsigned long dtb_reg asm ("x15");
     writes_uart("Loaded dtb address: ");
-    writehex_uart(dtb_reg);
-    writes_uart("\r\n");
+    writehex_uart(dtb_reg,1);
     fdt_header* header = (fdt_header*)dtb_reg;
     
     if(big2little(header->magic) != FDT_HEADER_MAGIC){

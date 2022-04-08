@@ -1,14 +1,16 @@
 #include "mini_uart.h"
+#include "stdlib.h"
 void init_uart(){
     *AUXENB |=1; // enable mini UART, then mini uart register can be accessed.
     *AUX_MU_CNTL_REG = 0; // Disable transmitter and receiver during configuration.
-    *AUX_MU_IER_REG = 0; // Disable interrupt
+    *AUX_MU_IER_REG = 0; // 0: Disable interrupt, 1: enable interrupt
     *AUX_MU_LCR_REG = 3; // set data size to 8 bits.
     *AUX_MU_MCR_REG = 0; // no flow control
     *AUX_MU_BAUD_REG  = 270; // 250MHz / (115200 + 1)*8
     *AUX_MU_IIR_REG = 6; // No FIFO
     *AUX_MU_CNTL_REG = 3; // Enable the transmitter and receiver.
 
+    
 
     /* configure gpio*/
     
@@ -67,20 +69,30 @@ char read_uart(){
     return r=='\r'?'\n':r;
 }
 
-int read_int(){
-    int n=0;
-    for(int i=0;i<4;i++){
-        char c = read_uart();
-        n = n << 8;
-        n += (int) c;
+void write_int_uart(unsigned int s, bool newline){
+    char a[128];
+    int i=0,n=s;
+    while(n!=0){
+        a[i] = '0' + n%10;
+        n/=10;
+        i++;
     }
-    return n;
+    a[i]='\0';
+    for (int j = i-1; j>=0; j--)
+    {
+        writec_uart(a[j]);
+        /* code */
+    }
+    
+    if(newline)
+        writes_uart("\r\n");
 }
 
 void writec_uart(unsigned int s){
-    unsigned int c = s;
-    while(!(*AUX_MU_LSR_REG & 0x20)) asm volatile("nop");
-    *AUX_MU_IO_REG = c;
+    // unsigned int c = s;
+    // while(!(*AUX_MU_LSR_REG & 0x20)) asm volatile("nop");
+    // *AUX_MU_IO_REG = c;
+    uart_buf_write_push(s);
 }
 
 void writes_n_uart(char *s, unsigned int size){
@@ -91,6 +103,15 @@ void writes_n_uart(char *s, unsigned int size){
     }
 }
 
+void writes_nl_uart(char *s){
+    while(*s){
+        if(*s=='\n')
+            writec_uart('\r');
+        writec_uart(*s++);
+    }
+    writes_uart("\r\n");
+}
+
 void writes_uart(char *s){
     while(*s){
         if(*s=='\n')
@@ -99,7 +120,7 @@ void writes_uart(char *s){
     }
     
 }
-void writehex_uart(unsigned int h){
+void writehex_uart(unsigned int h,int newline){
     writes_uart("0x");
     unsigned int n;
     int c;
@@ -109,6 +130,9 @@ void writehex_uart(unsigned int h){
         
         n+=n>9?0x37:0x30; // int 0~9 -> char '0'~'9', 10~15 -> 'A'~'F'
         writec_uart(n);
+    }
+    if(newline==1){
+        writes_uart("\r\n");
     }
 }
 void writeint_uart(unsigned int i){
@@ -141,3 +165,83 @@ void writeint_uart(unsigned int i){
 //         writec_uart(n);
 //     }
 // }
+void init_uart_buf(){
+    uart_read_i_l=0;
+    uart_read_i_r=0;
+    uart_write_i_l=0;
+    uart_write_i_r=0;
+    //uart_buf_read = simple_malloc(2560);
+    uart_buf_read[0]='\0';
+    // uart_buf_write = simple_malloc(2560);
+    uart_buf_write[0] = '\0';
+}
+void uart_buf_read_push(char c){
+    if(uart_read_i_r<256)
+    {
+        uart_buf_read[uart_read_i_r++] = c;
+        uart_read_i_r= uart_read_i_r % 256;
+        // uart_buf_read[uart_read_i_r] = '\0';
+    }    
+}
+void uart_buf_write_push(char c){
+
+    if(uart_write_i_r<256)
+    {
+        uart_buf_write[uart_write_i_r++] = c;
+        uart_write_i_r = uart_write_i_r % 256;
+        // uart_buf_write[uart_write_i_r] = '\0';
+        
+        // if(*AUX_MU_IER_REG != 3)
+        //     *AUX_MU_IER_REG = 3;
+        if(!(*AUX_MU_IER_REG & 2))
+            *AUX_MU_IER_REG |= 2;
+    }
+}
+void uart_buf_writes_push(char *s){
+    // writehex_uart(strlen(s),1);
+    // writes_uart(s);
+    // *AUX_MU_IER_REG = 1;
+    while(*s){
+        if(*s=='\n')
+            uart_buf_write_push('\r');
+        uart_buf_write_push(*s++);
+    }
+    // *AUX_MU_IER_REG = 3;
+
+}
+
+char uart_buf_read_pop(){
+    char c='0';
+    if(uart_read_i_l != uart_read_i_r){
+        
+        c = uart_buf_read[uart_read_i_l++];
+        uart_read_i_l=uart_read_i_l%256;
+        
+    }
+    return c;
+}
+char uart_buf_write_pop(){
+    char c='0';
+    if(uart_write_i_l != uart_write_i_r){
+        
+        c = uart_buf_write[uart_write_i_l++];
+        uart_write_i_l= uart_write_i_l % 256;
+        
+    }
+    return c;
+}
+
+int is_empty_write(){
+    if(uart_write_i_l==uart_write_i_r){
+        return 1; // return 1 if empty.
+    }else{
+        return 0; // return 0 if not empty.
+    }
+}
+int is_empty_read(){
+    if(uart_read_i_l==uart_read_i_r){
+        return 1; // return 1 if empty.
+    }else{
+        return 0; // return 0 if not empty.
+    }
+}

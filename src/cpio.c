@@ -107,17 +107,18 @@ void cpio_cat(){
     writes_uart("Filename: ");
     char* read_name;
     read_string(&read_name);
-    
+  
     while(1){
-        if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0){
+        int parse_result = cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header);
+        if(parse_result!=0){
             writes_uart("File not found!\r\n");
             break;
         }
-        if(strncmp(read_name,".",sizeof(cnh->c_namesize))==0){
+        if(strncmp(read_name,".",strlen(read_name))==0){
             writes_uart(".: Is a directory\r\n");
             break;
         }
-        else if(strncmp(read_name,filename,sizeof(cnh->c_namesize))==0){
+        else if(strncmp(read_name,filename,strlen(read_name))==0){
             writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
             writes_uart("\r\n");
             break;
@@ -127,6 +128,39 @@ void cpio_cat(){
         // writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
         // writes_uart("\r\n");
         cnh = next_header;
-        
     }
+}
+
+unsigned long long cpio_get_addr(){
+    cpio_newc_header* cnh = (cpio_newc_header*)cpio_addr;
+    cpio_newc_header* next_header;
+    char *filename;
+    char *filedata;
+    unsigned long filesize;
+    writes_uart("Filename: ");
+    char* read_name;
+    read_string(&read_name);
+    
+    while(1){
+        if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0){
+            writes_uart("File not found!\r\n");
+            break;
+        }
+        if(strncmp(read_name,".",strlen(read_name))==0){
+            writes_uart(".: Is a directory\r\n");
+            break;
+        }
+        else if(strncmp(read_name,filename,strlen(read_name))==0){
+            // writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
+            // writes_uart("\r\n");
+            return (unsigned long long)filedata;
+            break;
+        }
+        //writes_n_uart(filename,parse_hex_str(cnh->c_namesize,sizeof(cnh->c_namesize)));
+        //writes_uart("\r\n");
+        // writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
+        // writes_uart("\r\n");
+        cnh = next_header;
+    }
+    return 0;
 }
