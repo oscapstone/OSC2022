@@ -1,5 +1,6 @@
 #include "mini_uart.h"
 #include "stdlib.h"
+#include "exception.h"
 void init_uart(){
     *AUXENB |=1; // enable mini UART, then mini uart register can be accessed.
     *AUX_MU_CNTL_REG = 0; // Disable transmitter and receiver during configuration.
@@ -176,15 +177,17 @@ void init_uart_buf(){
     uart_buf_write[0] = '\0';
 }
 void uart_buf_read_push(char c){
+    disable_interrupt();
     if(uart_read_i_r<1024)
     {
         uart_buf_read[uart_read_i_r++] = c;
         uart_read_i_r= uart_read_i_r % 1024;
         // uart_buf_read[uart_read_i_r] = '\0';
-    }    
+    }
+    enable_interrupt();
 }
 void uart_buf_write_push(char c){
-
+    disable_interrupt();
     if(uart_write_i_r<1024)
     {
         uart_buf_write[uart_write_i_r++] = c;
@@ -196,6 +199,7 @@ void uart_buf_write_push(char c){
         if(!(*AUX_MU_IER_REG & 2))
             *AUX_MU_IER_REG |= 2;
     }
+    enable_interrupt();
 }
 void uart_buf_writes_push(char *s){
     // writehex_uart(strlen(s),1);
