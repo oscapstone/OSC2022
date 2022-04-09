@@ -5,10 +5,10 @@
 
 char read_buf[MAX_SIZE];
 char write_buf[MAX_SIZE];
-unsigned int read_set_idx = 0;
-unsigned int read_get_idx = 0;
-unsigned int write_set_idx = 0;
-unsigned int write_get_idx = 0;
+static unsigned int read_set_idx = 0;
+static unsigned int read_get_idx = 0;
+static unsigned int write_set_idx = 0;
+static unsigned int write_get_idx = 0;
 
 
 void uart_init(){
@@ -122,6 +122,7 @@ void tran_interrupt_handler(){
 void async_uart_putc(unsigned int c){
   /* buffer is full, wait the sending char */
   while((write_set_idx + 1) % MAX_SIZE == write_get_idx) {enable_AUX_MU_IER_w();}
+  
 
   disable_irq();
   write_buf[write_set_idx] = (char)c;

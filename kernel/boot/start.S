@@ -88,68 +88,65 @@ _start:
     add sp, sp, 33 * 8
 .endm
 
-exception_handler:
+sync_exception_entry:
     save_all
     mrs     x1, esr_el1
     mrs     x2, elr_el1
     mrs     x3, spsr_el1
-    bl      exception_entry
+    bl      exception_handler
+    load_all
+    eret
+
+irq_entry:
+    save_all
+    mrs     x1, spsr_el1
+    bl      irq_handler
+    load_all
+    eret
+
+fail:
+    save_all
+    b fail
     load_all
     eret
 
 
 .align 11 // vector table should be aligned to 0x800
 exception_vector_table:
-    mov     x4, #0
-    b exception_handler // branch to a handler function.
+    b fail // branch to a handler function.
     .align 7 // entry size is 0x80, .align will pad 0
-    mov     x4, #1
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #2
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #3
-    b exception_handler
+    b fail
     .align 7
 
-    mov     x4, #0
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #1
-    b exception_handler
+    b irq_entry
     .align 7
-    mov     x4, #2
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #3
-    b exception_handler
+    b fail
     .align 7
 
-    mov     x4, #0
-    b exception_handler
+    b sync_exception_entry
     .align 7
-    mov     x4, #1
-    b exception_handler
+    b irq_entry
     .align 7
-    mov     x4, #2
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #3
-    b exception_handler
+    b fail
     .align 7
 
-    mov     x4, #0
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #1
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #2
-    b exception_handler
+    b fail
     .align 7
-    mov     x4, #3
-    b exception_handler
+    b fail
     .align 7
 
 set_exception_vector_table:

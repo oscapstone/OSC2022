@@ -22,6 +22,12 @@
 #define SYSTEM_TIMER_IRQ_3	(1 << 3)
 #define NON_SECURE_TIMER_IRQ	(1 << 1)
 
+void irq_handler(unsigned long long, unsigned long long);
+void Time_interrupt(unsigned long long);
+void GPU_interrupt();
+
+#define TRANSMIT_HOLDING 0b10
+#define RECEIVE_VALID 0b100
 
 void enable_timer_irq();
 void disable_timer_irq();
