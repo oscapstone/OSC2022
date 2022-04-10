@@ -10,11 +10,10 @@
 
 // TODO: better define
 #define FRAME_SIZE ((MEM_REGION_END - MEM_REGION_START) / PAGE_SIZE)  // 0x10000 -> 65536
-// #define MAX_ORDER 16 - 1                                              // log2(0x10000) = 16
+//#define MAX_ORDER 16 - 1                                              // log2(0x10000) = 16
 #define MAX_ORDER 3
 
-//#define FRAME_VAL_F_MASK (1 << 8)  // The frame is free
-#define FRAME_VAL_X_MASK (1 << 8)  // The frame is allocated, if the bit is set
+//#define FRAME_VAL_X_MASK (1 << 8)  // The frame is allocated, if the bit is set
 
 #define DEBUG_PAGE_ALLOC
 
@@ -37,20 +36,21 @@ struct free_area {
 
 typedef struct frame {
     struct list_head node;
-    uint64_t val;       // order & FRAME_VAL_X_MASK bit
-    uint64_t page_fpn;  // frame page number (index)
+    bool is_used;       // true, if the frame is allocated
+    uint32_t val;       // order (only active when is_used == true)
+    uint32_t page_fpn;  // frame page number (index)
 } frame_t;
 
-uint64_t __find_buddy_pfn(uint64_t page_fpn, uint32_t order);
+uint32_t __find_buddy_pfn(uint32_t page_fpn, uint32_t order);
 
 void show_free_area();
-uint32_t fp2ord(uint64_t fp);   // number of frame page -> minimal order
-void* fpn2addr(uint64_t fpn);   // frame page index -> physical address
-uint64_t addr2fpn(void* addr);  // physical address -> frame page index
+uint32_t fp2ord(uint32_t fp);   // number of frame page -> minimal order
+void* fpn2addr(uint32_t fpn);   // frame page index -> physical address
+uint32_t addr2fpn(void* addr);  // physical address -> frame page index
 bool is_allocated(frame_t* f);
 
 void frame_init();
-void* frame_alloc(uint64_t fp);
+void* frame_alloc(uint32_t fp);
 void frame_free(void* addr);
 frame_t* get_frame_from_freelist(uint32_t order);
 

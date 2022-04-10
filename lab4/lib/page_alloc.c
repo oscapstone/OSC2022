@@ -3,7 +3,7 @@
 frame_t frame_list[FRAME_SIZE];
 struct free_area free_area[MAX_ORDER + 1];
 
-uint64_t __find_buddy_pfn(uint64_t page_fpn, uint32_t order) {
+uint32_t __find_buddy_pfn(uint32_t page_fpn, uint32_t order) {
     return page_fpn ^ (1 << order);
 }
 
@@ -22,26 +22,26 @@ void show_free_area() {
     printf("-----" ENDL ENDL);
 }
 
-uint32_t fp2ord(uint64_t fp) {
+uint32_t fp2ord(uint32_t fp) {
     uint32_t order = 0;
-    for (uint64_t t = 1; t < fp; t *= 2) {
+    for (uint32_t t = 1; t < fp; t *= 2) {
         order += 1;
     }
     return order;
 }
 
 // TODO: add bound check
-void* fpn2addr(uint64_t fpn) {
+void* fpn2addr(uint32_t fpn) {
     return MEM_REGION_START + 0x1000 * fpn;
 }
 
 // TODO: add bound check
-uint64_t addr2fpn(void* addr) {
-    return ((uint64_t)addr - MEM_REGION_START) / 0x1000;
+uint32_t addr2fpn(void* addr) {
+    return ((uint32_t)addr - MEM_REGION_START) / 0x1000;
 }
 
 bool is_allocated(frame_t* f) {
-    return (f->val & FRAME_VAL_X_MASK) != 0;
+    return f->is_used;
 }
 
 void frame_init() {
@@ -50,9 +50,10 @@ void frame_init() {
 #endif
 
     // Initialize fram_list
-    for (uint64_t fpn = 0; fpn < FRAME_SIZE; fpn++) {
+    for (uint32_t fpn = 0; fpn < FRAME_SIZE; fpn++) {
         INIT_LIST_HEAD(&frame_list[fpn].node);
-        frame_list[fpn].val = 0;  // TODO: better
+        frame_list[fpn].is_used = false;
+        frame_list[fpn].val = 0;
         frame_list[fpn].page_fpn = fpn;
     }
     frame_list[0].val = MAX_ORDER;
@@ -69,7 +70,7 @@ void frame_init() {
 #endif
 }
 
-void* frame_alloc(uint64_t fp) {
+void* frame_alloc(uint32_t fp) {
 #ifdef DEBUG_PAGE_ALLOC
     printf("[DEBUG] frame_alloc(%d)" ENDL, fp);
 #endif
@@ -80,14 +81,12 @@ void* frame_alloc(uint64_t fp) {
     frame_t* frame = get_frame_from_freelist(order);
 
     if (frame) {  // found a frame in free_area
-        printf("[+] frame found -> %d" ENDL, frame->page_fpn);
+        //printf("[+] frame found -> %d" ENDL, frame->page_fpn);
         while (true) {
             if (frame->val < fp) break;
 
             // find buddy and split it
-            uint64_t buddy = __find_buddy_pfn(frame->page_fpn, --(frame->val));
-            // printf("fp: %d, val: %d" ENDL, fp, frame->val);
-            // printf("buddy: %d" ENDL, buddy);
+            uint32_t buddy = __find_buddy_pfn(frame->page_fpn, --(frame->val));
             if (!is_allocated(&frame_list[buddy])) {                               // check if the buddy is not allocated
                 frame_list[buddy].val = frame->val;                                // split the buddy
                 list_add(&frame_list[buddy], (&free_area[frame->val].free_list));  // add to new frame_list
@@ -96,9 +95,10 @@ void* frame_alloc(uint64_t fp) {
                 break;  // TODO: impossible!!
             }
         }
-        // set the allocated bit
-        frame->val |= FRAME_VAL_X_MASK;
+        // now the frame is allocated
+        frame->is_used = true;
         retaddr = fpn2addr(frame->page_fpn);
+        printf("[+] Frame allocated -> 0x%X (0x%X)" ENDL, retaddr, 0x1000 * (1 << frame->val));
     } else {  // no space to allocate @@
         printf("[+] No frame to allocate!!" ENDL);
     }
@@ -111,7 +111,7 @@ void* frame_alloc(uint64_t fp) {
 }
 
 void frame_free(void* addr) {
-    uint64_t fpn = addr2fpn(addr);
+    uint32_t fpn = addr2fpn(addr);
     frame_t* frame = &frame_list[fpn];
     struct list_head* curr;
 
@@ -126,15 +126,14 @@ void frame_free(void* addr) {
     }
 
     // try merging the frame
-    uint64_t curr_val = frame->val - FRAME_VAL_X_MASK,
+    uint32_t curr_val = frame->val,
              min_fpn = frame->page_fpn;
 
-    // the frame can be freed -> set the bit to 0
-    frame->val -= FRAME_VAL_X_MASK;
-    frame->val = 0;
+    // the frame is freed, so set `is_used` to false
+    frame->is_used = false;
 
     while (curr_val < MAX_ORDER) {
-        uint64_t buddy = __find_buddy_pfn(min_fpn, curr_val);
+        uint32_t buddy = __find_buddy_pfn(min_fpn, curr_val);
         printf("[+] Get buddy -> %d" ENDL, buddy);
 
         // if the buddy is allocated -> can not be merged
