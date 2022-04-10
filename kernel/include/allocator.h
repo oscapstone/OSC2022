@@ -22,10 +22,9 @@ typedef struct _Frame {
 }Frame;
 
 void allocator_init();
-void buddy_push(Frame *, Buddy *);
-void buddy_pop(Buddy *, int);
-void buddy_alloc(unsigned int);
-void release_redundant(Frame *, int);
+void *buddy_pop(Buddy *, int);
+void *buddy_alloc(unsigned int);
+void *release_redundant(Frame *, int);
 void print_frame_info(Frame *);
 void print_use_frame(unsigned int, unsigned int, int);
 void print_frame_info(Frame *);
