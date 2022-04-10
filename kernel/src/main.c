@@ -5,17 +5,24 @@
 #include <string.h>
 #include <fdt.h>
 #include <irq.h>
-
+#include <allocator.h>
+#include <math.h>
 
 
 int main(unsigned long dtb_base){
     uart_init();
+    allocator_init();
+    char buf[15];
+    // int a = log2(17);
+    // itoa(buf, a);
+    // uart_puts(buf);
+    // uart_puts("\n");
+
     // uart_getc();
     // enable_timer_irq();
     // enable_AUX_MU_IER_r();
     // enable_irq(); // DAIF set to 0b0000
     
-    char buf[15];
     uart_puts("[*] DTB_BASE: 0x");
     uitohex(buf, (unsigned int)dtb_base);
     uart_puts(buf);
