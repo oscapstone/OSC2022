@@ -326,8 +326,12 @@ void memory_reserve(unsigned long long start, unsigned long long end)
 {
     start -= start % 0x1000; // floor (align 0x1000)
     end = end % 0x1000 ? end + 0x1000 - (end % 0x1000) : end; // ceiling (align 0x1000)
+
+#ifdef DEBUG
+    uart_printf("memory reserve:\r\n");
     uart_printf("start 0x%x\r\n", start);
     uart_printf("end 0x%x\r\n",end);
+#endif
 
     //delete page from freelist
     for (int order = MAXORDER; order >= 0; order--)
@@ -342,8 +346,10 @@ void memory_reserve(unsigned long long start, unsigned long long end)
             {
                 ((frame_t *)pos)->isused = 1;
                 list_del_entry(pos);
+#ifdef DEBUG
                 uart_printf("del order %d\r\n",order);
                 dump_freelist_info();
+#endif
             }
             else if (start >= pageend || end <= pagestart) // no intersection
             {
@@ -355,7 +361,9 @@ void memory_reserve(unsigned long long start, unsigned long long end)
                 list_head_t *temppos = pos -> prev;
                 list_add(&release_redundant((frame_t *)pos)->listhead, &freelist[order - 1]);
                 pos = temppos;
+#ifdef DEBUG
                 dump_freelist_info();
+#endif
             }
         }
     }
