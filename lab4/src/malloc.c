@@ -25,7 +25,6 @@ void *simple_malloc(unsigned int size)
 -2  -> free, but it belongs to a larger contiguous memory block (deprecated)
 */
 
-static unsigned long long buddysystem_start = 0x10000000L;
 static frame_t framearray[0x10000] = {0};
 static list_head_t freelist[MAXORDER + 1];       // 4K * (idx**ORDER) (for every 4K) (page)
 static list_head_t cachelist[MAXCACHEORDER + 1]; // 32, 64, 128, 256, 512  (for every 32bytes)
@@ -112,8 +111,7 @@ void *allocpage(unsigned int size)
     if (target_list_val > MAXORDER)
     {
         uart_puts("kmalloc ERROR (all lists are empty?)!!!!\r\n");
-        while (1)
-            ;
+        while (1);
         return simple_malloc(size);
     }
 
@@ -130,17 +128,17 @@ void *allocpage(unsigned int size)
     if (needto_enable_interrupt)
         enable_interrupt();
 #ifdef DEBUG
-    uart_printf("allocpage ret : 0x%x, val : %d\r\n", buddysystem_start + (0x1000 * (target_frame_ptr->idx)), target_frame_ptr->val);
+    uart_printf("allocpage ret : 0x%x, val : %d\r\n", BUDDYSYSTEM_START + (0x1000 * (target_frame_ptr->idx)), target_frame_ptr->val);
 #endif
-    return (void *)buddysystem_start + (0x1000 * (target_frame_ptr->idx));
+    return (void *)BUDDYSYSTEM_START + (0x1000 * (target_frame_ptr->idx));
 }
 
 void freepage(void *ptr)
 {
-    //if (ptr < buddysystem_start)
+    //if (ptr < BUDDYSYSTEM_START)
     //    return;
 
-    frame_t *target_frame_ptr = &framearray[((unsigned long long)ptr - buddysystem_start) >> 12];
+    frame_t *target_frame_ptr = &framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12];
 
     //critical section
     int needto_enable_interrupt = 0;
@@ -155,8 +153,7 @@ void freepage(void *ptr)
 #endif
 
     target_frame_ptr->isused = 0;
-    while (coalesce(target_frame_ptr) == 0)
-        ;
+    while (coalesce(target_frame_ptr) == 0);
 
     list_add(&target_frame_ptr->listhead, &freelist[target_frame_ptr->val]);
 
@@ -239,7 +236,7 @@ void page2caches(int order)
 {
     //make caches of the order from a page
     char *page = allocpage(0x1000);
-    frame_t *pageframe_ptr = &framearray[((unsigned long long)page - buddysystem_start) >> 12];
+    frame_t *pageframe_ptr = &framearray[((unsigned long long)page - BUDDYSYSTEM_START) >> 12];
     pageframe_ptr->cacheorder = order;
 
     // split page into a lot of caches and push them into cachelist
@@ -254,7 +251,7 @@ void page2caches(int order)
 void freecache(void *ptr)
 {
     list_head_t *c = (list_head_t *)ptr;
-    frame_t *pageframe_ptr = &framearray[((unsigned long long)ptr - buddysystem_start) >> 12];
+    frame_t *pageframe_ptr = &framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12];
     list_add(c, &cachelist[pageframe_ptr->cacheorder]);
 #ifdef DEBUG
     uart_printf("freecache 0x%x, order : %d\r\n", ptr, pageframe_ptr->cacheorder);
@@ -295,7 +292,7 @@ void kfree(void *ptr)
     uart_printf("kfree 0x%x\r\n", ptr);
 #endif
     //For page
-    if ((unsigned long long)ptr % 0x1000 == 0 && framearray[((unsigned long long)ptr - buddysystem_start) >> 12].cacheorder == -1)
+    if ((unsigned long long)ptr % 0x1000 == 0 && framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12].cacheorder == -1)
     {
         freepage(ptr);
 #ifdef DEBUG
@@ -325,9 +322,51 @@ void dump_cachelist_info()
         uart_printf("cachelist %d : %d\r\n", i, list_size(&cachelist[i]));
 }
 
+void memory_reserve(unsigned long long start, unsigned long long end)
+{
+    start -= start % 0x1000; // floor (align 0x1000)
+    end = end % 0x1000 ? end + 0x1000 - (end % 0x1000) : end; // ceiling (align 0x1000)
+    uart_printf("start 0x%x\r\n", start);
+    uart_printf("end 0x%x\r\n",end);
+
+    //delete page from freelist
+    for (int order = MAXORDER; order >= 0; order--)
+    {
+        list_head_t *pos;
+        list_for_each(pos, &freelist[order])
+        {
+            unsigned long long pagestart = ((frame_t *)pos)->idx * 0x1000L + BUDDYSYSTEM_START;
+            unsigned long long pageend = pagestart + (0x1000L << order);
+
+            if (start <= pagestart && end >= pageend) // if page all in reserved memory -> delete it from freelist
+            {
+                ((frame_t *)pos)->isused = 1;
+                list_del_entry(pos);
+                uart_printf("del order %d\r\n",order);
+                dump_freelist_info();
+            }
+            else if (start >= pageend || end <= pagestart) // no intersection
+            {
+                continue;
+            }
+            else // partial intersection (or reversed memory all in the page)
+            {
+                list_del_entry(pos);
+                list_head_t *temppos = pos -> prev;
+                list_add(&release_redundant((frame_t *)pos)->listhead, &freelist[order - 1]);
+                pos = temppos;
+                dump_freelist_info();
+            }
+        }
+    }
+}
+
 void alloctest()
 {
     uart_printf("alloc test\r\n");
+
+    memory_reserve(0x1FFFAddb, 0x1FFFFdda);
+    
     char *a = kmalloc(0x10);
     char *b = kmalloc(0x100);
     char *c = kmalloc(0x1000);

@@ -11,6 +11,7 @@
 // simple_malloc
 void *simple_malloc(unsigned int size);
 
+#define BUDDYSYSTEM_START 0x10000000L
 //buddy system (for >= 4K pages)
 void *allocpage(unsigned int size);
 void freepage(void *ptr);
@@ -29,7 +30,7 @@ void kfree(void *ptr);
 typedef struct frame
 {
     struct list_head listhead;
-    int val;
+    int val;        // val is order
     int isused;
     int cacheorder; // -1 means isn't used for cache
     unsigned int idx;
@@ -41,6 +42,6 @@ frame_t *get_buddy(frame_t *frame);
 int coalesce(frame_t* f);
 void dump_freelist_info();
 void dump_cachelist_info();
-
+void memory_reserve(unsigned long long start, unsigned long long end);
 void alloctest();
 #endif

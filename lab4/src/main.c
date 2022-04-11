@@ -18,6 +18,7 @@ void main(char* dtb)
     dtb_place = dtb;
 
     init_allocator();
+    alloctest();
     kmalloc(0x10000);
     //cannot use original input series after interrupt start (input is going to the buffer), use async input instead.
     //output series are not affected. (order is affected)

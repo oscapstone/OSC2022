@@ -14,7 +14,6 @@ void shell()
     print_system_messages();
     timer_list_init();
     core_timer_enable();
-    alloctest();
     while (1)
     {
         uart_async_printf("# ");
