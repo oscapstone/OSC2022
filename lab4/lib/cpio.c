@@ -3,16 +3,14 @@
 #include "string.h"
 #include "malloc.h"
 
-static int read_header(char *str, int size);
+int read_header(char *str, int size);
 
 void cpio_ls(){
   cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
   char *header = cpio->c_magic;
-  int namesize = 0;
-  int filesize = 0;
   while(strcmp(header+110, "TRAILER!!!")){
-    namesize = read_header(header + 94, 8);
-    filesize = read_header(header + 54, 8);
+    int namesize = read_header(header + 94, 8);
+    int filesize = read_header(header + 54, 8);
     if((namesize+110)%4){
       namesize += (4 - (namesize+110)%4);
     }
@@ -24,14 +22,12 @@ void cpio_ls(){
   }
 }
 
-int cpio_cat(char *str){
+void cpio_cat(char *str){
   cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
   char *header = cpio->c_magic;
-  int namesize = 0;
-  int filesize = 0;
   while(strcmp(header+110, "TRAILER!!!")){
-    namesize = read_header(header + 94, 8);
-    filesize = read_header(header + 54, 8);
+    int namesize = read_header(header + 94, 8);
+    int filesize = read_header(header + 54, 8);
     namesize = namesize + namesize%2;
     if((namesize+110)%4){
       namesize += (4 - (namesize+110)%4);
@@ -41,22 +37,21 @@ int cpio_cat(char *str){
     }
     if(!strcmp(header+110, str) && filesize != 0){
       printf("%s\n\r", header+110+namesize);
-      return 1;
+      return;
     }
     header = header + namesize + filesize + 110;
   }
-  return 0;
+  printf("can't find this file named \"%s\"\n\r", str);
 }
 
-int cpio_exec(char *str){
+void cpio_exec(char *str){
   cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
   char *header = cpio->c_magic;
-  int namesize = 0;
-  int filesize = 0;
+  char *data;
   while(strcmp(header+110, "TRAILER!!!")){
-    namesize = read_header(header + 94, 8);
-    filesize = read_header(header + 54, 8);
-    namesize += namesize%2;
+    int namesize = read_header(header + 94, 8);
+    int filesize = read_header(header + 54, 8);
+    namesize = namesize + namesize%2;
     if((namesize+110)%4){
       namesize += (4 - (namesize+110)%4);
     }
@@ -64,7 +59,7 @@ int cpio_exec(char *str){
       filesize += (4 - filesize%4);
     }
     if(!strcmp(header+110, str) && filesize != 0){
-      char *data = header+110+namesize;
+      data = header+110+namesize;
       char * sp = simple_malloc(0x20);
       asm("mov x1, 0x3c0\n\t"
           "msr spsr_el1, x1\n\t"
@@ -74,14 +69,14 @@ int cpio_exec(char *str){
           :
           :[input0] "r" (data), [input1] "r" (sp)
           :);
-      return 1;
+      return;
     }
     header = header + namesize + filesize + 110;
   }
-  return 0;
+  printf("can't find this file named \"%s\"\n\r", str);
 }
 
-static int read_header(char *str, int size){
+int read_header(char *str, int size){
   char a[size + 1];
   a[1] = 0;
   for(int i=0; i<size; i++){

@@ -66,10 +66,6 @@ void clock_alert(char *str){
 void timeout_print(char *str){
   printf("This is form timeout function.\n\r");
   print_time();
-  register unsigned int r=10000000;
-  while(r--) {
-    asm volatile("nop");
-  }
   printf("Message: %s.\n\r", str);
 }
 
@@ -130,8 +126,8 @@ void add_timer(callback_typ callback, char *msg, int time) {
 void pop_timer(void){
   timer_list *timer = timer_queue;
   timer_queue = timer_queue->next;
-  // timer->call_back(timer->msg);
-  add_task(timer->call_back, timer->msg, 1);
+  timer->call_back(timer->msg);
+  // add_task(timer->call_back, timer->msg, 1);
   if (!timer_queue)
     core_timer_interrupt_disable();
   else{

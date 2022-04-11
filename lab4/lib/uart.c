@@ -61,6 +61,19 @@ void uart_puts(char *s) {
   }
 }
 
+
+void uart_hex(unsigned int d) {
+  unsigned int n;
+  int c;
+  for(c=28;c>=0;c-=4) {
+    // get highest tetrad
+    n=(d>>c)&0xF;
+    // 0-9 => '0'-'9', 10-15 => 'A'-'F'
+    n+=n>9?0x37:0x30;
+    uart_send(n);
+  }
+}
+
 char uart_tx_buffer[MAX_BUF_SIZE] = {};
 unsigned int uart_tx_buffer_widx = 0; //write index
 unsigned int uart_tx_buffer_ridx = 0; //read index
@@ -73,6 +86,7 @@ void uart_interrupt_r_handler(){
     enable_uart_r_interrupt();
     return;
   }
+  // uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
   char r = (char)(*AUX_MU_IO);
   uart_rx_buffer[uart_rx_buffer_widx++] = r=='\r'?'\n':r;
   if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
@@ -85,18 +99,17 @@ void uart_interrupt_w_handler() { //can write
     disable_uart_w_interrupt();
     return;
   }
+  // uart_send(uart_tx_buffer[uart_tx_buffer_ridx++]);
   *AUX_MU_IO = uart_tx_buffer[uart_tx_buffer_ridx++];
-  if (uart_tx_buffer_ridx >= MAX_BUF_SIZE){
+  if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
     uart_tx_buffer_ridx = 0; // cycle pointer
-  }
   enable_uart_w_interrupt();
 }
 
 void async_uart_send(char c){
   uart_tx_buffer[uart_tx_buffer_widx++] = c;
-  if (uart_tx_buffer_widx >= MAX_BUF_SIZE){
+  if (uart_tx_buffer_widx >= MAX_BUF_SIZE)
     uart_tx_buffer_widx = 0;
-  }
   enable_uart_w_interrupt();
 }
 

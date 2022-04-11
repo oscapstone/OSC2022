@@ -15,7 +15,24 @@ void main(char * arg){
   ); 
   core_timer_enable();
   fdt_traverse(initramfs_callback);
+  page_init();
+  
+
+  page_allocate(2*0x1000);
+  int all = page_allocate(1*0x1000);
+
+
+  print_frame_state();
+  print_free_frame_list();
+  printf("index: %d\n\r", all);
+
+  page_free(all);
+  print_frame_state();
+  print_free_frame_list();
+
+
   printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
+
   shell();
 }

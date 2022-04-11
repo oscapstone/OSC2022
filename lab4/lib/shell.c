@@ -15,7 +15,8 @@ void shell(){
   int args_num = 0;
   char read = 0;
   while(1){
-    read = async_uart_getc();  // use async to get char
+    // read = uart_getc();
+    read = async_uart_getc();
     if(read != '\n' && read != 0x7f){
       append_str(input, read);
       printf("%c", read);
@@ -61,18 +62,17 @@ void shell(){
         }else if(!strcmp(args[0], "ls")){
           cpio_ls();
         }else if(!strcmp(args[0], "cat")){
-          if(args_num == 2){
-            if(!cpio_cat(args[1]))
-              printf("Can't find this file named \"%s\".\n\r", args[1]);
-          }
+          if(args_num == 2)
+            cpio_cat(args[1]);
         }else if(!strcmp(args[0], "exec")){
-          if(args_num == 2){
+          if(args_num == 2)
             cpio_exec(args[1]);
-            if(!cpio_cat(args[1]))
-              printf("Can't find this file named \"%s\".\n\r", args[1]);
-          }
         }else if(!strcmp(input, "clock")){
           add_timer(clock_alert, args[1], 2);
+          // core_timer_enable();
+          // asm(
+          //   "bl from_el1_to_el0\n\t"
+          // );
         }else if(!strcmp(input, "setTimeout")){
           if (args_num == 3)
             add_timer(timeout_print, args[1], atoi(args[2]));

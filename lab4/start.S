@@ -31,6 +31,17 @@ set_exception_vector_table:
   bl      main
   b       1b
 
+.global from_el1_to_el0
+from_el1_to_el0:
+  mov x1,        xzr        // EL0t, all interrupts enabled, 0x3c0 for interrupts disabled
+  msr spsr_el1,  x1
+  // set elr_el1 to the user program’s address
+  msr elr_el1,   lr           // return address to the caller
+  // set the user program’s stack pointer to a proper position by setting sp_el0.
+  mov x1,        sp
+  msr sp_el0,    x1           // set stack of el0 as orinary stack pointer
+  eret                        // jump to user code (jump to elr_el1)
+
 from_el2_to_el1:
   mov x1, (0b11 << 20) // this fixes printf (printf use stdargs, which access register q0~q7, and those are SIMD registers)
   msr cpacr_el1, x1
@@ -101,8 +112,9 @@ from_el2_to_el1:
   add sp, sp, 32 * 12
 .endm
 
-.macro    ali_vtable    label
-  .align    7  // per vector add 0x80
+
+.macro    ventry    label
+  .align    7
   b    \label
 .endm
 
@@ -112,28 +124,28 @@ from_el2_to_el1:
 exception_vector_table:
 
   //Exception from the current EL while using SP_EL0
-  ali_vtable	sync_invalid_el1t			// Synchronous EL1t
-  ali_vtable	irq_invalid_el1t			// IRQ EL1t
-  ali_vtable	fiq_invalid_el1t			// FIQ EL1t
-  ali_vtable	error_invalid_el1t			// Error EL1t
+  ventry	sync_invalid_el1t			// Synchronous EL1t
+  ventry	irq_invalid_el1t			// IRQ EL1t
+  ventry	fiq_invalid_el1t			// FIQ EL1t
+  ventry	error_invalid_el1t			// Error EL1t
   
   //Exception from the current EL while using SP_ELx
-  ali_vtable	sync_el1h			        // Synchronous EL1h	
-  ali_vtable	irq_el1h		        	// IRQ EL1h	
-  ali_vtable	fiq_invalid_el1h			// FIQ EL1h
-  ali_vtable	error_invalid_el1h			// Error EL1h
+  ventry	sync_el1h			        // Synchronous EL1h	
+  ventry	irq_el1h		        	// IRQ EL1h	
+  ventry	fiq_invalid_el1h			// FIQ EL1h
+  ventry	error_invalid_el1h			// Error EL1h
 
   //Exception from a lower EL and at least one lower EL is AArch64
-  ali_vtable	sync_el0_64			        // Synchronous 64-bit EL0
-  ali_vtable	irq_el0_64			        // IRQ 64-bit EL0
-  ali_vtable	fiq_invalid_el0_64			// FIQ 64-bit EL0
-  ali_vtable	error_invalid_el0_64		// Error 64-bit EL0
+  ventry	sync_el0_64			        // Synchronous 64-bit EL0
+  ventry	irq_el0_64			        // IRQ 64-bit EL0
+  ventry	fiq_invalid_el0_64			// FIQ 64-bit EL0
+  ventry	error_invalid_el0_64		// Error 64-bit EL0
       
   //Exception from a lower EL and at least all lower EL are AArch32
-  ali_vtable	sync_invalid_el0_32			// Synchronous 32-bit EL0
-  ali_vtable	irq_invalid_el0_32			// IRQ 32-bit EL0
-  ali_vtable	fiq_invalid_el0_32			// FIQ 32-bit EL0
-  ali_vtable	error_invalid_el0_32			// Error 32-bit EL0
+  ventry	sync_invalid_el0_32			// Synchronous 32-bit EL0
+  ventry	irq_invalid_el0_32			// IRQ 32-bit EL0
+  ventry	fiq_invalid_el0_32			// FIQ 32-bit EL0
+  ventry	error_invalid_el0_32			// Error 32-bit EL0
 
 
 
@@ -200,7 +212,7 @@ sync_el0_64:
 irq_el0_64:
   save_all
   mov x0,9
-  bl invalid_exception_router
+  bl irq_router
   load_all
   eret
 fiq_invalid_el0_64:

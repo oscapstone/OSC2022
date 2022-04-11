@@ -1,4 +1,4 @@
-char *CPIO_DEFAULT_PLACE ;
+char * CPIO_DEFAULT_PLACE ;
 
 typedef struct cpio_newc_header cpio_header;
 struct cpio_newc_header {
@@ -19,5 +19,5 @@ struct cpio_newc_header {
 };
 
 void cpio_ls();
-int cpio_cat(char *str);
-int cpio_exec(char *str);
+void cpio_cat(char *str);
+void cpio_exec(char *str);
