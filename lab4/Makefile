@@ -11,6 +11,10 @@ SRC_DIR = src
 
 all : kernel8.img bootloader/bootloader.img
 
+debug: COPS   += -DDEBUG
+debug: ASMOPS += -DDEBUG
+debug: all
+
 clean :
 	rm -rf $(BUILD_DIR) *.img 
 	make -C bootloader clean

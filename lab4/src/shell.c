@@ -6,6 +6,7 @@
 #include "filesystem.h"
 #include "dtb.h"
 #include "timer.h"
+#include "malloc.h"
 
 void shell()
 {
@@ -13,6 +14,7 @@ void shell()
     print_system_messages();
     timer_list_init();
     core_timer_enable();
+    alloctest();
     while (1)
     {
         uart_async_printf("# ");

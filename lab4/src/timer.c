@@ -41,9 +41,9 @@ void timer_event_callback(timer_event_t *timer_event)
 {
 
     list_del_entry((struct list_head *)timer_event); // delete the event
-    kfree(timer_event->args);                         // kfree the arg space
-    kfree(timer_event);
     ((void (*)(char *))timer_event->callback)(timer_event->args); // call the callback store in event
+    kfree(timer_event->args);                                     // kfree the arg space
+    kfree(timer_event);
 
     //set interrupt to next time_event if existing
     if (!list_empty(timer_event_list))
@@ -72,6 +72,7 @@ void two_second_alert(char *str)
 
 void core_timer_handler()
 {
+    //disable_interrupt();
     if (list_empty(timer_event_list))
     {
         set_core_timer_interrupt(10000); // disable timer interrupt (set a very big value)

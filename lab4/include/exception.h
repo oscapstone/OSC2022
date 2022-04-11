@@ -32,7 +32,17 @@ p112-115 https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 void sync_64_router();
 void irq_router();
 void invalid_exception_router();
-void enable_interrupt();
-void disable_interrupt();
+
+static inline void enable_interrupt()
+{
+    __asm__ __volatile__("msr daifclr, 0xf");
+}
+
+static inline void disable_interrupt()
+{
+    __asm__ __volatile__("msr daifset, 0xf");
+}
+
+unsigned long long is_disable_interrupt();
 
 #endif

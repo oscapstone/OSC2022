@@ -100,10 +100,10 @@ exception_vector_table:
 
 
 sync_invalid_el1t:
-    save_all
+    //save_all
     mov x0,0
     bl invalid_exception_router
-    load_all
+    //load_all
     eret
 irq_invalid_el1t:
     save_all
@@ -127,10 +127,10 @@ error_invalid_el1t:
 
 
 sync_el1h:
-    save_all
-    mov x0,4
+    //save_all
+    //mov x0,4
     bl invalid_exception_router
-    load_all
+    //load_all
     eret
 irq_el1h:
     save_all

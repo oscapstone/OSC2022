@@ -30,7 +30,6 @@ void add_task(void *task_function,unsigned long long priority){
     // if the same priority FIFO
     struct list_head *curr;
 
-    disable_interrupt(); // critical section
     list_for_each(curr, task_list)
     {
         if (((task_t *)curr)->priority > the_task->priority)
@@ -44,11 +43,10 @@ void add_task(void *task_function,unsigned long long priority){
     {
         list_add_tail(&the_task->listhead, task_list); // for the time is the biggest
     }
-    enable_interrupt();
 }
 
 void run_preemptive_tasks(){
-    enable_interrupt(); //do the tasks with interrupts enabled, (lab3 advanced 2 )
+    disable_interrupt();
     while (!list_empty(task_list))
     {
         disable_interrupt();  // critical section
@@ -62,14 +60,15 @@ void run_preemptive_tasks(){
         list_del_entry((struct list_head *)the_task);
         int prev_task_priority = curr_task_priority;
         curr_task_priority = the_task->priority;
-        enable_interrupt();
-
+        //there are two bugs in preemptive irq+kfree (After clockAlert many times) (too buggy I disable it now. TODO : fix it)
+        //enable_interrupt(); //do the tasks with interrupts enabled, (lab3 advanced 2 )
+        
         run_task(the_task);
 
         disable_interrupt(); // critical section
         curr_task_priority = prev_task_priority;
-        enable_interrupt();
         kfree(the_task);
+        enable_interrupt();
     }
 }
 
