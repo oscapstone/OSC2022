@@ -3,14 +3,14 @@
 cpio_newc_header* header;
 
 void cpio_init() {
-    header = malloc(sizeof(cpio_newc_parse_header) / sizeof(char));
+    header = kmalloc(sizeof(cpio_newc_parse_header) / sizeof(char));
 }
 
 void cpio_newc_parser(void* callback, char* param) {
     char *cpio_ptr = INITRD_ADDR,
          *file_name, *file_data;
     uint32_t name_size, data_size;
-    cpio_newc_header* header = malloc(CPIO_NEWC_HEADER_SIZE);
+    cpio_newc_header* header = kmalloc(CPIO_NEWC_HEADER_SIZE);
 
     while (1) {
         cpio_newc_parse_header(&cpio_ptr, &header);

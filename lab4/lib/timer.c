@@ -36,8 +36,9 @@ void core_timer_callback() {
 
     // remove the first event
     list_rotate_left(timer_event_list);
+    void* ptr_bk = timer_event_list->prev;  // !! backup the ptr
     list_del(timer_event_list->prev);
-    free();
+    kfree(ptr_bk);
 
     // if there is next event, set next timeout
     if (list_empty(timer_event_list)) {
@@ -46,12 +47,13 @@ void core_timer_callback() {
         set_absolute_timeout(((timer_event_t*)timer_event_list->next)->tval);
     }
 
+    show_timer_list();
     // [ Lab3 - AD2 ] 5. unmasks the interrupt line to get the next interrupt at the end of the task.
     enable_core_timer();
 }
 
 void timer_list_init() {
-    timer_event_list = malloc(sizeof(struct list_head));
+    timer_event_list = kmalloc(sizeof(struct list_head));
     INIT_LIST_HEAD(timer_event_list);
 }
 
@@ -63,9 +65,9 @@ uint64_t get_absolute_time(uint64_t offset) {
 }
 
 void add_timer(void* callback, char* args, uint64_t timeout) {
-    timer_event_t* new_timer_event = malloc(sizeof(timer_event_t));
+    timer_event_t* new_timer_event = kmalloc(sizeof(timer_event_t));
     INIT_LIST_HEAD(&new_timer_event->node);
-    new_timer_event->args = malloc(strlen(args) + 1);
+    new_timer_event->args = kmalloc(strlen(args) + 1);
     strcpy(new_timer_event->args, args);
     new_timer_event->callback = callback;
     new_timer_event->tval = get_absolute_time(timeout);
@@ -89,7 +91,7 @@ void show_timer_list() {
     struct list_head* curr;
     bool inserted = false;
     list_for_each(curr, timer_event_list) {
-        printf("%u -> ", ((timer_event_t*)curr)->tval);
+        printf("0x%X -> ", ((timer_event_t*)curr)->tval);
     }
     printf(ENDL);
 }

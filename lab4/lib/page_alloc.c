@@ -98,7 +98,7 @@ void* frame_alloc(uint32_t fp) {
         // now the frame is allocated
         frame->is_used = true;
         retaddr = fpn2addr(frame->page_fpn);
-        printf("[+] Frame allocated -> 0x%X (0x%X)" ENDL, retaddr, 0x1000 * (1 << frame->val));
+        //printf("[+] Frame allocated -> 0x%X (0x%X)" ENDL, retaddr, 0x1000 * (1 << frame->val));
     } else {  // no space to allocate @@
         printf("[+] No frame to allocate!!" ENDL);
     }

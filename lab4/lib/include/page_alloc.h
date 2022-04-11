@@ -10,7 +10,7 @@
 
 // TODO: better define
 #define FRAME_SIZE ((MEM_REGION_END - MEM_REGION_START) / PAGE_SIZE)  // 0x10000 -> 65536
-//#define MAX_ORDER 16 - 1                                              // log2(0x10000) = 16
+// #define MAX_ORDER 16 - 1                                              // log2(0x10000) = 16
 #define MAX_ORDER 3
 
 //#define FRAME_VAL_X_MASK (1 << 8)  // The frame is allocated, if the bit is set

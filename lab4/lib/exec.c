@@ -1,7 +1,8 @@
 #include "exec.h"
 
 void exec(char* file_data, uint32_t data_size) {
-    char* ustack = malloc(USTACK_SIZE);
+    // char* ustack = kmalloc(USTACK_SIZE);
+    char* ustack = frame_alloc(USTACK_SIZE / 0x1000);
 
     asm volatile(
         "msr spsr_el1, %0\n\t"  // M[4:0] = 0 -> User, 0 -> to enable interrupt in EL0
@@ -11,5 +12,5 @@ void exec(char* file_data, uint32_t data_size) {
         "r"(file_data),
         "r"(ustack + USTACK_SIZE));
 
-    free();
+    kfree(ustack);
 }

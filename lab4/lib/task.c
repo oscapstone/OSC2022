@@ -3,7 +3,7 @@
 struct list_head* task_event_list;
 
 void task_list_init() {
-    task_event_list = malloc(sizeof(struct list_head));
+    task_event_list = kmalloc(sizeof(struct list_head));
     INIT_LIST_HEAD(task_event_list);
 }
 
@@ -20,15 +20,18 @@ void run_task() {
     // remove the first event
     disable_interrupt();  // critical section
     list_rotate_left(task_event_list);
+    void* ptr_bk = task_event_list->prev;  // !! backup the ptr
     list_del(task_event_list->prev);
-    free();
+    kfree(ptr_bk);
     enable_interrupt();  // end of critical section
 
     // TODO: maybe handle the next task?
 }
 
 void add_task(void* callback, uint32_t priority) {
-    task_event_t* new_task_event = malloc(sizeof(task_event_t));
+    //disable_interrupt();
+    task_event_t* new_task_event = kmalloc(sizeof(task_event_t));
+    //printf("[+] add_task -> 0x%X" ENDL, new_task_event);
     INIT_LIST_HEAD(&new_task_event->node);
     new_task_event->callback = callback;
     new_task_event->priority = priority;
@@ -43,6 +46,7 @@ void add_task(void* callback, uint32_t priority) {
         }
     }
     if (!inserted) list_add_tail(&new_task_event->node, task_event_list);
+    //show_task_list();
     enable_interrupt();  // end of critical section
 }
 
