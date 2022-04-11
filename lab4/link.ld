@@ -3,6 +3,7 @@
 SECTIONS
 {
   . = 0x80000;
+  _kernel_start = .;
   .text : { *(.text) }
   
   .bss (NOLOAD) : {

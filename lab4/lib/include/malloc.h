@@ -9,11 +9,12 @@ void* simple_malloc(size_t size);
 
 
 
-#define PAGE_MAX_ENTRY 50
+#define PAGE_MAX_ENTRY 56
 #define MAX_CONTINUE_PAGE 32
 
 #define PAGE_NOT_ALLOCATE -1  // for the frame array which is not allocated
 #define PAGE_ALLOCATED -2  // for the frame array is allocated
+#define PAGE_RESERVED -3
 
 #define MAX_FREE_ITEM (PAGE_MAX_ENTRY)  // manage the free item fifo array
 
@@ -27,6 +28,8 @@ void page_init();
 
 void *malloc(size_t size);
 void free(char *addr);
+
+void memory_reserve(unsigned long start, unsigned long end);
 
 void print_frame_state();
 void print_free_frame_list();

@@ -265,7 +265,6 @@ void *malloc(size_t size){
   allocated_page *cur = mem_alloc_page;
   while(cur){
     if(cur->free >= size){
-      printf("free: %x, size: %x\n\r", cur->free, size);
       break;
     }
     if(!cur->next){
@@ -371,6 +370,53 @@ void merge_mem(int index, char *addr){
   }
 }
 
+void memory_reserve(unsigned long start, unsigned long end){
+  int start_index = (start-(unsigned long)top)/0x1000;
+  int end_index = (end-(unsigned long)top)/0x1000;
+  // int start_index = start;
+  // int end_index = end;
+
+  int head_index = start_index ;
+  while (frame[head_index] == -1){
+    head_index--;
+  }
+
+  while(head_index != start_index){
+    delete_frame_list(frame[head_index], head_index);
+    frame[head_index] = frame[head_index]-1;
+    add_frmae_list(frame[head_index], head_index);
+    frame[head_index+power_of_two(frame[head_index])] = frame[head_index];
+    add_frmae_list(frame[head_index], head_index+power_of_two(frame[head_index]));
+    head_index += power_of_two(frame[head_index]);
+    if(head_index > start_index){
+      head_index -= power_of_two(frame[head_index]);
+    }
+  }
+  while(head_index+power_of_two(frame[head_index]) < end_index){
+    delete_frame_list(frame[head_index], head_index);
+    for(int i=1; i<power_of_two(frame[head_index]); i++)
+      frame[head_index+i] = PAGE_RESERVED;
+    head_index += power_of_two(frame[head_index]);
+  }
+  while(head_index+power_of_two(frame[head_index])-1 != end_index){
+    delete_frame_list(frame[head_index], head_index);
+    frame[head_index] = frame[head_index]-1;
+    add_frmae_list(frame[head_index], head_index);
+    frame[head_index+power_of_two(frame[head_index])] = frame[head_index];
+    add_frmae_list(frame[head_index], head_index+power_of_two(frame[head_index]));
+    if(end_index >= head_index+power_of_two(frame[head_index])){
+      delete_frame_list(frame[head_index], head_index);
+      for(int i=1; i<power_of_two(frame[head_index]); i++)
+        frame[head_index+i] = PAGE_RESERVED;
+      head_index += power_of_two(frame[head_index]);
+    }
+  }
+  delete_frame_list(frame[head_index], head_index);
+  for(int i=1; i<power_of_two(frame[head_index]); i++)
+    frame[head_index+i] = PAGE_RESERVED;
+  print_frame_state();
+  print_free_frame_list();
+}
 
 void alloc_page_to_mem(int request){
   int queue_index = dequeue_page_allocate();
