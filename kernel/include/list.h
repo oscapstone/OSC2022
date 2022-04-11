@@ -97,6 +97,16 @@ static inline void __list_del(struct list_head * prev, struct list_head * next)
 	WRITE_ONCE(prev->next, next);
 }
 
+static inline void list_del(struct list_head *entry)
+{
+	// if (!__list_del_entry_valid(entry))
+	// 	return;
+
+	__list_del(entry->prev,entry->next);
+	INIT_LIST_HEAD(entry);
+}
+
+
 /*
  * Delete a list entry and clear the 'prev' pointer.
  *
