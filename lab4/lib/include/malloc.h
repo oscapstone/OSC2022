@@ -9,7 +9,7 @@ void* simple_malloc(size_t size);
 
 
 
-#define PAGE_MAX_ENTRY 56
+#define PAGE_MAX_ENTRY 50
 #define MAX_CONTINUE_PAGE 32
 
 #define PAGE_NOT_ALLOCATE -1  // for the frame array which is not allocated
@@ -25,9 +25,22 @@ typedef struct frame_list {
 
 void page_init();
 
-int page_allocate(size_t size);
-void page_free(int index);
+void *malloc(size_t size);
+void free(char *addr);
 
 void print_frame_state();
 void print_free_frame_list();
 
+typedef struct malloc_mem{
+  int allocted;
+  unsigned long size;
+  unsigned long previous;
+} malloc_mem;
+
+
+typedef struct allocated_page{
+  unsigned long index;
+  unsigned long total;
+  unsigned long free;
+  struct allocated_page *next;
+} allocated_page;

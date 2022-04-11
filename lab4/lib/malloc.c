@@ -29,6 +29,9 @@ static void add_frmae_list(int value, int index);
 static int allocate_frame_list(int value);
 static void delete_frame_list(int value, int index);
 
+static int page_allocate(size_t size);
+static void page_free(int index);
+
 static void page_devide(int value);
 static int find_in_free_frame_list(int level, int index);
 static void merge(int index);
@@ -37,11 +40,26 @@ static void merge(int index);
 static int get_log_of_two(int value);
 static int power_of_two(int value);
 
-void page_init(){
+static void alloc_page_to_mem(int request);
+static void merge_mem(int index, char *addr);
 
+static int dequeue_page_allocate();
+static void enqueue_page_allocate();
+
+
+allocated_page *mem_alloc_page = NULL;
+
+allocated_page page_allocated[MAX_FREE_ITEM];
+int free_page_queue[MAX_FREE_ITEM];
+int free_queue_front = -1;
+int free_queue_end = -1;
+
+void page_init(){
   // init the free queue array for managing the free_item
-  for(int i=0; i<PAGE_MAX_ENTRY; i++)
+  for(int i=0; i<PAGE_MAX_ENTRY; i++){
     enqueue_free_item(i);
+    enqueue_page_allocate(i);
+  }
 
   int non_init = PAGE_MAX_ENTRY;
   for(int start=0; start<PAGE_MAX_ENTRY;){
@@ -52,8 +70,8 @@ void page_init(){
       frame[i] = PAGE_NOT_ALLOCATE;
     non_init -= power_of_two(get_log_of_two(non_init));
   }
-  print_frame_state();
-  print_free_frame_list();
+  // print_frame_state();
+  // print_free_frame_list();
 }
 
 void enqueue_free_item(int value){
@@ -232,5 +250,174 @@ void print_free_frame_list(){
       pre = pre->next;
     }
     printf("\n\r");
+  }
+}
+
+
+void *malloc(size_t size){
+  int page_request = size + 0x1000 - size%0x1000;
+  if(!mem_alloc_page){
+    alloc_page_to_mem(page_request);
+  }
+
+  /* find the free page */
+
+  allocated_page *cur = mem_alloc_page;
+  while(cur){
+    if(cur->free >= size){
+      printf("free: %x, size: %x\n\r", cur->free, size);
+      break;
+    }
+    if(!cur->next){
+      alloc_page_to_mem(page_request);
+    }
+    cur = cur->next;
+  }
+
+  /*  find the size in page */
+  
+  malloc_mem *page = (malloc_mem *)(cur->index * 0x1000 + top);
+  malloc_mem *last_addr = (malloc_mem *)((unsigned long)page + cur->total);
+  while(page->size < size || page->allocted == 1){
+    page = (malloc_mem *)((unsigned long)page + page->size + sizeof(malloc_mem));
+    if(page == last_addr)
+      break;
+  }
+  if(page < last_addr){
+    malloc_mem *last_or_not = (malloc_mem *)((unsigned long)page + page->size + sizeof(malloc_mem));
+    page->allocted = 1;
+    if(last_or_not == last_addr){
+      if(cur->free >= size+sizeof(malloc_mem))
+        cur->free = cur->free - size - sizeof(malloc_mem);
+      else
+        cur->free = 0;
+      int remain_size = page->size - size - sizeof(malloc_mem);
+      page->size = size;
+      page = (malloc_mem *)((unsigned long)page + page->size + sizeof(malloc_mem));
+      page->size = remain_size;
+      page->previous = size;
+      page->allocted = 0;
+      return (malloc_mem *)((unsigned long)page - page->previous);
+    }
+    return (malloc_mem *)((unsigned long)page + sizeof(malloc_mem));
+  }else{
+    cur = mem_alloc_page;
+    while(cur){
+      if(!cur->next)
+        break;
+      cur = cur->next;
+    }
+    page = (malloc_mem *)(cur->index * 0x1000 + top);
+    if(cur->free >= size+sizeof(malloc_mem))
+      cur->free = cur->free - size - sizeof(malloc_mem);
+    else
+      cur->free = 0;
+    int remain_size = page->size - size - sizeof(malloc_mem);
+    page->allocted = 1;
+    page->size = size;
+    page = (malloc_mem *)((unsigned long)page + page->size + sizeof(malloc_mem));
+    page->size = remain_size;
+    page->previous = size;
+    page->allocted = 0;
+    return (malloc_mem *)((unsigned long)page - page->previous);
+  }
+}
+
+void free(char *addr){
+  int index = (addr-top)/0x1000;
+  malloc_mem *cur = (malloc_mem *)((unsigned long)addr - sizeof(malloc_mem));
+  cur->allocted = 0;
+  allocated_page *page_list = mem_alloc_page;
+  while(page_list->next){
+    if(page_list->index == index)
+      break;
+    page_list = page_list->next;
+  }
+  page_list->free += cur->size;
+  merge_mem(index, addr);
+  if(page_list->free == (page_list->total - sizeof(malloc_mem))){
+    page_free(index);
+  }
+}
+
+void merge_mem(int index, char *addr){
+  allocated_page *page_list = mem_alloc_page;
+  while(page_list->next){
+    if(page_list->index == index)
+      break;
+    page_list = page_list->next;
+  }
+  malloc_mem * cur = (malloc_mem *)((unsigned long)addr - sizeof(malloc_mem));
+  malloc_mem * next = (malloc_mem *)((unsigned long)addr + cur->size);
+  if(next != (malloc_mem *)(page_list->index * 0x1000 + top + page_list->total)){
+    if(next->allocted == 0){
+      cur->size += next->size + sizeof(malloc_mem);
+      page_list->free += sizeof(malloc_mem);
+      next = (malloc_mem *)((unsigned long)next + next->size + sizeof(malloc_mem));
+      if(next != (malloc_mem *)(page_list->index * 0x1000 + top + page_list->total))
+        next->previous = cur->size;
+    }
+  }
+
+  if(cur != (malloc_mem *)(page_list->index * 0x1000 + top)){
+    malloc_mem * pre = (malloc_mem *)((unsigned long)cur - cur->previous - sizeof(malloc_mem));
+    if(pre->allocted == 0){
+      pre->size += cur->size + sizeof(malloc_mem);
+      page_list->free += cur->size + sizeof(malloc_mem);
+      cur = (malloc_mem *)((unsigned long)cur + cur->size + sizeof(malloc_mem));
+      if(cur != (malloc_mem *)(page_list->index * 0x1000 + top + page_list->total))
+        cur->previous = pre->size;
+    }
+  }
+}
+
+
+void alloc_page_to_mem(int request){
+  int queue_index = dequeue_page_allocate();
+  allocated_page *page = &page_allocated[queue_index];
+  page->index = page_allocate(request);
+  page->total = request;
+  page->free = request - sizeof(malloc_mem);
+  page->next = NULL;
+  malloc_mem *page_init = (malloc_mem *)(page->index*request + top);
+  page_init->allocted = 0;
+  page_init->previous = 0;
+  page_init->size = request - sizeof(malloc_mem);
+  if(!mem_alloc_page){
+    mem_alloc_page = page;
+    return;
+  }
+  allocated_page *cur = mem_alloc_page;
+  while (cur->next){
+    cur = cur->next;
+  }
+  cur->next = page;
+}
+
+
+void enqueue_page_allocate(int value){
+  if((free_queue_front+1)%PAGE_MAX_ENTRY == free_queue_end)
+    printf("queue is full\n\r");
+  else{
+    if(free_queue_end == -1)
+      free_queue_end = 0;
+    free_queue_front += 1;
+    if(free_queue_front >= PAGE_MAX_ENTRY && free_queue_end != 0)
+      free_queue_front = 0;
+    free_page_queue[free_queue_front] = value;
+  }
+}
+
+int dequeue_page_allocate(){
+  int ans = free_page_queue[free_queue_end];
+  if(free_queue_front == free_queue_end){
+    free_queue_front = -1;
+    free_queue_end = -1;
+    return -1;
+  }else{
+    free_queue_end += 1;
+    if(free_queue_end == PAGE_MAX_ENTRY)
+      free_queue_end = 0;
+    return ans;
   }
 }
