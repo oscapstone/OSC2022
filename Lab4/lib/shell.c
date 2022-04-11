@@ -85,19 +85,20 @@ void parse_command() {
     }
     else if (compare_string(buffer, "test_timer") == 0) {
         test_timer();
-        print_frame_array();
     }
     else if (compare_string(buffer, "test_page") == 0) {
         debug_mode = 1;
         const int test_size = 3;
-        const uint64_t test_address[] = {0x2001, 0x3010, 0x5100};    // covered index 2, 3, 5
+        const uint64_t test_address[] = {0x2001, 0x3010, 0x6100};    // covered index 2(4K), 3(4K), 6(8K)
+        const int page_size[] = {0, 0, 1};
+        const uint64_t mask[] = {0x111, 0x111, 0x1111};
         for (int i = 0; i < test_size; ++i) {
-            reserve_page(0, test_address[i]);  
+            reserve_page(page_size[i], test_address[i]);  
             print_frame_array();
             uart_printf("\n");
         }
         for (int i = 0; i < test_size; ++i) {
-            page_free(test_address[i] & ~(uint64_t)0x111, 0);
+            page_free(test_address[i] & ~mask[i], page_size[i]);
             print_frame_array();
             uart_printf("\n");
         }

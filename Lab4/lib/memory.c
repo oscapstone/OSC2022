@@ -58,20 +58,20 @@ uint64_t request_page(int size) {
     if (free_node) {
         index = free_node->index;
         pop_front(&frame_free_lists[size]);
-        frame_array[index] = 0xAA;
-        debug_printf("[DEBUG][request_page] allocate memory, index: %ld, size: %dK\n", index, 4 << size);
     }
     else {
         index = request_page(size + 1);
         int end = index + (2 << size) - 1;
         int mid = (index + end) / 2;
-        for (int i = mid + 2; i <= end; ++i)
+        for (int i = index + 1; i <= end; ++i)
             frame_array[i] = 0xBB;
         frame_array[mid + 1] = size;
-        frame_array[index] = 0xAA;
         add_to_list(&frame_free_lists[size], mid + 1);
         debug_printf("[DEBUG][request_page] release redundant memory, index: %ld, size: %ldK\n", mid + 1, 4 * (1 << size));
     }
+    for (int i = 0; i < (1 << size); ++i)
+        frame_array[index + i] = 0xAA;
+    debug_printf("[DEBUG][request_page] allocate memory, index: %ld, size: %dK\n", index, 4 << size);
 
     return index;
 }
@@ -88,29 +88,28 @@ uint64_t reserve_page(int size, uint64_t addr) {
     frame_free_node *free_node = free_node_table[aligned_index];
     if (free_node && free_node->list_addr == &frame_free_lists[size]) {
         remove_from_list(&frame_free_lists[size], aligned_index);
-        frame_array[index] = 0xAA;
         debug_printf("[DEBUG][reserve_page] allocate memory, index: %ld, size: %dK\n", aligned_index, 4 << size);
     }
     else {
         aligned_index = reserve_page(size + 1, addr);
         int end = aligned_index + (2 << size) - 1;
         int mid = (aligned_index + end) / 2;
-        if (index <= mid) {
-            for (int i = mid + 2; i <= end; ++i)
+        for (int i = aligned_index + 1; i <= end; ++i)
                 frame_array[i] = 0xBB;
+        if (index <= mid) {     
             frame_array[mid + 1] = size;
             add_to_list(&frame_free_lists[size], mid + 1);
             debug_printf("[DEBUG][reserve_page] release redundant memory, index: %ld, size: %ldK\n", mid + 1, 4 * (1 << size));
         }
         else {
-            for (int i = aligned_index + 1; i <= mid; ++i)
-                frame_array[i] = 0xBB;
             frame_array[aligned_index] = size;
             add_to_list(&frame_free_lists[size], aligned_index);
             debug_printf("[DEBUG][reserve_page] release redundant memory, index: %ld, size: %ldK\n", aligned_index, 4 * (1 << size));
         }
-        frame_array[index] = 0xAA;
+        debug_printf("[DEBUG][reserve_page] allocate memory, index: %ld, size: %dK\n", index, 4 << size);
     }
+    for (int i = 0; i < (1 << size); ++i)
+            frame_array[index + i] = 0xAA;
 
     return aligned_index;
 }
@@ -121,7 +120,9 @@ void page_free(uint64_t addr, int size) {
         uart_printf("[ERROR][page_free] page_free: illegal index!\n");
     
     debug_printf("[DEBUG][page_free] free %ldK page, index: %ld\n", 4 << size, index);
-    frame_array[index] = 0x0;
+    frame_array[index] = size;
+    for (int i = 1; i < (1 << size); ++i)
+        frame_array[index + i] = 0xBB;
     add_to_list(&frame_free_lists[size], index);
     merge_page(index, size + 1);
 }
@@ -201,7 +202,7 @@ uint64_t getIndex(uint64_t addr, int size) {
     int page_size = (1 << size) << 12;
     if (_addr % page_size != 0)
         uart_printf("[ERROR][getIndex] getIndex: illegal address: %x\n", _addr);
-    return _addr / page_size;
+    return _addr / PAGE_SIZE_4K;
 }
 
 frame_free_node *get_free_node() {
