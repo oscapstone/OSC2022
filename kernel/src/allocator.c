@@ -109,6 +109,9 @@ void *release_redundant(Frame *left_frame, int use_order){
         right_frame->order = samll_order;
         left_frame->order = samll_order;
         list_add(&frames[right_frame->idx].list, &buddy_list[samll_order].list);
+        print_string(UITOA, "[*] Split: left->idx = ", left_frame->idx, 0);
+        print_string(UITOA, " | right->idx = ", right_frame->idx, 0);
+        print_string(UITOA, " | order = ", left_frame->order, 1);
     }
     left_frame->free = 0;
     return left_frame;
