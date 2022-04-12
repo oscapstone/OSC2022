@@ -3,11 +3,10 @@
 #include "power.h"
 #include "mbox.h"
 #include "cpio.h"
-#include "stdint.h"
 #include "timer.h"
 #include "exception.h"
 #include "alloc.h"
-
+#include "utils.h"
 // #include "device_tree.h"
 #define RAMFS_ADDR 0x8000000
 

@@ -1,6 +1,6 @@
 #ifndef _STR_TOOL_H
 #define _STR_TOOL_H
-#include "stdint.h"
+#include "utils.h"
 
 typedef struct {
     char    c_magic[6];

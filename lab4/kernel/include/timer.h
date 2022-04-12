@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdint.h"
+#include "utils.h"
 
 #define CORE0_TIMER_IRQ_CTRL ((volatile unsigned int *)(0x40000040))
 #define CORE0_INTERRUPT_SOURCE ((volatile unsigned int *)(0x40000060))

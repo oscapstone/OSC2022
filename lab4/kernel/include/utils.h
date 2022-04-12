@@ -9,8 +9,7 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
-void delay(unsigned long);
-void put32(unsigned long, unsigned int);
-unsigned int get32(unsigned long);
+uint8_t hex_to_int64(char*);
+uint64_t hex_to_int8(char);
 
 #endif

@@ -1,7 +1,7 @@
 #include "timer.h"
 #include "alloc.h"
 #include "uart.h"
-#include "stdint.h"
+#include "utils.h"
 
 void timeout_event_init() {
   timeout_queue_head = 0;
