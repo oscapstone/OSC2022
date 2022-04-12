@@ -4,11 +4,14 @@
 #include <malloc.h>
 #include <string.h>
 #include <uart.h>
+#include <malloc.h>
 
 Frame frames[FRAME_NUM];
 Buddy buddy_list[MAX_BUDDY_ORDER+1];
 
 void allocator_init(){
+    freechunk_list_init();
+
     for(unsigned int i = 0; i <= MAX_BUDDY_ORDER; i++){
         INIT_LIST_HEAD(&buddy_list[i].list);
     }
@@ -25,7 +28,7 @@ void allocator_init(){
             frames[i].free = 0;
             frames[i].idx = i;
             frames[i].order = MAX_BUDDY_ORDER;
-            frames[i].chunk_size = 0;
+            frames[i].chunk_level = -1;
             list_add_tail(&frames[i].list, &buddy_list[MAX_BUDDY_ORDER].list);
         }
         else{
@@ -33,10 +36,12 @@ void allocator_init(){
             frames[i].free = 1;
             frames[i].idx = i;
             frames[i].order = -1;
-            frames[i].chunk_size = 0;
+            frames[i].chunk_level = -1;
         }
     }
-    // buddy_debug();
+    
+    
+    
 }
 
 
@@ -83,7 +88,7 @@ void *release_redundant(Frame *left_frame, int use_order){
         right_frame->order = samll_order;
         left_frame->order = samll_order;
         list_add(&frames[right_frame->idx].list, &buddy_list[samll_order].list);
-        print_string(UITOHEX, "[*] Split: left->idx = 0x", left_frame->idx, 0);
+        print_string(UITOHEX, "[*] Alloc Buddy -> Split: left->idx = 0x", left_frame->idx, 0);
         print_string(UITOHEX, " | right->idx = 0x", right_frame->idx, 0);
         print_string(UITOA, " | order = ", left_frame->order, 1);
     }
@@ -93,7 +98,7 @@ void *release_redundant(Frame *left_frame, int use_order){
 
 int addr_to_frame_idx(void *addr){
     long long offset = (long long)addr - BUDDY_ADDR_START;
-    if(offset < 0) return -1;
+    if(offset < 0 || offset > 0x10000000) return -1;
     unsigned int idx = (unsigned int)(offset / FRAME_SIZE);
     return idx;
 }
@@ -110,7 +115,7 @@ void buddy_free(void *addr){
      */
 
     if(buddy_frame == NULL || buddy_frame->free == 0 || buddy_frame->order != target_frame->order){
-        print_string(UITOHEX, "[*] Free Addr: 0x", (unsigned int)addr, 1);
+        print_string(UITOHEX, "[*] Free Buddy -> Free Addr: 0x", (unsigned long long)addr, 1);
         print_string(UITOHEX, "[*] No buddy to merge | target_frame->idx = 0x", target_frame->idx, 0);
         print_string(UITOA, " | order = ", target_frame->order, 1);
 
@@ -125,14 +130,14 @@ void buddy_free(void *addr){
 
     while(buddy_frame->free == 1 && buddy_frame->order == target_frame->order){
         if(first){
-            print_string(UITOHEX, "[*] Free Addr: 0x", (unsigned int)addr, 1);
+            print_string(UITOHEX, "[*] Free Buddy -> Free Addr: 0x", (unsigned long long)addr, 1);
             first = 0;
         }
         /* buddy cannot be allocated, it will be merged */
         list_del(&frames[buddy_frame->idx].list);
 
         if(target_frame->idx > buddy_frame->idx){
-            print_string(UITOHEX, "[*] Merge: left->idx = 0x", buddy_frame->idx, 0);
+            print_string(UITOHEX, "[*] Free Buddy -> Merge: left->idx = 0x", buddy_frame->idx, 0);
             print_string(UITOHEX, " | right->idx = 0x", target_frame->idx, 0);
             print_string(UITOA, " | order = ", buddy_frame->order+1, 1);
             buddy_frame->order++;
@@ -140,7 +145,7 @@ void buddy_free(void *addr){
             target_frame = buddy_frame;
         }
         else{
-            print_string(UITOHEX, "[*] Merge: left->idx = 0x", target_frame->idx, 0);
+            print_string(UITOHEX, "[*] Free Buddy -> Merge: left->idx = 0x", target_frame->idx, 0);
             print_string(UITOHEX, " | right->idx = 0x", buddy_frame->idx, 0);
             print_string(UITOA, " | order = ", target_frame->order+1, 1);
             target_frame->order++;
@@ -160,7 +165,7 @@ void buddy_free(void *addr){
 
 
 void print_use_frame(unsigned int size, unsigned int frame_idx, unsigned int use_frames,int use_order){
-    print_string(UITOHEX, "[*] Allocate Size: 0x", size, 0);
+    print_string(UITOHEX, "[*] Alloc Buddy -> Allocate Size: 0x", size, 0);
     print_string(UITOHEX, " | Frame idx: 0x", frame_idx, 0);
     print_string(UITOA, " | Use Frames: ", use_frames, 0);
     print_string(UITOA, " | Use Order: ", use_order, 1);

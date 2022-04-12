@@ -13,12 +13,15 @@ typedef struct {
     struct list_head list; // size 0x10
 }Chunk;
 
+void *kmalloc(unsigned int size);
+void kfree(void *addr);
+
 unsigned int find_level(unsigned int);
 void *simple_malloc(unsigned long);
 void freechunk_list_init();
 void *chunk_alloc(unsigned int);
 void chunk_free(void *);
-
+void kmalloc_debug();
 
 void print_freechunk_list();
 

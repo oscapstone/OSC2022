@@ -115,17 +115,17 @@ void uitohex(char buf[MAX_SIZE], unsigned int d){
   reverse_string(buf);
 }
 
-void print_string(enum print_type type, char *text , unsigned int num, int println){
+void print_string(enum print_type type, char *text , unsigned long long num, int println){
   char buf[20];
   switch(type){
     case UITOHEX:
       uart_puts(text);
-      uitohex(buf, num);
+      uitohex(buf, (unsigned int)num);
       uart_puts(buf);
       break;
     case UITOA:
       uart_puts(text);
-      uitoa(buf, num);
+      uitoa(buf, (unsigned int)num);
       uart_puts(buf);
       break;
     case ITOA:

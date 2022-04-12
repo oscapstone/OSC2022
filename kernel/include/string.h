@@ -30,7 +30,7 @@ void uitoa(char *, unsigned int);
 
 /* uint to hex string */
 void uitohex(char *, unsigned int);
-void print_string(enum print_type type, char *text , unsigned int num, int println);
+void print_string(enum print_type type, char *text , unsigned long long num, int println);
 
 /* array to int */
 int atoi(const char *);

@@ -20,7 +20,7 @@ typedef struct _Frame {
     unsigned int free;
 
     // chunk allocator  
-    unsigned int chunk_size;
+    int chunk_level;
 }Frame;
 
 void allocator_init();

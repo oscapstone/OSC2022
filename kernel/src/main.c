@@ -11,9 +11,11 @@
 
 int main(unsigned long dtb_base){
     uart_init();
-    allocator_init();
-    freechunk_list_init();
+    allocator_init();    
     // buddy_debug();
+    // chunk_debug();
+    kmalloc_debug();
+
     char buf[15];
     // uart_getc();
     // enable_timer_irq();

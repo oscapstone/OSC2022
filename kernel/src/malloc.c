@@ -22,16 +22,37 @@ void freechunk_list_init(){
     for(int i = 0; i < MAX_CHUNK_SIZE; i++){
         INIT_LIST_HEAD(&freechunk_list[i].list);
     }
-
-    void *addr1 = chunk_alloc(0x2000);
-    void *addr2 = chunk_alloc(0x200);
-    void *addr3 = chunk_alloc(0x200);
-    chunk_free(addr2);
 }
+
+void *kmalloc(unsigned int size){
+    void *addr;
+
+    if(size < FRAME_SIZE) 
+        addr = chunk_alloc(size);
+    else 
+        addr = buddy_alloc(size);
+
+    return addr;
+}
+
+void kfree(void *addr){
+    int idx = addr_to_frame_idx(addr);
+    if(idx == -1){
+        print_string(UITOHEX, "[x] kfree error -> the addr: 0x", (unsigned long long)addr, 0);
+        uart_puts(" is illegal allocated memory!!!\n");
+        return;
+    }
+    Frame *target_frame = &frames[idx];
+    if(target_frame->chunk_level >= 0)
+        chunk_free(addr);
+    else
+        buddy_free(addr);
+}
+
 
 void *chunk_alloc(unsigned int size){
     if(size > FRAME_SIZE){
-        uart_puts("[x] Chunk malloc error -> allocate size is over 4096KB, please use \"buddy_alloc\" function\n");
+        uart_puts("[x] Alloc Chunk Error -> allocate size is over 4096KB, please use \"buddy_alloc\" function\n");
         return NULL;
     } 
     unsigned int level = find_level(size);
@@ -40,9 +61,11 @@ void *chunk_alloc(unsigned int size){
         void *addr = buddy_alloc(0x1000);
         int idx = addr_to_frame_idx(addr);
         Frame *target_frame = &frames[idx];
-        target_frame->chunk_size = chunk_size[level];
+        target_frame->chunk_level = (int)level;
 
-        /* split the frame */
+        /* split the frame 
+         * and add the chunk info(list_head) in the physical memory
+         */
         unsigned int offset = 0;
         while(offset < FRAME_SIZE){
             Chunk *chunk = (Chunk *)((char *)addr + offset);
@@ -54,7 +77,7 @@ void *chunk_alloc(unsigned int size){
     FreeChunkList *chunk_list = &freechunk_list[level];
     Chunk *chunk = (Chunk *)chunk_list->list.next;
     list_del(&chunk->list);
-    print_string(UITOHEX, "[*] Allocate Size: ", size, 0);
+    print_string(UITOHEX, "[*] Alloc Chunk -> Allocate Size: ", size, 0);
     print_string(UITOHEX, " | Chunk Size: ", chunk_size[level], 0);
     print_string(UITOA, " | Level: ", level, 1);
     print_freechunk_list();
@@ -65,20 +88,25 @@ void *chunk_alloc(unsigned int size){
 void chunk_free(void *addr){
     int idx = addr_to_frame_idx(addr);
     if(idx == -1){
-        print_string(UITOHEX, "[x] Chunk free error -> the addr: 0x", (unsigned int)addr, 0);
+        print_string(UITOHEX, "[x] Free Chunk error -> the addr: 0x", (unsigned long long)addr, 0);
         uart_puts(" is illegal allocated memory!!!\n");
         return;
     }
     Frame *target_frame = &frames[idx];
 
-    if(target_frame->chunk_size == 0){
-        print_string(UITOHEX, "[x] Chunk free error -> the addr: 0x", (unsigned int)addr, 0);
+    if(target_frame->chunk_level == -1){
+        print_string(UITOHEX, "[x] Free Chunk error -> the addr: 0x", (unsigned long long)addr, 0);
         uart_puts(" is not a chunk, please use \"buddy_free\" function\n");
         return;
     }
 
-    
+    /* add the chunk info(list_head) in the physical memory */
+    Chunk *chunk = (Chunk *)addr;
+    list_add(&chunk->list, &freechunk_list[target_frame->chunk_level].list);
 
+    print_string(UITOHEX, "[*] Free Chunk -> the addr: 0x", (unsigned long long)addr, 1);
+    print_freechunk_list();
+    
 }
 
 
@@ -91,13 +119,31 @@ void print_freechunk_list(){
         list_for_each(pos, &freechunk_list[i].list){
             void *tmp = (Chunk *)pos;
             if(first){
-                print_string(UITOHEX, "0x", (unsigned int)tmp, 0);
+                print_string(UITOHEX, "0x", (unsigned long long)tmp, 0);
                 first = 0;
             } 
-            else print_string(UITOHEX, " -> 0x", (unsigned int)tmp, 0);
+            else print_string(UITOHEX, " -> 0x", (unsigned long long)tmp, 0);
         }
         uart_puts("\n");
     }
+}
+
+
+
+
+void chunk_debug(){
+    // void *addr1 = chunk_alloc(0x2000);
+    // void *addr2 = chunk_alloc(0x200);
+    // void *addr3 = chunk_alloc(0x200);
+    // chunk_free(addr2);
+}
+
+void kmalloc_debug(){
+    void *addr1 = kmalloc(0x200);
+    void *addr2 = kmalloc(0x1000);
+    kfree(addr1);
+    kfree(addr2);
+    // kmalloc(0x10000000);
 }
 
 void *simple_malloc(unsigned long size) {
