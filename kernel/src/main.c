@@ -12,12 +12,9 @@
 int main(unsigned long dtb_base){
     uart_init();
     allocator_init();
+    freechunk_list_init();
+    // buddy_debug();
     char buf[15];
-    // int a = log2(17);
-    // itoa(buf, a);
-    // uart_puts(buf);
-    // uart_puts("\n");
-
     // uart_getc();
     // enable_timer_irq();
     // enable_AUX_MU_IER_r();

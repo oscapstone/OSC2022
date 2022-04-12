@@ -5,8 +5,8 @@
 #include <string.h>
 #include <uart.h>
 
-Buddy buddy_list[MAX_BUDDY_ORDER+1];
 Frame frames[FRAME_NUM];
+Buddy buddy_list[MAX_BUDDY_ORDER+1];
 
 void allocator_init(){
     for(unsigned int i = 0; i <= MAX_BUDDY_ORDER; i++){
@@ -25,7 +25,7 @@ void allocator_init(){
             frames[i].free = 0;
             frames[i].idx = i;
             frames[i].order = MAX_BUDDY_ORDER;
-            frames[i].chunk_used = 0;
+            frames[i].chunk_size = 0;
             list_add_tail(&frames[i].list, &buddy_list[MAX_BUDDY_ORDER].list);
         }
         else{
@@ -33,7 +33,7 @@ void allocator_init(){
             frames[i].free = 1;
             frames[i].idx = i;
             frames[i].order = -1;
-            frames[i].chunk_used = 0;
+            frames[i].chunk_size = 0;
         }
     }
     // buddy_debug();
@@ -60,8 +60,8 @@ void *buddy_alloc(unsigned int size){
 }
 
 
-void *buddy_pop(Buddy *buddy, int use_order){
-    Frame *target_frame = (Frame *)buddy->list.next;
+void *buddy_pop(Buddy *buddy_list, int use_order){
+    Frame *target_frame = (Frame *)buddy_list->list.next;
     list_del(&target_frame->list); // pop the free entry
     return release_redundant(target_frame, use_order);
 }
@@ -91,10 +91,15 @@ void *release_redundant(Frame *left_frame, int use_order){
     return left_frame;
 }
 
+int addr_to_frame_idx(void *addr){
+    long long offset = (long long)addr - BUDDY_ADDR_START;
+    if(offset < 0) return -1;
+    unsigned int idx = (unsigned int)(offset / FRAME_SIZE);
+    return idx;
+}
 
 void buddy_free(void *addr){
-    unsigned long long offset = (unsigned long long)addr - BUDDY_ADDR_START;
-    unsigned int idx = (unsigned int)(offset / FRAME_SIZE);
+    unsigned int idx = addr_to_frame_idx(addr);
     Frame *target_frame = &frames[idx];
     Frame *buddy_frame  = find_buddy_frame(target_frame, target_frame->order);
     int first = 1;

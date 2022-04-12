@@ -18,7 +18,9 @@ typedef struct _Frame {
     int order;
     unsigned int idx;
     unsigned int free;
-    unsigned int chunk_used; // the frame is used by samll chunk
+
+    // chunk allocator  
+    unsigned int chunk_size;
 }Frame;
 
 void allocator_init();
@@ -28,6 +30,7 @@ void *buddy_alloc(unsigned int);
 void *release_redundant(Frame *, int);
 void buddy_free(void *);
 Frame *find_buddy_frame(Frame*, int);
+int addr_to_frame_idx(void *);
 
 
 void print_frame_info(Frame *);
@@ -35,6 +38,6 @@ void print_use_frame(unsigned int, unsigned int, unsigned int, int);
 void print_frame_info(Frame *);
 void print_buddy_list();
 
-
+void buddy_debug();
 
 #endif

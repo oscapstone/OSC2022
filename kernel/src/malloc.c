@@ -1,40 +1,104 @@
-#include <malloc.h>
 #include <uart.h>
 #include <string.h>
 #include <allocator.h>
+#include <malloc.h>
 
-/* define 10 level common chunk size */
-unsigned int chunk_size[] = {0x10, 0x20, 0x40, 0x60, 0xa0, 0xe0, 0x100, 0x200, 0x400, 0x800};
-FreeChuckList freechunk_list[MAX_CHUNK_SIZE];
+extern Frame frames[FRAME_NUM];
+extern Buddy buddy_list[MAX_BUDDY_ORDER+1];
+FreeChunkList freechunk_list[MAX_CHUNK_SIZE];
 
-int find_level(unsigned int size){
-    for(int i = 0; i < chunk_size; i++){
-        if(size <= chunk_size[i]){
-            return i;
-        }
+/* define 11 level common chunk size */
+unsigned int chunk_size[] = {0x10, 0x20, 0x30, 0x40, 0x60, 0x80, 
+                            0xa0, 0x100, 0x200, 0x400, 0x800};
+
+unsigned int find_level(unsigned int size){
+    int i;
+    for(i = 0; i < MAX_CHUNK_SIZE; i++){
+        if(size <= chunk_size[i]) break;
     }
-    return -1;
+    return i;
 }
 void freechunk_list_init(){
     for(int i = 0; i < MAX_CHUNK_SIZE; i++){
         INIT_LIST_HEAD(&freechunk_list[i].list);
     }
+
+    void *addr1 = chunk_alloc(0x2000);
+    void *addr2 = chunk_alloc(0x200);
+    void *addr3 = chunk_alloc(0x200);
+    chunk_free(addr2);
 }
 
 void *chunk_alloc(unsigned int size){
-    int level = -1;
-    if(size > FRAME_SIZE) return NULL;
-    if((level = find_level) == -1) return NULL;
+    if(size > FRAME_SIZE){
+        uart_puts("[x] Chunk malloc error -> allocate size is over 4096KB, please use \"buddy_alloc\" function\n");
+        return NULL;
+    } 
+    unsigned int level = find_level(size);
     
-
     if(list_empty(&freechunk_list[level].list)){
-        // [TODO] alloc new frame ->  split the level size
+        void *addr = buddy_alloc(0x1000);
+        int idx = addr_to_frame_idx(addr);
+        Frame *target_frame = &frames[idx];
+        target_frame->chunk_size = chunk_size[level];
+
+        /* split the frame */
+        unsigned int offset = 0;
+        while(offset < FRAME_SIZE){
+            Chunk *chunk = (Chunk *)((char *)addr + offset);
+            list_add_tail(&chunk->list, &freechunk_list[level].list);
+            offset += chunk_size[level];
+        }
     }
 
-
-    return NULL;
+    FreeChunkList *chunk_list = &freechunk_list[level];
+    Chunk *chunk = (Chunk *)chunk_list->list.next;
+    list_del(&chunk->list);
+    print_string(UITOHEX, "[*] Allocate Size: ", size, 0);
+    print_string(UITOHEX, " | Chunk Size: ", chunk_size[level], 0);
+    print_string(UITOA, " | Level: ", level, 1);
+    print_freechunk_list();
+    return (void *)chunk;
 }
 
+
+void chunk_free(void *addr){
+    int idx = addr_to_frame_idx(addr);
+    if(idx == -1){
+        print_string(UITOHEX, "[x] Chunk free error -> the addr: 0x", (unsigned int)addr, 0);
+        uart_puts(" is illegal allocated memory!!!\n");
+        return;
+    }
+    Frame *target_frame = &frames[idx];
+
+    if(target_frame->chunk_size == 0){
+        print_string(UITOHEX, "[x] Chunk free error -> the addr: 0x", (unsigned int)addr, 0);
+        uart_puts(" is not a chunk, please use \"buddy_free\" function\n");
+        return;
+    }
+
+    
+
+}
+
+
+void print_freechunk_list(){
+    struct list_head *pos;
+    for(unsigned int i = 0; i < MAX_CHUNK_SIZE; i++){
+        print_string(UITOA, "", i, 0);
+        uart_puts("\t:\t");
+        unsigned int first = 1;
+        list_for_each(pos, &freechunk_list[i].list){
+            void *tmp = (Chunk *)pos;
+            if(first){
+                print_string(UITOHEX, "0x", (unsigned int)tmp, 0);
+                first = 0;
+            } 
+            else print_string(UITOHEX, " -> 0x", (unsigned int)tmp, 0);
+        }
+        uart_puts("\n");
+    }
+}
 
 void *simple_malloc(unsigned long size) {
     static void *head = (void *)MALLOC_BASE;
@@ -42,3 +106,5 @@ void *simple_malloc(unsigned long size) {
     head = head + size;
     return ptr;
 }
+
+
