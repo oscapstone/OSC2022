@@ -312,13 +312,13 @@ void uart_async_putc(char c)
 
     
     // critical section
-    disable_interrupt();
+    lock();
     uart_tx_buffer[uart_tx_buffer_widx++] = c;
     if (uart_tx_buffer_widx >= MAX_BUF_SIZE)
         uart_tx_buffer_widx = 0; // cycle pointer
 
     // start asynchronous transfer
-    enable_interrupt();
+    unlock();
     
     // enable interrupt to transfer
     enable_mini_uart_w_interrupt();
@@ -333,13 +333,13 @@ char uart_async_getc()
         enable_mini_uart_r_interrupt();
 
     // critical section
-    disable_interrupt();
+    lock();
     char r = uart_rx_buffer[uart_rx_buffer_ridx++];
 
     if (uart_rx_buffer_ridx >= MAX_BUF_SIZE)
         uart_rx_buffer_ridx = 0;
 
-    enable_interrupt();
+    unlock();
 
     return r;
 }
@@ -359,22 +359,22 @@ void disable_mini_uart_interrupt()
 
 void enable_mini_uart_r_interrupt()
 {
-    *AUX_MU_IER |= 1; // read interrupt
+    *AUX_MU_IER |= 1L; // read interrupt
 }
 
 void enable_mini_uart_w_interrupt()
 {
-    *AUX_MU_IER |= 2; // write interrupt
+    *AUX_MU_IER |= 2L; // write interrupt
 }
 
 void disable_mini_uart_r_interrupt()
 {
-    *AUX_MU_IER &= ~(1);
+    *AUX_MU_IER &= ~(1L);
 }
 
 void disable_mini_uart_w_interrupt()
 {
-    *AUX_MU_IER &= ~(2);
+    *AUX_MU_IER &= ~(2L);
 }
 
 int mini_uart_r_interrupt_is_enable()
