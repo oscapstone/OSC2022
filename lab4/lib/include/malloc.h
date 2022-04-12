@@ -28,9 +28,9 @@ void print_frame_state();
 void print_free_frame_list();
 
 typedef struct malloc_mem{
-  int allocted;
-  unsigned long size;
-  unsigned long previous;
+  int allocted:1;
+  unsigned int size;
+  unsigned int previous;
 } malloc_mem;
 
 

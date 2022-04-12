@@ -13,7 +13,7 @@ _start:
   b       1b
 2:  
   // cpu id == 0
-  // bl      from_el2_to_el1
+  bl      from_el2_to_el1
 
 set_exception_vector_table:
   adr x1, exception_vector_table
