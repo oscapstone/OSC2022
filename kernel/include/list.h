@@ -12,7 +12,7 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-#define NULL (void *)0x0
+#include <stddef.h>
 #define WRITE_ONCE(var, val) \
     (*((volatile typeof(val) *)(&(var))) = (val))
 

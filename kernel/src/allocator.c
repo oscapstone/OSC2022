@@ -11,61 +11,32 @@ Frame frames[FRAME_NUM];
 void allocator_init(){
     for(unsigned int i = 0; i <= MAX_BUDDY_ORDER; i++){
         INIT_LIST_HEAD(&buddy_list[i].list);
-        // buddy_list[i].free_num = 0;
     }
+
+    unsigned long long maxorder_frame_idx = (1 << MAX_BUDDY_ORDER);
 
     for(unsigned int i = 0; i < FRAME_NUM; i++){
-        INIT_LIST_HEAD(&frames[i].list);
-        frames[i].free = 1;
-        frames[i].idx = i;
-        frames[i].order = -1;
+        /*
+         * add the max order frame in buddy list
+         * if not max order frame, just init the info. 
+         */
+        if(i % maxorder_frame_idx == 0){
+            INIT_LIST_HEAD(&frames[i].list);
+            frames[i].free = 0;
+            frames[i].idx = i;
+            frames[i].order = MAX_BUDDY_ORDER;
+            frames[i].chunk_used = 0;
+            list_add_tail(&frames[i].list, &buddy_list[MAX_BUDDY_ORDER].list);
+        }
+        else{
+            INIT_LIST_HEAD(&frames[i].list);
+            frames[i].free = 1;
+            frames[i].idx = i;
+            frames[i].order = -1;
+            frames[i].chunk_used = 0;
+        }
     }
-
-    /* 
-     * set max val in first frame
-     * and add it in buddy_list
-     */
-    frames[0].free = 0;
-    frames[0].order = MAX_BUDDY_ORDER;
-    list_add(&frames[0].list, &buddy_list[MAX_BUDDY_ORDER].list);
-
-
-
-
-    // void *addr1 = buddy_alloc(0x1000);
-    // uitohex(buf, (unsigned int)addr1);
-    // uart_puts("Addr1 :");
-    // uart_puts(buf);
-    // uart_puts("\n");
-    // buddy_free(0x10000000);
-    // buddy_alloc(0x2000);
-    // buddy_alloc(0x2000);
-    void *addr1 = buddy_alloc(0x2000);
-    void *addr2 = buddy_alloc(0x1000);
-    void *addr3 = buddy_alloc(0x4000);
-    void *addr4 = buddy_alloc(0x1000);
-    void *addr5 = buddy_alloc(0x8000);
-    void *addr6 = buddy_alloc(0x1000);
-    void *addr7 = buddy_alloc(0x10000);
-    void *addr8 = buddy_alloc(0x1000);
-
-    buddy_free(addr2);
-    buddy_free(addr4);
-    buddy_free(addr6);
-    buddy_free(addr8);
-
-    buddy_free(addr1);
-    buddy_free(addr3);
-    buddy_free(addr5);
-    buddy_free(addr7);
-
-    // buddy_free(addr4);
-
-    
-    // buddy_alloc(0x1000);
-
-    // buddy_free(0x10000000);
-
+    // buddy_debug();
 }
 
 
@@ -82,6 +53,9 @@ void *buddy_alloc(unsigned int size){
             return (void *)alloca_addr;
         }
     }
+    print_string(UITOHEX, "[x] Allocate Size: 0x", size, 1);
+    uart_puts("[x] No enough memory!!!!\n");
+    // print_string(UITOHEX, "[*] No enough memory!!!!", left_frame->idx, 0);
     return NULL;
 }
 
@@ -109,8 +83,8 @@ void *release_redundant(Frame *left_frame, int use_order){
         right_frame->order = samll_order;
         left_frame->order = samll_order;
         list_add(&frames[right_frame->idx].list, &buddy_list[samll_order].list);
-        print_string(UITOA, "[*] Split: left->idx = ", left_frame->idx, 0);
-        print_string(UITOA, " | right->idx = ", right_frame->idx, 0);
+        print_string(UITOHEX, "[*] Split: left->idx = 0x", left_frame->idx, 0);
+        print_string(UITOHEX, " | right->idx = 0x", right_frame->idx, 0);
         print_string(UITOA, " | order = ", left_frame->order, 1);
     }
     left_frame->free = 0;
@@ -132,7 +106,7 @@ void buddy_free(void *addr){
 
     if(buddy_frame == NULL || buddy_frame->free == 0 || buddy_frame->order != target_frame->order){
         print_string(UITOHEX, "[*] Free Addr: 0x", (unsigned int)addr, 1);
-        print_string(UITOA, "[*] No buddy to merge | target_frame->idx = ", target_frame->idx, 0);
+        print_string(UITOHEX, "[*] No buddy to merge | target_frame->idx = 0x", target_frame->idx, 0);
         print_string(UITOA, " | order = ", target_frame->order, 1);
 
         target_frame->free = 1;
@@ -153,16 +127,16 @@ void buddy_free(void *addr){
         list_del(&frames[buddy_frame->idx].list);
 
         if(target_frame->idx > buddy_frame->idx){
-            print_string(UITOA, "[*] Merge: left->idx = ", buddy_frame->idx, 0);
-            print_string(UITOA, " | right->idx = ", target_frame->idx, 0);
+            print_string(UITOHEX, "[*] Merge: left->idx = 0x", buddy_frame->idx, 0);
+            print_string(UITOHEX, " | right->idx = 0x", target_frame->idx, 0);
             print_string(UITOA, " | order = ", buddy_frame->order+1, 1);
             buddy_frame->order++;
             target_frame->order = -1;
             target_frame = buddy_frame;
         }
         else{
-            print_string(UITOA, "[*] Merge: left->idx = ", target_frame->idx, 0);
-            print_string(UITOA, " | right->idx = ", buddy_frame->idx, 0);
+            print_string(UITOHEX, "[*] Merge: left->idx = 0x", target_frame->idx, 0);
+            print_string(UITOHEX, " | right->idx = 0x", buddy_frame->idx, 0);
             print_string(UITOA, " | order = ", target_frame->order+1, 1);
             target_frame->order++;
             buddy_frame->order = -1;
@@ -182,7 +156,7 @@ void buddy_free(void *addr){
 
 void print_use_frame(unsigned int size, unsigned int frame_idx, unsigned int use_frames,int use_order){
     print_string(UITOHEX, "[*] Allocate Size: 0x", size, 0);
-    print_string(UITOA, " | Frame idx: ", frame_idx, 0);
+    print_string(UITOHEX, " | Frame idx: 0x", frame_idx, 0);
     print_string(UITOA, " | Use Frames: ", use_frames, 0);
     print_string(UITOA, " | Use Order: ", use_order, 1);
 }
@@ -201,14 +175,38 @@ void print_buddy_list(){
         list_for_each(pos, &buddy_list[i].list){
             Frame *tmp = (Frame *)pos;
             if(first){
-                print_string(UITOA, "", tmp->idx, 0);
+                print_string(UITOHEX, "0x", tmp->idx, 0);
                 first = 0;
             } 
-            else print_string(UITOA, " -> ", tmp->idx, 0);
+            else print_string(UITOHEX, " -> 0x", tmp->idx, 0);
         }
         uart_puts("\n");
     }
 }
 
+void buddy_debug(){
+    void *addr1 = buddy_alloc(0x2000);
+    void *addr2 = buddy_alloc(0x1000);
+    void *addr3 = buddy_alloc(0x4000);
+    void *addr4 = buddy_alloc(0x1000);
+    void *addr5 = buddy_alloc(0x8000);
+    void *addr6 = buddy_alloc(0x1000);
+    void *addr7 = buddy_alloc(0x10000);
+    void *addr8 = buddy_alloc(0x1000);
+    for(int i = 0; i < 8; i++){
+        buddy_alloc(0x2000000);
+    }
+    buddy_alloc(0x10000000);
 
+
+    buddy_free(addr2);
+    buddy_free(addr4);
+    buddy_free(addr6);
+    buddy_free(addr8);
+
+    buddy_free(addr1);
+    buddy_free(addr3);
+    buddy_free(addr5);
+    buddy_free(addr7);
+}
 
