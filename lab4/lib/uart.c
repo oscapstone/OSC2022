@@ -26,7 +26,7 @@ void uart_init()
   *AUX_MU_CNTL = 0;
   *AUX_MU_LCR = 3;       // set 8 bits
   *AUX_MU_MCR = 0;
-  *AUX_MU_IER = 3;       // enalbe interrupt  // no use read interrupt so use 2, if want to enable read interrupt plz use 3
+  *AUX_MU_IER = 0;       // enalbe interrupt  // no use read interrupt so use 2, if want to enable read interrupt plz use 3
   *IRQS1 |= 1 << 29;
   *AUX_MU_IIR = 0x06;    // disable interrupts
   *AUX_MU_BAUD = 270;    // 115200 baud, system clock freq = 250MHz

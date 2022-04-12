@@ -329,9 +329,11 @@ void *malloc(size_t size){
         cur->free = 0;
       int remain_size = page->size - size - sizeof(malloc_mem);
       page->size = size;
+      // printf("cur->index: %p, remain size: %d\n\r", page, remain_size);
       page = (malloc_mem *)((unsigned long)page + page->size + sizeof(malloc_mem));
-      page->size = remain_size;
+      // printf("cur->index: %p, page size: %d\n\r", page, page->size);
       page->previous = size;
+      page->size = remain_size;
       page->allocted = 0;
       return (malloc_mem *)((unsigned long)page - page->previous);
     }
@@ -410,6 +412,7 @@ void merge_mem(int index, char *addr){
 void memory_reserve(unsigned long start, unsigned long end){
   int start_index = (start-(unsigned long)top)/0x1000;
   int end_index = (end-(unsigned long)top)/0x1000;
+  end_index++;
   // int start_index = start;
   // int end_index = end;
 
@@ -459,6 +462,7 @@ void alloc_page_to_mem(int request){
   int queue_index = dequeue_page_allocate();
   allocated_page *page = &page_allocated[queue_index];
   page->index = page_allocate(request);
+  // printf("index: %d\n\r", page->index);
   page->total = request;
   page->free = request - sizeof(malloc_mem);
   page->next = NULL;

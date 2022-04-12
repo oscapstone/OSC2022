@@ -31,8 +31,7 @@ debug:
 	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -serial null -serial stdio -s -S -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb 	
 
 load:
-	source ~/py-env/bin/activate
-	python3 send_kernel.py
+	source ~/py-env/bin/activate && python3 send_kernel.py
 
 screen:
 	screen /dev/tty.usbserial-0001 115200

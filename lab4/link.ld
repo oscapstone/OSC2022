@@ -13,6 +13,7 @@ SECTIONS
     *(COMMON)
     __bss_end = .;
   }
+  _kernel_end = .;
   _heap_start = .;
   _end = .;
 }
