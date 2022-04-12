@@ -282,7 +282,7 @@ void uart_interrupt_r_handler()
     if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
         uart_rx_buffer_widx = 0;
 
-    //enable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> unmask device line
+    enable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> unmask device line
 }
 
 void uart_interrupt_w_handler() //can write
@@ -290,6 +290,7 @@ void uart_interrupt_w_handler() //can write
     // buffer empty
     if (uart_tx_buffer_ridx == uart_tx_buffer_widx)
     {
+        *AUX_MU_IIR = 0xC4;
         disable_mini_uart_w_interrupt(); // disable w_interrupt to prevent interruption without any async output
         return;
     }
@@ -297,7 +298,7 @@ void uart_interrupt_w_handler() //can write
     if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
         uart_tx_buffer_ridx = 0; // cycle pointer
 
-    //enable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> unmask device line
+    enable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> unmask device line
 }
 
 void uart_async_putc(char c)

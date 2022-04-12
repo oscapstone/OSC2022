@@ -44,5 +44,7 @@ static inline void disable_interrupt()
 }
 
 unsigned long long is_disable_interrupt();
+void lock();
+void unlock();
 
 #endif

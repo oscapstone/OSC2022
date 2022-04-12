@@ -1,6 +1,10 @@
 #include "malloc.h"
+#include "cpio.h"
 extern char _heap_start;
+extern char _end;
 static char *simple_top = &_heap_start;
+static char *kernel_end = &_end;
+extern char *dtb_place;
 
 // simple_malloc
 void *simple_malloc(unsigned int size)
@@ -25,14 +29,18 @@ void *simple_malloc(unsigned int size)
 -2  -> free, but it belongs to a larger contiguous memory block (deprecated)
 */
 
-static frame_t framearray[0x10000] = {0};
+static frame_t* framearray;
 static list_head_t freelist[MAXORDER + 1];       // 4K * (idx**ORDER) (for every 4K) (page)
 static list_head_t cachelist[MAXCACHEORDER + 1]; // 32, 64, 128, 256, 512  (for every 32bytes)
 
 void init_allocator()
 {
+    // The usable memory region is from 0x00 to 0x3C000000, you can get this information from the memory node in devicetree.
+    // Advanced Exercise 3 - Startup Allocation - 20%
+    framearray = simple_malloc(BUDDYSYSTEM_PAGE_COUNT * sizeof(frame_t));
+
     // init framearray
-    for (int i = 0; i < 0x10000; i++)
+    for (int i = 0; i < BUDDYSYSTEM_PAGE_COUNT; i++)
     {
         if (i % (1 << MAXORDER) == 0)
         {
@@ -47,7 +55,7 @@ void init_allocator()
         INIT_LIST_HEAD(&freelist[i]);
     }
 
-    for (int i = 0; i < 0x10000; i++)
+    for (int i = 0; i < BUDDYSYSTEM_PAGE_COUNT; i++)
     {
         //init listhead for each frame
         INIT_LIST_HEAD(&framearray[i].listhead);
@@ -66,6 +74,21 @@ void init_allocator()
     {
         INIT_LIST_HEAD(&cachelist[i]);
     }
+
+
+    /* should reserve these memory region
+    Spin tables for multicore boot (0x0000 - 0x1000)
+    Kernel image in the physical memory
+    Initramfs
+    Devicetree (Optional, if you have implement it)
+    Your simple allocator (startup allocator)  
+    stack
+   */
+    reserve_memory_block_with_dtb();   // spin tables can be find
+    memory_reserve(0x80000, (unsigned long long)kernel_end);  //kernel
+    memory_reserve((unsigned long long)&_heap_start, (unsigned long long)simple_top); //simple
+    memory_reserve((unsigned long long)CPIO_DEFAULT_PLACE, (unsigned long long)CPIO_DEFAULT_END);
+    memory_reserve(0x2c000000, 0x3c000000); //0x2c000000L - 0x3c000000L (stack)
 }
 
 //smallest 4K
@@ -93,13 +116,6 @@ void *allocpage(unsigned int size)
         }
     }
 
-    int needto_enable_interrupt = 0;
-    if (!is_disable_interrupt())
-    {
-        disable_interrupt();
-        needto_enable_interrupt = 1;
-    }
-
     // find the smallest larger frame in freelist
     int target_list_val;
     for (target_list_val = val; target_list_val <= MAXORDER; target_list_val++)
@@ -125,8 +141,6 @@ void *allocpage(unsigned int size)
         release_redundant(target_frame_ptr);
     }
     target_frame_ptr->isused = 1;
-    if (needto_enable_interrupt)
-        enable_interrupt();
 #ifdef DEBUG
     uart_printf("allocpage ret : 0x%x, val : %d\r\n", BUDDYSYSTEM_START + (0x1000 * (target_frame_ptr->idx)), target_frame_ptr->val);
 #endif
@@ -140,14 +154,6 @@ void freepage(void *ptr)
 
     frame_t *target_frame_ptr = &framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12];
 
-    //critical section
-    int needto_enable_interrupt = 0;
-    if (!is_disable_interrupt())
-    {
-        disable_interrupt();
-        needto_enable_interrupt = 1;
-    }
-
 #ifdef DEBUG
     uart_printf("freepage 0x%x, val = %d\r\n", ptr, target_frame_ptr->val);
 #endif
@@ -156,9 +162,6 @@ void freepage(void *ptr)
     while (coalesce(target_frame_ptr) == 0);
 
     list_add(&target_frame_ptr->listhead, &freelist[target_frame_ptr->val]);
-
-    if (needto_enable_interrupt)
-        enable_interrupt();
 }
 
 frame_t *release_redundant(frame_t *frame_ptr)
@@ -226,6 +229,13 @@ void *alloccache(unsigned int size)
 
     list_head_t *r = cachelist[order].next;
     list_del_entry(r);
+
+    /*
+    unsigned long long sp;
+    __asm__ __volatile__("mov %0, sp\n\t"
+                         : "=r"(sp));
+    uart_printf("sp : 0x%x\r\n", sp);
+    uart_printf("alloc cache order : %d\r\n", order);*/
 #ifdef DEBUG
     uart_printf("alloc cache order : %d\r\n", order);
 #endif
@@ -260,6 +270,7 @@ void freecache(void *ptr)
 
 void *kmalloc(unsigned int size)
 {
+    lock();
 #ifdef DEBUG
     uart_printf("kmalloc size: %d\r\n", size);
 #endif
@@ -271,6 +282,7 @@ void *kmalloc(unsigned int size)
         dump_freelist_info();
         dump_cachelist_info();
 #endif
+        unlock();
         return r;
     }
 
@@ -281,13 +293,14 @@ void *kmalloc(unsigned int size)
     dump_cachelist_info();
     uart_printf("kmalloc ret 0x%x\r\n", r);
 #endif
-
+    unlock();
     //For cache
     return r;
 }
 
 void kfree(void *ptr)
 {
+    lock();
 #ifdef DEBUG
     uart_printf("kfree 0x%x\r\n", ptr);
 #endif
@@ -299,6 +312,7 @@ void kfree(void *ptr)
         dump_freelist_info();
         dump_cachelist_info();
 #endif
+        unlock();
         return;
     }
 
@@ -308,6 +322,7 @@ void kfree(void *ptr)
     dump_freelist_info();
     dump_cachelist_info();
 #endif
+    unlock();
 }
 
 void dump_freelist_info()
@@ -324,14 +339,9 @@ void dump_cachelist_info()
 
 void memory_reserve(unsigned long long start, unsigned long long end)
 {
+    uart_printf("reserve -> start : 0x%x end : 0x%x\r\n", start, end);
     start -= start % 0x1000; // floor (align 0x1000)
     end = end % 0x1000 ? end + 0x1000 - (end % 0x1000) : end; // ceiling (align 0x1000)
-
-#ifdef DEBUG
-    uart_printf("memory reserve:\r\n");
-    uart_printf("start 0x%x\r\n", start);
-    uart_printf("end 0x%x\r\n",end);
-#endif
 
     //delete page from freelist
     for (int order = MAXORDER; order >= 0; order--)
@@ -348,7 +358,7 @@ void memory_reserve(unsigned long long start, unsigned long long end)
                 list_del_entry(pos);
 #ifdef DEBUG
                 uart_printf("del order %d\r\n",order);
-                dump_freelist_info();
+                //dump_freelist_info();
 #endif
             }
             else if (start >= pageend || end <= pagestart) // no intersection
@@ -362,7 +372,7 @@ void memory_reserve(unsigned long long start, unsigned long long end)
                 list_add(&release_redundant((frame_t *)pos)->listhead, &freelist[order - 1]);
                 pos = temppos;
 #ifdef DEBUG
-                dump_freelist_info();
+                //dump_freelist_info();
 #endif
             }
         }
@@ -373,7 +383,7 @@ void alloctest()
 {
     uart_printf("alloc test\r\n");
 
-    memory_reserve(0x1FFFAddb, 0x1FFFFdda);
+    //memory_reserve(0x1FFFAddb, 0x1FFFFdda);
     
     char *a = kmalloc(0x10);
     char *b = kmalloc(0x100);

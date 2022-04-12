@@ -3,7 +3,6 @@
 #include "timer.h"
 #include "task.h"
 
-static int timer_irq_count = 0;
 void sync_64_router(unsigned long long x0)
 {
     unsigned long long spsr_el1;
@@ -19,7 +18,8 @@ void sync_64_router(unsigned long long x0)
 }
 
 void irq_router(unsigned long long x0){
-    disable_interrupt();
+    //看起來disbale_uart系列又會失效 只好先把nested irq關掉
+    lock();
     //uart_printf("ena : %d\r\n", is_disable_interrupt());
 
     //uart_printf("exception type: %x\n",x0);
@@ -64,17 +64,17 @@ void irq_router(unsigned long long x0){
 
     }else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ)  //from CNTPNS (core_timer)
     {
-        timer_irq_count++;
         core_timer_disable();   // lab 3 : advanced 2 -> mask device line
         add_task(core_timer_handler, TIMER_IRQ_PRIORITY);
         run_preemptive_tasks();
         core_timer_handler();
 
         // prevent core_timer_disable been enable by previous irq handler
-        disable_interrupt();
-        timer_irq_count--;
-        if (timer_irq_count==0)core_timer_enable(); // lab 3 : advanced 2 -> unmask device line
+        lock();
+        core_timer_enable(); // lab 3 : advanced 2 -> unmask device line
+        unlock();
     }
+    unlock();
 }
 
 void invalid_exception_router(unsigned long long x0){
@@ -97,4 +97,23 @@ unsigned long long is_disable_interrupt()
                          : "=r"(daif));
 
     return daif;  //enable -> daif == 0 (no mask)
+}
+
+static unsigned long long lock_count = 0;
+void lock()
+{
+    disable_interrupt();
+    lock_count++;
+}
+
+void unlock()
+{
+    lock_count--;
+    if (lock_count<0)
+    {
+        uart_printf("lock error !!!\r\n");
+        while(1);
+    }
+    if (lock_count == 0)
+        enable_interrupt();
 }

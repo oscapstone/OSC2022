@@ -12,8 +12,9 @@
 #define CPIO_NEWC_HEADER_MAGIC "070701"    // big endian
 
 void* CPIO_DEFAULT_PLACE;  // init in main
+void *CPIO_DEFAULT_END;
 
-struct cpio_newc_header 
+struct cpio_newc_header
 {
     char c_magic[6];            //magic   The string	"070701".
     char c_ino[8];

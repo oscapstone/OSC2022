@@ -17,16 +17,15 @@ void main(char* dtb)
     //stroe dtb pointer to global (device tree)
     dtb_place = dtb;
 
+    init_cpio_default_place(); //store cpio pointer to global (file system)
     init_allocator();
     alloctest();
-    kmalloc(0x10000);
+
     //cannot use original input series after interrupt start (input is going to the buffer), use async input instead.
     //output series are not affected. (order is affected)
     task_list_init();
     enable_mini_uart_interrupt();
-    enable_interrupt();  // enable interrupt in EL1 -> EL1
-
-    init_cpio_default_place(); //stroe cpio pointer to global (file system)
+    enable_interrupt(); // enable interrupt in EL1 -> EL1
 
     uart_printf("dtb : 0x%x\r\n",dtb);
 

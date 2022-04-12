@@ -4,6 +4,7 @@
 #include "list.h"
 #include "uart.h"
 #include "exception.h"
+#include "dtb.h"
 
 #define MAXORDER 6
 #define MAXCACHEORDER 4 // 32, 64, 128, 256, 512  (for every 32bytes)
@@ -11,7 +12,8 @@
 // simple_malloc
 void *simple_malloc(unsigned int size);
 
-#define BUDDYSYSTEM_START 0x10000000L
+#define BUDDYSYSTEM_START  0x0 //0x10000000L
+#define BUDDYSYSTEM_PAGE_COUNT 0x3C000
 //buddy system (for >= 4K pages)
 void *allocpage(unsigned int size);
 void freepage(void *ptr);
