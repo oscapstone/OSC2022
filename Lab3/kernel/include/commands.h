@@ -9,26 +9,30 @@
 #include "memory.h"
 #include "commands.h"
 #include "cpio.h"
+#include "timer.h"
 //#include "dtb.h"
 
 typedef struct commads
 {
     char* cmd;
     char* help;
-    void (*func)(void);
+    void (*func)(char *);
 
 } commads;
 
-void shell_help();
-void shell_hello();
-void shell_mailbox();
-void shell_reboot();
-void shell_cpio();
-void shell_alloc();
-void shell_user_program();
-void shell_ls();
-void shell_start_timer();
-void shell_async_puts();
+void shell_help(char* args);
+void shell_hello(char* args);
+void shell_mailbox(char* args);
+void shell_reboot(char* args);
+void shell_cpio(char* args);
+void shell_alloc(char* args);
+void shell_user_program(char* args);
+void shell_ls(char* args);
+void shell_start_timer(char* args);
+void shell_async_puts(char* args);
+void shell_test(char* args);
+void shell_settimeout(char* args);
+void shell_events(char* args);
 
 commads cmd_list[]=
 {
@@ -41,12 +45,15 @@ commads cmd_list[]=
     {.cmd="alloc", .help="memory allocation test", .func=shell_alloc},
     {.cmd="user", .help="run user program", .func=shell_user_program}, 
     {.cmd="timer-start", .help="start timer", .func=shell_start_timer},
-    {.cmd="async-puts", .help="uart async send test", .func=shell_async_puts}
+    {.cmd="async-puts", .help="uart async send test", .func=shell_async_puts},
+    {.cmd="test", .help="test your command here", .func=shell_test},
+    {.cmd="timeout", .help="setTimeout MESSAGE SECONDS", .func=shell_settimeout},
+    {.cmd="events", .help="show all timeout events", .func=shell_events}
 };
 
 
 
-void shell_cpio(){
+void shell_cpio(char* args){
     uint64_t cur_addr = CPIO_LOC;
     cpio_newc_header* cpio_ptr;
     uint64_t name_size, file_size;
@@ -95,7 +102,7 @@ void shell_cpio(){
     }
 }
 
-void shell_help(){
+void shell_help(char* args){
     uart_puts("===============================================");
     uart_puts("\r\n");
     uart_puts("Command Name");
@@ -116,16 +123,16 @@ void shell_help(){
     uart_puts("\r\n");
 }
 
-void shell_hello(){
+void shell_hello(char* args){
     uart_puts("Hello World!");
 }
 
-void shell_reboot(){
+void shell_reboot(char* args){
     uart_puts("reset");
     reset();
 }
 
-void shell_mailbox(){
+void shell_mailbox(char* args){
 
     // see mailbox detail in https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
     // get the board's unique serial number with a mailbox call
@@ -198,7 +205,7 @@ void shell_mailbox(){
     // uart_send(uart_getc());
 }
 
-void shell_alloc(){
+void shell_alloc(char* args){
     uart_puts("My Heap starting address in bytes is: ");
     uart_hex(HEAP_START);
     uart_puts("\r\n");
@@ -227,30 +234,73 @@ void shell_alloc(){
 
 }
 
-void shell_user_program(){
+void shell_user_program(char* args){
+
     uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled
     uint64_t target_addr = 0x30000000; // load your program here
     uint64_t target_sp = 0x31000000;
+
     cpio_load_user_program("user_program.img", target_addr);
     core_timer_enable();
+
     asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // save processor's state, 
-                                                  // you're at EL1 now so it's spsr_el1
+                                                        // you're at EL1 now so it's spsr_el1
     asm volatile("msr elr_el1, %0" : : "r"(target_addr));
     asm volatile("msr sp_el0, %0" : : "r"(target_sp));
     asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
+                          // we set the register manually to perform a "jump" or switcning between kernel and user space.
 }
 
-void shell_ls(){
+void shell_ls(char* args){
     cpio_ls();
 }
 
-void shell_start_timer(){
+void shell_start_timer(char* args){
     uart_puts("timer enable\n");
     core_timer_enable();
 }
 
-void shell_async_puts(){
+void shell_async_puts(char* args){
     uart_async_puts("async puts test\n");
 }
+
+void shell_test(char* args){
+    //add_timer(print_message, "testst", 10);
+    //update_event_time(head_event, 3);
+    //core_timer_disable();
+    set_next_timer(4);
+}
+
+void shell_settimeout(char* args){
+
+    // parse arg message
+    char* timeout_message = args;
+    char* ptr = args;
+    while((*ptr) != '\0'){
+        if((*ptr) == ' ' ){ // message end
+            (*ptr) = '\0';
+            ptr++;
+            break;
+        }
+        ptr++;
+    }
+    print_s("timeout message: ");
+    print_s(timeout_message);
+
+    int timeout_time = atoi(ptr);
+    print_s(", timeout time: ");
+    print_i(timeout_time);
+    print_s("\n");
+
+    add_timer(print_message, timeout_message, timeout_time);
+
+    //core_timer_enable();
+    //set_next_timer(timeout);
+}
+
+void shell_events(char* args){
+    show_all_events();
+}
+
 #endif
 

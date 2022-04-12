@@ -54,9 +54,9 @@ exception_vector_table:
     .align 7
     
     // EL1 -> EL1 
-    b _sync_handler // basically not used???
+    b _sync_handler // not used???
     .align 7
-    b _irq_handler // uart and EL1 timer
+    b _el1_to_el1_irq_handler  // uart and EL1 timer interrupt
     .align 7
     b _default_handler
     .align 7
@@ -66,7 +66,7 @@ exception_vector_table:
     // EL0 -> EL1
     b _sync_handler // user program
     .align 7
-    b _irq_handler  // user (EL0) timer interrupt
+    b _el0_to_el1_irq_handler  // user (EL0) timer interrupt
     .align 7
     b _default_handler
     .align 7
@@ -86,11 +86,17 @@ _sync_handler:
     save_reg
     bl sync_handler // exception.c
     load_reg
+    eret            // back to original EL
+
+_el0_to_el1_irq_handler:
+    save_reg
+    bl el0_to_el1_irq_handler // exception.c
+    load_reg
     eret
 
-_irq_handler:
+_el1_to_el1_irq_handler:
     save_reg
-    bl irq_handler // exception.c
+    bl el1_to_el1_irq_handler // exception.c
     load_reg
     eret
 

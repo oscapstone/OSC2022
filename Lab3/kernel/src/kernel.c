@@ -27,15 +27,31 @@ void clear_buffer(char* buffer, int size){
     }
 }
 
+void parse_command(char* cmd){
+    
+}
 
 void execute_command(const char* cmd){
     int cmd_len = sizeof(cmd_list)/sizeof(commads);
     uart_puts("\0"); // I'dont konw why if you remove this bugs occurs
     int command_found = 0;
     for(int i=0; i<cmd_len; i++){
-        if(compare(cmd, cmd_list[i].cmd) == 1){
+        if(find_command(cmd, cmd_list[i].cmd) == 1){
             command_found = 1;
-            cmd_list[i].func();
+            char *args;
+            int args_start = strlen(cmd_list[i].cmd) + 1;
+            if(args_start > strlen(cmd)){
+                // command with no argument
+                args = "foo";
+            } else {
+                args = &cmd[args_start];
+            }
+
+            print_s("args: ");
+            print_s(args);
+            print_s("\n");
+            
+            cmd_list[i].func(args);
             break;
         }
     }
@@ -55,6 +71,8 @@ void main()
     // enables interrupt in EL1 (for uart async IO)
     enable_interrupt(); // msr DAIFClr, 0xf
 
+    head_event = 0;
+    
     while(1) {
         // echo everything back
         clear_buffer(input_buffer, BUFFER_LEN);

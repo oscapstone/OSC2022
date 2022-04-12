@@ -16,6 +16,34 @@ int compare(char const *a, char const *b){
     return 1; // 
 }
 
+int find_command(char const *source, char const *target){
+    //for(int i = 0; i<size; i++){
+    //uart_puts(a);
+    while(*source){
+        if(*target == '\0' && (*source == ' ' || *source == '\0')) return 1; /// ????????
+        if(*source != *target) return 0;
+        source++; target++;
+    }
+    return (*source) == (*target); // prevent "l" see as  "ls"
+}
+
+int strlen(const char *s) {
+  int len = 0;
+  while (s[len] != '\0') {
+    len++;
+  }
+  return len;
+}
+
+int atoi(char* str){
+  int res = 0;
+  for (int i = 0; str[i] != '\0'; ++i)
+    res = res * 10 + str[i] - '0';
+  // return result.
+  return res;
+}
+
+
 char* itoa(int64_t val, int base){
     static char buf[32] = {0};
     int i = 30;

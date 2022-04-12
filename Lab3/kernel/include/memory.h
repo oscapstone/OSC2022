@@ -2,7 +2,8 @@
 #include "stdint.h"
 
 //extern uint32_t DTB_ADDR;
-extern uint32_t HEAP_START;
+//extern uint32_t HEAP_START;
+#define HEAP_START 0x9000000
 static size_t heap_offset=0;
 
 void* simple_malloc(size_t size){

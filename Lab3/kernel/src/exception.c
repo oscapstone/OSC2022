@@ -29,7 +29,7 @@ void sync_handler() {
   print_s("\n\n");
 }
 
-void irq_handler() {
+void el0_to_el1_irq_handler() {
   disable_interrupt();
   uint32_t is_uart = (*IRQ_PENDING_1 & AUX_IRQ);
 
@@ -40,6 +40,20 @@ void irq_handler() {
   }
   enable_interrupt();
 }
+
+void el1_to_el1_irq_handler() {
+  disable_interrupt();
+  uint32_t is_uart = (*IRQ_PENDING_1 & AUX_IRQ);
+
+  if (is_uart) {
+    uart_handler();
+  } else {
+    //core_timer_handler();
+    timeout_event_handler();
+  }
+  enable_interrupt();
+}
+
 
 //void irq_handler2() {
 //  disable_interrupt();
