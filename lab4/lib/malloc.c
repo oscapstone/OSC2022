@@ -3,24 +3,49 @@
 
 
 extern unsigned char _heap_start;
-static char* top = (char*) &_heap_start;
+static char* top = (char*) 0;
+static char* simple_mallc_top = (char*) &_heap_start;
+
+// #define PAGE_MAX_ENTRY 100
+
+#define MAX_PAGE_ORDER 15
+
+#define PAGE_NOT_ALLOCATE -1  // for the frame array which is not allocated
+#define PAGE_ALLOCATED -2  // for the frame array is allocated
+#define PAGE_RESERVED -3
+
+
+unsigned int PAGE_MAX_ENTRY  = 0x3c000000/0x1000;
+
 
 void* simple_malloc(size_t size) {
-  char* r = top + 0x10;  // reserve for header
   size = 0x10 + size - size%0x10;  // ALIGN 16
-  ((malloc_header*)top)->chunk = size;
-  top += size + 0x10;
-  return r;
+  simple_mallc_top += size;
+  return simple_mallc_top;
 }
 
-int frame[PAGE_MAX_ENTRY] = {0}; // frame array for record the status of page
 
-frame_list free_item[MAX_FREE_ITEM];
-int free_item_queue[MAX_FREE_ITEM];
+int *frame;
+// int frame[PAGE_MAX_ENTRY] = {0}; // frame array for record the status of page
+
+frame_list *free_item;
+// frame_list free_item[PAGE_MAX_ENTRY];
+int *free_item_queue;
+// int free_item_queue[PAGE_MAX_ENTRY];
 int queue_front = -1;
 int queue_end = -1;
 
-static frame_list *free_frame_list[6] = {NULL}; // linked-list for free page
+frame_list *free_frame_list[MAX_PAGE_ORDER+1] = {NULL}; // linked-list for free page
+
+
+allocated_page *page_allocated;
+// allocated_page page_allocated[PAGE_MAX_ENTRY];
+int *free_page_queue;
+// int free_page_queue[PAGE_MAX_ENTRY];
+int free_queue_front = -1;
+int free_queue_end = -1;
+
+allocated_page *mem_alloc_page = NULL;
 
 static void enqueue_free_item(int value);
 static int dequeue_free_item();
@@ -47,16 +72,27 @@ static int dequeue_page_allocate();
 static void enqueue_page_allocate();
 
 
-allocated_page *mem_alloc_page = NULL;
-
-allocated_page page_allocated[MAX_FREE_ITEM];
-int free_page_queue[MAX_FREE_ITEM];
-int free_queue_front = -1;
-int free_queue_end = -1;
-
 void page_init(){
+  char *sim_alloc_start = 0;
+  char *sim_alloc_end = 0;
+  // for page alloc
+  frame_list *addr = simple_malloc(PAGE_MAX_ENTRY * sizeof(frame_list));
+  free_item = addr;
+  sim_alloc_start = (char *)addr;
+  addr = simple_malloc(PAGE_MAX_ENTRY * sizeof(int));
+  frame = (int *)addr;
+  addr = simple_malloc(PAGE_MAX_ENTRY * sizeof(int));
+  free_item_queue = (int *)addr;
+  // for malloc
+  addr = simple_malloc(PAGE_MAX_ENTRY * sizeof(allocated_page));
+  page_allocated = (allocated_page *)addr;
+  addr = simple_malloc(PAGE_MAX_ENTRY * sizeof(int));
+  sim_alloc_end = (char *)addr + PAGE_MAX_ENTRY * sizeof(int);
+  free_page_queue = (int *)addr;
+  
   // init the free queue array for managing the free_item
   for(int i=0; i<PAGE_MAX_ENTRY; i++){
+    *(frame+i) = 0;
     enqueue_free_item(i);
     enqueue_page_allocate(i);
   }
@@ -64,14 +100,15 @@ void page_init(){
   int non_init = PAGE_MAX_ENTRY;
   for(int start=0; start<PAGE_MAX_ENTRY;){
     frame[start] = get_log_of_two(non_init);
-    add_frmae_list(get_log_of_two(non_init), start);
-    start += power_of_two(get_log_of_two(non_init));
+    add_frmae_list(frame[start], start);
+    start += power_of_two(frame[start]);
     for(int i=PAGE_MAX_ENTRY-non_init+1; i<start; i++)
       frame[i] = PAGE_NOT_ALLOCATE;
     non_init -= power_of_two(get_log_of_two(non_init));
   }
-  // print_frame_state();
-  // print_free_frame_list();
+  memory_reserve(0x0000, 0x1000); //spin table
+  memory_reserve((unsigned long)sim_alloc_start, (unsigned long)sim_alloc_end);
+  print_free_frame_list();
 }
 
 void enqueue_free_item(int value){
@@ -103,11 +140,12 @@ int dequeue_free_item(){
 
 void add_frmae_list(int value, int index){
   int queue_index = dequeue_free_item();
-  frame_list *free_frame = &free_item[queue_index];
+  // frame_list *free_frame = &free_item[queue_index];
+  frame_list *free_frame = free_item+queue_index;
   free_frame->index = index;
   free_frame->queue_index = queue_index;
   free_frame->next = NULL;
-  if(value<6 && value >=0){
+  if(value <= MAX_PAGE_ORDER && value >=0){
     if(!free_frame_list[value]){
       free_frame_list[value] = free_frame;
     }else{
@@ -120,7 +158,7 @@ void add_frmae_list(int value, int index){
 
 int allocate_frame_list(int value){
   int ans = -1;
-  if(value < 6 && value >= 0){
+  if(value <= MAX_PAGE_ORDER && value >= 0){
     enqueue_free_item(free_frame_list[value]->queue_index);
     for(int i=1; i<power_of_two(value); i++)
       frame[free_frame_list[value]->index+i] = PAGE_ALLOCATED;
@@ -153,7 +191,7 @@ void page_devide(int value){
 int page_allocate(size_t size){
   int level = get_log_of_two((size-1)/0x1000)+1;
   if(!free_frame_list[level]){
-    if(level < 5)
+    if(level < MAX_PAGE_ORDER)
       page_devide(level+1);
     else{
       printf("Request too LARGE size!!\n\r");
@@ -165,7 +203,6 @@ int page_allocate(size_t size){
 
 void page_free(int index){
   int size = frame[index];
-  // printf("size: %d, index: %d\n\r", size, index);
   add_frmae_list(size, index);
   for(int i=1; i<power_of_two(size); i++){
     frame[index+i] = PAGE_NOT_ALLOCATE;
@@ -199,6 +236,8 @@ int find_in_free_frame_list(int level, int index){
 }
 
 void merge(int index){
+  if(frame[index] >= MAX_PAGE_ORDER)
+   return;
   int size = power_of_two(frame[index]);
   int merge_index = index + size;
   if(index%(2*size))
@@ -216,9 +255,10 @@ void merge(int index){
 
 int get_log_of_two(int value){
   int ans = 1;
-  for(int i = 0;;i++){
-    if(ans > value)
-      return --i;
+  for(int i=0; ;i++){
+    if(ans > value){
+      return (--i)>MAX_PAGE_ORDER?MAX_PAGE_ORDER:i;
+    }  // set the max continue order
     ans *= 2;
   }
 }
@@ -242,7 +282,7 @@ void print_frame_state(){
 void print_free_frame_list(){
   printf("--------------free frame list--------------\n\r");
   frame_list *pre;
-  for(int i=0; i<6; i++){
+  for(int i=0; i<=MAX_PAGE_ORDER; i++){
     pre = free_frame_list[i];
     printf("list%d: ", i);
     while (pre){
@@ -414,8 +454,8 @@ void memory_reserve(unsigned long start, unsigned long end){
   delete_frame_list(frame[head_index], head_index);
   for(int i=1; i<power_of_two(frame[head_index]); i++)
     frame[head_index+i] = PAGE_RESERVED;
-  print_frame_state();
-  print_free_frame_list();
+  // print_frame_state();
+  // print_free_frame_list();
 }
 
 void alloc_page_to_mem(int request){

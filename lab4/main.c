@@ -18,11 +18,6 @@ void main(char * arg){
   page_init();
 
 
-  memory_reserve(0xaad50, 0xafd50);
-  // memory_reserve(15, 52);
-  // print_frame_state();
-  // print_free_frame_list();
-
   printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
 
