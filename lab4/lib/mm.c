@@ -7,6 +7,7 @@ static unsigned int n_frames = 0;
 static unsigned int max_size = 0;
 static struct frame* frame_list[MAX_ORDER] = {NULL};
 static struct frame* frame_array = NULL;
+static struct dynamic_pool pools[MAX_POOLS] = { {ALLOCABLE, 0, 0, 0, 0, {NULL}, NULL} };
 
 void *malloc(unsigned int size) {
 
@@ -71,7 +72,7 @@ void *malloc(unsigned int size) {
 
 void free(void *address) {
 
-    unsigned int idx = ((unsigned int)address-MEM_REGION_BEGIN) / PAGE_SIZE;
+    unsigned int idx = ((unsigned long long)address-MEM_REGION_BEGIN) / PAGE_SIZE;
     struct frame* target = &frame_array[idx];
 
     if (target->state == ALLOCABLE || target->state == C_NALLOCABLE) {
@@ -171,5 +172,103 @@ void init_mm() {
     frame_list[5] = &frame_array[0];
     
     max_size = PAGE_SIZE * pow(2, MAX_ORDER-1);
+
+}
+
+void init_pool(struct dynamic_pool* pool, unsigned int size) {
+    pool->chunk_size = size;
+    pool->chunks_per_page = PAGE_SIZE / size;
+    pool->chunks_allocated = 0;
+    pool->page_new_chunk_off = 0;
+    pool->pages_used = 0;
+    pool->free_head = NULL;
+}
+
+int register_chunk(unsigned int size) {
+    
+    unsigned int nsize = 0;
+    if (size <= 8) nsize = 8;
+    else {
+        int rem = size % 4;
+        if (rem != 0) nsize = (size/4 + 1)*4;
+        else nsize = size;
+    }
+
+    if (nsize >= PAGE_SIZE) {
+        printf("[error] Normalized chunk size request leq page size.\n");
+        return -1;
+    }
+
+    for (int i=0; i<MAX_POOLS; i++) {
+        if (pools[i].chunk_size == nsize) return i;
+        else if (pools[i].chunk_size == ALLOCABLE) {
+            init_pool(&pools[i], nsize);
+            return i;
+        }
+    }
+
+    return -1;
+
+}
+
+void *chunk_alloc(unsigned int size) {
+
+    int pool_idx = register_chunk(size);
+    printf("[info] pool index is %d.\n", pool_idx);
+    if (pool_idx == -1) return NULL;
+    
+    struct dynamic_pool* pool = &pools[pool_idx];
+
+    if (pool->free_head != NULL) {
+        void *ret = (void*) pool->free_head;
+        pool->free_head = pool->free_head->next;
+        printf("[info] allocate address 0x%x from pool free list.\n", ret);
+        return ret;
+    }
+
+    if (pool->chunks_allocated >= MAX_POOL_PAGES*pool->chunks_per_page) {
+        printf("[error] Pool maximum reached.\n");
+        return NULL;
+    }
+        
+
+    if (pool->chunks_allocated >= pool->pages_used*pool->chunks_per_page) {
+        pool->page_base_addrs[pool->pages_used] = malloc(PAGE_SIZE);
+        printf("[info] allocate new page for pool with base address 0x%x.\n", 
+                pool->page_base_addrs[pool->pages_used]);
+        pool->pages_used++;
+        pool->page_new_chunk_off = 0;
+    }
+
+    void *ret = pool->page_base_addrs[pool->pages_used - 1] + 
+                pool->chunk_size*pool->page_new_chunk_off;
+    pool->page_new_chunk_off++;
+    pool->chunks_allocated++;
+
+    printf("[info] allocate new address 0x%x from pool.\n", ret);
+
+    return ret;
+
+}
+
+void chunk_free(void *address) {
+
+    int target = -1;
+
+    void *prefix_addr = (void *)((unsigned long long)address & ~0xFFF);
+
+    for (unsigned int i=0; i<MAX_POOLS; i++) {
+        for (unsigned int j=0; j<pools[i].pages_used; j++) {
+            void *base = pools[i].page_base_addrs[j];
+            if (base == prefix_addr)
+                target = i;
+        }
+    }
+    printf("[info] free chunk from pool %d.\n", target);
+    struct dynamic_pool *pool = &pools[target];
+    struct node* old_head = pool->free_head;
+    pool->free_head = (struct node*) address;
+    pool->free_head->next = old_head;
+    pool->chunks_allocated--;
 
 }

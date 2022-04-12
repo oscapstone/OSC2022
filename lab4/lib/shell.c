@@ -84,6 +84,14 @@ void parse_cmd()
             free(to_free[i]);
         }
     }
+    else if (stringcmp(buffer, "cm") == 0) {
+        chunk_alloc(8);
+        chunk_alloc(8);
+    }
+    else if (stringcmp(buffer, "cf") == 0) {
+        chunk_free((void*)0x10000000);
+        chunk_free((void*)0x10000008);
+    }
     else if (stringcmp(buffer, "help") == 0) {
         uart_send_string("help:\t\tprint list of available commands\n");
         uart_send_string("hello:\t\tprint Hello World!\n");

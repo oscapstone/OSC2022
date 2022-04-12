@@ -10,11 +10,11 @@
 #define ALLOCATED           -1
 #define C_NALLOCABLE        -2
 
-#define NULL                (void*)0
+#define NULL                0
 
-void *malloc(unsigned int size);
-void free(void *address);
-void init_mm();
+#define MAX_POOL_PAGES      8
+#define MAX_POOLS           8
+#define MIN_CHUNK_SIZE      8
 
 struct frame {
     unsigned int index;
@@ -22,5 +22,27 @@ struct frame {
     int state;
     struct frame *prev, *next;    
 };
+
+struct node {
+    struct node *next;
+};
+
+struct dynamic_pool {
+    unsigned int chunk_size;
+    unsigned int chunks_per_page;
+    unsigned int chunks_allocated;
+    unsigned int page_new_chunk_off;
+    unsigned int pages_used;
+    void *page_base_addrs[MAX_POOL_PAGES];
+    struct node *free_head;
+};
+
+void *malloc(unsigned int);
+void free(void *);
+void init_mm();
+void init_pool(struct dynamic_pool*, unsigned int);
+int register_chunk(unsigned int);
+void *chunk_alloc(unsigned int);
+void chunk_free(void *);
 
 #endif  /*_MM_H */
