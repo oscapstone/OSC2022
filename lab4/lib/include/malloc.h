@@ -16,6 +16,9 @@ typedef struct frame_list {
 
 void page_init();
 
+int page_allocate(size_t size);
+void page_free(int index);
+
 void *malloc(size_t size);
 void free(char *addr);
 

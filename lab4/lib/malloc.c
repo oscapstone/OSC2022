@@ -54,9 +54,6 @@ static void add_frmae_list(int value, int index);
 static int allocate_frame_list(int value);
 static void delete_frame_list(int value, int index);
 
-static int page_allocate(size_t size);
-static void page_free(int index);
-
 static void page_devide(int value);
 static int find_in_free_frame_list(int level, int index);
 static void merge(int index);
@@ -73,6 +70,7 @@ static void enqueue_page_allocate();
 
 
 void page_init(){
+  // for reserve the simple_malloc space
   char *sim_alloc_start = 0;
   char *sim_alloc_end = 0;
   // for page alloc
@@ -96,7 +94,7 @@ void page_init(){
     enqueue_free_item(i);
     enqueue_page_allocate(i);
   }
-
+  // init the frame
   int non_init = PAGE_MAX_ENTRY;
   for(int start=0; start<PAGE_MAX_ENTRY;){
     frame[start] = get_log_of_two(non_init);
@@ -106,9 +104,8 @@ void page_init(){
       frame[i] = PAGE_NOT_ALLOCATE;
     non_init -= power_of_two(get_log_of_two(non_init));
   }
-  memory_reserve(0x0000, 0x1000); //spin table
+  // reserve the page
   memory_reserve((unsigned long)sim_alloc_start, (unsigned long)sim_alloc_end);
-  print_free_frame_list();
 }
 
 void enqueue_free_item(int value){
@@ -284,7 +281,7 @@ void print_free_frame_list(){
   frame_list *pre;
   for(int i=0; i<=MAX_PAGE_ORDER; i++){
     pre = free_frame_list[i];
-    printf("list%d: ", i);
+    printf("list %d: ", i);
     while (pre){
       printf("%d ", pre->index);
       pre = pre->next;

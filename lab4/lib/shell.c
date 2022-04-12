@@ -32,17 +32,18 @@ void shell(){
         printf("\n\r");
         if(!strcmp(args[0], "help")){
           printf("help      : print this help menu\n\r");
-          printf("hello     : print Hello World!\n\r");
           printf("reboot    : reboot the device\n\r");
           printf("sysinfo   : print the system information\n\r");
           printf("ls        : list the file\n\r");
           printf("cat <file>: print the content of the file\n\r");
-          printf("asyncUartTest: test the async uart_print\n\r");
           printf("exec <file>: exec the content of the file\n\r");
           printf("clock      : print the core timer time every 2 seconds\n\r");
           printf("setTimeout <MESSAGE> <TIME>: Print the message when timeout\n\r");
-        }else if(!strcmp(args[0], "hello")){
-          printf("Hello World!\n\r");
+          printf("dump_page  : dump the free frame list\n\r");
+          printf("allocp <size>  : alloc the page\n\r");
+          printf("freep <size>   : free the page\n\r");
+          printf("malloc <size>  : alloc the memory\n\r");
+          printf("free <size>    : free the memory\n\r");
         }else if(!strcmp(args[0], "reboot")){
           printf("Bye bye~\n\r");
           reset(300);
@@ -69,19 +70,25 @@ void shell(){
             cpio_exec(args[1]);
         }else if(!strcmp(input, "clock")){
           add_timer(clock_alert, args[1], 2);
-          // core_timer_enable();
-          // asm(
-          //   "bl from_el1_to_el0\n\t"
-          // );
         }else if(!strcmp(input, "setTimeout")){
           if (args_num == 3)
             add_timer(timeout_print, args[1], atoi(args[2]));
-        }else if(!strcmp(input, "asyncUartTest")){
-          async_uart_puts("Test1\n\r");
-          async_uart_puts("Test2\n\r");
-          async_uart_puts("Test3\n\r");
-        }else{
-          printf("Please use \"help\" to get information.\n\r");
+        }else if(!strcmp(args[0], "dump_page")){
+          print_free_frame_list();
+        }else if(!strcmp(args[0], "allocp")){
+          if (args_num == 2)
+            printf("allocte page index: %d\n\r", page_allocate(atoi(args[1]) * 0x1000));
+        }else if(!strcmp(args[0], "freep")){
+          if (args_num == 2)
+            page_free(atoi(args[1]));
+        }else if(!strcmp(args[0], "malloc")){
+          if (args_num == 2)
+            printf("alloc the memory form: 0x%x\n\r", malloc(atoi(args[1])));
+        }else if(!strcmp(args[0], "free")){
+          if (args_num == 2){
+            char *addr = (char *)((unsigned long)myHex2Int(args[1]));
+            free(addr);
+          }
         }
         printf("raspberryPi: ");
         input[0] = 0;

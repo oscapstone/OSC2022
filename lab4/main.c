@@ -5,6 +5,9 @@
 #include "dtb.h"
 #include "timer.h"
 
+extern unsigned char _kernel_start;
+extern unsigned char _end;
+
 extern char* dtb_place;
 
 void main(char * arg){
@@ -16,7 +19,10 @@ void main(char * arg){
   core_timer_enable();
   fdt_traverse(initramfs_callback);
   page_init();
-
+  print_free_frame_list();
+  memory_reserve(0x0000, 0x1000); //spin table
+  memory_reserve((unsigned long)&_kernel_start, (unsigned long)&_end);
+  memory_reserve(0x20000000, 0x20000000+69120);  // cpio size
 
   printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
