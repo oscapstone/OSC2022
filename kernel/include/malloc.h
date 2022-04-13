@@ -2,7 +2,9 @@
 #define MALLOC_H_
 #include <list.h>
 #include <stddef.h>
-#define MALLOC_BASE   ((volatile unsigned long*)(0x5000000))
+#define SIMPLE_MALLOC_BASE_START    ((volatile unsigned long*)(0x5000000))
+#define SIMPLE_MALLOC_BASE_END      ((volatile unsigned long*)(0x7000000))
+
 #define MAX_CHUNK_SIZE 11
 
 typedef struct {

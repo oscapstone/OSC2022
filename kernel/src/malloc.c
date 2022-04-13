@@ -147,7 +147,7 @@ void kmalloc_debug(){
 }
 
 void *simple_malloc(unsigned long size) {
-    static void *head = (void *)MALLOC_BASE;
+    static void *head = (void *)SIMPLE_MALLOC_BASE_START;
     void *ptr = head;
     head = head + size;
     return ptr;

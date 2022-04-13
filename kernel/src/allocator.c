@@ -23,7 +23,7 @@ void memory_init(){
 
     /* Simple malloc in the physical memory*/
     uart_puts("[*] Memory Reserve(Simple malloc) -> ");
-    memory_reserve((void *)MALLOC_BASE, (void *)MALLOC_BASE+0x4000000);
+    memory_reserve((void *)SIMPLE_MALLOC_BASE_START, (void *)SIMPLE_MALLOC_BASE_END);
 
 }
 
@@ -41,19 +41,19 @@ void memory_reserve(void *start, void *end){
     print_string(UITOHEX, " | end addr: 0x", end_idx * FRAME_SIZE, 1);
 
 
-    while(start_idx < end_idx){
-        frames[start_idx].idx = start_idx;
+    for(; start_idx < end_idx; start_idx++){
         frames[start_idx].free = 0;
         frames[start_idx].order = -1;
-        frames[start_idx].chunk_level = -1;
-        start_idx++;
     }
 }
 
 void frames_init(){  
-     for(unsigned int i = 0; i < FRAME_NUM; i++){
-         frames[i].free = 1;
-         INIT_LIST_HEAD(&frames[i].list);
+     for(unsigned int idx = 0; idx < FRAME_NUM; idx++){
+        INIT_LIST_HEAD(&frames[idx].list);
+        frames[idx].idx = idx;
+        frames[idx].free = 1;
+        frames[idx].order = 0;
+        frames[idx].chunk_level = -1;
      }
 }
 
@@ -67,33 +67,43 @@ void allocator_init(){
         INIT_LIST_HEAD(&buddy_list[i].list);
     }
 
-    unsigned long long maxorder_frame_idx = (1 << MAX_BUDDY_ORDER);
-
-    for(unsigned int i = 0; i < FRAME_NUM; i++){
-        if(frames[i].free == 0) continue;
-        /*
-         * add the max order frame in buddy list
-         * if not max order frame, just init the info. 
+    for(unsigned int idx = 0; idx < FRAME_NUM; idx++){
+        /* 
+         *  reserve frames  ->  don't do merge
+         *  merge already   ->  don't merge 
          */
-        if(i % maxorder_frame_idx == 0){
-            INIT_LIST_HEAD(&frames[i].list);
-            frames[i].free = 0;
-            frames[i].idx = i;
-            frames[i].order = MAX_BUDDY_ORDER;
-            frames[i].chunk_level = -1;
-            list_add_tail(&frames[i].list, &buddy_list[MAX_BUDDY_ORDER].list);
+        if(frames[idx].free == 0 || frames[idx].order == -1) continue;
+        Frame *target_frame = &frames[idx];
+        Frame *buddy_frame  = find_buddy_frame(target_frame, target_frame->order);
+
+        if( buddy_frame == NULL || 
+            buddy_frame->free == 0 || 
+            buddy_frame->order != target_frame->order){
+            continue;
         }
-        else{
-            INIT_LIST_HEAD(&frames[i].list);
-            frames[i].free = 1;
-            frames[i].idx = i;
-            frames[i].order = -1;
-            frames[i].chunk_level = -1;
+
+        while(buddy_frame->free == 1 && buddy_frame->order == target_frame->order){
+            if(target_frame->idx > buddy_frame->idx){
+                buddy_frame->order++;
+                target_frame->order = -1;
+                target_frame = buddy_frame;
+            }
+            else{
+                target_frame->order++;
+                buddy_frame->order = -1;
+            }
+
+            buddy_frame = find_buddy_frame(target_frame, target_frame->order);  
+            if(buddy_frame == NULL) break; 
         }
     }
-    
-    
-    
+
+    for(unsigned int idx = 0; idx < FRAME_NUM; idx++){
+        if(frames[idx].free == 0 || frames[idx].order == -1) continue;
+        list_add_tail(&frames[idx].list, &buddy_list[frames[idx].order].list);
+    }
+
+    print_buddy_list();
 }
 
 
@@ -237,10 +247,10 @@ void print_buddy_list(){
         list_for_each(pos, &buddy_list[i].list){
             Frame *tmp = (Frame *)pos;
             if(first){
-                print_string(UITOHEX, "0x", tmp->idx, 0);
+                print_string(UITOHEX, "0x", tmp->idx * FRAME_SIZE, 0);
                 first = 0;
             } 
-            else print_string(UITOHEX, " -> 0x", tmp->idx, 0);
+            else print_string(UITOHEX, " -> 0x", tmp->idx * FRAME_SIZE, 0);
         }
         uart_puts("\n");
     }
