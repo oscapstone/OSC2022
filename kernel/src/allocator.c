@@ -4,13 +4,64 @@
 #include <malloc.h>
 #include <string.h>
 #include <uart.h>
-#include <malloc.h>
 
 Frame frames[FRAME_NUM];
 Buddy buddy_list[MAX_BUDDY_ORDER+1];
 
+extern unsigned long long _start;
+extern unsigned long long _end;
+
+
+void memory_init(){
+    /* Spin tables for multicore boot (0x0000 - 0x1000) */
+    uart_puts("[*] Memory Reserve(Spin tables) -> ");
+    memory_reserve((void *)0x0, (void *)0x1000);
+
+    /* Kernel image in the physical memory*/
+    uart_puts("[*] Memory Reserve(Kernel image) -> ");
+    memory_reserve((void *)&_start, (void *)&_end);
+
+    /* Simple malloc in the physical memory*/
+    uart_puts("[*] Memory Reserve(Simple malloc) -> ");
+    memory_reserve((void *)MALLOC_BASE, (void *)MALLOC_BASE+0x4000000);
+
+}
+
+void memory_reserve(void *start, void *end){
+    // unsigned long long start_addr = (unsigned long long)start;
+    // unsigned long long end_addr = (unsigned long long)end;
+    unsigned int start_idx = addr_to_frame_idx(start);
+    unsigned int end_idx = addr_to_frame_idx(end);
+
+    /* align end_idx */
+    unsigned long long end_addr = (unsigned long long)end;
+    end_idx = (end_addr % FRAME_SIZE == 0) ? end_idx : end_idx + 1;
+
+    print_string(UITOHEX, "start addr: 0x", start_idx * FRAME_SIZE, 0);
+    print_string(UITOHEX, " | end addr: 0x", end_idx * FRAME_SIZE, 1);
+
+
+    while(start_idx < end_idx){
+        frames[start_idx].idx = start_idx;
+        frames[start_idx].free = 0;
+        frames[start_idx].order = -1;
+        frames[start_idx].chunk_level = -1;
+        start_idx++;
+    }
+}
+
+void frames_init(){  
+     for(unsigned int i = 0; i < FRAME_NUM; i++){
+         frames[i].free = 1;
+         INIT_LIST_HEAD(&frames[i].list);
+     }
+}
+
+
 void allocator_init(){
     freechunk_list_init();
+    frames_init();
+    memory_init();
 
     for(unsigned int i = 0; i <= MAX_BUDDY_ORDER; i++){
         INIT_LIST_HEAD(&buddy_list[i].list);
@@ -19,6 +70,7 @@ void allocator_init(){
     unsigned long long maxorder_frame_idx = (1 << MAX_BUDDY_ORDER);
 
     for(unsigned int i = 0; i < FRAME_NUM; i++){
+        if(frames[i].free == 0) continue;
         /*
          * add the max order frame in buddy list
          * if not max order frame, just init the info. 
@@ -98,7 +150,7 @@ void *release_redundant(Frame *left_frame, int use_order){
 
 int addr_to_frame_idx(void *addr){
     long long offset = (long long)addr - BUDDY_ADDR_START;
-    if(offset < 0 || offset > 0x10000000) return -1;
+    // if(offset < 0 || offset > 0x10000000) return -1;
     unsigned int idx = (unsigned int)(offset / FRAME_SIZE);
     return idx;
 }

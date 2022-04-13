@@ -51,7 +51,7 @@ void kfree(void *addr){
 
 
 void *chunk_alloc(unsigned int size){
-    if(size > FRAME_SIZE){
+    if(size >= FRAME_SIZE){
         uart_puts("[x] Alloc Chunk Error -> allocate size is over 4096KB, please use \"buddy_alloc\" function\n");
         return NULL;
     } 
