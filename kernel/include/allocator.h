@@ -8,8 +8,8 @@
 // #define BUDDY_ADDR_START    0x10000000
 // #define BUDDY_ADDR_END      0x20000000
 #define FRAME_SIZE          4096
-#define FRAME_NUM           ((BUDDY_ADDR_END-BUDDY_ADDR_START) / FRAME_SIZE) // 65536 frames
-#define MAX_BUDDY_ORDER     16      //log2(8192)
+#define FRAME_NUM           ((BUDDY_ADDR_END-BUDDY_ADDR_START) / FRAME_SIZE)
+#define MAX_BUDDY_ORDER     15
 
 typedef struct _Buddy {
     struct list_head list;
@@ -25,9 +25,13 @@ typedef struct _Frame {
     int chunk_level;
 }Frame;
 
+void startup_alloc();
+void all_allocator_init();
+void frames_init();
 void memory_init();
 void memory_reserve(void *start, void *end);
 void allocator_init();
+void buddy_init();
 void buddy_push(Frame *, Buddy *);
 void *buddy_pop(Buddy *, int);
 void *buddy_alloc(unsigned int);

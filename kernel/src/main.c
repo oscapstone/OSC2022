@@ -11,7 +11,7 @@
 
 int main(unsigned long dtb_base){
     uart_init();
-    allocator_init();    
+    all_allocator_init();    
     // buddy_debug();
     // chunk_debug();
     // kmalloc_debug();

@@ -5,12 +5,42 @@
 #include <string.h>
 #include <uart.h>
 
-Frame frames[FRAME_NUM];
-Buddy buddy_list[MAX_BUDDY_ORDER+1];
+Frame *frames;
+Buddy *buddy_list;
+// Frame frames[FRAME_NUM];
+// Buddy buddy_list[MAX_BUDDY_ORDER+1];
 
 extern unsigned long long _start;
 extern unsigned long long _end;
+extern FreeChunkList *freechunk_list;
 
+void all_allocator_init(){
+    startup_alloc();
+    freechunk_list_init();
+    frames_init();
+    memory_init();
+    buddy_init();
+}
+
+void startup_alloc(){
+    frames = (Frame *)simple_malloc(sizeof(Frame) * FRAME_NUM);
+    buddy_list = (Buddy *)simple_malloc(sizeof(Buddy) * (MAX_BUDDY_ORDER+1));
+    freechunk_list = (FreeChunkList *)simple_malloc(sizeof(FreeChunkList) * MAX_CHUNK_SIZE);
+
+    print_string(UITOHEX, "[*] Startup Alloca -> frames addr = 0x", (unsigned long long)frames, 0);
+    print_string(UITOHEX, " | buddy_list addr = 0x", (unsigned long long)buddy_list, 0);
+    print_string(UITOHEX, " | freechunk_list addr = 0x", (unsigned long long)freechunk_list, 1);
+}
+
+void frames_init(){  
+     for(unsigned int idx = 0; idx < FRAME_NUM; idx++){
+        INIT_LIST_HEAD(&frames[idx].list);
+        frames[idx].idx = idx;
+        frames[idx].free = 1;
+        frames[idx].order = 0;
+        frames[idx].chunk_level = -1;
+     }
+}
 
 void memory_init(){
     /* Spin tables for multicore boot (0x0000 - 0x1000) */
@@ -28,8 +58,6 @@ void memory_init(){
 }
 
 void memory_reserve(void *start, void *end){
-    // unsigned long long start_addr = (unsigned long long)start;
-    // unsigned long long end_addr = (unsigned long long)end;
     unsigned int start_idx = addr_to_frame_idx(start);
     unsigned int end_idx = addr_to_frame_idx(end);
 
@@ -47,22 +75,7 @@ void memory_reserve(void *start, void *end){
     }
 }
 
-void frames_init(){  
-     for(unsigned int idx = 0; idx < FRAME_NUM; idx++){
-        INIT_LIST_HEAD(&frames[idx].list);
-        frames[idx].idx = idx;
-        frames[idx].free = 1;
-        frames[idx].order = 0;
-        frames[idx].chunk_level = -1;
-     }
-}
-
-
-void allocator_init(){
-    freechunk_list_init();
-    frames_init();
-    memory_init();
-
+void buddy_init(){
     for(unsigned int i = 0; i <= MAX_BUDDY_ORDER; i++){
         INIT_LIST_HEAD(&buddy_list[i].list);
     }
@@ -105,6 +118,8 @@ void allocator_init(){
 
     print_buddy_list();
 }
+
+
 
 
 void *buddy_alloc(unsigned int size){
@@ -159,8 +174,7 @@ void *release_redundant(Frame *left_frame, int use_order){
 }
 
 int addr_to_frame_idx(void *addr){
-    long long offset = (long long)addr - BUDDY_ADDR_START;
-    // if(offset < 0 || offset > 0x10000000) return -1;
+    unsigned long long offset = (unsigned long long)addr;
     unsigned int idx = (unsigned int)(offset / FRAME_SIZE);
     return idx;
 }
@@ -265,10 +279,10 @@ void buddy_debug(){
     void *addr6 = buddy_alloc(0x1000);
     void *addr7 = buddy_alloc(0x10000);
     void *addr8 = buddy_alloc(0x1000);
-    for(int i = 0; i < 8; i++){
-        buddy_alloc(0x2000000);
-    }
-    buddy_alloc(0x10000000);
+    // for(int i = 0; i < 8; i++){
+    //     buddy_alloc(0x2000000);
+    // }
+    // buddy_alloc(0x10000000);
 
 
     buddy_free(addr2);
