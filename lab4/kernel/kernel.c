@@ -7,9 +7,9 @@
 void kernel_main(void)
 {
 	uart_init();
-	init_mm();
 	devtree_getaddr();
 	fdt_traverse(initramfs_callback);
+	init_mm_reserve();
 	uart_send_string("OSDI 2022 Spring\n");
 
 	shell_loop();

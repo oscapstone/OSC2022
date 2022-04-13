@@ -20,7 +20,7 @@ memzero:
 	cbnz   x1, memzero
 
 movesp:
-    mov    sp, #0x400000
+    mov    sp, #0x80000
     bl     kernel_main
 
 proc_hang: 

@@ -1,8 +1,8 @@
 #ifndef	_MM_H
 #define	_MM_H
 
-#define MEM_REGION_BEGIN    0x10000000
-#define MEM_REGION_END      0x20000000
+#define MEM_REGION_BEGIN    0x0
+#define MEM_REGION_END      0x3C000000
 #define PAGE_SIZE           4096
 #define MAX_ORDER           6 // largest: PAGE_SIZE*2^(MAX_ORDER)
 

@@ -16,5 +16,6 @@ SECTIONS
     . = ALIGN(16);
 
     __heap_start = .;
+    __kernel_end = .;
 
 }

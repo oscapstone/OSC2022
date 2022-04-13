@@ -10,6 +10,8 @@ static struct frame frame_array[(MEM_REGION_END-MEM_REGION_BEGIN)/PAGE_SIZE];
 static struct dynamic_pool pools[MAX_POOLS] = { {ALLOCABLE, 0, 0, 0, 0, {NULL}, NULL} };
 static unsigned int reserved_num = 0;
 static void* reserved_se[MAX_RESERVABLE][2] = {{0x0, 0x0}}; // expects to be sorted and addresses [,)
+extern char __kernel_end;
+static char *__kernel_end_ptr = &__kernel_end;
 
 void *malloc(unsigned int size) {
 
@@ -291,7 +293,8 @@ void init_mm_reserve() {
     max_size = PAGE_SIZE * pow(2, MAX_ORDER-1);
     n_frames = (MEM_REGION_END-MEM_REGION_BEGIN) / PAGE_SIZE;
 
-    //memory_reserve((void*)((MEM_REGION_BEGIN+MEM_REGION_END)/2), (void*)(MEM_REGION_END));
+    memory_reserve((void*)0x0, __kernel_end_ptr); // spin tables, kernel image
+    memory_reserve((void*)0x20000000, (void*)0x20000800); // hard code reserve initramfs
     
     for (unsigned int i=0; i<n_frames; i++) {
         frame_array[i].index = i;
