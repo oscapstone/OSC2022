@@ -16,6 +16,7 @@
 
 static char buffer[MAX_BUFFER_SIZE];
 static void* to_free[10] = {(void*)MEM_REGION_BEGIN};
+static void* to_freec[4] = {(void*)MEM_REGION_BEGIN};
 
 void read_cmd()
 {
@@ -60,15 +61,6 @@ void parse_cmd()
     else if (stringcmp(buffer, "cat") == 0) {
         cpio_cat();
     }
-    else if (stringcmp(buffer, "test_smalloc") == 0) {
-        char *str = simple_malloc(8);
-        for (int i=0; i<8; i++) {
-            str[i] = 'A' + i;
-        }
-        str[7] = '\0';
-        uart_send_string(str);
-        uart_send('\n');
-    }
     else if (stringcmp(buffer, "execute") == 0) {
         cpio_exec();
     }
@@ -85,12 +77,15 @@ void parse_cmd()
         }
     }
     else if (stringcmp(buffer, "cm") == 0) {
-        chunk_alloc(8);
-        chunk_alloc(8);
+        to_freec[0] = chunk_alloc(8);
+        to_freec[1] = chunk_alloc(8);
+        to_freec[2] = chunk_alloc(96); 
+        to_freec[3] = chunk_alloc(256); 
     }
     else if (stringcmp(buffer, "cf") == 0) {
-        chunk_free((void*)0x10000000);
-        chunk_free((void*)0x10000008);
+        for (int i=0; i<4; i++) {
+            chunk_free(to_freec[i]);
+        }
     }
     else if (stringcmp(buffer, "help") == 0) {
         uart_send_string("help:\t\tprint list of available commands\n");
@@ -99,7 +94,6 @@ void parse_cmd()
         uart_send_string("hwinfo:\t\tprint hardware information\n");
         uart_send_string("ls:\t\tlist initramfs files\n");
         uart_send_string("cat:\t\tprint file content in initramfs\n");
-        uart_send_string("test_smalloc:\ttest simple malloc\n");
         uart_send_string("execute:\trun program from cpio\n");
     }
     else 

@@ -16,6 +16,8 @@
 #define MAX_POOLS           8
 #define MIN_CHUNK_SIZE      8
 
+#define MAX_RESERVABLE      8
+
 struct frame {
     unsigned int index;
     int val;
@@ -44,5 +46,6 @@ void init_pool(struct dynamic_pool*, unsigned int);
 int register_chunk(unsigned int);
 void *chunk_alloc(unsigned int);
 void chunk_free(void *);
+void memory_reserve(void*, void*);
 
 #endif  /*_MM_H */

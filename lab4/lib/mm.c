@@ -8,6 +8,8 @@ static unsigned int max_size = 0;
 static struct frame* frame_list[MAX_ORDER] = {NULL};
 static struct frame* frame_array = NULL;
 static struct dynamic_pool pools[MAX_POOLS] = { {ALLOCABLE, 0, 0, 0, 0, {NULL}, NULL} };
+static unsigned int reserved_num = 0;
+static void* reserved_se[MAX_RESERVABLE][2] = {{0x0, 0x0}};
 
 void *malloc(unsigned int size) {
 
@@ -271,4 +273,14 @@ void chunk_free(void *address) {
     pool->free_head->next = old_head;
     pool->chunks_allocated--;
 
+}
+
+void memory_reserve(void* start, void* end) {
+    if (reserved_num >= MAX_RESERVABLE) {
+        printf("[error] Max reservable locations already reached.\n");
+        return;
+    }
+    reserved_se[reserved_num][0] = start;
+    reserved_se[reserved_num][1] = end;
+    reserved_num++;
 }
