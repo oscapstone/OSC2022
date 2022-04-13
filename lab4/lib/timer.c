@@ -72,19 +72,24 @@ void add_timer(void* callback, char* args, uint64_t timeout) {
     new_timer_event->callback = callback;
     new_timer_event->tval = get_absolute_time(timeout);
 
-    // set first event interrupt
+    // if the list is empty, set first event interrupt
     if (list_empty(timer_event_list)) set_absolute_timeout(new_timer_event->tval);
 
     // insert node
     struct list_head* curr;
-    bool inserted = false;
+    bool inserted = false, is_first_node = true;
     list_for_each(curr, timer_event_list) {
         if (new_timer_event->tval < ((timer_event_t*)curr)->tval) {
             list_add(&new_timer_event->node, curr->prev);
             inserted = true;
+            break;
         }
+        is_first_node = false;
     }
     if (!inserted) list_add_tail(&new_timer_event->node, timer_event_list);
+
+    // if the first element is updated, should renew the timeout
+    if (is_first_node) set_absolute_timeout(new_timer_event->tval);
 }
 
 void show_timer_list() {
