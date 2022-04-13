@@ -53,17 +53,53 @@ void frame_init() {
     for (uint32_t fpn = 0; fpn < FRAME_SIZE; fpn++) {
         INIT_LIST_HEAD(&frame_list[fpn].node);
         frame_list[fpn].is_used = false;
+        // to implement `memory_reserve()`, set all val to 0
         frame_list[fpn].val = 0;
         frame_list[fpn].page_fpn = fpn;
     }
-    frame_list[0].val = MAX_ORDER;
+    // frame_list[0].val = MAX_ORDER;
+
+    // handle reserved memory
+    // 1. find all reserved frames
+    memory_reserve(0x10001000, 0x10002001);  // use fpn 1, 2
+
+    // 2. merge the unused frames
+    bool modified = false;
+    uint32_t first_fpn = 0,
+             inc = 1,
+             buddy;
+    for (uint32_t ord = 0; ord < MAX_ORDER; ord++) {
+        for (uint32_t fpn = 0; fpn < FRAME_SIZE; fpn += inc) {
+            if (frame_list[fpn].val != ord) continue;
+
+            buddy = __find_buddy_pfn(fpn, ord);
+
+            if (frame_list[buddy].val != ord) continue;
+
+            // if the buddy is reserved, can't be mergered
+            if (frame_list[fpn].is_used || frame_list[buddy].is_used) continue;
+            frame_list[buddy].val = FRAME_IS_BUDDY;
+            frame_list[fpn].val += 1;
+            printf("[+] 0x%X, 0x%X, 0x%X" ENDL, fpn, buddy, frame_list[fpn].val);
+
+            // record the first modified fpn
+            if (!modified) first_fpn = fpn;
+            modified = true;
+        }
+        if (!modified) break;
+        modified = false;
+        inc <<= 1;
+        printf(ENDL);
+    }
 
     // Initialize free_area
     for (uint32_t order = 0; order < MAX_ORDER + 1; order++) {  // TODO: more check
         INIT_LIST_HEAD(&free_area[order].free_list);
     }
-
-    list_add(&frame_list[0], &free_area[MAX_ORDER]);
+    for (uint32_t fpn = 0; fpn < FRAME_SIZE; fpn++) {
+        if (frame_list[fpn].is_used || frame_list[fpn].val == FRAME_IS_BUDDY) continue;
+        list_add_tail(&frame_list[fpn], &free_area[frame_list[fpn].val]);
+    }
 
 #ifdef DEBUG_PAGE_ALLOC
     show_free_area();
@@ -173,9 +209,26 @@ frame_t* get_frame_from_freelist(uint32_t order) {
 
         // get the first element in the list
         ret = free_area[i].free_list.next;  // TODO: check @@
-        list_del_init(&free_area[i].free_list);
+        list_del_init(free_area[i].free_list.next);
 
         break;
     }
     return ret;
+}
+
+void memory_reserve(void* start, void* end) {
+#ifdef DEBUG_PAGE_ALLOC
+    printf("[+] memory_reserve(0x%X, 0x%X)" ENDL, start, end);
+#endif
+
+    uint32_t start_fpn = addr2fpn(start),
+             end_fpn = addr2fpn(end - 1);
+
+    printf("[+] %d ~ %d" ENDL, start_fpn, end_fpn);
+    for (uint32_t fpn = start_fpn; fpn <= end_fpn; fpn++) {
+        if (frame_list[fpn].is_used) {  // TODO: simple check
+            printf("[+] The reserved memory is used (0x%X ~ 0x%X)" ENDL, start, end);
+        }
+        frame_list[fpn].is_used = true;
+    }
 }

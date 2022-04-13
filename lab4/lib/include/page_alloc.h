@@ -9,9 +9,11 @@
 #define PAGE_SIZE 0x1000
 
 // TODO: better define
-#define FRAME_SIZE ((MEM_REGION_END - MEM_REGION_START) / PAGE_SIZE)  // 0x10000 -> 65536
+//#define FRAME_SIZE ((MEM_REGION_END - MEM_REGION_START) / PAGE_SIZE)  // 0x10000 -> 65536
+#define FRAME_SIZE 8
 // #define MAX_ORDER 16 - 1                                              // log2(0x10000) = 16
 #define MAX_ORDER 3
+#define FRAME_IS_BUDDY (MAX_ORDER + 1)
 
 //#define FRAME_VAL_X_MASK (1 << 8)  // The frame is allocated, if the bit is set
 
@@ -53,5 +55,6 @@ void frame_init();
 void* frame_alloc(uint32_t fp);
 void frame_free(void* addr);
 frame_t* get_frame_from_freelist(uint32_t order);
+void memory_reserve(void* start, void* end);
 
 #endif
