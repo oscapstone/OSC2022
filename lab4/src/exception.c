@@ -18,8 +18,7 @@ void sync_64_router(unsigned long long x0)
 }
 
 void irq_router(unsigned long long x0){
-    //看起來disbale_uart系列又會失效 只好先把nested irq關掉
-    lock();
+    //lock();
     //uart_printf("ena : %d\r\n", is_disable_interrupt());
 
     //uart_printf("exception type: %x\n",x0);
@@ -45,17 +44,29 @@ void irq_router(unsigned long long x0){
         // buffer read, write
         if (*AUX_MU_IIR & (0b01 << 1)) //can write
         {
+            //nested irq 打開會kmalloc會壞掉????
+            lock();
+            //uart_printf("uu %d %d \r\n", mini_uart_r_interrupt_is_enable(), mini_uart_w_interrupt_is_enable());
             disable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> mask device line (enable by handler)
             add_task(uart_interrupt_w_handler, UART_IRQ_PRIORITY);
             run_preemptive_tasks();
-            //uart_interrupt_w_handler();
+            unlock();
         }
         else if (*AUX_MU_IIR & (0b10 << 1)) // can read
         {
+            lock();
+            //不知道為啥關了還會進來 這種時候清除FIFO就可以關掉 (會有最多8個FIFO裡的byte消失)
+            if (!mini_uart_r_interrupt_is_enable())
+            {
+                *AUX_MU_IIR = 0xC2;
+                unlock();
+                return;
+            }
+            //uart_printf("dd %d %d \r\n", mini_uart_r_interrupt_is_enable(), mini_uart_w_interrupt_is_enable());
             disable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> mask device line (enable by handler)
             add_task(uart_interrupt_r_handler, UART_IRQ_PRIORITY);
             run_preemptive_tasks();
-            //uart_interrupt_r_handler();
+            unlock();
         }
         else
         {
@@ -64,17 +75,15 @@ void irq_router(unsigned long long x0){
 
     }else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ)  //from CNTPNS (core_timer)
     {
+        //這個好像也有可能重複進來 跟rx一樣
+        lock();
         core_timer_disable();   // lab 3 : advanced 2 -> mask device line
         add_task(core_timer_handler, TIMER_IRQ_PRIORITY);
         run_preemptive_tasks();
-        core_timer_handler();
-
-        // prevent core_timer_disable been enable by previous irq handler
-        lock();
         core_timer_enable(); // lab 3 : advanced 2 -> unmask device line
         unlock();
     }
-    unlock();
+    //unlock();
 }
 
 void invalid_exception_router(unsigned long long x0){
@@ -102,6 +111,7 @@ unsigned long long is_disable_interrupt()
 static unsigned long long lock_count = 0;
 void lock()
 {
+    //uart_printf("lock %d\r\n", lock_count);
     disable_interrupt();
     lock_count++;
 }

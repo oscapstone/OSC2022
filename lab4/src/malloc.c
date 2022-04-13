@@ -230,12 +230,6 @@ void *alloccache(unsigned int size)
     list_head_t *r = cachelist[order].next;
     list_del_entry(r);
 
-    /*
-    unsigned long long sp;
-    __asm__ __volatile__("mov %0, sp\n\t"
-                         : "=r"(sp));
-    uart_printf("sp : 0x%x\r\n", sp);
-    uart_printf("alloc cache order : %d\r\n", order);*/
 #ifdef DEBUG
     uart_printf("alloc cache order : %d\r\n", order);
 #endif
@@ -282,6 +276,11 @@ void *kmalloc(unsigned int size)
         dump_freelist_info();
         dump_cachelist_info();
 #endif
+        if (r >= 0x3c000000)
+        {
+            uart_printf("kmalloc weird return");
+            while (1);
+        }
         unlock();
         return r;
     }
@@ -293,8 +292,13 @@ void *kmalloc(unsigned int size)
     dump_cachelist_info();
     uart_printf("kmalloc ret 0x%x\r\n", r);
 #endif
-    unlock();
+    if(r>=0x3c000000)
+    {
+        uart_printf("kmalloc weird return");
+        while (1);
+    }
     //For cache
+    unlock();
     return r;
 }
 

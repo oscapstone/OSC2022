@@ -39,12 +39,14 @@ void core_timer_disable()
 
 void timer_event_callback(timer_event_t *timer_event)
 {
-
-    lock();
-    list_del_entry((struct list_head *)timer_event);              // delete the event
     ((void (*)(char *))timer_event->callback)(timer_event->args); // call the callback store in event
-    kfree(timer_event->args);                                     // kfree the arg space
+    list_del_entry((struct list_head *)timer_event);              // delete the event
+    //uart_putc('E');
+    //uart_printf("D 0x%x 0x%x\r\n", timer_event, timer_event->args);
+    kfree(timer_event->args); // kfree the arg space
+    //uart_putc('E');
     kfree(timer_event);
+    //uart_putc('F');
 
     //set interrupt to next time_event if existing
     if (!list_empty(timer_event_list))
@@ -55,7 +57,6 @@ void timer_event_callback(timer_event_t *timer_event)
     {
         set_core_timer_interrupt(10000); // disable timer interrupt (set a very big value)
     }
-    unlock();
 }
 
 void two_second_alert(char *str)
@@ -74,19 +75,24 @@ void two_second_alert(char *str)
 
 void core_timer_handler()
 {
+    lock();
     //disable_interrupt();
     if (list_empty(timer_event_list))
     {
         set_core_timer_interrupt(10000); // disable timer interrupt (set a very big value)
+        unlock();
         return;
     }
 
     timer_event_callback((timer_event_t *)timer_event_list->next); // do callback and set new interrupt
+    unlock();
 }
 
 // give a string argument to callback   timeout after seconds
 void add_timer(void *callback, unsigned long long timeout, char *args)
 {
+    lock();
+
     timer_event_t *the_timer_event = kmalloc(sizeof(timer_event_t)); //need to kfree by event handler
 
     // store argument string into timer_event
@@ -97,7 +103,6 @@ void add_timer(void *callback, unsigned long long timeout, char *args)
     the_timer_event->callback = callback;
     INIT_LIST_HEAD(&the_timer_event->listhead);
 
-    lock();
 
     // add the timer_event into timer_event_list (sorted)
     struct list_head *curr;
@@ -116,11 +121,12 @@ void add_timer(void *callback, unsigned long long timeout, char *args)
         list_add_tail(&the_timer_event->listhead, timer_event_list); // for the time is the biggest
     }
 
-    unlock();
 
     // set interrupt to first event
     set_core_timer_interrupt_by_tick(((timer_event_t *)timer_event_list->next)->interrupt_time);
+    unlock();
 }
+
 
 // get cpu tick add some second
 unsigned long long get_tick_plus_s(unsigned long long second)

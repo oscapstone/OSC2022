@@ -75,13 +75,9 @@ void run_preemptive_tasks(){
         list_del_entry((struct list_head *)the_task);
         int prev_task_priority = curr_task_priority;
         curr_task_priority = the_task->priority;
-        //there are two bugs in preemptive irq+kfree (After clockAlert many times) (too buggy I disable it now. TODO : fix it)
-        //enable_interrupt(); //do the tasks with interrupts enabled, (lab3 advanced 2 )
 
         unlock();
-        lock();
         run_task(the_task);
-        unlock();
         lock();
 
         curr_task_priority = prev_task_priority;

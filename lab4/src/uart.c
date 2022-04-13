@@ -359,22 +359,22 @@ void disable_mini_uart_interrupt()
 
 void enable_mini_uart_r_interrupt()
 {
-    *AUX_MU_IER |= 1L; // read interrupt
+    *AUX_MU_IER |= 1; // read interrupt
 }
 
 void enable_mini_uart_w_interrupt()
 {
-    *AUX_MU_IER |= 2L; // write interrupt
+    *AUX_MU_IER |= 2; // write interrupt
 }
 
 void disable_mini_uart_r_interrupt()
 {
-    *AUX_MU_IER &= ~(1L);
+    *AUX_MU_IER &= ~(1);
 }
 
 void disable_mini_uart_w_interrupt()
 {
-    *AUX_MU_IER &= ~(2L);
+    *AUX_MU_IER &= ~(2);
 }
 
 int mini_uart_r_interrupt_is_enable()
