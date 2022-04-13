@@ -60,6 +60,7 @@ void *malloc(size_t size) {
             struct block *ptr = block + len / BLOCK_SIZE;
             ptr->size = block->size - len;
             ptr->free = 1;
+            ptr->page_number = block->page_number;
             list_add(&ptr->list, &block->list);
             block->size = len - BLOCK_SIZE;
             block->free = 0;
