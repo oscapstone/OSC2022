@@ -9,6 +9,7 @@
 #define ALLOCABLE           0
 #define ALLOCATED           -1
 #define C_NALLOCABLE        -2
+#define RESERVED            -3
 
 #define NULL                0
 
@@ -47,5 +48,6 @@ int register_chunk(unsigned int);
 void *chunk_alloc(unsigned int);
 void chunk_free(void *);
 void memory_reserve(void*, void*);
+void init_mm_reserve();
 
 #endif  /*_MM_H */

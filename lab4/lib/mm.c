@@ -6,10 +6,10 @@
 static unsigned int n_frames = 0;
 static unsigned int max_size = 0;
 static struct frame* frame_list[MAX_ORDER] = {NULL};
-static struct frame* frame_array = NULL;
+static struct frame frame_array[(MEM_REGION_END-MEM_REGION_BEGIN)/PAGE_SIZE];
 static struct dynamic_pool pools[MAX_POOLS] = { {ALLOCABLE, 0, 0, 0, 0, {NULL}, NULL} };
 static unsigned int reserved_num = 0;
-static void* reserved_se[MAX_RESERVABLE][2] = {{0x0, 0x0}};
+static void* reserved_se[MAX_RESERVABLE][2] = {{0x0, 0x0}}; // expects to be sorted and addresses [,)
 
 void *malloc(unsigned int size) {
 
@@ -86,25 +86,13 @@ void free(void *address) {
 
     for (int i=target->val; i<MAX_ORDER; i++) {
         
-        unsigned int buddy = idx ^ pow(2, i);
+        unsigned int buddy = idx ^ (unsigned int)pow(2, i);
         struct frame* fr_buddy = &frame_array[buddy];
-        printf("[info] Index %d with buddy %d at order %d.\n", (int)idx, (int)buddy, (int)i+1);
+        printf("[info] Index %d at order %d, buddy %d at order %d state %d.\n", 
+                (int)idx, (int)i+1, (int)buddy, fr_buddy->val+1, fr_buddy->state);
 
-        if (i == MAX_ORDER-1 || fr_buddy->state == ALLOCATED) {
+        if (i < MAX_ORDER-1 && fr_buddy->state == ALLOCABLE && i== fr_buddy->val) {
             
-            target->val = i;
-            target->state = ALLOCABLE;
-            target->prev = NULL;
-            target->next = frame_list[i];
-            if (frame_list[i] != NULL)
-                frame_list[i]->prev = target;
-            frame_list[i] = target;
-            printf("[info] Frame index %d pushed to frame list of order %d.\n", 
-                (int)target->index, (int)i+1);
-            break;
-
-        } else {
-
             printf("[info] Merging from order %d. Frame indices %d, %d.\n", i+1, (int)buddy, (int)idx);
             
             if (fr_buddy->prev != NULL) {
@@ -131,7 +119,21 @@ void free(void *address) {
             
             printf("[info] Frame index of next merge target is %d.\n", (int)idx);
 
+        } else {
+
+            target->val = i;
+            target->state = ALLOCABLE;
+            target->prev = NULL;
+            target->next = frame_list[i];
+            if (frame_list[i] != NULL)
+                frame_list[i]->prev = target;
+            frame_list[i] = target;
+            printf("[info] Frame index %d pushed to frame list of order %d.\n", 
+                (int)target->index, (int)i+1);
+            break;
+
         }
+        
     } 
 
     printf("[info] Free finished.\n");
@@ -147,7 +149,6 @@ void free(void *address) {
 void init_mm() {
 
     n_frames = (MEM_REGION_END-MEM_REGION_BEGIN) / PAGE_SIZE;
-    frame_array = simple_malloc(n_frames*sizeof(struct frame));
     unsigned int mul = (unsigned int)pow(2, MAX_ORDER-1);
     printf("[info] Frame array start address 0x%x.\n", frame_array);
     for (unsigned int i=0; i<n_frames; i++) {
@@ -283,4 +284,90 @@ void memory_reserve(void* start, void* end) {
     reserved_se[reserved_num][0] = start;
     reserved_se[reserved_num][1] = end;
     reserved_num++;
+}
+
+void init_mm_reserve() {
+
+    max_size = PAGE_SIZE * pow(2, MAX_ORDER-1);
+    n_frames = (MEM_REGION_END-MEM_REGION_BEGIN) / PAGE_SIZE;
+
+    //memory_reserve((void*)((MEM_REGION_BEGIN+MEM_REGION_END)/2), (void*)(MEM_REGION_END));
+    
+    for (unsigned int i=0; i<n_frames; i++) {
+        frame_array[i].index = i;
+        frame_array[i].val = 0;
+        frame_array[i].state = ALLOCABLE;
+        frame_array[i].prev = NULL;
+        frame_array[i].next = NULL;
+    }
+
+    int j = 0;
+    for (unsigned int i=0; i<reserved_num; i++) {
+        for (; j<n_frames; j++) {
+            void *addr = (void*)MEM_REGION_BEGIN + PAGE_SIZE*j;
+            if (addr >= reserved_se[i][0] && addr < reserved_se[i][1]) {
+                frame_array[j].state = RESERVED;
+            }
+            if (addr >= reserved_se[i][1]) break;
+        }
+    }
+
+    for (int i=0; i<MAX_ORDER; i++) {
+        frame_list[i] = NULL;
+    }
+
+    for (unsigned int n=0; n<n_frames; n++) {
+
+        struct frame* target = &frame_array[n];
+        unsigned int idx = n;
+
+        if (target->state == RESERVED) continue;
+        if (target->state == C_NALLOCABLE) continue;
+
+        for (int i=target->val; i<MAX_ORDER; i++) {
+        
+            unsigned int buddy = idx ^ (unsigned int)pow(2, i);
+            struct frame* fr_buddy = &frame_array[buddy];
+
+            if (i < MAX_ORDER-1 && fr_buddy->state == ALLOCABLE && i== fr_buddy->val) {
+                
+                if (fr_buddy->prev != NULL) {
+                    fr_buddy->prev->next = fr_buddy->next;
+                } else {
+                    frame_list[fr_buddy->val] = fr_buddy->next;
+                }
+
+                if (fr_buddy->next != NULL) {
+                    fr_buddy->next->prev = fr_buddy->prev;
+                }
+
+                fr_buddy->prev = NULL;
+                fr_buddy->next = NULL;
+                fr_buddy->val = C_NALLOCABLE;
+                fr_buddy->state = C_NALLOCABLE;
+                target->val = C_NALLOCABLE;
+                target->state = C_NALLOCABLE;
+
+                if (fr_buddy->index < target->index) {
+                    idx = fr_buddy->index;
+                    target = fr_buddy;
+                }
+
+            } else {
+
+                target->val = i;
+                target->state = ALLOCABLE;
+                target->prev = NULL;
+                target->next = frame_list[i];
+                if (frame_list[i] != NULL)
+                    frame_list[i]->prev = target;
+                frame_list[i] = target;
+                break;
+
+            }
+            
+        } 
+
+    }
+
 }
