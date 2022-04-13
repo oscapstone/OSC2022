@@ -71,6 +71,12 @@ char read_uart(){
 }
 
 void write_int_uart(unsigned int s, bool newline){
+    if(s==0){
+        writec_uart('0');
+        if(newline)
+            writes_uart("\r\n");
+        return;
+    }
     char a[128];
     int i=0,n=s;
     while(n!=0){
