@@ -246,6 +246,7 @@ void merge(int index){
     frame[merge_index] = frame[index]+1;
     frame[index] = PAGE_NOT_ALLOCATE;
     merge(merge_index);
+    printf("merge page: %d and page: %d\n\r", index, merge_index);
   }else
     return;
 }
@@ -292,7 +293,11 @@ void print_free_frame_list(){
 
 
 void *malloc(size_t size){
+  size = size + 8 + sizeof(malloc_mem) % 8;
+  if(size % 8)
+    size = size + 8 - size%8;
   int page_request = size + 0x1000 - size%0x1000;
+  printf("request size: %d\n\r", size);
   if(!mem_alloc_page){
     alloc_page_to_mem(page_request);
   }
@@ -309,7 +314,6 @@ void *malloc(size_t size){
     }
     cur = cur->next;
   }
-
   /*  find the size in page */
   
   malloc_mem *page = (malloc_mem *)(cur->index * 0x1000 + top);
@@ -319,9 +323,11 @@ void *malloc(size_t size){
     if(page == last_addr)
       break;
   }
+  // printf("alloc or not: %d\n\r", page->allocted);
   if(page < last_addr){
     malloc_mem *last_or_not = (malloc_mem *)((unsigned long)page + page->size + sizeof(malloc_mem));
     page->allocted = 1;
+    // printf("alloc or not: %d\n\r", page->allocted);
     if(last_or_not == last_addr){
       if(cur->free >= size+sizeof(malloc_mem))
         cur->free = cur->free - size - sizeof(malloc_mem);
@@ -466,8 +472,9 @@ void alloc_page_to_mem(int request){
   page->total = request;
   page->free = request - sizeof(malloc_mem);
   page->next = NULL;
-  malloc_mem *page_init = (malloc_mem *)(page->index*request + top);
+  malloc_mem *page_init = (malloc_mem *)(page->index*0x1000 + top);
   page_init->allocted = 0;
+  // printf("request page size: %d \n\r", request);
   page_init->previous = 0;
   page_init->size = request - sizeof(malloc_mem);
   if(!mem_alloc_page){
