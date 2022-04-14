@@ -1,4 +1,6 @@
 #include "mbox.h"
+#include "uart.h"
+#include "string.h"
 
 unsigned int get_board_revision(volatile unsigned int mbox[36]){
     mbox[0] = 7 * 4; // buffer size in bytes
