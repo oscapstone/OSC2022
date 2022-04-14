@@ -2,7 +2,7 @@
 #include "mini_uart.h"
 #include "stdlib.h"
 #include "shell.h"
-
+#include "string.h"
 #define CORE0_TIMER_IRQ_CTRL ((volatile unsigned int*)(0x40000040))
 void init_timer(){
     // head->next = nullptr;
@@ -39,9 +39,16 @@ void set_expired_time(int after){
 }
 
 void add_timer(void (*callback)(char* s),char *message,int after){
+    //busy_wait_writes("Enter add timer",TRUE);
     timer* node ;
     unsigned long long time_count=0;
     unsigned long long time_freq=0;
+    // char* tmp_message = simple_malloc(strlen(message));
+    // for (int i = 0; i < strlen(message); i++)
+    // {
+    //     tmp_message[i] = message[i];
+    // }
+    
     if(head==nullptr){
         writes_nl_uart("Add new timer to null queue");
         node = (timer*)simple_malloc(sizeof(timer));
@@ -54,6 +61,7 @@ void add_timer(void (*callback)(char* s),char *message,int after){
         set_expired_time(after);
         enable_timer_interrupt();
     }else{
+        // busy_wait_writes("ADDing new timer busy2",TRUE);
         writes_nl_uart("Add new timer to non-null queue");
         timer* newNode = (timer*)simple_malloc(sizeof(timer));
         get_current_time(&time_count,&time_freq);

@@ -7,7 +7,7 @@
 #include "string.h"
 #include "timer.h"
 #include "task.h"
-#include "allocator.h"
+// #include "allocator.h"
 extern unsigned long _head_start_brk;
 
 uint32_t* cpio_addr;
@@ -28,25 +28,19 @@ int main(){
     init_uart_buf();
     init_timer();
     init_taskq();
-    init_frame_freelist();
+    // init_frame_freelist();
     *AUX_MU_IER_REG = 1; // 3 for RX, TX interrupt enable
     *IRQ_ENABLE1 = 1<<29;
 
-    // writes_uart("\r\n");
+    writes_uart("\r\n");
     // writes_uart("██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗\r\n");
     // writes_uart("██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝\r\n");
     // writes_uart("██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  \r\n");
     // writes_uart("██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  \r\n");
     // writes_uart("╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗\r\n");
     // writes_uart("╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
-    // uart_buf_writes_push("\r\n");
-    uart_buf_writes_push("██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗\r\n");
-    uart_buf_writes_push("██║ m  ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝\r\n");
-    uart_buf_writes_push("██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  \r\n");
-    uart_buf_writes_push("██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  \r\n");
-    uart_buf_writes_push("╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗\r\n");
-    uart_buf_writes_push(" ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
-    // uart_buf_writes_push("Hello World!\r\n");
+    
+    writes_uart("Hello World!\r\n");
     // asm volatile(
     //     "bl core_timer_enable\n\t"
     //     // "bl core_timer_handler\n\t"
@@ -80,21 +74,27 @@ int main(){
     // add_timer(writes_nl_uart,"HELLO2",7);
     // add_timer(writes_nl_uart,"HELLO3",10);
 
-    int got_freeaddr[10];
-    for (int i = 0; i < 10; i++)
-    {
-        unsigned int* f_addr;
-        f_addr = get_freeframe_addr(0x3000);
-        got_freeaddr[i]=f_addr;
-        writes_uart("Got address ");
-        writehex_uart((unsigned int)f_addr,TRUE);
-    }
-    for (int i = 0; i < 10; i++)
-    {
-        writes_uart("Free address ");
-        writehex_uart(got_freeaddr[i],TRUE);
-        free_frame(got_freeaddr[i]);
-    }
+    // unsigned int got_freeaddr[10];
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     unsigned int* f_addr;
+    //     f_addr = get_freeframe_addr(0x3000);
+    //     got_freeaddr[i]=f_addr;
+    //     writes_uart("Got address ");
+    //     writehex_uart((unsigned int)f_addr,TRUE);
+    // }
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     writes_uart("Free address ");
+    //     writehex_uart(got_freeaddr[i],TRUE);
+    //     free_frame(got_freeaddr[i]);
+    // }
+
+    // for (int i = 1; i < 100; i++)
+    // {
+    //     write_int_uart(getBestChunkSize(i),TRUE);
+    // }
+    
     
     // unsigned int* f_addr;
     // f_addr = get_freeframe_addr(0x1000);

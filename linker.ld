@@ -9,6 +9,7 @@ SECTIONS
     .bss : { *(.bss*) } 
     bss_end = .;
     _end = .;
+    . = 0x20000000;
     _head_start_brk = .;
 
 }

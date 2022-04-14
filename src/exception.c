@@ -55,7 +55,8 @@ void irq_entry(){
         
         if((*AUX_MU_IIR_REG & 0b0010)) //write interrupt
         {
-            *AUX_MU_IER_REG &= ~2;
+            // disable_interrupt();
+            *AUX_MU_IER_REG &= ~2; //disable write interrupt
             add_task(tx_interrupt_handler,INTERRUPT_PRIVILEGE_WRITE);
             if(curr_task_privilege<INTERRUPT_PRIVILEGE_WRITE)
                 return;
@@ -66,7 +67,8 @@ void irq_entry(){
         }
         else if(*AUX_MU_IIR_REG & 0b0100) // read interrupt
         {
-            *AUX_MU_IER_REG &= ~1;
+            // disable_interrupt();
+            *AUX_MU_IER_REG &= ~1; // disable read interrupt
             add_task(rx_interrupt_handler,INTERRUPT_PRIVILEGE_READ);
             if(curr_task_privilege<INTERRUPT_PRIVILEGE_READ)
                 return;
@@ -137,6 +139,7 @@ void Timer_interrupt_handler(){
          "=r" (time_freq)
         );
     //itr_timer_queue();
+    // busy_wait_writes("TIMER INT",TRUE);
     if(is_timerq_empty()){
         write_int_uart((int)(time_count/time_freq),0);
         writes_uart(" seconds After booting\r\n");
@@ -145,10 +148,12 @@ void Timer_interrupt_handler(){
         return;
     }
     else{
+        writes_uart("Current time is: ");
         write_int_uart((int)(time_count/time_freq),1);
         timer* h = get_head_timer();
         h->callback(h->message);
-
+        // writes_uart("DEBUG:");
+        // writes_nl_uart(h->message);
         if(h->next==nullptr){
             writes_uart("next timer is null\r\n");
             h = to_next_timer();

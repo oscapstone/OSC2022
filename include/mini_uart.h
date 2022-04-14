@@ -56,5 +56,7 @@ void uart_buf_write_push(char c);
 void uart_buf_writes_push(char *s);
 char uart_buf_read_pop();
 char uart_buf_write_pop();
+void busy_wait_writes(char *s,bool newline);
+void busy_wait_writec(char s);
 int is_empty_write();
 int is_empty_read();

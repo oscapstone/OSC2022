@@ -66,7 +66,8 @@ void read_command(){
             }
             else if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
                 uart_buf_write_push(c);
-                buffer[count++] = c; 
+                buffer[count++] = c;
+                buffer[count] = '\0';
             }
             
         }else{
@@ -208,12 +209,16 @@ char* get_para_by_num(int num,char *buffer){
         return nullptr;
     else
     {
-        if(end==0) end = strlen(buffer);
+        if(end==0) 
+            end = strlen(buffer);
         char *s = simple_malloc(end-start+1);
-        for (int i = start; i < end; i++)
+        s[end-start]='\0';
+        int i=0;
+        for (i = start; i < end; i++)
         {
             s[i-start] = buffer[i];
         }
+        s[i] = '\0';
         return s;
     }
     
@@ -268,10 +273,10 @@ void handle_command(enum Action action, char *buffer){
             writehex_uart(prog_addr,1);
             // writehex_uart(e0_stack);
             // writes_uart("\r\n");
-            asm volatile(
-                "bl core_timer_enable\n\t"
-                // "bl core_timer_handler\n\t"
-            );
+            // asm volatile(
+            //     "bl core_timer_enable\n\t"
+            //     // "bl core_timer_handler\n\t"
+            // );
             asm volatile(
                 // "mov x0, (1 << 31)\n\t" // EL1 uses aarch64
                 // "msr hcr_el21, x0\n\t" // Hypervisor Configuration Register, set RW to 1.
@@ -289,34 +294,80 @@ void handle_command(enum Action action, char *buffer){
             break;
         }
         case timeout:
+        {
             // writes_uart("Input message:");
             // char *s;
             // read_string(&s);
             // writes_uart("Input time:");
             // unsigned int after = read_int();
             
-            // unsigned long long time_count=0;
-            // unsigned long long time_freq=0;
-            // asm volatile(
-            //     "mrs %0,cntpct_el0\n\t"
-            //     "mrs %1,cntfrq_el0\n\t"
-            //     :"=r" (time_count),
-            //     "=r" (time_freq)
-            //     );
-            // writes_uart("Current time: ");
-            // write_int_uart(time_count/time_freq,1);
-            // add_timer(writes_nl_uart,s,after);
-            if(get_para_num(buffer)!=2)
+            // if(get_para_num(buffer)!=2)
+            // {
+            //     writes_uart("Please input at least 2 parameters\r\n");
+            //     return;
+            // }
+            // else{
+            //     //busy_wait_writes(buffer,TRUE);
+            //     //busy_wait_writes("add timer shell1",TRUE);
+            //     char *message = get_para_by_num(1,buffer);
+            //     //busy_wait_writes(message,TRUE);
+            //     //busy_wait_writes("add timer shell2",TRUE);
+            //     char *after = get_para_by_num(2,buffer);
+            //     //busy_wait_writes("add timer shell3",TRUE);
+            //     int after_int = str2int(after);
+            //     //busy_wait_writes(after,TRUE);
+            //     //busy_wait_writes("add timer shell4",TRUE);
+            //     add_timer(writes_nl_uart,"3",3);
+            // }
+            // timeout 3 3
+
+
+            int space_count=0;
+            int message_start=0,message_end=0,after_start=0,after_end=strlen(buffer);
+            for (int i = 0; i < strlen(buffer); i++)
             {
-                writes_uart("Please input at least 2 parameters\r\n");
-                return;
+                if(buffer[i]==' '){
+                    space_count++;
+                    if(message_start == 0){
+                        message_start = i+1;
+                    }
+                    else{
+                        message_end = i;
+                        after_start = i+1;
+                    }
+                }
             }
-            else{
-                char *message = get_para_by_num(1,buffer);
-                char *after = get_para_by_num(2,buffer);
-                add_timer(writes_nl_uart,message,str2int(after));
+            if(space_count!=2){
+                writes_uart("Error, please input 'timeout message after'\r\n");
+                break;
             }
+            //char* message_buffer = simple_malloc(message_end - message_start+1);
+            //char* after_buffer = simple_malloc(after_start - after_end+1);
+            char* message_buffer = simple_malloc(128);
+            char after_buffer[128];
+            int i,j;
+            for (i = message_start,j=0; i < message_end; i++,j++)
+            {
+                message_buffer[j] = buffer[i];
+            }
+            message_buffer[j] = '\0';
+            for (i = after_start,j=0; i < after_end; i++,j++)
+            {
+                after_buffer[j] = buffer[i];
+            }
+            after_buffer[j] = '\0';
+            // writes_nl_uart(buffer);
+            // writes_nl_uart(message_buffer);
+            // writes_nl_uart(after_buffer);
+            int after = str2int(after_buffer);
+            // write_int_uart(after,TRUE);
+            // write_int_uart(message_start,TRUE);
+            // write_int_uart(message_end,TRUE);
+            // write_int_uart(after_start,TRUE);
+            // write_int_uart(after_end,TRUE);
+            add_timer(writes_nl_uart,message_buffer,after);
             break;
+        }
         default:
             writes_uart("command not found: ");
             writes_uart(buffer);

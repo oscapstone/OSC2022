@@ -1,6 +1,7 @@
 #include "mini_uart.h"
 #include "stdlib.h"
 #include "exception.h"
+#include "string.h"
 void init_uart(){
     *AUXENB |=1; // enable mini UART, then mini uart register can be accessed.
     *AUX_MU_CNTL_REG = 0; // Disable transmitter and receiver during configuration.
@@ -120,12 +121,21 @@ void writes_nl_uart(char *s){
 }
 
 void writes_uart(char *s){
-    while(*s){
-        if(*s=='\n')
-            writec_uart('\r');
-        writec_uart(*s++);
-    }
+    // while(*s){
+    //     if(*s=='\n')
+    //         writec_uart('\r');
+    //     writec_uart(*s++);
+    // }
     
+    // disable_interrupt();
+    for (int i = 0; i < strlen(s); i++)
+    {
+        /* code */
+        if(s[i]=='\n')
+            uart_buf_write_push('\r');
+        uart_buf_write_push(s[i]);
+    }
+    // enable_interrupt();
 }
 void writehex_uart(unsigned int h,int newline){
     writes_uart("0x");
@@ -211,11 +221,20 @@ void uart_buf_writes_push(char *s){
     // writehex_uart(strlen(s),1);
     // writes_uart(s);
     // *AUX_MU_IER_REG = 1;
-    while(*s){
-        if(*s=='\n')
+    
+    for (int i = 0; i < strlen(s); i++)
+    {
+        /* code */
+        if(s[i]=='\n')
             uart_buf_write_push('\r');
-        uart_buf_write_push(*s++);
+        uart_buf_write_push(s[i]);
     }
+    
+    // while(*s){
+    //     if(*s=='\n')
+    //         uart_buf_write_push('\r');
+    //     uart_buf_write_push(*s++);
+    // }
     // *AUX_MU_IER_REG = 3;
 
 }
@@ -254,4 +273,18 @@ int is_empty_read(){
     }else{
         return 0; // return 0 if not empty.
     }
+}
+void busy_wait_writec(char s){
+    unsigned int c = s;
+    while(!(*AUX_MU_LSR_REG & 0x20)) asm volatile("nop");
+    *AUX_MU_IO_REG = c;
+}
+void busy_wait_writes(char *s,bool newline){
+    while(*s){
+        if(*s=='\n')
+            busy_wait_writec('\r');
+        busy_wait_writec(*s++);
+    }
+    busy_wait_writec('\r');
+    busy_wait_writec('\n');
 }
