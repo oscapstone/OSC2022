@@ -19,13 +19,7 @@ frame_free_node *free_node_table[FRAME_ARRAY_SIZE];  // 紀錄node位子
 frame_free_node *node_pool_head;              //指向pool裡可用的node
 frame_free_node node_pool[FRAME_ARRAY_SIZE]; //存可用的node,最多只會有 FRAME_ARRAY_SIZE 個 node . 
 
-uint64_t get_alloc_num() {
-    uint64_t num = 0;
-    for(uint64_t i = 0;i<FRAME_ARRAY_SIZE;i++)
-        if(frame_array[i] == 0xAA)
-            num++;
-    return num;
-}
+
 
 uint64_t getIndex(uint64_t addr) {
     uint64_t _addr = addr - MEMORY_BASE_ADDR;
@@ -37,6 +31,13 @@ uint64_t getIndex(uint64_t addr) {
     return _addr / page_size;
 }
 
+uint64_t get_alloc_num(){
+    uint64_t num = 0;
+    for(uint64_t i =0 ; i < FRAME_ARRAY_SIZE ; i++)
+        if(frame_array[i] == 0xAA)
+            num++;
+    return num;
+}
 
 
 void memory_init() {
@@ -116,13 +117,17 @@ uint64_t request_page(int size) {
         uart_printf("[ERROR] request_page(%d): illegal argument!\n", size);
         return 0;
     }
-
+    uint64_t *addr;
     frame_free_node *free_node = frame_free_lists[size];
     uint64_t index;
     if (free_node) {
         index = free_node->index;
         pop_front(&frame_free_lists[size]);
         frame_array[index] = 0xAA;
+        addr = (uint64_t *)(MEMORY_BASE_ADDR + ( index << 12)); 
+        for(uint64_t i = 0 ; i<64;i++){
+            *(addr+i) = 0;  
+        }
         uart_printf("[Page malloc] index: %ld, size: %dK\n", index, 4 << size);
     }
     else {
@@ -133,6 +138,10 @@ uint64_t request_page(int size) {
             frame_array[i] = 0xBB;
         frame_array[mid + 1] = size;
         frame_array[index] = 0xAA;
+        addr = (uint64_t *)(MEMORY_BASE_ADDR + ( index << 12)); 
+        for(uint64_t i = 0 ; i< 64;i++){
+            *(addr+i) = 0;  
+        }
         /*
         if (!node_pool_head)
             uart_printf("[ERROR] request_page(%d): no more nodes!\n", size);
@@ -298,7 +307,7 @@ void merge_page(uint64_t index, int size) {
 // ============================================================================
 void test_page(){
         const int test_size = 3;
-        const uint64_t test_address[] = {0x8001,0x9010,0x10100};    // covered index 2(4K), 3(4K), 6(8K)
+        const uint64_t test_address[] = {0x8001,0x9010,0xA100};    // covered index 8(4K), 9(4K), 10(8K)
         const int page_size[] = {0,0,1};
         //const uint64_t mask[] = {0x1fff, 0xfff, 0x1fff};
         for (int i = 0; i < test_size; ++i) {

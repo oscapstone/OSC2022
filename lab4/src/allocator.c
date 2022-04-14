@@ -197,6 +197,7 @@ void init_reserve() {
 void test_dyn(){
     const int test_size = 10;
     const int test_cases[] = {200,200,230,240,250,60,70,80,90,200};
+    //const int test_cases[] = {200};
     void *addrs[test_size];
     for (int i = 0; i < test_size; ++i) {
         addrs[i] = kmalloc(test_cases[i]);

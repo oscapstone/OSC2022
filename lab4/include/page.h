@@ -37,4 +37,5 @@ void print_allocated_page();
 void print_frame_array();
 void print_frame_free_lists();
 void test_page();
+uint64_t get_alloc_num();
 #endif
