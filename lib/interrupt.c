@@ -146,7 +146,6 @@ void exec_handler(interrupt_event_t* event_p)
     */
 }
 
-
 void enable_interrupt()
 {
     __asm__ __volatile__("msr daifclr, 0xf");

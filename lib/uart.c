@@ -85,7 +85,7 @@ void uart_prefix() {
 }
 
 // Show hex value
-void uart_hex(unsigned int d) {
+void uart_hex(uint64 d) {
     unsigned int n;
     int c;
     uart_puts("0x");
@@ -99,10 +99,16 @@ void uart_hex(unsigned int d) {
 }
 
 // Show dec value
-void uart_num(unsigned int d) {
+void uart_num(int64 d) {
     unsigned int n;
-    unsigned int s[16];
+    char s[16];
     int i;
+
+    if(d < 0) {
+        d *= -1;
+        uart_putc('-');
+    }
+
     for(i = 0; d > 0; i++) {
         n = d % 10 + 0x30;
         s[i] = n;
@@ -287,7 +293,7 @@ void uart_async_prefix() {
 }
 
 // Show hex value
-void uart_async_hex(unsigned int d) {
+void uart_async_hex(uint64 d) {
     unsigned int n;
     int c;
     uart_async_puts("0x");
@@ -300,8 +306,7 @@ void uart_async_hex(unsigned int d) {
     }
 }
 
-
-void uart_async_num(unsigned int d) {
+void uart_async_num(int64 d) {
     unsigned int n;
     unsigned int s[16];
     int i;
