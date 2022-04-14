@@ -19,3 +19,10 @@ uint64_t hex_to_int64(char* num){
     }
     return res;
 }
+
+uint64_t log2(uint64_t num) {
+  for (uint64_t i = 0; i < 64; i++) {
+    if (num == (1 << i)) return i;
+  }
+  return 0;
+}

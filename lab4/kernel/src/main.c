@@ -242,6 +242,10 @@ void command_set_timeout(char *args) {
   add_timer(timer_callback, args, duration);
 }
 
+void command_buddy_test() {
+    buddy_test();
+}
+
 void parse_command(char * buffer)
 {
     if ( !strcmp(buffer, "help")) command_help();
@@ -254,8 +258,8 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "user")) command_load_user_program();
     else if ( !strcmp(buffer, "puts")) uart_async_puts("Test Message!\n");
     else if ( !strcmp(buffer, "timer")) core_timer_enable();
-    else if ( !strcmp(buffer, "timer")) core_timer_enable();
     else if ( !strncmp(buffer, "setTimeout", 10)) command_set_timeout(&buffer[11]);
+    else if ( !strcmp(buffer, "bd test")) command_buddy_test();
     else command_not_found(buffer);
 }
 
@@ -264,6 +268,7 @@ void main()
 {
     // set up serial console
     uart_init();
+    buddy_init();
     //welcome message
     uart_puts("*****************************\r\n");
     uart_puts("*       welcome OSC2022     *\r\n");
