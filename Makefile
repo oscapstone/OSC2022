@@ -2,7 +2,7 @@ ARMGNU ?= aarch64-linux-gnu
 
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
-CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
+CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles -g -O0
 
 DEVPATH ?= /dev/ttyUSB0
 SDCPATH ?= /dev/sdc1
@@ -13,7 +13,7 @@ start.o: start.S
 	$(ARMGNU)-gcc $(CFLAGS) -c start.S -o start.o
 
 %.o: %.c
-	$(ARMGNU)-gcc $(CFLAGS) -c -g $< -o $@
+	$(ARMGNU)-gcc $(CFLAGS) -c $< -o $@
 
 kernel8.img: start.o $(OBJS)
 	$(ARMGNU)-ld -nostdlib -nostartfiles start.o $(OBJS) -T link.ld -o kernel8.elf
@@ -28,11 +28,8 @@ cpio:
 run:
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
-rune:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -d int
-
 gdb:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -d int -S -s
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -S -s
 
 dd:
 	sudo mount $(SDCPATH) /media

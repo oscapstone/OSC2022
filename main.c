@@ -1,7 +1,7 @@
 #include "uart.h"
 #include "devicetree.h"
 #include "shell.h"
-#include "exception.h"
+#include "mem.h"
 
 void main() {
     // set up serial console
@@ -12,9 +12,7 @@ void main() {
             printf("error no cpio\n");
     // say hello
     // uart_puts("Hello World!\n");
-
-    enable_current_interrupt();
-    
+    init_buddy();
     // start shell
     shell();
 }

@@ -6,7 +6,6 @@
 #include "mem.h"
 #include "devicetree.h"
 #include "utils.h"
-#include "exception.h"
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -40,8 +39,6 @@ void exec_help() {
     uart_puts("ls\t: list all archives\n");
     uart_puts("cat\t: cat archive data\n");
     uart_puts("lsfdt\t: traverse fdt\n");
-    uart_puts("load\t: load archive data\n");
-    uart_puts("timeout\t: set timeout\n");
     uart_puts("reboot\t: reboot the device\n");
 }
 
@@ -57,40 +54,9 @@ void exec_cat() {
     cat_file();
 }
 
-void exec_load() {
-    load_file();
-}
-
 void exec_lsfdt() {
     if (fdt_traverse(initramfs_callback))
             printf("flattened devicetree error\n");
-}
-
-void exec_timeout(char *command_string) {
-    char message[100]; 
-    unsigned int duration = 0;
-    int i = 8;
-    while (command_string[i]) {
-        duration = duration*10 + (int)command_string[i] - (int)'0';
-        i++;
-    }
-    i++;
-    int j = 0;
-    while (command_string[i]) {
-        message[j] = command_string[i];
-        i++;
-        j++;
-    }
-    message[j++] = '\n';
-    message[j] = 0;
-	// unsigned long timer;
-	// timer = get_time10();
-	// printf("executed time: %d.%ds\n", timer/10, timer%10);
-    // printf("duration: 5\n");
-    async_uart_puts(message);
-    set_time(duration);
-    enable_timer_interrupt();
-
 }
 
 void exec_testmem() {
@@ -99,10 +65,6 @@ void exec_testmem() {
 
 void exec_checkmem() {
     printf(mem);
-}
-
-void exec_testasync() {
-    test_async_write();
 }
 
 void command_not_found(char* s) {
@@ -172,18 +134,12 @@ void parse_command(char* command_string) {
         exec_ls();
     else if (!strcmp(command_string, "cat"))
         exec_cat();
-    else if (!strcmp(command_string, "load"))
-        load_file();
     else if (!strcmp(command_string, "testmem"))
         exec_testmem();
     else if (!strcmp(command_string, "checkmem"))
         exec_checkmem();
     else if (!strcmp(command_string, "lsfdt"))
         exec_lsfdt();
-    else if (!strcmp(command_string, "timeout"))
-        exec_timeout(command_string);
-    else if (!strcmp(command_string, "testasync"))
-        exec_testasync();   
     else if (!strcmp(command_string, "mbox_board_revision"))
         mbox_board_revision();
     else if (!strcmp(command_string, "mbox_arm_memory"))
