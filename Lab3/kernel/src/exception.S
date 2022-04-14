@@ -54,7 +54,7 @@ exception_vector_table:
     .align 7
     
     // EL1 -> EL1 
-    b _sync_handler // not used???
+    b _sync_handler // kernel exceptions
     .align 7
     b _el1_to_el1_irq_handler  // uart and EL1 timer interrupt
     .align 7

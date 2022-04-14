@@ -33,6 +33,7 @@ void shell_async_puts(char* args);
 void shell_test(char* args);
 void shell_settimeout(char* args);
 void shell_events(char* args);
+void shell_buddy_test(char* args);
 
 commads cmd_list[]=
 {
@@ -48,7 +49,8 @@ commads cmd_list[]=
     {.cmd="async-puts", .help="uart async send test", .func=shell_async_puts},
     {.cmd="test", .help="test your command here", .func=shell_test},
     {.cmd="timeout", .help="setTimeout MESSAGE SECONDS", .func=shell_settimeout},
-    {.cmd="events", .help="show all timeout events", .func=shell_events}
+    {.cmd="events", .help="show all timeout events", .func=shell_events},
+    {.cmd="buddy", .help="buddy memory system test", .func=shell_buddy_test}
 };
 
 
@@ -294,12 +296,14 @@ void shell_settimeout(char* args){
 
     add_timer(print_message, timeout_message, timeout_time);
 
-    //core_timer_enable();
-    //set_next_timer(timeout);
 }
 
 void shell_events(char* args){
     show_all_events();
+}
+
+void shell_buddy_test(char* args){
+    buddy_test();
 }
 
 #endif

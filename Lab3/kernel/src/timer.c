@@ -119,7 +119,8 @@ void add_timeout_event(timeout_event* new_event){
         prev_event->next_event = new_event;
         new_event->next_event = curr_event;
       }
-      update_event_time(curr_event, -1 * new_event->queue_time);
+      //update_event_time(curr_event, -1 * new_event->queue_time);
+      curr_event->queue_time -= new_event->queue_time;
       break;
     }else{
       //print_s("minus wait time\n");

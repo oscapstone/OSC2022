@@ -66,13 +66,15 @@ void main()
 
     // set up serial console
     uart_init();
+    // buddy system init
+    buddy_init();
     // say hello
     uart_puts("Wellcome!\r\n");
     // enables interrupt in EL1 (for uart async IO)
     enable_interrupt(); // msr DAIFClr, 0xf
 
     head_event = 0;
-    
+
     while(1) {
         // echo everything back
         clear_buffer(input_buffer, BUFFER_LEN);

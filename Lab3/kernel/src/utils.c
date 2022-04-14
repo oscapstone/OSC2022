@@ -63,3 +63,8 @@ uint64_t log2(uint64_t num) {
   }
   return 0;
 }
+
+void bp(char*msg){
+  print_s(msg);
+  print_s("\n");
+}
