@@ -40,10 +40,10 @@ void printf_init(PRINT_FPTR pf)
         return value;                                  \
     }
 
-uint64_t strto(lu, uint64_t);
-int64_t strto(l, int64_t);
-uint32_t strto(u, uint32_t);
-int32_t strto(i, int64_t);
+uint64_t strto(lu, uint64_t); /* strtolu */
+uint32_t strto(u, uint32_t);  /* strtou */
+int64_t strto(l, int64_t);    /* strtol */
+int32_t strto(i, int64_t);    /* strtoi */
 
 /* Only support base 10 and 16 now */
 #define tostr(_name_, _type_)                         \
@@ -81,10 +81,10 @@ int32_t strto(i, int64_t);
         return i;                                     \
     }
 
-int tostr(lu, uint64_t);
-int tostr(l, int64_t);
-int tostr(u, uint32_t);
-int tostr(i, int32_t);
+int tostr(lu, uint64_t); /* lutostr */
+int tostr(u, uint32_t);  /* utostr */
+int tostr(l, int64_t);   /* ltostr */
+int tostr(i, int32_t);   /* itostr */
 
 /**
  * Only support some common formats:
@@ -174,7 +174,7 @@ int sprintf(char *buf, const char *fmt, ...)
 
 int printf(const char *fmt, ...)
 {
-    char buf[0x100] = {0};
+    char buf[0x200] = {0};
     int count = 0;
     va_list args;
 
