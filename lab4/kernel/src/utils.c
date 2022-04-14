@@ -26,3 +26,18 @@ uint64_t log2(uint64_t num) {
   }
   return 0;
 }
+uint64_t align_up(uint64_t addr, uint64_t alignment) {
+  return (addr + alignment - 1) & (~(alignment - 1));
+}
+
+uint64_t align_up_exp(uint64_t n) {
+  n--;
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  n |= n >> 32;
+  n++;
+  return n;
+}

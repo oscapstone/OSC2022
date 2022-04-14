@@ -29,6 +29,8 @@ void command_help()
     uart_puts("user\t\t: load and run a user program in the initramfs\n");    
     uart_puts("timer\t\t: core_timer_enable\n");    
     uart_puts("puts\t\t: async_puts Test Message\n");    
+    uart_puts("buddy test\t: test for buddy system\n");
+    uart_puts("dma test \t: test for dynamic memory allocation\n");
     uart_puts("setTimeout [MESSAGE] [SECONDS]\t: prints MESSAGE after SECONDS\n");
 }
 
@@ -245,6 +247,9 @@ void command_set_timeout(char *args) {
 void command_buddy_test() {
     buddy_test();
 }
+void command_dma_test() { 
+    dma_test();
+}
 
 void parse_command(char * buffer)
 {
@@ -259,7 +264,8 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "puts")) uart_async_puts("Test Message!\n");
     else if ( !strcmp(buffer, "timer")) core_timer_enable();
     else if ( !strncmp(buffer, "setTimeout", 10)) command_set_timeout(&buffer[11]);
-    else if ( !strcmp(buffer, "bd test")) command_buddy_test();
+    else if ( !strcmp(buffer, "buddy test")) command_buddy_test();
+    else if ( !strcmp(buffer, "dma test")) command_dma_test();
     else command_not_found(buffer);
 }
 
