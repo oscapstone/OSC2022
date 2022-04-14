@@ -1,7 +1,7 @@
 #ifndef __CPIO__
 #define __CPIO__
 
-#define __USE_QEMU__
+
 
 #ifdef __USE_QEMU__
 #define CPIO_ADDR  ((char *)0x8000000) // qemu

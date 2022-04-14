@@ -100,6 +100,7 @@ frame_free_node *get_page_with_slot(int size) {
         uint64_t index = GET_PAGE_INDEX(addr);
         add_to_list(&allocated_pages, index);
         page = allocated_pages;
+        clear_4K_page(page->index);
     }
     return page;
 }

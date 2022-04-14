@@ -36,6 +36,7 @@ uint64_t getIndex(uint64_t addr, int size);
 frame_free_node *get_free_node();
 void return_free_node(frame_free_node *node);
 uint64_t get_allocated_num();
+void clear_4K_page(uint64_t index);
 
 void print_frame_array();
 void print_frame_free_lists();

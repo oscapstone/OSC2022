@@ -14,11 +14,20 @@ proc_hang:
 
 master:
 	bl from_el2_to_el1
-
     ldr x0, =exception_table	// setup interrupt vector base
     msr vbar_el1, x0
 
 	mov sp, #0x800000
+
+	ldr     x1, =__bss_start
+    ldr     w2, =__bss_size
+memzero:  
+	cbz     w2, main
+    str     xzr, [x1], #8
+    sub     w2, w2, #1
+    b    memzero
+
+main:
 	bl	kernel_main		// Perform an unconditional branch and store the return address in x30
 	b 	proc_hang		// Should never come here
 

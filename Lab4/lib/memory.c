@@ -227,6 +227,13 @@ uint64_t get_allocated_num() {
     return cnt;
 }
 
+/* clear first 64 bytes */
+void clear_4K_page(uint64_t index) {
+    uint64_t *addr = (uint64_t*)GET_PAGE_ADDR(index);
+    addr[0] = 0;
+}
+
+
 void print_frame_array() {
     uart_printf("frame_array: ");
     for (uint64_t i = 0; i < 8; ++i) {

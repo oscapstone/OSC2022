@@ -91,7 +91,7 @@ void parse_command() {
         const int test_size = 3;
         const uint64_t test_address[] = {0x2001, 0x3010, 0x6100};    // covered index 2(4K), 3(4K), 6(8K)
         const int page_size[] = {0, 0, 1};
-        const uint64_t mask[] = {0x111, 0x111, 0x1111};
+        const uint64_t mask[] = {0xFFF, 0xFFF, 0x1FFF};
         for (int i = 0; i < test_size; ++i) {
             reserve_page(page_size[i], test_address[i]);  
             print_frame_array();
