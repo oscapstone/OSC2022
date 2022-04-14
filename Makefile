@@ -1,6 +1,6 @@
 ARMGNU ?= aarch64-linux-gnu
 
-COPS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g 
+COPS = -Wall -nostdlib -nostartfiles -Iinclude -g
 ASMOPS = -Iinclude 
 
 BUILD_DIR = build
@@ -41,7 +41,12 @@ remote:
 	screen /dev/ttyUSB0 115200
 
 debug:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -S -s --dtb bcm2710-rpi-3-b-plus.dtb
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -S -s --dtb bcm2710-rpi-3-b-plus.dtb -serial null -serial stdio -initrd initramfs.cpio
 
 gdb:
 	aarch64-gdb build/kernel8.elf
+
+filesystem:
+	cd rootfs;find . | cpio -o -H newc > ../initramfs.cpio
+	
+

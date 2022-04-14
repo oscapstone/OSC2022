@@ -1,23 +1,41 @@
-#include "mm.h"
+.section ".text.relocate"
+
+.global _relocate
+
+_relocate:
+    mov x11, x0
+    // get cpu id
+    mrs     x1, MPIDR_EL1
+    and     x1, x1, #3
+    cbz     x1, 2f
+    // if cpu_id > 0, stop
+1:
+    wfe
+    b       1b
+    // if cpu_id == 0
+2:
+    // set stack pointer
+    ldr     x1, =__boot_loader
+    mov     sp, x1
+
+    // clear bss
+    ldr     x1, =__bss_start
+    ldr     x2, =__bss_size
+3:  cbz     x2, 4f
+    str     xzr, [x1], #8
+    sub     x2, x2, #1
+    cbnz    x2, 3b
+
+4:  bl      relocate
 
 .section ".text.boot"
 
-.globl _start
+.global _start
+
 _start:
-	mrs	x0, mpidr_el1		
-	and	x0, x0,#0xFF		// Check processor id
-	cbz	x0, master		// Hang for all non-primary CPU
-	b	proc_hang
-
-proc_hang: 
-	b 	proc_hang
-
-master:
-	adr	x0, bss_begin
-	adr	x1, bss_end
-	sub	x1, x1, x0
-	bl 	memzero
-
-	mov	sp, #LOW_MEMORY 
-	bl	kernel_main
-	b 	proc_hang		// should never come here
+    // jump to main function in C
+    bl      main
+    // halt this core if return
+1:
+    wfe
+    b       1b

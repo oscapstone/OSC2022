@@ -3,6 +3,7 @@
 #include "cpio.h"
 #include "test.h"
 #include "devicetree.h"
+#include "buddy.h"
  
 void input_buffer_overflow_message(char *str){
     uart_send_string("input buffer overflow message\n");
@@ -18,7 +19,11 @@ void command_help(){
     uart_send_string("cat\t: cat\r\n");
     uart_send_string("test alloc\t: test alloc\r\n");
     uart_send_string("fdt_traverse\t: fdt_traverse\r\n");
-    uart_send_string("\r\n");
+    uart_send_string("exec\t: exec FILENAME\r\n");
+    uart_send_string("settimeout\t: settimeout MESSAGE SECONDS\r\n");
+    uart_printf("test\t: test buddy print\n");
+    uart_printf("test1\t; test dynamic alloc\n");
+	uart_send_string("\r\n");
 }
 
 void command_hello(){
@@ -53,3 +58,24 @@ void command_test_alloc(){
 void command_fdt_traverse(){
 	fdt_traverse();
 }
+
+void command_lab3_basic_1(char *str){
+	lab3_basic_1(str);
+}
+
+void command_settimeout(char *str){
+	char *message = strchr(str, ' ') + 1;
+	char *end_message = strchr(message, ' ');
+	*end_message = '\0';
+	char *second = end_message + 1;
+	add_timer(uart_send_string, atoi(second) ,message);
+}
+
+void command_test_buddy_print(){
+	test_buddy_print();
+}
+
+void command_test_dynamic_alloc_print(){
+	test_dynamic_print();
+}
+

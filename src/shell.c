@@ -87,6 +87,18 @@ void shell_command(char* str){
     else if(!strcmp(str,"fdt_traverse")){
     	command_fdt_traverse();
     }
+    else if(!strcmp_len(str,"exec",4)){
+    	command_lab3_basic_1(str);
+    }
+    else if(!strcmp_len(str, "settimeout", 10)){
+    	command_settimeout(str);
+    }
+	else if(!strcmp(str,"test")){
+		command_test_buddy_print();
+	}
+	else if(!strcmp(str,"test1")){
+		test_dynamic_print();
+	}
     else{
         command_not_found();
     }

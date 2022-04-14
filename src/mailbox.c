@@ -65,3 +65,37 @@ void mailbox_vc_memory(){
     uart_send_string("\r\n");
     
 }
+
+unsigned int get_mailbox_vc_memory(){
+    unsigned int __attribute__((aligned(16))) mailbox[8];
+    mailbox[0] = 8*4;
+    mailbox[1] = MAILBOX_CODE_BUF_REQ;
+    // tags begin    
+    mailbox[2] = MAILBOX_TAG_GET_VC_MEMORY;
+    mailbox[3] = 8;
+    mailbox[4] = MAILBOX_CODE_TAG_REQ;
+    mailbox[5] = 0;
+    mailbox[6] = 0;
+    mailbox[7] = 0x0;
+    // tags end
+    mailbox_call(mailbox, 8);
+    
+    return mailbox[5];
+}
+unsigned int get_mailbox_vc_memory_size(){
+    unsigned int __attribute__((aligned(16))) mailbox[8];
+    mailbox[0] = 8*4;
+    mailbox[1] = MAILBOX_CODE_BUF_REQ;
+    // tags begin    
+    mailbox[2] = MAILBOX_TAG_GET_VC_MEMORY;
+    mailbox[3] = 8;
+    mailbox[4] = MAILBOX_CODE_TAG_REQ;
+    mailbox[5] = 0;
+    mailbox[6] = 0;
+    mailbox[7] = 0x0;
+    // tags end
+    mailbox_call(mailbox, 8);
+    
+    return mailbox[6];
+    
+}

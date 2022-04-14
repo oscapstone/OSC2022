@@ -2,6 +2,7 @@
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
 #include "string.h"
+#include "printf.h"
 typedef unsigned long uint32_t;
 void uart_send ( char c )
 {
@@ -76,6 +77,20 @@ void uart_print_uint32_t(uint32_t i){
 	char str[128] = {0};
 	uitoxstr(i, str);
 	uart_send_string(str);
+}
+
+void uart_printf(char *fmt, ...){
+	__builtin_va_list args;
+	__builtin_va_start(args, fmt);
+
+	extern volatile unsigned char _va_start; // defined in linker
+	char* s = (char*) &_va_start;
+	vsprintf(s, fmt, args);
+	
+	while(*s){
+		if (*s == '\n') uart_send('\r');
+		uart_send(*s++);
+	} 
 }
 
 void uart_init ( void )

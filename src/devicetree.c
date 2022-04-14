@@ -41,6 +41,10 @@ void init_dtb(){
 	dtb_base = x11;
 }
 
+unsigned int get_dtb_address(){
+	return (unsigned int)dtb_base;
+}
+
 void print_header_info(char * dtb_base, fdt_header_type * fdt_header){
     uart_send_string("dtb_base: ");
     uart_print_long(dtb_base);
