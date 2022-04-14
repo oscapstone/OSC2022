@@ -25,6 +25,8 @@ SECTIONS
         *(.bss)
     } >DATA
     _bss_end = .;
+    _kernel_reserved_memory_start = ORIGIN(CODE);
+    _kernel_reserved_memory_end = ORIGIN(RAM) + LENGTH(RAM);
     _heap_start = ORIGIN(RAM);
     _heap_end = ORIGIN(RAM) + 4M + 512K;
     _stack_end = ORIGIN(RAM) + LENGTH(RAM);

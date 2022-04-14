@@ -67,8 +67,13 @@ int dtb_print_callback(char* node, const char *name, int depth, void *data)
         uart_print(prop->name);
         uart_print(" len: 0x");
         uart_print_hex(prop->len);
-        uart_print(" value[:4]: 0x");
-        uart_putshex(fdt32_ld((uint32_t*)prop->value));
+        //uart_print(" value[:4]: 0x");
+        uart_print(" value:");
+        for(int i=0;i<((((int32_t)prop->len-1)>>2)+1);i++){
+            uart_print(" 0x");
+            uart_print_hex(fdt32_ld(((uint32_t*)prop->value)+i));
+        }
+        uart_puts("");
     }
     return 0;
 }
@@ -125,7 +130,41 @@ void setTimeout()
 void main()
 {
     char buf[0x100];
+    kmalloc_init();
     uart_init();
+    initrd_init();
+
+    void *test_page1 = buddy_alloc(3);
+    void *test_page2 = buddy_alloc(1);
+    void *test_page3 = buddy_alloc(5);
+    void *test_page4 = buddy_alloc(2);
+    void *test_page5 = buddy_alloc(1);
+    buddy_free(test_page1);
+    buddy_free(test_page2);
+    buddy_free(test_page3);
+    buddy_free(test_page4);
+    buddy_free(test_page5);
+
+    test_page1 = buddy_alloc(3);
+    test_page2 = buddy_alloc(1);
+    test_page3 = buddy_alloc(5);
+    test_page4 = buddy_alloc(2);
+    test_page5 = buddy_alloc(1);
+
+    void *test_kmalloc1 = kmalloc(0x18);
+    void *test_kmalloc2 = kmalloc(0x23);
+    void *test_kmalloc3 = kmalloc(0x128);
+    void *test_kmalloc4 = kmalloc(0x220);
+    void *test_kmalloc5 = kmalloc(0x30);
+
+    kfree(test_kmalloc1);
+    test_kmalloc1 = kmalloc(0x1f);
+    kfree(test_kmalloc4);
+    test_kmalloc4 = kmalloc(0x130);
+    kfree(test_kmalloc4);
+    kfree(test_kmalloc3);
+    test_kmalloc3 = kmalloc(0x150);
+    test_kmalloc4 = kmalloc(0x20010);
 
     uart_puts("Boot!!!");
     //uart_puts("Shell");
