@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <uart.h>
+#include <cpio.h>
 
 Frame *frames;
 Buddy *buddy_list;
@@ -12,6 +13,9 @@ Buddy *buddy_list;
 
 extern unsigned long long _start;
 extern unsigned long long _end;
+extern unsigned long long CPIO_BASE_START;
+extern unsigned long long CPIO_BASE_END;
+
 extern FreeChunkList *freechunk_list;
 
 void all_allocator_init(){
@@ -50,6 +54,10 @@ void memory_init(){
     /* Kernel image in the physical memory*/
     uart_puts("[*] Memory Reserve(Kernel image) -> ");
     memory_reserve((void *)&_start, (void *)&_end);
+
+     /* Kernel image in the physical memory*/
+    uart_puts("[*] Memory Reserve(Initramfs) -> ");
+    memory_reserve((void *)CPIO_BASE_START, (void *)CPIO_BASE_END);
 
     /* Simple malloc in the physical memory*/
     uart_puts("[*] Memory Reserve(Simple malloc) -> ");
@@ -130,7 +138,7 @@ void *buddy_alloc(unsigned int size){
             Frame *alloca_frame = (Frame *)buddy_pop(&buddy_list[i], use_order);
             unsigned long long alloca_addr = alloca_frame->idx * FRAME_SIZE + BUDDY_ADDR_START;
             print_use_frame(size, alloca_frame->idx, use_frames, use_order);
-            print_buddy_list();
+            // print_buddy_list();
             // memset((void *)alloca_addr, '\0', (1 << alloca_frame->order) * FRAME_SIZE);
             return (void *)alloca_addr;
         }
@@ -200,7 +208,7 @@ void buddy_free(void *addr){
         // no buddy_frame = the init status
         if(buddy_frame != NULL) 
             list_add(&frames[target_frame->idx].list, &buddy_list[target_frame->order].list);
-        print_buddy_list();
+        // print_buddy_list();
         return;
     }
 
@@ -272,27 +280,22 @@ void print_buddy_list(){
 
 void buddy_debug(){
     void *addr1 = buddy_alloc(0x2000);
-    void *addr2 = buddy_alloc(0x1000);
-    void *addr3 = buddy_alloc(0x4000);
-    void *addr4 = buddy_alloc(0x1000);
-    void *addr5 = buddy_alloc(0x8000);
+    void *addr2 = buddy_alloc(0x2000);
+    void *addr3 = buddy_alloc(0x2000);
+    void *addr4 = buddy_alloc(0x2000);
+    void *addr5 = buddy_alloc(0x1000);
     void *addr6 = buddy_alloc(0x1000);
-    void *addr7 = buddy_alloc(0x10000);
+    void *addr7 = buddy_alloc(0x1000);
     void *addr8 = buddy_alloc(0x1000);
-    // for(int i = 0; i < 8; i++){
-    //     buddy_alloc(0x2000000);
-    // }
-    // buddy_alloc(0x10000000);
-
-
-    buddy_free(addr2);
-    buddy_free(addr4);
-    buddy_free(addr6);
-    buddy_free(addr8);
 
     buddy_free(addr1);
+    buddy_free(addr2);
     buddy_free(addr3);
+    buddy_free(addr4);
+
     buddy_free(addr5);
+    buddy_free(addr6);
     buddy_free(addr7);
+    buddy_free(addr8);
 }
 

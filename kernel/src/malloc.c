@@ -140,10 +140,26 @@ void chunk_debug(){
 }
 
 void kmalloc_debug(){
-    void *addr1 = kmalloc(0x200);
-    void *addr2 = kmalloc(0x1000);
+    void *addr1 = kmalloc(0x2000);
+    void *addr2 = kmalloc(0x4000);
+    void *addr3 = kmalloc(0x8000);
+    void *addr4 = kmalloc(0x10000);
+    void *addr5 = kmalloc(0x1000);
+    void *addr6 = kmalloc(0x1000);
+    void *addr7 = kmalloc(0x1000);
+    void *addr8 = kmalloc(0x1000);
+    void *addr9 = kmalloc(0x16);
+    void *addr10 = kmalloc(0x61);
     kfree(addr1);
     kfree(addr2);
+    kfree(addr3);
+    kfree(addr4);
+    kfree(addr5);
+    kfree(addr6);
+    kfree(addr7);
+    kfree(addr8);
+    kfree(addr9);
+    kfree(addr10);
     // kmalloc(0x10000000);
 }
 
