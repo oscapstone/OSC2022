@@ -15,23 +15,23 @@ struct list_head *task_list;
 
 void task_list_init()
 {
+    task_list = kmalloc(sizeof(list_head_t));
     INIT_LIST_HEAD(task_list);
 }
 
 //like add_timer
 void add_task(void *task_function,unsigned long long priority){
-    lock();
 
     task_t *the_task = kmalloc(sizeof(task_t)); //need to kfree by task runner
 
     the_task->priority = priority; // store interrupt time into timer_event
     the_task->task_function = task_function;
-    INIT_LIST_HEAD(&the_task->listhead);
 
     // add the timer_event into timer_event_list (sorted) 
     // if the same priority FIFO
     struct list_head *curr;
 
+    lock();
     //uart_printf("no %d\r\n", list_size(task_list));
     list_for_each(curr, task_list)
     {
@@ -78,11 +78,9 @@ void run_preemptive_tasks(){
 
         unlock();
         run_task(the_task);
-        lock();
 
         curr_task_priority = prev_task_priority;
         kfree(the_task);
-        unlock();
     }
 }
 

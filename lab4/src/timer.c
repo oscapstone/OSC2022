@@ -8,6 +8,7 @@ struct list_head *timer_event_list; // first head has nothing, store timer_event
 
 void timer_list_init()
 {
+    timer_event_list = kmalloc(sizeof(list_head_t));
     INIT_LIST_HEAD(timer_event_list);
 }
 
@@ -41,12 +42,8 @@ void timer_event_callback(timer_event_t *timer_event)
 {
     ((void (*)(char *))timer_event->callback)(timer_event->args); // call the callback store in event
     list_del_entry((struct list_head *)timer_event);              // delete the event
-    //uart_putc('E');
-    //uart_printf("D 0x%x 0x%x\r\n", timer_event, timer_event->args);
     kfree(timer_event->args); // kfree the arg space
-    //uart_putc('E');
     kfree(timer_event);
-    //uart_putc('F');
 
     //set interrupt to next time_event if existing
     if (!list_empty(timer_event_list))
@@ -91,8 +88,6 @@ void core_timer_handler()
 // give a string argument to callback   timeout after seconds
 void add_timer(void *callback, unsigned long long timeout, char *args)
 {
-    lock();
-
     timer_event_t *the_timer_event = kmalloc(sizeof(timer_event_t)); //need to kfree by event handler
 
     // store argument string into timer_event
@@ -101,12 +96,11 @@ void add_timer(void *callback, unsigned long long timeout, char *args)
 
     the_timer_event->interrupt_time = get_tick_plus_s(timeout); // store interrupt time into timer_event
     the_timer_event->callback = callback;
-    INIT_LIST_HEAD(&the_timer_event->listhead);
-
 
     // add the timer_event into timer_event_list (sorted)
     struct list_head *curr;
 
+    lock();
     list_for_each(curr, timer_event_list)
     {
         if (((timer_event_t *)curr)->interrupt_time > the_timer_event->interrupt_time)

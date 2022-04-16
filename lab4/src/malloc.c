@@ -102,7 +102,6 @@ void *allocpage(unsigned int size)
 
         if (size <= (0x1000 << i))
         {
-            //allocsize = (0x1000 << i);
             val = i;
             break;
         }
@@ -110,8 +109,7 @@ void *allocpage(unsigned int size)
         if (i == MAXORDER)
         {
             uart_puts("Too large size for kmalloc!!!!\r\n");
-            while (1)
-                ;
+            while (1);
             return simple_malloc(size);
         }
     }
@@ -149,9 +147,6 @@ void *allocpage(unsigned int size)
 
 void freepage(void *ptr)
 {
-    //if (ptr < BUDDYSYSTEM_START)
-    //    return;
-
     frame_t *target_frame_ptr = &framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12];
 
 #ifdef DEBUG
@@ -276,11 +271,6 @@ void *kmalloc(unsigned int size)
         dump_freelist_info();
         dump_cachelist_info();
 #endif
-        if (r >= 0x3c000000)
-        {
-            uart_printf("kmalloc weird return");
-            while (1);
-        }
         unlock();
         return r;
     }
@@ -292,11 +282,6 @@ void *kmalloc(unsigned int size)
     dump_cachelist_info();
     uart_printf("kmalloc ret 0x%x\r\n", r);
 #endif
-    if(r>=0x3c000000)
-    {
-        uart_printf("kmalloc weird return");
-        while (1);
-    }
     //For cache
     unlock();
     return r;
