@@ -1,4 +1,5 @@
-char mem[65536];
+unsigned long mem_position;
 void init_buddy();
-void* simple_malloc(unsigned long size);
+void* kmalloc(unsigned int size);
+void kfree(void *ptr);
 void test_malloc();

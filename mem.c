@@ -2,21 +2,22 @@
 #include "utils.h"
 #include "uart.h"
 
+#define DEMO_LOG 0
 #define BUDDY_MAX_ORDER 5
-#define BUDDY_MAX_LEN 1 << BUDDY_MAX_ORDER
+#define BUDDY_MAX_LEN (1 << BUDDY_MAX_ORDER)
 #define FRAME_SIZE 4096
 #define CHUNK_SIZE 32
-extern unsigned char _heap;
-#define BUDDY_BASE (unsigned long)&_heap
+extern unsigned char _end;
 
-unsigned long mem_position = 0;
-unsigned long mem_count = 0;
+unsigned long mem_position = (unsigned long)&_end;
 
 void* simple_malloc(unsigned long size) {
-    mem_position = (unsigned long)&_heap + mem_count;
-    mem_count += size;
-    return (void*)(mem_position);
+    void *chunk = (void*)mem_position;
+    mem_position += ((size-1) & -FRAME_SIZE) + FRAME_SIZE;
+    return chunk;
 }
+
+unsigned long BUDDY_BASE;
 
 typedef struct mem_frame{
     unsigned long address;
@@ -27,21 +28,21 @@ typedef struct mem_frame{
     struct mem_frame *prev;
 } mem_frame;
 
-mem_frame frame_array[BUDDY_MAX_LEN];
-mem_frame buddy_system[BUDDY_MAX_ORDER+1];
+mem_frame *frame_array;
+mem_frame *buddy_system;
 
 typedef struct chunk{
-    mem_frame *page;
     mem_frame *curr;
     struct chunk *next;
     struct chunk *prev;
     mem_frame chunk_slot[FRAME_SIZE/CHUNK_SIZE];
 } chunk;
 
-chunk chunk_array[BUDDY_MAX_LEN];
+chunk *chunk_array;
 chunk chunk_system;
 
 void show_frame() {
+#if DEMO_LOG == 1
     printf("|");
     int position = 0;
     while (position < BUDDY_MAX_LEN) {
@@ -59,6 +60,7 @@ void show_frame() {
         position += 1 << show->order;
     }
     printf("\n");
+#endif
 }
 
 void pop_page(mem_frame *my_frame) {
@@ -74,15 +76,8 @@ void push_page(mem_frame *my_frame) {
     my_frame->prev = top;
 }
 
-// mem_frame *find_order_mem(unsigned int order) {
-//     mem_frame *target = &buddy_system[order];
-//     while (target->next != 0)
-//         target = target->next;
-//     return target;
-// };
-
 mem_frame *find_address_frame(unsigned long address) {
-    unsigned long position = (address - mem_position) / 4096;
+    unsigned long position = (address - BUDDY_BASE) / 4096;
     mem_frame *target = &frame_array[(unsigned int)position];
     return target;
 };
@@ -134,17 +129,6 @@ void merge(mem_frame *my_frame) {
     }
 };
 
-
-// mem_frame *get_address(unsigned int need_order) {
-//     mem_frame *find_order = &buddy_system[need_order].next;
-//     while (find_order) {
-//         if (find_order->order == need_order)
-//             return find_order;
-//         find_order = find_order->next;
-//     }
-//     return find_order;
-// }
-
 mem_frame *ask_mem(unsigned int need_order) {
     unsigned int current_order = need_order + 1;
     while (current_order <= BUDDY_MAX_ORDER) {
@@ -180,6 +164,7 @@ mem_frame *buddy_malloc(unsigned int size) {
     }
 
     target->free = 0;
+    show_frame();
     pop_page(target);
 
     return target;
@@ -188,13 +173,13 @@ mem_frame *buddy_malloc(unsigned int size) {
 void buddy_free(unsigned long address) {
     mem_frame *target = find_address_frame(address);
     target->free = 1;
+    show_frame();
     push_page(target);
     merge(target);
 };
 
 chunk *init_chunk(mem_frame *target) {
     chunk *slot = &chunk_array[target->position];
-    slot->page = target;
     slot->curr = &slot->chunk_slot[0];
     slot->next->prev = slot;
     slot->next = chunk_system.next;
@@ -244,16 +229,6 @@ mem_frame *find_slot(unsigned int need_len) {
 mem_frame *ask_chunk(unsigned int need_len) {
     mem_frame *target = buddy_malloc(FRAME_SIZE);
     chunk *slot = init_chunk(target);
-
-    // slot->chunk_slot[need_len].next = slot->chunk_slot[0].next;
-    // slot->chunk_slot[0].next->prev = &slot->chunk_slot[need_len];
-    // slot->chunk_slot[need_len].prev = &slot->chunk_slot[0];
-    // slot->chunk_slot[need_len].free = 1;
-    // slot->chunk_slot[need_len].order = slot->chunk_slot[0].order - need_len;
-    // slot->chunk_slot[0].next = &slot->chunk_slot[need_len];
-    // slot->chunk_slot[0].order = need_len;
-
-    // return slot->curr;
     target = slot_malloc(slot, slot->curr, need_len);
     return target;
 };
@@ -265,6 +240,10 @@ mem_frame *chunk_malloc(unsigned int size) {
         target = ask_chunk(need_len);
     }
     target->free = 0;
+#if DEMO_LOG == 1
+    uart_hex(target->address);
+    uart_send('\n');
+#endif
     return target;
 }
 
@@ -293,8 +272,8 @@ void slot_merge(mem_frame *slot) {
 };
 
 void chunk_free(unsigned long address) {
-    unsigned int position = (address - mem_position) / FRAME_SIZE;
-    unsigned int shift = (address - mem_position - position*FRAME_SIZE) / CHUNK_SIZE;
+    unsigned int position = (address - BUDDY_BASE) / FRAME_SIZE;
+    unsigned int shift = (address - BUDDY_BASE - position*FRAME_SIZE) / CHUNK_SIZE;
     mem_frame *target = &chunk_array[position].chunk_slot[shift];
     target->free = 1;
     slot_merge(target);
@@ -304,18 +283,14 @@ void* kmalloc(unsigned int size) {
     mem_frame *target;
     if (size > FRAME_SIZE)
         target = buddy_malloc(size);
-    else {
+    else 
         target = chunk_malloc(size);
-        show_frame();
-        uart_hex(target->address);
-        uart_send('\n');
-    }
     return (void*)target->address;
 }
 
 void kfree(void *ptr) {
     unsigned long address = (unsigned long) ptr;
-    mem_frame *target = find_address_frame(address/FRAME_SIZE * FRAME_SIZE);
+    mem_frame *target = find_address_frame(address & -FRAME_SIZE);
     if (target->order)
         buddy_free(address);
     else
@@ -323,10 +298,13 @@ void kfree(void *ptr) {
 };
 
 void init_buddy() {
-    mem_position = (unsigned long)simple_malloc(FRAME_SIZE*BUDDY_MAX_LEN);
+    frame_array = simple_malloc(BUDDY_MAX_LEN * sizeof(mem_frame));
+    buddy_system = simple_malloc((BUDDY_MAX_ORDER+1) * sizeof(mem_frame));
+    BUDDY_BASE = (unsigned long)simple_malloc(FRAME_SIZE*BUDDY_MAX_LEN);
+    chunk_array = simple_malloc(sizeof(chunk) * BUDDY_MAX_LEN);
     for (int i=0; i<BUDDY_MAX_LEN; i++) {
         frame_array[i].position = i;
-        frame_array[i].address = mem_position + FRAME_SIZE * i;
+        frame_array[i].address = BUDDY_BASE + FRAME_SIZE * i;
         frame_array[i].free = 0;
     }
     for (int i=0; i<BUDDY_MAX_ORDER; i++) {
@@ -343,32 +321,30 @@ void init_buddy() {
     // init chunk slots
     chunk_system.next = 0;
     chunk_system.next->prev = &chunk_system;
-
-    show_frame();  
-    char *a = kmalloc(40000);
-    // show_frame(); 
+#if DEMO_LOG == 1
+    show_frame();
+    char *a = kmalloc(4096*16);
     char *b = kmalloc(400);
-    // show_frame();  
-    kfree(b);
-    // show_frame();
+    char *c = kmalloc(4000);
+    char *d = kmalloc(4096*8);
     kfree(a);
-    // show_frame();
+    char *e = kmalloc(4000);
+    char *f = kmalloc(40);
+    kfree(b);
+    char *g = kmalloc(4096*8);
+    kfree(d);
+    kfree(c);
+    kfree(f);
+    kfree(g);
+    kfree(e);
+#endif
 };
 
 void test_malloc() {
-    // char* string1 = simple_malloc(6);
-    // string1[0] = 'q';
-    // string1[1] = 'w';
-    // string1[2] = 'e';
-    // string1[3] = 'r';
-    // string1[4] = 't';
-
-    // char* string2 = simple_malloc(6);
-
-    // string2[0] = '1';
-    // string2[1] = '2';
-    // string2[2] = '3';
-    // string2[3] = '4';
-    // string2[4] = '5';
-    // string2[4] = '\0';
+    char* string1 = simple_malloc(4);
+    string1[0] = 'q';
+    string1[1] = 'w';
+    string1[2] = 'e';
+    string1[3] = 'r';
+    string1[4] = '\n';
 }

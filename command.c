@@ -64,7 +64,7 @@ void exec_testmem() {
 }
 
 void exec_checkmem() {
-    printf(mem);
+    // printf((char *)&_end);
 }
 
 void command_not_found(char* s) {

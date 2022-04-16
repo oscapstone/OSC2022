@@ -12,8 +12,8 @@ _start:
     b       1b
 2:  // cpu id == 0
 
-    // set top of stack just before our code
-    ldr     x1, =_start
+    // set top of stack at ARM memory end: 0x3C000000
+    ldr     x1, =0x3C000000
     mov     sp, x1
 
     // clear bss
