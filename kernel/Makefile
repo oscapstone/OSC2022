@@ -18,10 +18,10 @@ CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 all: clean kernel8.img run
 
 $(BUILD_DIR)/%.o: $(BOOT_DIR)/%.S
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ 
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -g
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS)	$(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS)	$(INCLUDE) -c $< -o $@ -g
 
 kernel8.img: $(ALLOFILES)
 	$(LD) -nostdlib -nostartfiles  $(ALLOFILES) -T boot/linker.ld -o kernel8.elf

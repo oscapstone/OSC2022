@@ -28,7 +28,7 @@ void freechunk_list_init(){
 void *kmalloc(unsigned int size){
     void *addr;
 
-    if(size < FRAME_SIZE) 
+    if(size <= FRAME_SIZE / 2) 
         addr = chunk_alloc(size);
     else 
         addr = buddy_alloc(size);
@@ -81,7 +81,7 @@ void *chunk_alloc(unsigned int size){
     print_string(UITOHEX, "[*] Alloc Chunk -> Allocate Size: ", size, 0);
     print_string(UITOHEX, " | Chunk Size: ", chunk_size[level], 0);
     print_string(UITOA, " | Level: ", level, 1);
-    print_freechunk_list();
+    // print_freechunk_list();
     return (void *)chunk;
 }
 
@@ -106,7 +106,7 @@ void chunk_free(void *addr){
     list_add(&chunk->list, &freechunk_list[target_frame->chunk_level].list);
 
     print_string(UITOHEX, "[*] Free Chunk -> the addr: 0x", (unsigned long long)addr, 1);
-    print_freechunk_list();
+    // print_freechunk_list();
     
 }
 
@@ -114,7 +114,7 @@ void chunk_free(void *addr){
 void print_freechunk_list(){
     struct list_head *pos;
     for(unsigned int i = 0; i < MAX_CHUNK_SIZE; i++){
-        print_string(UITOA, "", i, 0);
+        print_string(UITOHEX, "0x", chunk_size[i], 0);
         uart_puts("\t:\t");
         unsigned int first = 1;
         list_for_each(pos, &freechunk_list[i].list){
@@ -140,27 +140,37 @@ void chunk_debug(){
 }
 
 void kmalloc_debug(){
-    void *addr1 = kmalloc(0x2000);
-    void *addr2 = kmalloc(0x4000);
-    void *addr3 = kmalloc(0x8000);
-    void *addr4 = kmalloc(0x10000);
-    void *addr5 = kmalloc(0x1000);
-    void *addr6 = kmalloc(0x1000);
-    void *addr7 = kmalloc(0x1000);
-    void *addr8 = kmalloc(0x1000);
-    void *addr9 = kmalloc(0x16);
-    void *addr10 = kmalloc(0x61);
-    kfree(addr1);
-    kfree(addr2);
-    kfree(addr3);
-    kfree(addr4);
-    kfree(addr5);
-    kfree(addr6);
-    kfree(addr7);
-    kfree(addr8);
-    kfree(addr9);
-    kfree(addr10);
-    // kmalloc(0x10000000);
+    // test buddy alloc & free
+    uart_puts("\n--------------------------------------TEST BUDDY ALLOC & FREE--------------------------------------\n\n");
+    unsigned long long size1[] = {0x900, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
+                                    0x1500, 0x4000, 0x8000, 0x10000, 0x20000, 0x20001};
+    void *addr1[sizeof(size1) / sizeof(unsigned long long)];
+
+    for(int i = 0; i < sizeof(size1) / sizeof(unsigned long long); i++){
+        addr1[i] = kmalloc(size1[i]);
+    }
+    print_buddy_list();
+
+
+    for(int i = 0; i < sizeof(size1) / sizeof(unsigned long long); i++){
+        kfree(addr1[i]);
+    }
+    print_buddy_list();
+
+
+    // test chunk alloc & free
+    uart_puts("\n--------------------------------------TEST CHUNK ALLOC & FREE--------------------------------------\n\n");
+    void *addr2[sizeof(chunk_size) / sizeof(unsigned int)];
+    for(int i = 0; i < sizeof(chunk_size)/ sizeof(unsigned int); i++){
+        addr2[i] = kmalloc(chunk_size[i]);
+    }
+    print_freechunk_list();
+
+    for(int i = 0; i < sizeof(chunk_size) / sizeof(unsigned int); i++){
+        kfree(addr2[i]);
+    }
+    print_freechunk_list();
+
 }
 
 void *simple_malloc(unsigned long size) {
