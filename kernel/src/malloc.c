@@ -157,6 +157,16 @@ void kmalloc_debug(){
     }
     print_buddy_list();
 
+    // test buddy merge & split
+    uart_puts("\n--------------------------------------TEST BUDDY MERGE & SPLIT--------------------------------------\n\n");
+    void *addr3[30];
+    for(int i = 0; i < 30 ; i++){
+        addr3[i] = kmalloc(0x1000);  
+    } 
+    for(int i = 0; i < 30 ;i++){
+        kfree(addr3[i]);
+    }
+    print_buddy_list();
 
     // test chunk alloc & free
     uart_puts("\n--------------------------------------TEST CHUNK ALLOC & FREE--------------------------------------\n\n");
@@ -170,6 +180,8 @@ void kmalloc_debug(){
         kfree(addr2[i]);
     }
     print_freechunk_list();
+
+
 
 }
 
