@@ -60,3 +60,15 @@ void busy_wait_writes(char *s,bool newline);
 void busy_wait_writec(char s);
 int is_empty_write();
 int is_empty_read();
+
+#ifdef __DEBUG_LOG
+    static inline void writes_uart_debug(char* s, bool newline){
+         while(*s){
+            if(*s=='\n')
+                writec_uart('\r');
+            writec_uart(*s++);
+        }
+        if(newline)
+            writes_uart("\r\n");
+    }
+#endif

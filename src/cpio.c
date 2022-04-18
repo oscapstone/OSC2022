@@ -3,10 +3,11 @@
 #include "string.h"
 #include "shell.h"
 #include "utils.h"
+#include "dtb.h"
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
 #define CPIO_ALIGNMENT 4
-
+uint32_t* cpio_addr;
  //((volatile unsigned int*)(0x8000000))
 typedef struct {
     char c_magic[6];      /* Magic header '070701'. */
@@ -111,11 +112,11 @@ void cpio_cat(){
     while(1){
         int parse_result = cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header);
         if(parse_result!=0){
-            writes_uart("File not found!\r\n");
+            writes_uart("[!] File not found!\r\n");
             break;
         }
         if(strncmp(read_name,".",strlen(read_name))==0){
-            writes_uart(".: Is a directory\r\n");
+            writes_uart("[!] .: Is a directory\r\n");
             break;
         }
         else if(strncmp(read_name,filename,strlen(read_name))==0){
@@ -163,4 +164,28 @@ unsigned long long cpio_get_addr(){
         cnh = next_header;
     }
     return 0;
+}
+
+void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop){
+    if(strncmp(name,"linux,initrd-start",18)==0){ // start address of initrd
+        writes_uart("Found target: \"");
+        writes_n_uart(name,18);
+        writes_uart("\" at target_cpio_addraddress ");
+        cpio_addr = (unsigned int*)((unsigned long)big2little(*((uint32_t*)(prop+1))));
+        writehex_uart((unsigned long)cpio_addr,TRUE);
+        return (void*)cpio_addr;
+    }
+    return nullptr;
+}
+void* initramfs_end_callback(fdt_prop* prop,char * name,uint32_t len_prop){
+    if(strncmp(name,"linux,initrd-end",16)==0)
+    {
+        writes_uart("Found target: \"");
+        writes_n_uart(name,18);
+        writes_uart("\" at address ");
+        void* target_cpio_addr = (void*)((unsigned long)big2little(*((uint32_t*)(prop+1))));
+        writehex_uart((unsigned long)target_cpio_addr,TRUE);
+        return (void*)target_cpio_addr;
+    }
+    return nullptr;
 }

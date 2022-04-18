@@ -18,6 +18,7 @@ void disable_interrupt(){
 
 
 void exception_entry(){
+    busy_wait_writes("EXCEPTION ENTRY",TRUE);
     // spsr_el1, elr_el1, and esr_el1
     unsigned long long reg_spsr_el1, reg_elr_el1,reg_esr_el1;
     asm volatile(

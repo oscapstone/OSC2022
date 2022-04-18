@@ -278,14 +278,12 @@ void handle_command(enum Action action, char *buffer){
             //     // "bl core_timer_handler\n\t"
             // );
             asm volatile(
-                // "mov x0, (1 << 31)\n\t" // EL1 uses aarch64
-                // "msr hcr_el21, x0\n\t" // Hypervisor Configuration Register, set RW to 1.
-                "mov x0, 0\n\t" // EL1h (SPSel = 1) with interrupt disabled
+                "mov x0, 0\n\t" // 
                 "msr spsr_el1, x0\n\t"
                 "msr elr_el1, %0\n\t"
                 "msr sp_el0,%1\n\t"
                 
-                "eret\n\t" // return to EL1"
+                "eret\n\t" // 
                 ::"r" (prog_addr),
                 "r" (e0_stack)
                 : "x0"

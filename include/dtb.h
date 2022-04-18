@@ -1,5 +1,8 @@
+#ifndef _DTB_HEADER
+#define _DTB_HEADER
+
 #include "utils.h"
-void fdt_traverse(void (*f)());
+void* fdt_traverse(void* (*f)());
 
 #define FDT_HEADER_MAGIC 0xd00dfeed
 
@@ -32,3 +35,5 @@ typedef struct fdt_prop
     uint32_t len;
     uint32_t nameoff;
 }fdt_prop;
+
+#endif

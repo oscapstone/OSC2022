@@ -2,6 +2,7 @@ SECTIONS
 {
     . = 0x80000;
     .text :  { *(.text) }
+    
     .rodata : { *(.rodata) }
     .data : { *(.data) }
     . = ALIGN(8);
@@ -9,10 +10,10 @@ SECTIONS
     .bss : { *(.bss*) } 
     bss_end = .;
     _end = .;
-    . = 0x20000000;
+    
     _head_start_brk = .;
 
 }
 
 _boot_size = _end - _start;
-_head_start_brk = _head_start_brk + 0x00020;
+_head_start_brk = _head_start_brk + 0x00100;
