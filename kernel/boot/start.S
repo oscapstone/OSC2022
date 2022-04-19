@@ -122,7 +122,7 @@ exception_vector_table:
     b fail
     .align 7
 
-    b fail
+    b sync_exception_entry
     .align 7
     b irq_entry
     .align 7
