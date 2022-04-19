@@ -17,7 +17,7 @@ int main(unsigned long dtb_base){
     all_allocator_init();    
     // buddy_debug();
     // chunk_debug();
-    // kmalloc_debug();
+    kmalloc_debug();
 
 
     enable_timer_irq();
