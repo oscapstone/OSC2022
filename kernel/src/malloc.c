@@ -159,11 +159,14 @@ void kmalloc_debug(){
 
     // test buddy merge & split
     uart_puts("\n--------------------------------------TEST BUDDY MERGE & SPLIT--------------------------------------\n\n");
-    void *addr3[30];
-    for(int i = 0; i < 30 ; i++){
+    unsigned int test_size = 30;
+    void *addr3[test_size];
+    for(int i = 0; i < test_size ; i++){
         addr3[i] = kmalloc(0x1000);  
     } 
-    for(int i = 0; i < 30 ;i++){
+    print_buddy_list();
+
+    for(int i = 0; i < test_size ;i++){
         kfree(addr3[i]);
     }
     print_buddy_list();
