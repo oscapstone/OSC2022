@@ -28,6 +28,9 @@ cpio:
 run: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
+rune: all
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -d int
+
 gdb: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -S -s
 

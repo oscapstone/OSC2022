@@ -1,13 +1,14 @@
 #include "mem.h"
-#include "utils.h"
+#include "devicetree.h"
 #include "uart.h"
 
-#define DEMO_LOG 0
+#define MEM_DEMO_LOG
 #define BUDDY_MAX_ORDER 5
 #define BUDDY_MAX_LEN (1 << BUDDY_MAX_ORDER)
 #define FRAME_SIZE 4096
 #define CHUNK_SIZE 32
-extern unsigned char _end;
+#define RESERVED_LEN 32
+extern unsigned char _start, _end;
 
 unsigned long mem_position = (unsigned long)&_end;
 
@@ -41,8 +42,11 @@ typedef struct chunk{
 chunk *chunk_array;
 chunk chunk_system;
 
+int reserved_position[BUDDY_MAX_LEN] = {0};
+int reserved_address[RESERVED_LEN][2] = {0};
+
 void show_frame() {
-#if DEMO_LOG == 1
+#ifdef MEM_DEMO_LOG
     printf("|");
     int position = 0;
     while (position < BUDDY_MAX_LEN) {
@@ -181,8 +185,8 @@ void buddy_free(unsigned long address) {
 chunk *init_chunk(mem_frame *target) {
     chunk *slot = &chunk_array[target->position];
     slot->curr = &slot->chunk_slot[0];
-    slot->next->prev = slot;
     slot->next = chunk_system.next;
+    slot->next->prev = slot;
     chunk_system.next = slot;
     slot->prev = &chunk_system;
     for (int i=0; i<(FRAME_SIZE/CHUNK_SIZE); i++) {
@@ -240,15 +244,15 @@ mem_frame *chunk_malloc(unsigned int size) {
         target = ask_chunk(need_len);
     }
     target->free = 0;
-#if DEMO_LOG == 1
+#ifdef MEM_DEMO_LOG
     uart_hex(target->address);
     uart_send('\n');
 #endif
     return target;
 }
 
-void slot_merge(mem_frame *slot) {
-    // left
+int slot_merge(mem_frame *slot) {
+    // right
     mem_frame *target = slot->next;
     if (target != 0 && target->free) {
         target->free = 0;
@@ -256,6 +260,7 @@ void slot_merge(mem_frame *slot) {
         target->next->prev = slot;
         slot->next = target->next;
     }
+    // left
     if (slot->position != 0) {
         target = slot->prev;
         if (target->free) {
@@ -267,16 +272,26 @@ void slot_merge(mem_frame *slot) {
     }
     else 
         target = slot;
-    if (target->order == FRAME_SIZE/CHUNK_SIZE)
+        
+    if (target->order == FRAME_SIZE/CHUNK_SIZE) {
         buddy_free(target->address);
+        return 1;
+    }
+    return 0;
 };
 
 void chunk_free(unsigned long address) {
     unsigned int position = (address - BUDDY_BASE) / FRAME_SIZE;
     unsigned int shift = (address - BUDDY_BASE - position*FRAME_SIZE) / CHUNK_SIZE;
+    // free slot
     mem_frame *target = &chunk_array[position].chunk_slot[shift];
     target->free = 1;
-    slot_merge(target);
+    if (slot_merge(target)) {
+        // free chunk
+        chunk *slot = &chunk_array[position];
+        slot->prev->next = slot->next;
+        slot->next->prev = slot->prev;
+    }
 };
 
 void* kmalloc(unsigned int size) {
@@ -297,17 +312,75 @@ void kfree(void *ptr) {
         chunk_free(address);
 };
 
+void memory_reserve(unsigned long start, unsigned long end, char* message) {
+    int i = 0;
+    while (i<RESERVED_LEN && reserved_address[i][1]) {
+        if ((reserved_address[i][0]<start && start<reserved_address[i][1]) || (reserved_address[i][0]<end && end<reserved_address[i][1])) {
+            printf("invalid_memory_address");
+            while (1);
+        }
+        i++;
+    }
+    reserved_address[i][0] = start;
+    reserved_address[i][1] = end;
+
+    int position_start = (start-BUDDY_BASE) / FRAME_SIZE;
+    int position_end = (end-BUDDY_BASE) / FRAME_SIZE;
+    if (position_start < 0 && position_end >= 0) {
+        int j = 0;
+        while (j<BUDDY_MAX_LEN && j<=position_end) {
+            reserved_position[j] = 1;
+            j++;
+        }
+    }
+    else if (0 <= position_start) {
+        int j = position_start;
+        while (j<BUDDY_MAX_LEN && j<=position_end) {
+            reserved_position[j] = 1;
+            j++;
+        }
+    }
+#ifdef MEM_DEMO_LOG
+    printf("reserve %s:\t%x\t---%x\n", message, start, end);
+#endif
+};
+
+void startup_allocation() {
+    memory_reserve((unsigned long)0x0000, (unsigned long)0x1000, "multicore boot"); // Spin tables for multicore boot
+    memory_reserve((unsigned long)&_start, (unsigned long)&_end, "Kernel image");   // Kernel image in the physical memory
+    memory_reserve((unsigned long)cpio_start, (unsigned long)cpio_end, "Initramfs");// Initramfs
+    memory_reserve((unsigned long)fdt_start, (unsigned long)fdt_end, "Devicetree");  // Devicetree
+    memory_reserve((unsigned long)&_end, mem_position, "simple alloc");   // simple allocator (startup allocator)
+    int last = BUDDY_MAX_LEN - 1;
+    while (reserved_position[last] == 0 && last != -1) last--;
+    void *init[BUDDY_MAX_LEN];
+    for (int i=0; i<=last; i++) {
+        init[i] = kmalloc(4096);
+    }
+    for (int i=last; i>=0; i--) {
+        if (reserved_position[i] == 0)
+            kfree(init[i]);
+        else {
+            // free chunk
+            chunk *slot = &chunk_array[i];
+            slot->prev->next = slot->next;
+            slot->next->prev = slot->prev;
+        }
+    }
+};
+
 void init_buddy() {
     frame_array = simple_malloc(BUDDY_MAX_LEN * sizeof(mem_frame));
     buddy_system = simple_malloc((BUDDY_MAX_ORDER+1) * sizeof(mem_frame));
-    BUDDY_BASE = (unsigned long)simple_malloc(FRAME_SIZE*BUDDY_MAX_LEN);
+    BUDDY_BASE = (unsigned long)0x0;
     chunk_array = simple_malloc(sizeof(chunk) * BUDDY_MAX_LEN);
+    
     for (int i=0; i<BUDDY_MAX_LEN; i++) {
         frame_array[i].position = i;
         frame_array[i].address = BUDDY_BASE + FRAME_SIZE * i;
         frame_array[i].free = 0;
     }
-    for (int i=0; i<BUDDY_MAX_ORDER; i++) {
+    for (int i=0; i<BUDDY_MAX_ORDER+1; i++) {
         buddy_system[i].next = 0;
         buddy_system[i].next->prev = &buddy_system[i];
     }
@@ -321,7 +394,9 @@ void init_buddy() {
     // init chunk slots
     chunk_system.next = 0;
     chunk_system.next->prev = &chunk_system;
-#if DEMO_LOG == 1
+    startup_allocation();
+
+#ifdef MEM_DEMO_LOG
     show_frame();
     char *a = kmalloc(4096*16);
     char *b = kmalloc(400);
