@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <irq.h>
 
-int printAfter2Second = 1;
+int printAfter2Second = 0;
 Timer *head = NULL;
 void add_timer(TimerTask task, unsigned long long expired_time, void *args){
     unsigned long long system_timer = 0;
@@ -82,9 +82,9 @@ void timer_interrupt_handler(){
         }
     }
     if(head == NULL) set_long_timer_irq();
-    if(printAfter2Second) {
+    if(printAfter2Second == 0) {
         add_timer(timeout_print, 2, "[*] After Two Second, Hello User\n# ");
-        printAfter2Second = 0;
+        printAfter2Second = 1;
     }
     enable_timer_irq();
 }

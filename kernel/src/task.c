@@ -3,45 +3,39 @@
 #include <string.h>
 #include <malloc.h>
 #include <irq.h>
+#include <list.h>
 
 unsigned int curr_poriority = 100;
-Task *task_head = NULL;
+
+Task *task_head;
+
+void init_task_head(){
+    task_head = (Task*)kmalloc(sizeof(Task));
+    INIT_LIST_HEAD(&task_head->list);
+}
+
 void add_task(Handler handler, unsigned int priority){
     Task *task = (Task*)kmalloc(sizeof(Task));
     memset((char *)task, 0, sizeof(Task));
+    INIT_LIST_HEAD(&task->list);
     task->handler = handler;
     task->priority = priority;
-    task->next = NULL;
-    task->prev = NULL;
 
-    if(task_head == NULL){
-        task_head = task;
+    if(list_empty(&task_head->list)){
+        list_add_tail(&task->list, &task_head->list);
         return;
     }
-    
-    Task *tmp = task_head;
-    while(tmp->next != NULL && task->priority > tmp->priority){
-        tmp = tmp->next;
-    }
 
-    if(task->priority <= tmp->priority){
-        if(tmp == task_head){
-            task_head = task;
-            task_head->next = tmp;
-            tmp->prev = task_head;
-        }
-        else{
-            task->next = tmp;
-            task->prev = tmp->prev;
-            tmp->prev->next = task;
-            tmp->prev = task;
+    struct list_head *pos;
+    list_for_each(pos, &task_head->list){
+        Task *tmp = (Task *)pos;
+        if(task->priority <= tmp->priority){
+            list_add(&task->list, tmp->list.prev);
         }
     }
-    else{
-        tmp->next = task;
-        task->prev = tmp;
+    if(list_is_head(pos, &task_head->list)){
+        list_add_tail(&task->list, &task_head->list);
     }
-
 }
 
 
@@ -53,26 +47,10 @@ void do_task(){
     // }
     // uart_sputs("\n");
 
-    // NO PREEMPTION
-    // while(task_head != NULL){
-    //     if(task_head->next != NULL){
-    //         Handler handler = task_head->handler;
-    //         task_head = task_head->next;
-    //         task_head->prev = NULL;
-    //         enable_irq();
-    //         handler();
-    //     } 
-    //     else{
-    //         Handler handler = task_head->handler;
-    //         task_head = NULL;
-    //         enable_irq();
-    //         handler();
-    //     }
-    // }
-
-    while(task_head != NULL){
+    while(!list_empty(&task_head->list)){
+        Task *t_task = (Task *)task_head->list.next;
         // curr_task is highest priority task, return it and finish the curr_task.
-        if(curr_poriority <= task_head->priority){
+        if(curr_poriority <= t_task->priority){
             // uart_sputs("curr_task is highest priority task, return it.\n");
             return;
         } 
@@ -82,17 +60,17 @@ void do_task(){
         ** new(highest priority) -> prev(curr_poriority) -> low priority task...
         */
         unsigned int prev_poriority = curr_poriority; // save current poriority     
-        curr_poriority = task_head->priority;
-        Handler handler = task_head->handler;
+        curr_poriority = t_task->priority;
+        Handler handler = t_task->handler;
+        // new_task should be the low priority task / me / null
+
         enable_irq();
         handler();
         disable_irq();
 
-        // new_task should be the low priority task / me / null
-        Task *tmp = task_head;
-        task_head = task_head->next;
-        kfree(tmp);
-        tmp = NULL;
+        list_del(&t_task->list);
+        kfree(t_task);
+        t_task = NULL;
         /*
         ** if prev_poriority(curr_poriority now) is highest priority task
         ** it means the prev_task need to be continued to finish the task.

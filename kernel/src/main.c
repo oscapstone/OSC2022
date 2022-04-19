@@ -7,6 +7,7 @@
 #include <irq.h>
 #include <allocator.h>
 #include <math.h>
+#include <task.h>
 
 
 int main(unsigned long dtb_base){
@@ -17,13 +18,13 @@ int main(unsigned long dtb_base){
     all_allocator_init();    
     // buddy_debug();
     // chunk_debug();
-    kmalloc_debug();
+    // kmalloc_debug();
+    init_task_head();
 
-
+    // printf("wef\n");
     enable_timer_irq();
     // enable_AUX_MU_IER_r();
     enable_irq(); // DAIF set to 0b0000
-    
 
     PrintWelcome();
 
