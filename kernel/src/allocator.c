@@ -52,8 +52,9 @@ void memory_init(){
     memory_reserve((void *)0x0, (void *)0x1000);
 
     /* Kernel image in the physical memory*/
+    unsigned long long stack = (unsigned long long)&_start - 0x10000;
     uart_puts("[*] Memory Reserve(Kernel image) -> ");
-    memory_reserve((void *)&_start, (void *)&_end);
+    memory_reserve((void *)stack, (void *)&_end);
 
      /* Kernel image in the physical memory*/
     uart_puts("[*] Memory Reserve(Initramfs) -> ");
