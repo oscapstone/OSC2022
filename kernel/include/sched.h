@@ -35,10 +35,11 @@ typedef struct _Thread{
     CpuContext ctx;
     enum thread_state state;
     int id;
-    void *addr;
+    void *ustack_addr;
+    void *kstack_addr;
 }Thread;
 
-void init_thread_pool();
+void init_thread_pool_and_head();
 Thread *thread_create();
 
 #endif

@@ -26,7 +26,8 @@ int main(unsigned long dtb_base){
 
 
     Thread *new_thread = thread_create(print_string);
-    print_string(UITOHEX, "new_thread->stack: ", (unsigned long long )new_thread->ctx.sp, 1);
+    print_string(UITOHEX, "new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 1);
+    print_string(UITOHEX, "new_thread->kstack: ", (unsigned long long )new_thread->kstack_addr, 1);
     print_string(UITOHEX, "thead_head->next: ", (unsigned long long )thread_head->list.next, 1);
 
 
