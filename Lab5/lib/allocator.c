@@ -96,7 +96,7 @@ frame_free_node *get_page_with_slot(int size) {
         page = page->next;
     }   
     if (!page) {
-        uint64_t addr = page_malloc();
+        uint64_t addr = page_malloc(0);
         uint64_t index = GET_PAGE_INDEX(addr);
         add_to_list(&allocated_pages, index);
         page = allocated_pages;
@@ -173,7 +173,5 @@ void init_reserve() {
     memory_reserve(0x0000, 0x1000);     // spin tables for multicore boot
     memory_reserve(0x80000, 0x800000);  // kernel and heap/stack space
     memory_reserve((uint64_t)CPIO_ADDR, (uint64_t)CPIO_ADDR + MAX_INITRAMFS_SIZE);  // initramfs
-    debug_mode = 1;
     debug_printf("[DEBUG][init_reserve] reserves 0X%x 4K pages\n", get_allocated_num());
-    debug_mode = 0;
 }

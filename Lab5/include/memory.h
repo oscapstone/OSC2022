@@ -24,7 +24,7 @@ typedef struct frame_free_node {
 } frame_free_node;
 
 void memory_init();
-uint64_t page_malloc();
+uint64_t page_malloc(int sz);
 uint64_t request_page(int size);
 uint64_t reserve_page(int size, uint64_t addr);
 void page_free(uint64_t addr, int size);

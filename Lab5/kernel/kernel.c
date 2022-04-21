@@ -4,6 +4,7 @@
 #include "timer.h"
 #include "memory.h"
 #include "allocator.h"
+#include "task.h"
 
 
 void kernel_main(void) {
@@ -11,5 +12,6 @@ void kernel_main(void) {
 	memory_init();
 	init_reserve();
 	enable_interrupt();
+	run_main_thread();
 	shell();
 }

@@ -41,8 +41,8 @@ void memory_init() {
     node_pool_head = &node_pool[MAX_32K_NUM];
 }
 
-uint64_t page_malloc() {
-    uint64_t index = request_page(0);
+uint64_t page_malloc(int sz) {
+    uint64_t index = request_page(sz);
     return GET_PAGE_ADDR(index);
 }
 
