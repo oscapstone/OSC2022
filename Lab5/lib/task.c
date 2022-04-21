@@ -15,7 +15,7 @@ static task_struct main_task;
 
 void foo() {
     for(int i = 0; i < 10; ++i) {
-        uart_printf("Thread id: %d %d (%x)\n", get_current()->id, i, get_current());
+        uart_printf("Thread id: %d %d\n", get_current()->id, i);
         delay(1000000);
         thread_schedule();
     }
@@ -35,7 +35,7 @@ task_struct* thread_create(void *func){
     task_struct* new_task = (task_struct*)page_malloc(0);
     new_task->context.fp = (unsigned long)new_task + sizeof(task_struct);
     new_task->context.lr = (unsigned long)func;
-    new_task->context.sp = (unsigned long)new_task + sizeof(task_struct) + PAGE_SIZE_4K - 1;
+    new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 1;
 
     new_task->state = RUNNING;
     new_task->id = ++task_cnt;
@@ -52,12 +52,11 @@ void thread_schedule() {
     if (!next_task)
         idle();
 
-    //pop_task_from_queue(&run_queue, next_task);
-    //push_task_to_queue(&run_queue, next_task);
+    pop_task_from_queue(&run_queue, next_task);
+    push_task_to_queue(&run_queue, next_task);
 
     task_struct *cur = get_current();
-    debug_printf("[DEBUG][thread_schedule] switch from thread %d (%x) to %d (%x)\n", cur->id, main_task, next_task->id, next_task);
-    dump_queue(&run_queue);
+    debug_printf("[DEBUG][thread_schedule] switch from thread %d to %d\n", cur->id, next_task->id);
     switch_to(cur, next_task);
 }
 
@@ -110,7 +109,7 @@ void dump_queue(task_queue *queue) {
     task_struct *task = queue->begin;
     uart_printf("%s queue: ", queue->name);
     while (task) {
-        uart_printf("%d ", task->id);
+        uart_printf("%d ", task->id, task);
         task = task->next;
     }
     uart_printf("\n");

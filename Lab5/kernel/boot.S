@@ -17,7 +17,7 @@ master:
     ldr x0, =exception_table	// setup interrupt vector base
     msr vbar_el1, x0
 
-	mov sp, #0x800000
+	mov sp, #0xF00000
 
 	ldr     x1, =__bss_start
     ldr     w2, =__bss_size

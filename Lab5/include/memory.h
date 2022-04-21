@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// 0x8000_0 -> 0x4000_00   kernel
-// 0x1000_0000 -> 0x2000_0000
-
 #define MEMORY_BASE_ADDR 0x00
 #define MEMORY_END_ADDR 0x3C000000
 #define PAGE_SIZE_4K ((uint64_t)1 << 12)
