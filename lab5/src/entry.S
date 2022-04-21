@@ -20,10 +20,13 @@
 
     //using for nested interrupt
     mrs x0,  spsr_el1
-    str x0,  [sp, 16 * 16]
+    str x0,  [sp, 16 * 15 + 8]
     mrs x0,  elr_el1
-    str x0,  [sp, 16 * 17]
-    ldp x0, x1, [sp ,16 * 0]  // restore x0
+    str x0,  [sp, 16 * 16]
+    mrs x0,  sp_el0
+    str x0,  [sp, 16 * 16 + 8]
+
+    mov x0, sp  // trap_frame
 .endm
 
 // load general registers from stack
@@ -46,42 +49,14 @@
     ldr x30, [sp, 16 * 15]
 
     //using for nested interrupt
-    ldr x0, [sp, 16 * 16]
+    ldr x0, [sp, 16 * 15 + 8]
     msr spsr_el1,x0
-    ldr x0,  [sp, 16 * 17]
+    ldr x0,  [sp, 16 * 16]
     msr elr_el1, x0
+    ldr x0,  [sp, 16 * 16 + 8]
+    msr  sp_el0, x0
 
     ldp x0, x1, [sp ,16 * 0]  // restore x0
-    
-    add sp, sp, 32 * 9
-.endm
-
-// load general registers from stack
-.macro load_all_without_x0
-    ldr x1, [sp ,8 * 1]
-    ldp x2, x3, [sp ,16 * 1]
-    ldp x4, x5, [sp ,16 * 2]
-    ldp x6, x7, [sp ,16 * 3]
-    ldp x8, x9, [sp ,16 * 4]
-    ldp x10, x11, [sp ,16 * 5]
-    ldp x12, x13, [sp ,16 * 6]
-    ldp x14, x15, [sp ,16 * 7]
-    ldp x16, x17, [sp ,16 * 8]
-    ldp x18, x19, [sp ,16 * 9]
-    ldp x20, x21, [sp ,16 * 10]
-    ldp x22, x23, [sp ,16 * 11]
-    ldp x24, x25, [sp ,16 * 12]
-    ldp x26, x27, [sp ,16 * 13]
-    ldp x28, x29, [sp ,16 * 14]
-    ldr x30, [sp, 16 * 15]
-
-    //using for nested interrupt
-    ldr x2, [sp, 16 * 16]
-    msr spsr_el1,x2
-    ldr x2,  [sp, 16 * 17]
-    msr elr_el1, x2
-
-    ldp x2, x3, [sp ,16 * 1]  // restore x2
     
     add sp, sp, 32 * 9
 .endm
@@ -178,7 +153,7 @@ error_invalid_el1h:
 sync_el0_64:
     save_all
     bl sync_64_router
-    load_all_without_x0
+    load_all
     eret
 irq_el0_64:
     save_all

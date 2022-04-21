@@ -3,6 +3,7 @@
         "./include"
     ],
     "files.associations": {
-        "irqtask.h": "c"
+        "irqtask.h": "c",
+        "exception.h": "c"
     },
 }

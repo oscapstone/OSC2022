@@ -6,26 +6,31 @@
 
 
 // For svc 0 (supervisor call)
-long long sync_64_router(unsigned long long x0, unsigned long long x1)
+long long sync_64_router(trapframe_t* tpf)
 {
-    unsigned long long syscall_no;
-    __asm__ __volatile__("mov %0, x8\n\t": "=r"(syscall_no));
+    uart_putc('A');
+    return 0;
+    unsigned long long syscall_no = tpf -> x8;
 
     if (syscall_no == 0)
     {
-        return getpid();
+        return getpid(tpf);
     }
     else if(syscall_no == 1)
     {
-        return uartread((char *)x0, x1);
+        return uartread(tpf,(char *) tpf->x0, tpf->x1);
     }
     else if (syscall_no == 2)
     {
-        return uartwrite((char *)x0, x1);
+        return uartwrite(tpf,(char *) tpf->x0, tpf->x1);
     }
     else if (syscall_no == 3)
     {
-        return exec((char *)x0, (char **)x1);
+        return exec(tpf,(char *) tpf->x0, (char **)tpf->x1);
+    }
+    else if (syscall_no == 4)
+    {
+        return fork(tpf);
     }
 
     return -1;
