@@ -1,12 +1,8 @@
 #include "sched.h"
 #include "exception.h"
 #include "malloc.h"
-
-list_head_t *run_queue;
-list_head_t *wait_queue;
-list_head_t *zombie_queue;
-
-thread_t threads[PIDMAX + 1];
+#include "timer.h"
+#include "uart.h"
 
 void init_thread_sched()
 {
@@ -43,8 +39,8 @@ void idle(){
 
 void schedule(){
     lock();
-
-    curr_thread = (thread_t*)curr_thread->listhead.next;
+    //uart_printf("sched\n");
+    curr_thread = (thread_t *)curr_thread->listhead.next;
 
     // ignore run_queue head
     if(list_is_head(&curr_thread->listhead,run_queue))
@@ -64,7 +60,7 @@ void kill_zombies(){
         list_del_entry(curr);
         kfree(((thread_t*)curr)->stack_alloced_ptr); // free stack
         kfree(((thread_t *)curr)->kernel_stack_alloced_ptr); // free stack
-        kfree(((thread_t *)curr)->data); // free data
+        //kfree(((thread_t *)curr)->data); // free data (don't free data because of fork)
         ((thread_t *)curr) -> iszombie = 0;
         ((thread_t *)curr)-> isused = 0;
     }
@@ -83,6 +79,10 @@ int exec_thread(char *data, unsigned int filesize)
         t->data[i] = data[i];
     }
 
+    //disable echo when going to userspace
+    uart_disable_echo();
+    curr_thread = t;
+    add_timer(schedule_timer, 1, "", 0);
     // eret to exception level 0
     asm("msr tpidr_el1, %0\n\t"
         "msr elr_el1, %1\n\t"
@@ -94,6 +94,8 @@ int exec_thread(char *data, unsigned int filesize)
     return 0;
 }
 
+
+//malloc a kstack and a userstack
 thread_t *thread_create(void *start)
 {
     lock();
@@ -127,4 +129,10 @@ void thread_exit(){
     list_add(&curr_thread->listhead, zombie_queue);
     schedule();
     unlock();
+}
+
+void schedule_timer(char* notuse){
+    unsigned long long cntfrq_el0;
+    __asm__ __volatile__("mrs %0, cntfrq_el0\n\t": "=r"(cntfrq_el0)); //tick frequency
+    add_timer(schedule_timer, cntfrq_el0 >> 5, "", 1);
 }

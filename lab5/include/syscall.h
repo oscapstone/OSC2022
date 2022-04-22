@@ -9,7 +9,7 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size);
 int exec(trapframe_t *tpf,const char *name, char *const argv[]);
 int fork(trapframe_t *tpf);
 void exit(trapframe_t *tpf,int status);
-int mbox_call(trapframe_t *tpf,unsigned char ch, unsigned int *mbox);
+int syscall_mbox_call(trapframe_t *tpf, unsigned char ch, unsigned int *mbox);
 void kill(trapframe_t *tpf,int pid);
 
 #endif

@@ -76,6 +76,7 @@ void run_preemptive_tasks(){
 
         curr_task_priority = prev_task_priority;
         kfree(the_task);
+
     }
 }
 

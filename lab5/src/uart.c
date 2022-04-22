@@ -7,6 +7,8 @@
 // get address from linker
 extern volatile unsigned char _end;
 
+int echoflag = 1;
+
 //implement first in first out buffer with a read index and a write index
 char uart_tx_buffer[MAX_BUF_SIZE] = {};
 unsigned int uart_tx_buffer_widx = 0; //write index
@@ -109,28 +111,41 @@ char uart_getc()
     r = (char)(*AUX_MU_IO);
 
     /*
-        echo back
+    echo back   (disable it when going to userspace)
     */
-    if (r == '\r')
+    if(echoflag)
     {
-        uart_printf("\r\r\n");
-        do
+        if (r == '\r')
         {
-            asm volatile("nop");
-        } while (!(*AUX_MU_LSR & 0x40)); //wait for output success Transmitter idle
-    }
-    else if (r == '\x7f') // backspace -> get del
-    {
-        uart_putc('\b');
-        uart_putc(' ');
-        uart_putc('\b');
-    }
-    else
-    {
-        uart_putc(r);
+            uart_printf("\r\r\n");
+            do
+            {
+                asm volatile("nop");
+            } while (!(*AUX_MU_LSR & 0x40)); //wait for output success Transmitter idle
+        }
+        else if (r == '\x7f') // backspace -> get del
+        {
+            uart_putc('\b');
+            uart_putc(' ');
+            uart_putc('\b');
+        }
+        else
+        {
+            uart_putc(r);
+        }
     }
     /* convert carrige return to newline */
     return r == '\r' ? '\n' : r;
+}
+
+void uart_disable_echo()
+{
+    echoflag = 0;
+}
+
+void uart_enable_echo()
+{
+    echoflag = 1;
 }
 
 /**

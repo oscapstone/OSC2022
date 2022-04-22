@@ -4,6 +4,12 @@
     ],
     "files.associations": {
         "irqtask.h": "c",
-        "exception.h": "c"
+        "exception.h": "c",
+        "gpio.h": "c",
+        "mbox.h": "c",
+        "malloc.h": "c",
+        "uart.h": "c",
+        "sched.h": "c",
+        "timer.h": "c"
     },
 }

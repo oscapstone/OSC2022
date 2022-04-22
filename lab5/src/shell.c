@@ -27,9 +27,9 @@ void shell()
 {
     char cmd[MAX_BUF_SIZE];
     print_system_messages();
+    init_thread_sched();
     timer_list_init();
     core_timer_enable();
-    init_thread_sched();
     while (1)
     {
         uart_async_printf("# ");
@@ -101,11 +101,11 @@ void do_cmd(char *cmd)
         }
         *end_message = '\0';
         char *seconds = end_message + 1;
-        add_timer(uart_puts, atoi(seconds), message);
+        add_timer(uart_puts, atoi(seconds), message,0);
     }
     else if (strcmp(cmd, "clockAlert") == 0)
     {
-        add_timer(two_second_alert, 2, "two_second_alert");
+        add_timer(two_second_alert, 2, "two_second_alert",0);
     }
     else if(strcmp(cmd,"test_thread") == 0)
     {

@@ -5,6 +5,7 @@
 #include "filesystem.h"
 #include "exception.h"
 #include "malloc.h"
+#include "mbox.h"
 
 int getpid(trapframe_t* tpf)
 {
@@ -56,15 +57,12 @@ int fork(trapframe_t *tpf)
 {
     lock();
     thread_t *newt = thread_create(curr_thread->data);
-    newt->data = kmalloc(curr_thread->datasize);
     newt->datasize = curr_thread->datasize;
 
-    //copy data into new process
-    for (int i = 0; i < newt->datasize; i++)
-    {
-        newt->data[i] = curr_thread->data[i];
-    }
+    int parent_pid = curr_thread->pid;
+    thread_t *parent_thread_t = curr_thread;
 
+    //Cannot copy data because there are a lot of ret addresses on stack
     //copy user stack into new process
     for (int i = 0; i < USTACK_SIZE; i++)
     {
@@ -76,23 +74,79 @@ int fork(trapframe_t *tpf)
     {
         newt->kernel_stack_alloced_ptr[i] = curr_thread->kernel_stack_alloced_ptr[i];
     }
-
+    
     store_context(get_current());
-    newt->context = curr_thread->context;
-    thread_t *parent_thread_t = curr_thread;
+    //for child
+    if( parent_pid != curr_thread->pid)
+    {
+        goto child;
+    }
 
+    newt->context = curr_thread->context;
     newt->context.fp += newt->kernel_stack_alloced_ptr - curr_thread->kernel_stack_alloced_ptr; // move fp
     newt->context.sp += newt->kernel_stack_alloced_ptr - curr_thread->kernel_stack_alloced_ptr; // move kernel sp
-    newt->context.lr = (unsigned long)&&child;                                                     // move lr
+    //cannot use this??
+    //newt->context.lr = (unsigned long)&&child;                                                // move lr
+
+    //trapframe_t* child_tpf = tpf + newt->kernel_stack_alloced_ptr - parent_thread_t->kernel_stack_alloced_ptr;
     unlock();
 
     tpf->x0 = newt->pid;
     return newt->pid;
 
 child:
-    tpf += newt->kernel_stack_alloced_ptr - parent_thread_t->kernel_stack_alloced_ptr; // move tpf
-    tpf->elr_el1 += newt->data - parent_thread_t->data; // mov elr_el1 (return to userspace lr)
+    tpf = (trapframe_t*)((char *)tpf + (unsigned long)newt->kernel_stack_alloced_ptr - (unsigned long)parent_thread_t->kernel_stack_alloced_ptr); // move tpf
     tpf->sp_el0 += newt->stack_alloced_ptr - parent_thread_t->stack_alloced_ptr;
     tpf->x0 = 0;
     return 0;
+}
+
+void exit(trapframe_t *tpf, int status)
+{
+    thread_exit();
+}
+
+int syscall_mbox_call(trapframe_t *tpf, unsigned char ch, unsigned int *mbox)
+{
+    lock();
+    unsigned long r = (((unsigned long)((unsigned long)mbox) & ~0xF) | (ch & 0xF));
+    /* wait until we can write to the mailbox */
+    do{asm volatile("nop");} while (*MBOX_STATUS & MBOX_FULL);
+    /* write the address of our message to the mailbox with channel identifier */
+    *MBOX_WRITE = r;
+    /* now wait for the response */
+    while (1)
+    {
+        /* is there a response? */
+        do
+        {
+            asm volatile("nop");
+        } while (*MBOX_STATUS & MBOX_EMPTY);
+        /* is it a response to our message? */
+        if (r == *MBOX_READ)
+        {
+            /* is it a valid successful response? */
+            tpf->x0 = (mbox[1] == MBOX_RESPONSE);
+            unlock();
+            return mbox[1] == MBOX_RESPONSE;
+        }
+    }
+
+    tpf->x0 = 0;
+    unlock();
+    return 0;
+}
+
+void kill(trapframe_t *tpf,int pid)
+{
+    lock();
+    if (pid >= PIDMAX || !threads[pid].isused)
+    {
+        unlock();
+        return;
+    }
+    list_del_entry(&threads[pid].listhead);
+    curr_thread->iszombie = 1;
+    list_add(&threads[pid].listhead, zombie_queue);
+    unlock();
 }

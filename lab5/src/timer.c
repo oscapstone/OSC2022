@@ -4,10 +4,13 @@
 #include "malloc.h"
 #include "string.h"
 
-struct list_head *timer_event_list; // first head has nothing, store timer_event_t after it
-
 void timer_list_init()
 {
+    uint64_t tmp;
+    asm volatile("mrs %0, cntkctl_el1": "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0":: "r"(tmp));
+
     timer_event_list = kmalloc(sizeof(list_head_t));
     INIT_LIST_HEAD(timer_event_list);
 }
@@ -67,7 +70,7 @@ void two_second_alert(char *str)
                          : "=r"(cntfrq_el0)); //tick frequency
     uart_printf("alert '%s': \r\nexception irq_router ->  seconds after booting : %d\r\n", str, cntpct_el0 / cntfrq_el0);
 
-    add_timer(two_second_alert, 2, "two_second_alert");
+    add_timer(two_second_alert, 2, "two_second_alert",0);
 }
 
 void core_timer_handler()
@@ -86,7 +89,7 @@ void core_timer_handler()
 }
 
 // give a string argument to callback   timeout after seconds
-void add_timer(void *callback, unsigned long long timeout, char *args)
+void add_timer(void *callback, unsigned long long timeout, char *args, int bytick)
 {
     timer_event_t *the_timer_event = kmalloc(sizeof(timer_event_t)); //need to kfree by event handler
 
@@ -94,7 +97,14 @@ void add_timer(void *callback, unsigned long long timeout, char *args)
     the_timer_event->args = kmalloc(strlen(args) + 1);
     strcpy(the_timer_event->args, args);
 
-    the_timer_event->interrupt_time = get_tick_plus_s(timeout); // store interrupt time into timer_event
+    if(bytick == 0)
+    {
+        the_timer_event->interrupt_time = get_tick_plus_s(timeout); // store interrupt time into timer_event
+    }else
+    {
+        the_timer_event->interrupt_time = get_tick_plus_s(0) + timeout;
+    }
+
     the_timer_event->callback = callback;
 
     // add the timer_event into timer_event_list (sorted)

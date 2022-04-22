@@ -125,7 +125,7 @@ error_invalid_el1t:
 
 sync_el1h:
     //save_all
-    //mov x0,4
+    mov x0,4
     bl invalid_exception_router
     //load_all
     eret

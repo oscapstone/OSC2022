@@ -16,12 +16,14 @@ typedef struct timer_event
     char *args; // need to free the string by event callback function
 } timer_event_t;
 
+struct list_head *timer_event_list; // first head has nothing, store timer_event_t after it
+
 void core_timer_enable();
 void core_timer_disable();
 void core_timer_handler();
 
-//now the callback only support "funcion(char *)", char* in args
-void add_timer(void *callback, unsigned long long timeout, char *args);
+//now the callback only support "funcion(char *)", char* in args (defualt by second)
+void add_timer(void *callback, unsigned long long timeout, char *args, int bytick);
 unsigned long long get_tick_plus_s(unsigned long long second);
 void set_core_timer_interrupt(unsigned long long expired_time);
 void set_core_timer_interrupt_by_tick(unsigned long long tick);

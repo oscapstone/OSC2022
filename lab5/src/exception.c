@@ -3,37 +3,48 @@
 #include "timer.h"
 #include "irqtask.h"
 #include "syscall.h"
+#include "sched.h"
 
 
 // For svc 0 (supervisor call)
-long long sync_64_router(trapframe_t* tpf)
+void sync_64_router(trapframe_t* tpf)
 {
-    uart_putc('A');
-    return 0;
-    unsigned long long syscall_no = tpf -> x8;
+    enable_interrupt();
+    unsigned long long syscall_no = tpf->x8;
 
     if (syscall_no == 0)
     {
-        return getpid(tpf);
+        getpid(tpf);
     }
     else if(syscall_no == 1)
     {
-        return uartread(tpf,(char *) tpf->x0, tpf->x1);
+        uartread(tpf,(char *) tpf->x0, tpf->x1);
     }
     else if (syscall_no == 2)
     {
-        return uartwrite(tpf,(char *) tpf->x0, tpf->x1);
+        uartwrite(tpf,(char *) tpf->x0, tpf->x1);
     }
     else if (syscall_no == 3)
     {
-        return exec(tpf,(char *) tpf->x0, (char **)tpf->x1);
+        exec(tpf,(char *) tpf->x0, (char **)tpf->x1);
     }
     else if (syscall_no == 4)
     {
-        return fork(tpf);
+        fork(tpf);
+    }
+    else if (syscall_no == 5)
+    {
+        exit(tpf,tpf->x0);
+    }
+    else if (syscall_no == 6)
+    {
+        syscall_mbox_call(tpf,(unsigned char)tpf->x0, (unsigned int *)tpf->x1);
+    }
+    else if (syscall_no == 7)
+    {
+        kill(tpf, (int)tpf->x0);
     }
 
-    return -1;
     /*
     unsigned long long spsr_el1;
 	__asm__ __volatile__("mrs %0, SPSR_EL1\n\t" : "=r" (spsr_el1));
@@ -49,7 +60,6 @@ long long sync_64_router(trapframe_t* tpf)
 
 void irq_router(unsigned long long x0){
     //uart_printf("ena : %d\r\n", is_disable_interrupt());
-    //uart_printf("exception type: %x\n",x0);
     //uart_printf("irq_basic_pending: %x\n",*IRQ_BASIC_PENDING);
     //uart_printf("irq_pending_1: %x\n",*IRQ_PENDING_1);
     //uart_printf("irq_pending_2: %x\n",*IRQ_PENDING_2);
@@ -84,6 +94,7 @@ void irq_router(unsigned long long x0){
                 *AUX_MU_IIR = 0xC2;
                 return;
             }
+            
             //uart_printf("dd %d %d \r\n", mini_uart_r_interrupt_is_enable(), mini_uart_w_interrupt_is_enable());
             disable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> mask device line (enable by handler)
             add_task(uart_interrupt_r_handler, UART_IRQ_PRIORITY);
@@ -96,12 +107,15 @@ void irq_router(unsigned long long x0){
 
     }else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ)  //from CNTPNS (core_timer)
     {
-        core_timer_disable();   // lab 3 : advanced 2 -> mask device line
+        core_timer_disable(); // lab 3 : advanced 2 -> mask device line
         add_task(core_timer_handler, TIMER_IRQ_PRIORITY);
         run_preemptive_tasks();
         core_timer_enable(); // lab 3 : advanced 2 -> unmask device line
+
+        //at least two trhead running -> schedule for any timer irq
+        if (run_queue->next->next != run_queue)schedule();
     }
-    //unlock();
+
 }
 
 void invalid_exception_router(unsigned long long x0){
@@ -109,7 +123,7 @@ void invalid_exception_router(unsigned long long x0){
     __asm__ __volatile__("mrs %0, ELR_EL1\n\t"
                          : "=r"(elr_el1));
     uart_printf("invalid exception : 0x%x\r\n", elr_el1);
-    uart_printf("invalid exception : 0x%x\r\n",x0);
+    uart_printf("invalid exception : x0 : %x\r\n",x0);
     while(1);
 }
 

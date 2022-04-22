@@ -42,7 +42,13 @@ typedef struct thread
 } thread_t;
 
 thread_t *curr_thread;
+list_head_t *run_queue;
+list_head_t *wait_queue;
+list_head_t *zombie_queue;
 
+thread_t threads[PIDMAX + 1];
+
+void schedule_timer(char *notuse);
 void init_thread_sched();
 void idle();
 void schedule();
