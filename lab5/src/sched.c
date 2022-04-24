@@ -53,14 +53,12 @@ void kill_zombies(){
     {
         if (((thread_t *)curr)->iszombie)
         {
-            list_head_t *prev_curr = curr->prev;
             list_del_entry(curr);
             kfree(((thread_t *)curr)->stack_alloced_ptr);        // free stack
             kfree(((thread_t *)curr)->kernel_stack_alloced_ptr); // free stack
             //kfree(((thread_t *)curr)->data); // free data (don't free data because of fork)
             ((thread_t *)curr)->iszombie = 0;
             ((thread_t *)curr)->isused = 0;
-            curr = prev_curr;
         }
     }
     unlock();
