@@ -10,10 +10,8 @@ void init_thread_sched()
     lock();
     run_queue = kmalloc(sizeof(list_head_t));
     wait_queue = kmalloc(sizeof(list_head_t));
-    zombie_queue = kmalloc(sizeof(list_head_t));
     INIT_LIST_HEAD(run_queue);
     INIT_LIST_HEAD(wait_queue);
-    INIT_LIST_HEAD(zombie_queue);
 
     //init pids
     for (int i = 0; i <= PIDMAX; i++)
