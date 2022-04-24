@@ -42,7 +42,6 @@ void irq_router(unsigned long long x0){
         // buffer read, write
         if (*AUX_MU_IIR & (0b01 << 1)) //can write
         {
-            //uart_printf("uu %d %d \r\n", mini_uart_r_interrupt_is_enable(), mini_uart_w_interrupt_is_enable());
             disable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> mask device line (enable by handler)
             add_task(uart_interrupt_w_handler, UART_IRQ_PRIORITY);
             run_preemptive_tasks();

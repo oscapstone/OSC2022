@@ -32,22 +32,17 @@ void add_task(void *task_function,unsigned long long priority){
     struct list_head *curr;
 
     lock();
-    //uart_printf("no %d\r\n", list_size(task_list));
     list_for_each(curr, task_list)
     {
         if (((task_t *)curr)->priority > the_task->priority)
         {
-            //uart_printf("error %d\r\n", list_size(task_list));
             list_add(&the_task->listhead, curr->prev); // add this timer at the place just before the bigger one (sorted)
-            //uart_printf("erro2\r\n");
             break;
         }
     }
 
     if (list_is_head(curr, task_list))
     {
-        //uart_printf("no %d\r\n", list_size(task_list));
-        //uart_printf("error3\r\n");
         list_add_tail(&(the_task->listhead), task_list); // for the time is the biggest
     }
 

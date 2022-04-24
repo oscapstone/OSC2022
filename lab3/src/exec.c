@@ -14,6 +14,6 @@ int exec(char* data){
         :: "r" (data),
            "r" (ustack+USTACK_SIZE));
 
-    free(ustack);
+    kfree(ustack);
     return 0;
 }
