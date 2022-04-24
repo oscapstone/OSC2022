@@ -74,16 +74,16 @@ void shell(){
           if (args_num == 3)
             add_timer(timeout_print, args[1], atoi(args[2]));
         }else if(!strcmp(args[0], "dump_page")){
-          print_free_frame_list();
+          show_page_list();
         }else if(!strcmp(args[0], "allocp")){
           if (args_num == 2)
             printf("allocte page index: %d\n\r", page_allocate(atoi(args[1]) * 0x1000));
         }else if(!strcmp(args[0], "freep")){
           if (args_num == 2)
             page_free(atoi(args[1]));
-        }else if(!strcmp(args[0], "malloc")){
+        }else if(!strcmp(args[0], "m")){
           if (args_num == 2)
-            printf("alloc the memory form: 0x%x\n\r", malloc(atoi(args[1])));
+            printf("addr = 0x%x\n\r", malloc(atoi(args[1])));
         }else if(!strcmp(args[0], "free")){
           if (args_num == 2){
             char *addr = (char *)((unsigned long)myHex2Int(args[1]));
