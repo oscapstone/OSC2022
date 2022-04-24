@@ -57,8 +57,14 @@ int fork(trapframe_t *tpf)
 {
     lock();
     thread_t *newt = thread_create(curr_thread->data);
-    newt->datasize = curr_thread->datasize;
 
+    //copy signal handler
+    for (int i = 0; i <= SIGNAL_MAX;i++)
+    {
+        newt->singal_handler[i] = curr_thread->singal_handler[i];
+    }
+
+    newt->datasize = curr_thread->datasize;
     int parent_pid = curr_thread->pid;
     thread_t *parent_thread_t = curr_thread;
 
@@ -88,7 +94,6 @@ int fork(trapframe_t *tpf)
     //cannot use this??
     //newt->context.lr = (unsigned long)&&child;                                                // move lr
 
-    //trapframe_t* child_tpf = tpf + newt->kernel_stack_alloced_ptr - parent_thread_t->kernel_stack_alloced_ptr;
     unlock();
 
     tpf->x0 = newt->pid;
@@ -140,13 +145,37 @@ int syscall_mbox_call(trapframe_t *tpf, unsigned char ch, unsigned int *mbox)
 void kill(trapframe_t *tpf,int pid)
 {
     lock();
-    if (pid >= PIDMAX || !threads[pid].isused)
+    if (pid >= PIDMAX || pid < 0  || !threads[pid].isused)
     {
         unlock();
         return;
     }
-    list_del_entry(&threads[pid].listhead);
-    curr_thread->iszombie = 1;
-    list_add(&threads[pid].listhead, zombie_queue);
+    threads[pid].iszombie = 1;
     unlock();
+    schedule();
+}
+
+void signal_register(int signal, void (*handler)())
+{
+    if (signal > SIGNAL_MAX || signal < 0)return;
+
+    curr_thread->singal_handler[signal] = handler;
+}
+
+void signal_kill(int pid, int signal)
+{
+    if (pid > PIDMAX || pid < 0 || !threads[pid].isused)return;
+
+    lock();
+    threads[pid].sigcount[signal]++;
+    unlock();
+}
+
+void sigreturn()
+{
+    unsigned long long sp_el0;
+    __asm__ __volatile__("mrs %0, sp_el0\n\t": "=r"(sp_el0));
+    unsigned long long signal_ustack = sp_el0 % USTACK_SIZE == 0 ? sp_el0 - USTACK_SIZE : sp_el0&(~(USTACK_SIZE-1));
+    kfree((char*)signal_ustack);
+    load_context(&curr_thread->signal_saved_context);
 }

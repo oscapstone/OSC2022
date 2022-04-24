@@ -4,6 +4,7 @@
 #include "irqtask.h"
 #include "syscall.h"
 #include "sched.h"
+#include "signal.h"
 
 
 // For svc 0 (supervisor call)
@@ -44,6 +45,18 @@ void sync_64_router(trapframe_t* tpf)
     {
         kill(tpf, (int)tpf->x0);
     }
+    else if (syscall_no == 8)
+    {
+        signal_register(tpf->x0, (void (*)())tpf->x1);
+    }
+    else if (syscall_no == 9)
+    {
+        signal_kill(tpf->x0, tpf->x1);
+    }
+    else if (syscall_no == 50)
+    {
+        sigreturn();
+    }
 
     /*
     unsigned long long spsr_el1;
@@ -58,7 +71,8 @@ void sync_64_router(trapframe_t* tpf)
     //uart_printf("exception sync_el0_64_router -> spsr_el1 : 0x%x, elr_el1 : 0x%x, esr_el1 : 0x%x\r\n",spsr_el1,elr_el1,esr_el1);
 }
 
-void irq_router(unsigned long long x0){
+void irq_router(trapframe_t* tpf)
+{
     //uart_printf("ena : %d\r\n", is_disable_interrupt());
     //uart_printf("irq_basic_pending: %x\n",*IRQ_BASIC_PENDING);
     //uart_printf("irq_pending_1: %x\n",*IRQ_PENDING_1);
@@ -116,6 +130,13 @@ void irq_router(unsigned long long x0){
         if (run_queue->next->next != run_queue)schedule();
     }
 
+    //only do signal handler when return to user mode
+    if ((tpf->spsr_el1 & 0b1100) == 0)
+    {
+        check_signal();
+    }
+
+    disable_interrupt();
 }
 
 void invalid_exception_router(unsigned long long x0){

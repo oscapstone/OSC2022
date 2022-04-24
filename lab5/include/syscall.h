@@ -11,5 +11,8 @@ int fork(trapframe_t *tpf);
 void exit(trapframe_t *tpf,int status);
 int syscall_mbox_call(trapframe_t *tpf, unsigned char ch, unsigned int *mbox);
 void kill(trapframe_t *tpf,int pid);
+void signal_register(int signal, void (*handler)());
+void signal_kill(int pid, int signal);
+void sigreturn();
 
 #endif

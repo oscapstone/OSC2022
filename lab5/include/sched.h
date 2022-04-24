@@ -6,9 +6,11 @@
 #define PIDMAX 32768
 #define USTACK_SIZE 0x10000
 #define KSTACK_SIZE 0x10000
+#define SIGNAL_MAX  64
 
 extern void switch_to(void *curr_context, void *next_context);
 extern void store_context(void *curr_context);
+extern void load_context(void *curr_context);
 extern void *get_current();
 
 typedef struct thread_context
@@ -26,6 +28,7 @@ typedef struct thread_context
     unsigned long fp;
     unsigned long lr;
     unsigned long sp;
+    unsigned long spsr_el1;
 } thread_context_t;
 
 typedef struct thread
@@ -39,6 +42,11 @@ typedef struct thread
     int isused;
     char* stack_alloced_ptr;
     char *kernel_stack_alloced_ptr;
+    void (*singal_handler[SIGNAL_MAX+1])();
+    int sigcount[SIGNAL_MAX + 1];
+    void (*curr_signal_handler)();
+    int signal_is_checking;
+    thread_context_t signal_saved_context;
 } thread_t;
 
 thread_t *curr_thread;

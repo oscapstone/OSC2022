@@ -68,8 +68,8 @@ typedef struct trapframe
 
 } trapframe_t;
 
-void sync_64_router();
-void irq_router();
+void sync_64_router(trapframe_t *tpf);
+void irq_router(trapframe_t *tpf);
 void invalid_exception_router();
 
 static inline void enable_interrupt()

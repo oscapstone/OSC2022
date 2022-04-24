@@ -1,4 +1,5 @@
 // save general registers to stack
+.global save_all
 .macro save_all
     sub sp, sp, 32 * 9
     stp x0, x1, [sp ,16 * 0]
@@ -26,10 +27,10 @@
     mrs x0,  sp_el0
     str x0,  [sp, 16 * 16 + 8]
 
-    mov x0, sp  // trap_frame
 .endm
 
-// load general registers from stack
+// load general registers from 
+.global load_all
 .macro load_all
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
@@ -54,7 +55,7 @@
     ldr x0,  [sp, 16 * 16]
     msr elr_el1, x0
     ldr x0,  [sp, 16 * 16 + 8]
-    msr  sp_el0, x0
+    msr sp_el0, x0
 
     ldp x0, x1, [sp ,16 * 0]  // restore x0
     
@@ -131,7 +132,7 @@ sync_el1h:
     eret
 irq_el1h:
     save_all
-    mov x0,5
+    mov x0, sp  // trap_frame
     bl irq_router
     load_all
     eret
@@ -152,12 +153,13 @@ error_invalid_el1h:
 
 sync_el0_64:
     save_all
+    mov x0, sp  // trap_frame
     bl sync_64_router
     load_all
     eret
 irq_el0_64:
     save_all
-    mov x0,9
+    mov x0, sp  // trap_frame
     bl irq_router
     load_all
     eret

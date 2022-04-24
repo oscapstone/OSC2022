@@ -9,20 +9,6 @@
 #include "malloc.h"
 #include "sched.h"
 
-void foo(){
-    for (int i = 0; i < 10; ++i)
-    {
-        uart_printf("Thread id: %d %d\n", curr_thread->pid, i);
-        int r = 150;
-        while (r--)
-        {
-            asm volatile("nop");
-        }
-        schedule();
-    }
-    thread_exit();
-}
-
 void shell()
 {
     char cmd[MAX_BUF_SIZE];
@@ -51,7 +37,6 @@ void do_cmd(char *cmd)
         uart_async_printf("exec                            : load a user program in the initramfs and run it in EL0\r\n");
         uart_async_printf("setTimeout [MESSAGE] [SECONDS]  : print message after [SECONDS] seconds (non-blocking)\r\n");
         uart_async_printf("clockAlert                      : alert every two seconds\r\n");
-        uart_async_printf("test_thread                     : test_thread (lab5 basic 1)\r\n");
     }
     else if (strcmp(cmd, "hello") == 0)
     {
@@ -106,15 +91,6 @@ void do_cmd(char *cmd)
     else if (strcmp(cmd, "clockAlert") == 0)
     {
         add_timer(two_second_alert, 2, "two_second_alert",0);
-    }
-    else if(strcmp(cmd,"test_thread") == 0)
-    {
-        init_thread_sched();
-        for (int i = 0; i < 5; ++i)
-        { // N should > 2
-            thread_create(foo);
-        }
-        schedule();
     }
     else
     {

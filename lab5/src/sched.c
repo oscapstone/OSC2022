@@ -3,6 +3,7 @@
 #include "malloc.h"
 #include "timer.h"
 #include "uart.h"
+#include "signal.h"
 
 void init_thread_sched()
 {
@@ -39,14 +40,9 @@ void idle(){
 
 void schedule(){
     lock();
-    //uart_printf("sched\n");
-    curr_thread = (thread_t *)curr_thread->listhead.next;
-
-    // ignore run_queue head
-    if(list_is_head(&curr_thread->listhead,run_queue))
-    {
+    do{
         curr_thread = (thread_t *)curr_thread->listhead.next;
-    }
+    } while (list_is_head(&curr_thread->listhead, run_queue) || curr_thread->iszombie);
 
     switch_to(get_current(), &curr_thread->context);
     unlock();
@@ -54,15 +50,20 @@ void schedule(){
 
 void kill_zombies(){
     lock();
-    while(!list_empty(zombie_queue))
+    list_head_t *curr;
+    list_for_each(curr,run_queue)
     {
-        list_head_t *curr = zombie_queue->next;
-        list_del_entry(curr);
-        kfree(((thread_t*)curr)->stack_alloced_ptr); // free stack
-        kfree(((thread_t *)curr)->kernel_stack_alloced_ptr); // free stack
-        //kfree(((thread_t *)curr)->data); // free data (don't free data because of fork)
-        ((thread_t *)curr) -> iszombie = 0;
-        ((thread_t *)curr)-> isused = 0;
+        if (((thread_t *)curr)->iszombie)
+        {
+            list_head_t *prev_curr = curr->prev;
+            list_del_entry(curr);
+            kfree(((thread_t *)curr)->stack_alloced_ptr);        // free stack
+            kfree(((thread_t *)curr)->kernel_stack_alloced_ptr); // free stack
+            //kfree(((thread_t *)curr)->data); // free data (don't free data because of fork)
+            ((thread_t *)curr)->iszombie = 0;
+            ((thread_t *)curr)->isused = 0;
+            curr = prev_curr;
+        }
     }
     unlock();
 }
@@ -116,6 +117,13 @@ thread_t *thread_create(void *start)
     r->kernel_stack_alloced_ptr = kmalloc(KSTACK_SIZE);
     r->context.sp = (unsigned long long )r->stack_alloced_ptr + USTACK_SIZE;
     r->context.fp = r->context.sp;
+    r->signal_is_checking = 0;
+    //initial signal handler with signal_default_handler (kill thread)
+    for (int i = 0; i < SIGNAL_MAX;i++)
+    {
+        r->singal_handler[i] = signal_default_handler;
+        r->sigcount[i] = 0;
+    }
 
     list_add(&r->listhead, run_queue);
     unlock();
@@ -124,11 +132,9 @@ thread_t *thread_create(void *start)
 
 void thread_exit(){
     lock();
-    list_del_entry(&curr_thread->listhead);
     curr_thread->iszombie = 1;
-    list_add(&curr_thread->listhead, zombie_queue);
-    schedule();
     unlock();
+    schedule();
 }
 
 void schedule_timer(char* notuse){
