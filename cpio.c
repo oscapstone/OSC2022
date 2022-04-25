@@ -31,7 +31,7 @@ unsigned long strtoi(char* str) {
 			tmp = tmp*16 + str[i] - '0';
 		}
 		else {
-			tmp = tmp*16 + str[i] - 'a'+10;
+			tmp = tmp*16 + str[i] - 'A'+10;
 		}
 	}
 	return tmp;
@@ -93,16 +93,16 @@ void load_cpio(cpio_t* addr, char* target){
 			// jump to the new kernel.
 			// asm volatile("mov x0, 0x3c0  \n"); //disable core timer interrupt (11 1100 0000)
 			asm volatile("mov x0, 0x340		\n"); // enable core timer interrupt (11 0100 0000)
-            asm volatile("msr spsr_el1, x0  \n");
-            asm volatile("msr elr_el1, %0   \n" :: "r"(0x7000000));
-            asm volatile("msr sp_el0, %0    \n" :: "r"(0x7000000));
+            		asm volatile("msr spsr_el1, x0  \n");
+            		asm volatile("msr elr_el1, %0   \n" :: "r"(0x7000000));
+            		asm volatile("msr sp_el0, %0    \n" :: "r"(0x7000000));
 
 			// enable the core timer’s interrupt
 			set_time(2);
 			enable_timer_interrupt();
 
 
-            asm volatile("eret              \n");
+            		asm volatile("eret              \n");
 
 			break;
 		}
