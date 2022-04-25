@@ -13,6 +13,6 @@ int syscall_mbox_call(trapframe_t *tpf, unsigned char ch, unsigned int *mbox);
 void kill(trapframe_t *tpf,int pid);
 void signal_register(int signal, void (*handler)());
 void signal_kill(int pid, int signal);
-void sigreturn();
+void sigreturn(trapframe_t *tpf);
 
 #endif

@@ -55,7 +55,7 @@ void sync_64_router(trapframe_t* tpf)
     }
     else if (syscall_no == 50)
     {
-        sigreturn();
+        sigreturn(tpf);
     }
 
     /*

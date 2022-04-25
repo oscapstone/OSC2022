@@ -6,6 +6,7 @@
 #include "exception.h"
 #include "malloc.h"
 #include "mbox.h"
+#include "signal.h"
 
 int getpid(trapframe_t* tpf)
 {
@@ -45,10 +46,14 @@ int exec(trapframe_t *tpf,const char *name, char *const argv[])
         curr_thread->data[i] = new_data[i];
     }
 
-    // eret to exception level 0
-    asm("msr sp_el0, %0\n\t" ::"r"(curr_thread->stack_alloced_ptr+USTACK_SIZE));
+    //clear signal handler
+    for (int i = 0; i <= SIGNAL_MAX; i++)
+    {
+        curr_thread->singal_handler[i] = signal_default_handler;
+    }
 
     tpf->elr_el1 = (unsigned long)curr_thread->data;
+    tpf->sp_el0 = (unsigned long)curr_thread->stack_alloced_ptr + USTACK_SIZE;
     tpf->x0 = 0;
     return 0;
 }
@@ -171,11 +176,9 @@ void signal_kill(int pid, int signal)
     unlock();
 }
 
-void sigreturn()
+void sigreturn(trapframe_t *tpf)
 {
-    unsigned long long sp_el0;
-    __asm__ __volatile__("mrs %0, sp_el0\n\t": "=r"(sp_el0));
-    unsigned long long signal_ustack = sp_el0 % USTACK_SIZE == 0 ? sp_el0 - USTACK_SIZE : sp_el0&(~(USTACK_SIZE-1));
+    unsigned long signal_ustack = tpf->sp_el0 % USTACK_SIZE == 0 ? tpf->sp_el0 - USTACK_SIZE : tpf->sp_el0 & (~(USTACK_SIZE - 1));
     kfree((char*)signal_ustack);
     load_context(&curr_thread->signal_saved_context);
 }
