@@ -8,7 +8,7 @@ void foo() {
   for (int i = 0; i < 4; ++i) {
     //printf("Thread id: %d, %d\r\n", current_thread()->tid, i);
     print_s("Thread id: ");
-    print_i(current_thread()->tid);
+    print_i(current_thread()->pid);
     print_s("\r\n");
     delay(10);
     schedule();
@@ -35,18 +35,21 @@ void thread_init() {
 }
 
 thread_info *thread_create(void (*func)()) {
-  print_s("asdfasdf\r\n");
-  thread_info *thread = (thread_info *)malloc(THREAD_SIZE);
-  //printf("malloc succ\n");
-  thread->context.fp = (uint64_t)thread + THREAD_SIZE;
-  thread->context.lr = (uint64_t)func;
-  thread->context.sp = (uint64_t)thread + THREAD_SIZE;
-  thread->tid = thread_cnt++;
-  thread->status = ALIVE;
+  thread_info *thread = (thread_info *)malloc(sizeof(thread_info));
+  thread->pid = thread_cnt++;
+  thread->status = THREAD_READY;
   thread->next = 0;
+  thread->kernel_stack_base = (uint64_t)malloc(STACK_SIZE);
+  thread->user_stack_base = 0;
+  thread->user_program_base =
+      USER_PROGRAM_BASE + thread->pid * USER_PROGRAM_SIZE;
+  thread->context.fp = thread->kernel_stack_base + STACK_SIZE;
+  thread->context.lr = (uint64_t)func;
+  thread->context.sp = thread->kernel_stack_base + STACK_SIZE;
   run_queue_push(thread);
   return thread;
 }
+
 
 void run_queue_push(thread_info *thread) {
   if (run_queue.head == 0) {
@@ -92,6 +95,7 @@ void idle() {
 }
 
 void exit() {
+  // read this?????
   thread_info *cur = current_thread();
   cur->status = DEAD;
   schedule();

@@ -64,7 +64,7 @@ exception_vector_table:
     .align 7
 
     // EL0 -> EL1
-    b _sync_handler // user program
+    b _lower_64_EL_sync_handler // user program
     .align 7
     b _el0_to_el1_irq_handler  // user (EL0) timer interrupt
     .align 7
@@ -84,9 +84,17 @@ exception_vector_table:
 
 _sync_handler:
     save_reg
+    mov x0, sp      // load stack pointer into function argument
     bl sync_handler // exception.c
     load_reg
     eret            // back to original EL
+
+_lower_64_EL_sync_handler:
+    save_reg
+    mov x0, sp      // load stack pointer into function argument
+    bl lower_64_EL_sync_handler // exception.c
+    load_reg
+    eret 
 
 _el0_to_el1_irq_handler:
     save_reg

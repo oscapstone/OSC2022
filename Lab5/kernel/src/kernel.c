@@ -1,4 +1,8 @@
+#include "thread.h"
+#include "timer.h"
 #include "commands.h"
+
+//extern commads cmd_list[];
 
 #define BUFFER_LEN 1000
 
@@ -31,10 +35,10 @@ void parse_command(char* cmd){
 }
 
 void execute_command(const char* cmd){
-    int cmd_len = sizeof(cmd_list)/sizeof(commads);
+    //int cmd_len = sizeof(cmd_list)/sizeof(commads);
     uart_puts("\0"); // I'dont konw why if you remove this bugs occurs
     int command_found = 0;
-    for(int i=0; i<cmd_len; i++){
+    for(int i=0; i<cmd_num; i++){
         if(find_command(cmd, cmd_list[i].cmd) == 1){
             command_found = 1;
             char *args;

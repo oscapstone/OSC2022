@@ -2,7 +2,13 @@
 
 #include "utils.h"
 
-#define THREAD_SIZE 4096
+#define STACK_SIZE 4096
+#define USER_PROGRAM_BASE 0x30000000
+#define USER_PROGRAM_SIZE (1 * mb)
+
+#define THREAD_DEAD 1
+#define THREAD_FORK 2
+#define THREAD_READY 4
 
 typedef struct {
   uint64_t x19;
@@ -29,8 +35,14 @@ typedef enum {
 
 typedef struct thread_info {
   cpu_context context;
-  uint32_t tid;
-  thread_status status;
+  uint32_t pid;
+  uint32_t child_pid;
+  int status;
+  uint64_t trap_frame_addr;
+  uint64_t kernel_stack_base;
+  uint64_t user_stack_base;
+  uint64_t user_program_base;
+  uint32_t user_program_size;
   struct thread_info *next;
 } thread_info;
 
@@ -41,8 +53,12 @@ typedef struct {
 thread_queue run_queue;
 uint32_t thread_cnt;
 
-extern uint64_t get_current();
+extern thread_info *get_current();
 extern void switch_to(uint64_t, uint64_t);
+
+typedef struct {
+  uint64_t x[31];
+} trap_frame_t;
 
 void foo();
 void thread_test();
