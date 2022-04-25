@@ -1,7 +1,6 @@
 #include "commands.h"
 
-#define BUFFER_LEN 100
-
+#define BUFFER_LEN 1000
 
 void read_command(char* buffer){
     uart_puts("\r\n# ");
@@ -9,7 +8,7 @@ void read_command(char* buffer){
     while(1){
         if(idx >= BUFFER_LEN) break;
         //char c = uart_getc();
-        char c = uart_async_getc();
+        char c = uart_getc();
         if(c=='\n') {
             uart_puts("\r\n"); // echo
             break;
@@ -46,10 +45,6 @@ void execute_command(const char* cmd){
             } else {
                 args = &cmd[args_start];
             }
-
-            print_s("args: ");
-            print_s(args);
-            print_s("\n");
             
             cmd_list[i].func(args);
             break;

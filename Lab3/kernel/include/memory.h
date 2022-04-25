@@ -3,7 +3,7 @@
 #include "stdint.h"
 
 //extern uint32_t HEAP_START;
-#define HEAP_START 0x20000000
+#define HEAP_START 0x30000000
 static size_t heap_offset=0;
 
 #define PAGE_BASE_ADDR ((uint64_t)0x10000000)

@@ -26,7 +26,7 @@
 
 #define AUX_IRQ (1 << 29)
 
-#define UART_BUFFER_SIZE 1024
+#define UART_BUFFER_SIZE 2048
 char read_buf[UART_BUFFER_SIZE];
 char write_buf[UART_BUFFER_SIZE];
 int read_buf_start, read_buf_end;

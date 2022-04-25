@@ -1,32 +1,5 @@
 #include "memory.h"
 
-void* simple_malloc(size_t size){
-    size_t mem_start = heap_offset + HEAP_START;
-    heap_offset+=size;
-    return (void*) mem_start;
-}
-
-unsigned long __stack_chk_guard;
-void __stack_chk_guard_setup(void)
-{
-     __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
-}
-
-void __stack_chk_fail(void)                         
-{
- /* Error message */                                 
-}// will be called when guard variable is corrupted 
-
-
-void *memcpy(void *dest, const void *src, unsigned int n)
-{
-    for (unsigned int i = 0; i < n; i++)
-    {
-        ((char*)dest)[i] = ((char*)src)[i];
-    }
-}
-
-
 void buddy_test() {
   print_frame_lists();
   uint64_t size[6] = {
@@ -104,43 +77,51 @@ void dma_test() {
 }
 
 void buddy_init() {
-  for (int i = 0; i < MAX_PAGE_NUM; i++) {
-    frames[i].id = i;
-    frames[i].order = -1;
-    frames[i].is_allocated = 0;
-    frames[i].addr = PAGE_BASE_ADDR + i * PAGE_SIZE;
-    frames[i].next = 0;
-  }
-  for (int i = 0; i < FRAME_LIST_NUM; i++) {
-    free_frame_lists[i] = 0;
-    used_frame_lists[i] = 0;
-  }
-  frames[0].order = MAX_FRAME_ORDER;
-  free_frame_lists[MAX_FRAME_ORDER] = &frames[0];
-  free_dma_list = 0;
+    // init each page
+    for (int i = 0; i < MAX_PAGE_NUM; i++) {
+      frames[i].id = i;
+      frames[i].order = -1;
+      frames[i].is_allocated = 0;
+      frames[i].addr = PAGE_BASE_ADDR + i * PAGE_SIZE;
+      frames[i].next = 0;
+    }
+    // no free or used frame in the beggining
+    for (int i = 0; i < FRAME_LIST_NUM; i++) {
+      free_frame_lists[i] = 0;
+      used_frame_lists[i] = 0;
+    }
+    // assign first frame as the largest single memory frame.
+    frames[0].order = MAX_FRAME_ORDER;
+    free_frame_lists[MAX_FRAME_ORDER] = &frames[0];
+    free_dma_list = 0;
 }
 
 page_frame *buddy_allocate(uint64_t size) {
-  uint64_t page_num = size / PAGE_SIZE;
-  if (size % PAGE_SIZE != 0) page_num++;
+  uint64_t page_num = size / PAGE_SIZE; // number of 4kb page needed to create the frame.
+  if (size % PAGE_SIZE != 0) page_num++; 
   page_num = align_up_exp(page_num);
   uint64_t order = log2(page_num);
-
+  print_s("allocation size: ");
+  print_i(size);
+  print_s("\r\norder: ");
+  print_i(order);
+  print_s("\r\n");
   for (uint64_t i = order; i <= MAX_FRAME_ORDER; i++) {
     if (free_frame_lists[i]) {
+      
       int cur_id = free_frame_lists[i]->id;
       free_frame_lists[i] = free_frame_lists[i]->next;
       frames[cur_id].order = order;
       frames[cur_id].is_allocated = 1;
       frames[cur_id].next = used_frame_lists[order];
       used_frame_lists[order] = &frames[cur_id];
-      // print_s("allocate frame index ");
-      // print_i(cur_id);
-      // print_s(" (4K x 2^");
-      // print_i(order);
-      // print_s(" = ");
-      // print_i(1 << (order + 2));
-      // print_s(" KB)\n");
+      print_s("allocate frame index ");
+      print_i(cur_id);
+      print_s(" (4K x 2^");
+      print_i(order);
+      print_s(" = ");
+      print_i(1 << (order + 2));
+      print_s(" KB)\n");
 
       // release redundant memory block
       for (; i > order; i--) {
@@ -149,13 +130,13 @@ page_frame *buddy_allocate(uint64_t size) {
         frames[id].is_allocated = 0;
         frames[id].next = free_frame_lists[i - 1];
         free_frame_lists[i - 1] = &frames[id];
-        // print_s("put frame index ");
-        // print_i(id);
-        // print_s(" back to free lists (4K x 2^");
-        // print_i(frames[id].order);
-        // print_s(" = ");
-        // print_i(1 << (frames[id].order + 2));
-        // print_s(" KB)\n");
+        print_s("put frame index ");
+        print_i(id);
+        print_s(" back to free lists (4K x 2^");
+        print_i(frames[id].order);
+        print_s(" = ");
+        print_i(1 << (frames[id].order + 2));
+        print_s(" KB)\n");
       }
       // print_s("\n");
       return &frames[cur_id];
@@ -172,9 +153,11 @@ void buddy_free(page_frame *frame) {
   }
 
   uint64_t order = frames[index].order;
-  buddy_unlink(index, 1);
+  buddy_unlink(index, 1); // remove from used list since it's freed
   while (order <= MAX_FRAME_ORDER) {
+    // check left right
     uint64_t target_index = index ^ (1 << order);
+    // check if target_index is merge-ble.
     if ((target_index >= MAX_PAGE_NUM) || frames[target_index].is_allocated ||
         (frames[target_index].order != order))
       break;
@@ -186,8 +169,9 @@ void buddy_free(page_frame *frame) {
     print_s(" = ");
     print_i(1 << (frames[target_index].order + 2));
     print_s(" KB)\n");
-    buddy_unlink(target_index, 0);
+    buddy_unlink(target_index, 0); // remove from free list since it's merged
     order += 1;
+    // the index need to point to the head of that memory frame.
     if (index > target_index) index = target_index;
   }
   frames[index].order = order;
@@ -204,11 +188,14 @@ void buddy_free(page_frame *frame) {
 
 void buddy_unlink(int index, int type) {
   uint64_t order = frames[index].order;
+  print_s(""); // I don't know why you need this print
   frames[index].order = -1;
+  print_s(""); // I don't know why you need this print
   frames[index].is_allocated = 0;
 
   if (type == 0) {
     if (free_frame_lists[order] == &frames[index]) {
+      // move out of free frame list since it's been merged.
       free_frame_lists[order] = frames[index].next;
       frames[index].next = 0;
     } else {
@@ -263,6 +250,7 @@ void *malloc(uint64_t size) {
   uint64_t min_size = ((uint64_t)1) << 63;
   // find the smallest free slot which is bigger than the required size
   for (dma_header *cur = free_dma_list; cur; cur = cur->next) {
+    // minus dma_header size, allocatable size.
     uint64_t data_size = cur->total_size - align_up(sizeof(dma_header), 8);
     if (data_size >= align_up(size, 8) && data_size < min_size) {
       free_slot = cur;
@@ -279,6 +267,7 @@ void *malloc(uint64_t size) {
     free_slot->total_size = allocated_size;
     free_slot->used_size = size;
     free_slot->is_allocated = 1;
+    // cut from free_slot linked-list
     if (free_slot->prev) free_slot->prev->next = free_slot->next;
     if (free_slot->next) free_slot->next->prev = free_slot->prev;
     if (free_dma_list == free_slot) free_dma_list = free_slot->next;
@@ -347,7 +336,8 @@ void free(void *ptr) {
   target_header->next = free_dma_list;
   if (free_dma_list) free_dma_list->prev = target_header;
   free_dma_list = target_header;
-
+  
+  //enters the frame and merge dma in the frame if possible
   page_frame *frame_ptr = target_header->frame_ptr;
   uint64_t base_addr = frame_ptr->addr;
   uint64_t order = frame_ptr->order;
@@ -366,7 +356,7 @@ void free(void *ptr) {
     target_header->total_size += next_header->total_size;
   }
 
-  // merge previous slot if it is free
+  // merge previous slot if it is free, check from start
   uint64_t current_addr = base_addr;
   while (current_addr < boundary) {
     dma_header *header = (dma_header *)current_addr;
@@ -410,4 +400,31 @@ void print_dma_list() {
     print_s("\n");
   }
   print_s("========================\n");
+}
+
+
+void* simple_malloc(size_t size){
+    size_t mem_start = heap_offset + HEAP_START;
+    heap_offset+=size;
+    return (void*) mem_start;
+}
+
+unsigned long __stack_chk_guard;
+void __stack_chk_guard_setup(void)
+{
+     __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
+}
+
+void __stack_chk_fail(void)                         
+{
+ /* Error message */                                 
+}// will be called when guard variable is corrupted 
+
+
+void *memcpy(void *dest, const void *src, unsigned int n)
+{
+    for (unsigned int i = 0; i < n; i++)
+    {
+        ((char*)dest)[i] = ((char*)src)[i];
+    }
 }

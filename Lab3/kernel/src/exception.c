@@ -18,15 +18,15 @@ void sync_handler() {
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
   asm volatile("mrs %0, elr_el1" : "=r"(elr_el1));
   asm volatile("mrs %0, esr_el1" : "=r"(esr_el1));
-  print_s("SPSR_EL1: ");
-  print_h(spsr_el1);
-  print_s("\n");
-  print_s("ELR_EL1: ");
-  print_h(elr_el1);
-  print_s("\n");
-  print_s("ESR_EL1: ");
-  print_h(esr_el1);
-  print_s("\n\n");
+  //print_s("SPSR_EL1: ");
+  //print_h(spsr_el1);
+  //print_s("\n");
+  //print_s("ELR_EL1: ");
+  //print_h(elr_el1); // return address of EL1 exception
+  //print_s("\n");
+  //print_s("ESR_EL1: "); 
+  //print_h(esr_el1); // cause of the exception
+  //print_s("\n\n");
 }
 
 void el0_to_el1_irq_handler() {

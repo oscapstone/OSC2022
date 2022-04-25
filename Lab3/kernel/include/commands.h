@@ -34,6 +34,7 @@ void shell_test(char* args);
 void shell_settimeout(char* args);
 void shell_events(char* args);
 void shell_buddy_test(char* args);
+void shell_dma_test(char* args);
 
 commads cmd_list[]=
 {
@@ -50,7 +51,8 @@ commads cmd_list[]=
     {.cmd="test", .help="test your command here", .func=shell_test},
     {.cmd="timeout", .help="setTimeout MESSAGE SECONDS", .func=shell_settimeout},
     {.cmd="events", .help="show all timeout events", .func=shell_events},
-    {.cmd="buddy", .help="buddy memory system test", .func=shell_buddy_test}
+    {.cmd="buddy", .help="buddy memory system test", .func=shell_buddy_test},
+    {.cmd="dma", .help="dynamic memory allocation test", .func=shell_dma_test}
 };
 
 
@@ -238,19 +240,18 @@ void shell_alloc(char* args){
 
 void shell_user_program(char* args){
 
-    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled
+    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
     uint64_t target_addr = 0x30000000; // load your program here
     uint64_t target_sp = 0x31000000;
 
     cpio_load_user_program("user_program.img", target_addr);
     core_timer_enable();
 
-    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // save processor's state, 
-                                                        // you're at EL1 now so it's spsr_el1
-    asm volatile("msr elr_el1, %0" : : "r"(target_addr));
+    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer
+    asm volatile("msr elr_el1, %0" : : "r"(target_addr)); // link register at 
     asm volatile("msr sp_el0, %0" : : "r"(target_sp));
     asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
-                          // we set the register manually to perform a "jump" or switcning between kernel and user space.
+                          // we set the register manually to perform a "jump" or switchning between kernel and user space.
 }
 
 void shell_ls(char* args){
@@ -263,7 +264,9 @@ void shell_start_timer(char* args){
 }
 
 void shell_async_puts(char* args){
+    enable_uart_interrupt();
     uart_async_puts("async puts test\n");
+    disable_uart_interrupt();
 }
 
 void shell_test(char* args){
@@ -304,6 +307,10 @@ void shell_events(char* args){
 
 void shell_buddy_test(char* args){
     buddy_test();
+}
+
+void shell_dma_test(char* args){
+    dma_test();
 }
 
 #endif

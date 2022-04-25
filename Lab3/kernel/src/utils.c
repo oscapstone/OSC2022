@@ -1,5 +1,5 @@
 #include "utils.h"
-
+#include "io.h"
 int is_digit(char ch) { return (ch >= '0') && (ch <= '9'); }
 
 uint64_t hex2int(char *hex, int len) {

@@ -30,7 +30,7 @@ void uart_init() {
 
   read_buf_start = read_buf_end = 0;
   write_buf_start = write_buf_end = 0;
-  enable_uart_interrupt();
+  //enable_uart_interrupt();
 }
 
 void uart_send(unsigned int c) {
@@ -77,7 +77,7 @@ void enable_uart_interrupt() { *ENABLE_IRQS_1 = AUX_IRQ; }
 
 void disable_uart_interrupt() { *DISABLE_IRQS_1 = AUX_IRQ; }
 
-void assert_transmit_interrupt() { *AUX_MU_IER_REG |= 0x2; }
+void assert_transmit_interrupt() { *AUX_MU_IER_REG |= 0x2; } // TX interrupt
 
 void clear_transmit_interrupt() { *AUX_MU_IER_REG &= ~(0x2); }
 
@@ -121,7 +121,7 @@ void uart_async_puts(char *str) {
     write_buf[write_buf_end++] = str[i];
     if (write_buf_end == UART_BUFFER_SIZE) write_buf_end = 0;
   }
-  assert_transmit_interrupt();
+  assert_transmit_interrupt(); // when FIFO is emptied (done all transmitting), assert exception to request data from write_buf
 }
 /**
  * Display a binary value in hexadecimal
