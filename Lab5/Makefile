@@ -17,7 +17,7 @@ bootloader.img: bootloader/*.S bootloader/*.c $(LIB)/*.S $(LIB)/mini_uart.c $(LI
 	$(ARMGNU)-gcc $(FLAGS) -Tbootloader/linker.ld $^ -o bootloader.elf -I$(INC)
 	$(ARMGNU)-objcopy -O binary bootloader.elf bootloader.img
 
-user.img: user/*.S
+user.img: user/*.c $(LIB)/*.c $(LIB)/*.S
 	$(ARMGNU)-gcc $(FLAGS) -Tuser/linker.ld $^ -o user.elf
 	$(ARMGNU)-objcopy -O binary user.elf user.img
 

@@ -70,7 +70,7 @@ void cpio_cat(char *filename) {
     }
 }
 
-void load_program() {
+void load_program(const char *name) {
     char *target = findFile("user.img");
     if (target) {
         cpio_header *header = (cpio_header *)target;
@@ -81,20 +81,13 @@ void load_program() {
         align_4(&headerPathname_size); 
         align_4(&file_size);           
         
-        unsigned char *addr = (unsigned char *) 0x400000;
+        unsigned char *addr = (unsigned char *)USER_PROGRAM_ADDR;
         char *file_content = target + headerPathname_size;
         for (unsigned int i = 0; i < file_size; i++) {
-            *addr = file_content[i]; // print the file content
+            *addr = file_content[i];
             addr++;
         }
-
-        add_timer(read_sysreg(cntfrq_el0) << 1, show_time_elapsed, NULL);
-        core_timer_enable();
-        asm volatile("mov x0, 0x340  \n");
-        asm volatile("msr spsr_el1, x0   \n");
-        asm volatile("msr elr_el1, %0    \n" ::"r"(0x400000));
-        asm volatile("msr sp_el0, %0    \n" ::"r"(0x400000 + 10000));
-        asm volatile("eret   \n");
+        debug_printf("[DEBUG][load_program] load program: %s\n", name);
     }
     else {
         uart_send_string("File not found!\n");

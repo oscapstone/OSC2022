@@ -1,15 +1,17 @@
 #ifndef __CPIO__
 #define __CPIO__
 
-
+#define __USE_QEMU__
 
 #ifdef __USE_QEMU__
 #define CPIO_ADDR  ((char *)0x8000000) // qemu
 #else
 #define CPIO_ADDR  ((char *)0x20000000) // raspi3
 #endif
-
 #define MAX_INITRAMFS_SIZE 0x100000  // 1M
+
+#define USER_PROGRAM_ADDR 0x30000000
+#define MAX_USER_PROGRAM_SIZE 0x100000  // 1M
 
 typedef struct
 {
@@ -33,6 +35,6 @@ typedef struct
 void cpio_list();
 void cpio_cat(char *filename);
 char * findFile(char *name);
-void load_program();
+void load_program(const char *name);
 
 #endif

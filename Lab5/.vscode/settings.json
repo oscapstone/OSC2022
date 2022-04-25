@@ -8,6 +8,7 @@
         "initializer_list": "c",
         "utility": "c",
         "task.h": "c",
-        "allocator.h": "c"
+        "allocator.h": "c",
+        "mini_uart.h": "c"
     }
 }

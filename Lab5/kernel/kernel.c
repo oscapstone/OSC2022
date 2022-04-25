@@ -13,5 +13,4 @@ void kernel_main(void) {
 	init_reserve();
 	enable_interrupt();
 	run_main_thread();
-	shell();
 }

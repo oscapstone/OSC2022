@@ -18,7 +18,7 @@ switch_to:
     ldp x27, x28, [x1, 16 * 4]
     ldp fp, lr, [x1, 16 * 5]
     ldr x9, [x1, 16 * 6]
-    mov sp,  x9
+    mov sp, x9
     msr tpidr_el1, x1
     ret
 
