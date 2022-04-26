@@ -11,6 +11,8 @@ void kernel_main(void) {
 	uart_init();
 	memory_init();
 	init_reserve();
+	init_timer();
 	enable_interrupt();
-	run_main_thread();
+	create_root_thread();
+	shell();
 }

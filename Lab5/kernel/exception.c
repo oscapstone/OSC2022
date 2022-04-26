@@ -47,7 +47,11 @@ void lower_sync_handler(trap_frame *tf) {
                 case 7:
                     sys_kill(regs[0]);
                     break;
+                default:
+                    uart_printf("[ERROR][lower_sync_handler] unknown svc!\n");
+                    break;
             }
+            thread_schedule();
         }
         else
             uart_printf("[ERROR][lower_sync_handler] unknown exception!\n");
@@ -56,9 +60,11 @@ void lower_sync_handler(trap_frame *tf) {
 
 void lower_iqr_handler() {
 	pop_timer();
+    thread_schedule();
 }
 
 void curr_sync_handler() {
+    uart_printf("[ERROR][curr_sync_handler]\n");
 	error_handler();
 }
 
@@ -168,7 +174,6 @@ void sys_exit() {
     pop_task_from_queue(&run_queue, cur_task);
     push_task_to_queue(&terminated_queue, cur_task);
     debug_printf("[DEBUG][sys_exit] thread: %d\n", cur_task->id);
-    thread_schedule();
 }
 
 int sys_mbox_call(unsigned char ch, unsigned int *mbox) {

@@ -14,6 +14,7 @@ struct Timer {
     void *args;
 };
 
+void init_timer();
 void core_timer_enable();
 void core_timer_handler();
 void add_timer(unsigned int time, timer_call_back, void *);
@@ -23,5 +24,6 @@ void test_timer();
 /* callbacks */
 void show_time_elapsed(void *);
 void print_timer(void *);
+void normal_timer();
 
 #endif

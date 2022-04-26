@@ -3,9 +3,18 @@
 #include "sysreg.h"
 #include "allocator.h"
 #include "exception.h"
+#include "shell.h"
 
 
 static struct Timer *timer_list = NULL;
+
+
+void init_timer() {
+    uint64_t tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
+}
 
 void core_timer_enable() {
     write_sysreg(cntp_ctl_el0, 1); // enable
@@ -87,4 +96,12 @@ void show_time_elapsed(void *args) {
 void print_timer(void *args) {
     char *msg = (char *)args;
     uart_send_string(msg);
+}
+
+void normal_timer() {
+    unsigned long cntpct = read_sysreg(cntpct_el0);
+	unsigned long cntfrq = read_sysreg(cntfrq_el0);
+	unsigned long tmp = cntpct * 10 / cntfrq;
+    uart_printf("[DEBUG][normal_timer] time elapsed: %d.%ds\n", tmp/10, tmp%10);
+    add_timer(cntfrq >> 5, normal_timer, NULL);
 }

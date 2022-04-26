@@ -6,20 +6,24 @@
 #include "mini_uart.h"
 #include "sysreg.h"
 #include "cpio.h"
+#include "timer.h"
 
 
 task_queue run_queue = {"run", NULL, NULL};
 task_queue wait_queue = {"wait", NULL, NULL};
 task_queue terminated_queue = {"terminated", NULL, NULL};
-static int task_cnt = 0;
+int run_queue_sz = 0;
 char **_argv = NULL;
+static int task_cnt = 0;
 
 
 void run_user_program(const char* name, char *const argv[]) {
     load_program((char*)name);
     _argv = (char**)argv;
     thread_create(switch_to_user_space);
-    thread_schedule();
+    add_timer(read_sysreg(cntfrq_el0) >> 5, normal_timer, NULL); // < 0.1s
+    core_timer_enable();
+    idle();
 }
 
 void switch_to_user_space() {
@@ -31,11 +35,9 @@ void switch_to_user_space() {
     asm volatile("eret  \n"::);
 }
 
-void run_main_thread() {
+void create_root_thread() {
     task_struct* root_task = thread_create(idle);
     write_sysreg(tpidr_el1, root_task);
-    thread_create(shell);
-    idle();
 }
 
 task_struct* thread_create(void *func) {
@@ -54,17 +56,16 @@ task_struct* thread_create(void *func) {
     return new_task;
 }
 
-/* The state/queue of the current thread should be taken care of before entering this function */
 void thread_schedule() {
     task_struct *next_task = run_queue.begin;
-
+    if (!next_task->id && !next_task->next) // escapes idle(), but the call stack will grow forever
+        shell();
+    
     pop_task_from_queue(&run_queue, next_task);
     push_task_to_queue(&run_queue, next_task);
 
     task_struct *cur = get_current();
     debug_printf("[DEBUG][thread_schedule] switch from thread %d to %d\n", cur->id, next_task->id);
-    if (run_queue.begin->id != 0) // has threads other than root and shell
-        thread_schedule();
     switch_to(cur, next_task);
 }
 
@@ -90,6 +91,7 @@ void push_task_to_queue(task_queue *queue, task_struct *task) {
         queue->begin = queue->end = task;
         task->prev = task->next = NULL;
     }
+    run_queue_sz += 1;
     debug_printf("[DEBUG][push_task_to_queue] push thread %d into %s queue\n", task->id, queue->name);
 }
 
@@ -110,6 +112,7 @@ void pop_task_from_queue(task_queue *queue, task_struct *task) {
     }
     else
         queue->begin = queue->end = NULL;
+    run_queue_sz -= 1;
     debug_printf("[DEBUG][pop_task_from_queue] pop thread %d from %s queue\n", task->id, queue->name);
 }
 

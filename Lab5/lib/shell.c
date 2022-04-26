@@ -82,7 +82,7 @@ void parse_command() {
     else if (compare_string(buffer, "async_uart") == 0) {
         test_uart_async();
     }
-    else if (compare_string(buffer, "test_timer") == 0) {
+    else if (compare_string(buffer, "test_timer_lab3") == 0) {
         test_timer();
     }
     else if (compare_string(buffer, "test_page") == 0) {
@@ -121,10 +121,14 @@ void parse_command() {
         debug_mode = 0;
     }
     else if (compare_string(buffer, "test_fork") == 0) {
+        debug_mode = 1;
         run_user_program("fork_test.img", NULL);
     }
     else if (compare_string(buffer, "test_exec") == 0) {
         run_user_program("exec_test.img", NULL);
+    }
+    else if (compare_string(buffer, "test_timer") == 0) {
+        run_user_program("timer_test.img", NULL);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
