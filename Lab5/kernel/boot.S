@@ -41,9 +41,9 @@ from_el2_to_el1:
 
 
 
-// save general registers to stack
+// save registers to stack
 .macro save_regs
-    sub sp, sp, 36 * 8	//size of all registers x0-x30 (31 * 16)
+    sub sp, sp, 36 * 8
     stp x0, x1, [sp, 16 * 0]
     stp x2, x3, [sp, 16 * 1]
     stp x4, x5, [sp, 16 * 2]
@@ -68,7 +68,7 @@ from_el2_to_el1:
 	str x21, [sp, 16 * 17]
 .endm
 
-// load general registers from stack
+// load registers from stack
 .macro load_regs
 	ldp x21, x20, [sp, 16 * 17]
 	ldp x19, x20, [sp, 16 * 16]

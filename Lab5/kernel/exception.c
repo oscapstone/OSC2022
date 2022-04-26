@@ -19,34 +19,38 @@ void lower_sync_handler(trap_frame *tf) {
     unsigned long esr, svc;
     asm volatile("mrs %0, esr_el1  \n":"=r"(esr):);
 	unsigned long *regs = tf->regs;
-    if(((esr >> 26) & 0x3f) == 0x15) {
+    if (((esr >> 26) & 0x3f) == 0x15) {
         svc = esr & 0x1ffffff;
-        switch(svc){
-            case 0:
-                regs[0] = sys_getpid();
-                break;
-            case 1:
-                regs[0] = sys_uartread((char*)regs[0], (size_t)regs[1]);
-                break;
-            case 2:
-                regs[0] = sys_uartwrite((const char*)regs[0], (size_t)regs[1]);
-                break;
-            case 3:
-				sys_exec((const char*)regs[0], (char * const*)regs[1]);
-                break;
-            case 4:
-				sys_fork(tf);
-                break;
-            case 5:
-				sys_exit(regs[0]);
-                break;
-            case 6:
-                regs[0] = sys_mbox_call((unsigned char)regs[0], (unsigned int*)regs[1]);
-                break;
-			case 7:
-				sys_kill(regs[0]);
-				break;
+        if (svc == 0) {
+            switch(regs[8]) {
+                case 0:
+                    regs[0] = sys_getpid();
+                    break;
+                case 1:
+                    regs[0] = sys_uartread((char*)regs[0], (size_t)regs[1]);
+                    break;
+                case 2:
+                    regs[0] = sys_uartwrite((const char*)regs[0], (size_t)regs[1]);
+                    break;
+                case 3:
+                    sys_exec((const char*)regs[0], (char * const*)regs[1]);
+                    break;
+                case 4:
+                    sys_fork(tf);
+                    break;
+                case 5:
+                    sys_exit(regs[0]);
+                    break;
+                case 6:
+                    regs[0] = sys_mbox_call((unsigned char)regs[0], (unsigned int*)regs[1]);
+                    break;
+                case 7:
+                    sys_kill(regs[0]);
+                    break;
+            }
         }
+        else
+            uart_printf("[ERROR][lower_sync_handler] unknown exception!\n");
     }
 }
 

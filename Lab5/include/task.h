@@ -9,10 +9,10 @@
 
 
 typedef struct trap_frame {
-  unsigned long regs[32];
-  unsigned long sp_el0;
-  unsigned long elr_el1;
-  unsigned long spsr_el1;
+    unsigned long regs[32];
+    unsigned long sp_el0;
+    unsigned long elr_el1;
+    unsigned long spsr_el1;
 } trap_frame;
 
 typedef struct cpu_context {
