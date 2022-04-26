@@ -3,6 +3,8 @@
 #include "devtree.h"
 #include "cpio.h"
 #include "mm.h"
+#include "timer.h"
+#include "exception.h"
 
 void kernel_main(void)
 {
@@ -10,6 +12,8 @@ void kernel_main(void)
 	devtree_getaddr();
 	fdt_traverse(initramfs_callback);
 	init_mm_reserve();
+	timer_init();
+	enable_interrupt();
 	uart_send_string("OSDI 2022 Spring\n");
 
 	shell_loop();

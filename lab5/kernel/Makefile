@@ -38,7 +38,6 @@ DEP_FILES = $(OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)
 
 kernel8.img: linker.ld $(OBJ_FILES) $(LIBOBJ_FILES)
-	@echo $(BLOADOBJ_FILE)
 	$(LD) -T linker.ld -o $(BUILD_DIR)/kernel8.elf $(OBJ_FILES) $(LIBOBJ_FILES) 
 	$(OBJCPY) $(BUILD_DIR)/kernel8.elf -O binary $@
 

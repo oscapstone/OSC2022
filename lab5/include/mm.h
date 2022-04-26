@@ -50,4 +50,6 @@ void chunk_free(void *);
 void memory_reserve(void*, void*);
 void init_mm_reserve();
 
+void memzero(unsigned long, unsigned long);
+
 #endif  /*_MM_H */

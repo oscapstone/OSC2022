@@ -10,13 +10,21 @@
 #include "exception.h"
 #include "math.h"
 #include "mm.h"
+#include "../include/sched.h"
+#include "fork.h"
 
 
 #define MAX_BUFFER_SIZE 256u
 
 static char buffer[MAX_BUFFER_SIZE];
-static void* to_free[10] = {(void*)MEM_REGION_BEGIN};
-static void* to_freec[4] = {(void*)MEM_REGION_BEGIN};
+
+void foo() {
+    for(int i = 0; i < 10; ++i) {
+        printf("Thread id: %d %d\n", current->id, i);
+        delay(1000000);
+        schedule();
+    }
+}
 
 void read_cmd()
 {
@@ -64,27 +72,9 @@ void parse_cmd()
     else if (stringcmp(buffer, "execute") == 0) {
         cpio_exec();
     }
-    else if (stringcmp(buffer, "m") == 0) {
+    else if (stringcmp(buffer, "thread_test") == 0) {
         for (int i=0; i<10; i++) {
-            if(i < 5) to_free[i] = malloc(4095);
-            else to_free[i] = malloc(4096*pow(2, i-4));
-        }
-        malloc(4096*64);
-    }
-    else if (stringcmp(buffer, "f") == 0) {
-        for (int i=0; i<10; i++) {
-            free(to_free[i]);
-        }
-    }
-    else if (stringcmp(buffer, "cm") == 0) {
-        to_freec[0] = chunk_alloc(8);
-        to_freec[1] = chunk_alloc(8);
-        to_freec[2] = chunk_alloc(96); 
-        to_freec[3] = chunk_alloc(256); 
-    }
-    else if (stringcmp(buffer, "cf") == 0) {
-        for (int i=0; i<4; i++) {
-            chunk_free(to_freec[i]);
+            copy_process(foo, 0);
         }
     }
     else if (stringcmp(buffer, "help") == 0) {
@@ -104,6 +94,8 @@ void parse_cmd()
 void shell_loop() 
 {
     while (1) {
+        // kill zombies
+        // schedule
         uart_send_string("% ");
         read_cmd();
         parse_cmd();

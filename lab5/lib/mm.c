@@ -37,7 +37,7 @@ void *malloc(unsigned int size) {
         struct frame* l_tmp = frame_list[t];
         frame_list[t] = l_tmp->next;
         frame_list[t]->prev = NULL;
-        printf("[info] Split at order %d, new head is 0x%x.\n", t+1, frame_list[t]);
+        //printf("[info] Split at order %d, new head is 0x%x.\n", t+1, frame_list[t]);
 
         unsigned int off = pow(2, l_tmp->val-1);
         struct frame* r_tmp = &frame_array[l_tmp->index+off];
@@ -68,7 +68,7 @@ void *malloc(unsigned int size) {
     ret->prev = NULL;
     ret->next = NULL;
 
-    printf("[info] allocated address: 0x%x\n", MEM_REGION_BEGIN+PAGE_SIZE*ret->index);
+    //printf("[info] allocated address: 0x%x\n", MEM_REGION_BEGIN+PAGE_SIZE*ret->index);
 
     return (void*)MEM_REGION_BEGIN+PAGE_SIZE*ret->index;
 
@@ -83,19 +83,19 @@ void free(void *address) {
         printf("[error] invalid free of already freed memory.\n");
         return;
     }
-    printf("=========================================================\n");
-    printf("[info] Now freeing address 0x%x with frame index %d.\n", address, (int)idx);
+    //printf("=========================================================\n");
+    //printf("[info] Now freeing address 0x%x with frame index %d.\n", address, (int)idx);
 
     for (int i=target->val; i<MAX_ORDER; i++) {
         
         unsigned int buddy = idx ^ (unsigned int)pow(2, i);
         struct frame* fr_buddy = &frame_array[buddy];
-        printf("[info] Index %d at order %d, buddy %d at order %d state %d.\n", 
-                (int)idx, (int)i+1, (int)buddy, fr_buddy->val+1, fr_buddy->state);
+        //printf("[info] Index %d at order %d, buddy %d at order %d state %d.\n", 
+        //        (int)idx, (int)i+1, (int)buddy, fr_buddy->val+1, fr_buddy->state);
 
         if (i < MAX_ORDER-1 && fr_buddy->state == ALLOCABLE && i== fr_buddy->val) {
             
-            printf("[info] Merging from order %d. Frame indices %d, %d.\n", i+1, (int)buddy, (int)idx);
+            //printf("[info] Merging from order %d. Frame indices %d, %d.\n", i+1, (int)buddy, (int)idx);
             
             if (fr_buddy->prev != NULL) {
                 fr_buddy->prev->next = fr_buddy->next;
@@ -119,7 +119,7 @@ void free(void *address) {
                 target = fr_buddy;
             }
             
-            printf("[info] Frame index of next merge target is %d.\n", (int)idx);
+            //printf("[info] Frame index of next merge target is %d.\n", (int)idx);
 
         } else {
 
@@ -130,21 +130,21 @@ void free(void *address) {
             if (frame_list[i] != NULL)
                 frame_list[i]->prev = target;
             frame_list[i] = target;
-            printf("[info] Frame index %d pushed to frame list of order %d.\n", 
-                (int)target->index, (int)i+1);
+            //printf("[info] Frame index %d pushed to frame list of order %d.\n", 
+            //    (int)target->index, (int)i+1);
             break;
 
         }
         
     } 
 
-    printf("[info] Free finished.\n");
-    for (int i=0; i < MAX_ORDER; i++) {
+    //printf("[info] Free finished.\n");
+    /*for (int i=0; i < MAX_ORDER; i++) {
         if (frame_list[i] != NULL)
             printf("[info] Head of order %d has frame array index %d.\n",i+1,frame_list[i]->index);
         else
             printf("[info] Head of order %d has frame array index null.\n",i+1);
-    }
+    }*/
 
 }
 
@@ -219,7 +219,7 @@ int register_chunk(unsigned int size) {
 void *chunk_alloc(unsigned int size) {
 
     int pool_idx = register_chunk(size);
-    printf("[info] pool index is %d.\n", pool_idx);
+    //printf("[info] pool index is %d.\n", pool_idx);
     if (pool_idx == -1) return NULL;
     
     struct dynamic_pool* pool = &pools[pool_idx];
@@ -227,20 +227,20 @@ void *chunk_alloc(unsigned int size) {
     if (pool->free_head != NULL) {
         void *ret = (void*) pool->free_head;
         pool->free_head = pool->free_head->next;
-        printf("[info] allocate address 0x%x from pool free list.\n", ret);
+        //printf("[info] allocate address 0x%x from pool free list.\n", ret);
         return ret;
     }
 
     if (pool->chunks_allocated >= MAX_POOL_PAGES*pool->chunks_per_page) {
-        printf("[error] Pool maximum reached.\n");
+        //printf("[error] Pool maximum reached.\n");
         return NULL;
     }
         
 
     if (pool->chunks_allocated >= pool->pages_used*pool->chunks_per_page) {
         pool->page_base_addrs[pool->pages_used] = malloc(PAGE_SIZE);
-        printf("[info] allocate new page for pool with base address 0x%x.\n", 
-                pool->page_base_addrs[pool->pages_used]);
+        //printf("[info] allocate new page for pool with base address 0x%x.\n", 
+        //        pool->page_base_addrs[pool->pages_used]);
         pool->pages_used++;
         pool->page_new_chunk_off = 0;
     }
@@ -250,7 +250,7 @@ void *chunk_alloc(unsigned int size) {
     pool->page_new_chunk_off++;
     pool->chunks_allocated++;
 
-    printf("[info] allocate new address 0x%x from pool.\n", ret);
+    //printf("[info] allocate new address 0x%x from pool.\n", ret);
 
     return ret;
 
@@ -269,7 +269,7 @@ void chunk_free(void *address) {
                 target = i;
         }
     }
-    printf("[info] free chunk from pool %d.\n", target);
+    //printf("[info] free chunk from pool %d.\n", target);
     struct dynamic_pool *pool = &pools[target];
     struct node* old_head = pool->free_head;
     pool->free_head = (struct node*) address;
