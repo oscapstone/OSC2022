@@ -46,9 +46,9 @@ void lower_64_EL_sync_handler(uint64_t sp){
     int sys_call_num;
     asm volatile("mov %0, x8" : "=r"(sys_call_num));
 
-    print_s("system call number: ");
-    print_i(sys_call_num);
-    print_s("\r\n");
+    //print_s("system call number: ");
+    //print_i(sys_call_num);
+    //print_s("\r\n");
 
     // print content of the trap frame
     //for(int i = 0; i< 10; i++){
@@ -71,7 +71,16 @@ void lower_64_EL_sync_handler(uint64_t sp){
       trap_frame->x[0] = size;
     }else if(sys_call_num == 2){ // uartread(char buf[], size_t size)
       char* str = trap_frame->x[0];
-      uart_puts(str);
+      uint32_t size = (uint32_t)(trap_frame->x[1]);
+      //uart_puts("[size: ");
+      //print_i(size);
+      //uart_puts(", ");
+      uart_write(str, size);
+      //uart_puts(":");
+      //for(int i = 0; i< size; i++){
+      //  print_i(str[i]);
+      //}
+      //uart_puts("]\n");
     }else{
       print_s("unhandled system call number\r\n");
     }

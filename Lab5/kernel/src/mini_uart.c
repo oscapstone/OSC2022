@@ -85,6 +85,13 @@ void uart_puts(char *s) {
   }
 }
 
+void uart_write(const char buf[], size_t size){
+  for(int i = 0; i< size; i++){
+    if(buf[i] == '\n') uart_send('\r');
+    uart_send(buf[i]);
+  }
+}
+
 // #define AUX_IRQ (1 << 29)
 void enable_uart_interrupt() { *ENABLE_IRQS_1 = AUX_IRQ; }
 

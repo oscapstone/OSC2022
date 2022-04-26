@@ -40,6 +40,7 @@ char uart_getc();
 uint32_t uart_gets(char *buf, uint32_t size);
 void uart_puts(char *s);
 void uart_hex(unsigned int d);
+void uart_write(const char buf[], size_t size); // for user program
 
 void enable_uart_interrupt();
 void disable_uart_interrupt();
