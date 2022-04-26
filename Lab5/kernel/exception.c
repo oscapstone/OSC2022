@@ -33,7 +33,7 @@ void lower_sync_handler(trap_frame *tf) {
                     regs[0] = sys_uartwrite((const char*)regs[0], (size_t)regs[1]);
                     break;
                 case 3:
-                    sys_exec((const char*)regs[0], (char * const*)regs[1]);
+                    sys_exec(tf, (const char*)regs[0], (char * const*)regs[1]);
                     break;
                 case 4:
                     sys_fork(tf);
@@ -103,9 +103,12 @@ size_t sys_uartwrite(const char buf[], size_t size) {
     return cnt;
 }
 
-int sys_exec(const char *name, char *const argv[]) {
+int sys_exec(trap_frame *tf, const char *name, char *const argv[]) {
     load_program((char*)name);
-
+    _argv = (char**)argv;
+    task_struct *cur_task = get_current();
+    tf->elr_el1 = (unsigned long)USER_PROGRAM_ADDR;
+    tf->sp_el0 = cur_task->user_fp;
     return 0;
 }
 

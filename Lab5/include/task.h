@@ -49,17 +49,21 @@ typedef struct task_queue {
 extern task_queue run_queue;
 extern task_queue wait_queue;
 extern task_queue terminated_queue;
+extern char **_argv;
 
 task_struct* thread_create(void* func);
 void thread_schedule();
 void kill_zombies();
 void idle();
 void run_main_thread();
-void run_user_program(const char* name);
+void run_user_program(const char* name, char *const argv[]);
 void switch_to_user_space();
 
 void dump_queue(task_queue *queue);
 void push_task_to_queue(task_queue *queue, task_struct *task);
 void pop_task_from_queue(task_queue *queue, task_struct *task);
+
+/* Helper functions */
+void put_args(char *const argv[]);
 
 #endif

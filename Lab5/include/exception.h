@@ -18,7 +18,7 @@ void child_return_from_fork();
 int sys_getpid();
 size_t sys_uartread(char buf[], size_t size);
 size_t sys_uartwrite(const char buf[], size_t size);
-int sys_exec(const char *name, char *const argv[]);
+int sys_exec(trap_frame *tf, const char *name, char *const argv[]);
 void sys_fork(trap_frame *tf);
 void sys_exit();
 int sys_mbox_call(unsigned char ch, unsigned int *mbox);

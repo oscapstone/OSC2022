@@ -12,10 +12,12 @@ task_queue run_queue = {"run", NULL, NULL};
 task_queue wait_queue = {"wait", NULL, NULL};
 task_queue terminated_queue = {"terminated", NULL, NULL};
 static int task_cnt = 0;
+char **_argv = NULL;
 
 
-void run_user_program(const char* name) {
+void run_user_program(const char* name, char *const argv[]) {
     load_program((char*)name);
+    _argv = (char**)argv;
     thread_create(switch_to_user_space);
     thread_schedule();
 }
@@ -119,4 +121,14 @@ void dump_queue(task_queue *queue) {
         task = task->next;
     }
     uart_printf("\n");
+}
+
+/* Helper functions */
+void put_args(char *const argv[]) {
+    if (!argv)
+        return;
+
+    char **iter = (char**) argv;
+    for (int i = 0; iter[i]; ++i)
+        asm volatile("mov %0,   %1   \n"::"r"(i), "r"(iter[i]));
 }

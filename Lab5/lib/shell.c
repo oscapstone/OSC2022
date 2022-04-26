@@ -121,7 +121,10 @@ void parse_command() {
         debug_mode = 0;
     }
     else if (compare_string(buffer, "test_fork") == 0) {
-        run_user_program("fork_test.img");
+        run_user_program("fork_test.img", NULL);
+    }
+    else if (compare_string(buffer, "test_exec") == 0) {
+        run_user_program("exec_test.img", NULL);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
