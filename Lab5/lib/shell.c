@@ -10,6 +10,7 @@
 #include "allocator.h"
 #include "printf.h"
 #include "task.h"
+#include "exception.h"
 
 
 int debug_mode = 0;
@@ -119,8 +120,8 @@ void parse_command() {
         }
         debug_mode = 0;
     }
-    else if (compare_string(buffer, "test_user") == 0) {
-        
+    else if (compare_string(buffer, "test_fork") == 0) {
+        run_user_program("fork_test.img");
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
@@ -133,7 +134,7 @@ void parse_command() {
         uart_send_string("test_timer         : test timer multiplexing\n");
         uart_send_string("test_page          : test buddy system\n");
         uart_send_string("test_dyn           : test dynamic allocator\n");
-        uart_send_string("test_user          : test user program\n");
+        uart_send_string("test_fork          : test user program\n");
     }
     else
         uart_send_string("\rcommand not found!\r\n");

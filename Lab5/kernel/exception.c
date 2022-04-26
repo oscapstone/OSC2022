@@ -104,7 +104,7 @@ size_t sys_uartwrite(const char buf[], size_t size) {
 }
 
 int sys_exec(const char *name, char *const argv[]) {
-    load_program(name);
+    load_program((char*)name);
 
     return 0;
 }

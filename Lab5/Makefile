@@ -6,6 +6,7 @@ FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g 
 INC = include
 LIB = lib
 CPIO = archive/initramfs.cpio
+USER_PROG = fork_test
 
 all: kernel8.img bootloader.img $(CPIO) user.img 
 
@@ -17,11 +18,11 @@ bootloader.img: bootloader/*.S bootloader/*.c $(LIB)/*.S $(LIB)/mini_uart.c $(LI
 	$(ARMGNU)-gcc $(FLAGS) -Tbootloader/linker.ld $^ -o bootloader.elf -I$(INC)
 	$(ARMGNU)-objcopy -O binary bootloader.elf bootloader.img
 
-user.img: user/*.c $(LIB)/*.c $(LIB)/*.S
-	$(ARMGNU)-gcc $(FLAGS) -Tuser/linker.ld $^ -o user.elf
-	$(ARMGNU)-objcopy -O binary user.elf user.img
+$(USER_PROG).img: user/*.c $(LIB)/*.c $(LIB)/*.S
+	$(ARMGNU)-gcc $(FLAGS) -Tuser/linker.ld $^ -o $(USER_PROG).elf
+	$(ARMGNU)-objcopy -O binary $(USER_PROG).elf $(USER_PROG).img
 
-$(CPIO): user.img
+$(CPIO): $(USER_PROG).img
 	cd archive/rootfs && find . | cpio -o -H newc > ../initramfs.cpio
 
 rd.o:$(CPIO)

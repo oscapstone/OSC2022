@@ -9,6 +9,7 @@
         "utility": "c",
         "task.h": "c",
         "allocator.h": "c",
-        "mini_uart.h": "c"
+        "mini_uart.h": "c",
+        "exception.h": "c"
     }
 }

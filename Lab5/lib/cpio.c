@@ -70,8 +70,8 @@ void cpio_cat(char *filename) {
     }
 }
 
-void load_program(const char *name) {
-    char *target = findFile("user.img");
+void load_program(char *name) {
+    char *target = findFile(name);
     if (target) {
         cpio_header *header = (cpio_header *)target;
         unsigned long pathname_size = hexToDec(header->namesize);

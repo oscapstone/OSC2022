@@ -35,6 +35,6 @@ typedef struct
 void cpio_list();
 void cpio_cat(char *filename);
 char * findFile(char *name);
-void load_program(const char *name);
+void load_program(char *name);
 
 #endif

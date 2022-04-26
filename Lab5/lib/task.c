@@ -13,30 +13,26 @@ task_queue wait_queue = {"wait", NULL, NULL};
 task_queue terminated_queue = {"terminated", NULL, NULL};
 static int task_cnt = 0;
 
-void foo() {
-    for(int i = 0; i < 10; ++i) {
-        uart_printf("Thread id: %d %d\n", get_current()->id, i);
-        delay(1000000);
-        thread_schedule();
-    }
+
+void run_user_program(const char* name) {
+    load_program((char*)name);
+    thread_create(switch_to_user_space);
+    thread_schedule();
 }
 
-void run_user_program() {
-    debug_mode = 0;
-    load_program("user.img");
-    //core_timer_enable();
-    task_struct* root_task = get_current();
+void switch_to_user_space() {
+    task_struct* cur_task = get_current();
     asm volatile("mov x0, 0x340   \n"::);
     asm volatile("msr spsr_el1, x0   \n"::);
     asm volatile("msr elr_el1,  %0   \n"::"r"(USER_PROGRAM_ADDR));
-    asm volatile("msr sp_el0,   %0   \n"::"r"(root_task->user_fp));
+    asm volatile("msr sp_el0,   %0   \n"::"r"(cur_task->user_fp));
     asm volatile("eret  \n"::);
 }
 
 void run_main_thread() {
     task_struct* root_task = thread_create(idle);
     write_sysreg(tpidr_el1, root_task);
-    thread_create(run_user_program);
+    thread_create(shell);
     idle();
 }
 
@@ -59,16 +55,14 @@ task_struct* thread_create(void *func) {
 /* The state/queue of the current thread should be taken care of before entering this function */
 void thread_schedule() {
     task_struct *next_task = run_queue.begin;
-    if (!next_task->id && !next_task->next) {
-        thread_create(shell);
-        thread_schedule();
-    }
 
     pop_task_from_queue(&run_queue, next_task);
     push_task_to_queue(&run_queue, next_task);
 
     task_struct *cur = get_current();
     debug_printf("[DEBUG][thread_schedule] switch from thread %d to %d\n", cur->id, next_task->id);
+    if (run_queue.begin->id != 0) // has threads other than root and shell
+        thread_schedule();
     switch_to(cur, next_task);
 }
 
@@ -80,7 +74,7 @@ void idle() {
 }
 
 void kill_zombies() {
-    
+
 }
 
 void push_task_to_queue(task_queue *queue, task_struct *task) {
