@@ -186,7 +186,7 @@ ret_from_fork:
     cbz     x19, ret_to_user
     mov     x0, x20
     blr     x19         // in theory should not return
-    b       err_hang    // hang fail-safe
+    //b       err_hang    // hang fail-safe
 ret_to_user:
     bl      disable_interrupt
     kernel_exit 0

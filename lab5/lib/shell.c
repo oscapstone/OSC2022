@@ -24,6 +24,25 @@ void foo() {
         delay(1000000);
         schedule();
     }
+    current->state = TASK_ZOMBIE;
+    while(1);
+}
+
+void user_foo() {
+    for(int i = 0; i < 10; ++i) {
+        printf("User thread id: %d %d\n", current->id, i);
+        delay(1000000);
+    }
+    current->state = TASK_ZOMBIE;
+    while(1);
+}
+
+void kernel_process(){
+	printf("Kernel process started.\n");
+	int err = move_to_user_mode((unsigned long)&user_foo);
+	if (err < 0){
+		printf("Error while moving process to user mode\n\r");
+	} 
 }
 
 void read_cmd()
@@ -74,8 +93,11 @@ void parse_cmd()
     }
     else if (stringcmp(buffer, "thread_test") == 0) {
         for (int i=0; i<10; i++) {
-            copy_process(foo, 0);
+            copy_process(PF_KTHREAD, (unsigned long)&foo, 0, 0);
         }
+    }
+    else if (stringcmp(buffer, "to_user") == 0) {
+        copy_process(PF_KTHREAD, (unsigned long)&kernel_process, 0, 0);
     }
     else if (stringcmp(buffer, "help") == 0) {
         uart_send_string("help:\t\tprint list of available commands\n");

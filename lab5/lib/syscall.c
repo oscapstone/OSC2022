@@ -11,7 +11,7 @@ unsigned sys_uartread(char buf[], unsigned size) {
 
 unsigned sys_uartwrite(const char buf[], unsigned size) {
 
-}
+} // check
 
 int sys_exec(const char *name, char *const argv[]) {
 
@@ -19,11 +19,11 @@ int sys_exec(const char *name, char *const argv[]) {
 
 int sys_fork() {
 
-}
+} //check
 
 void sys_exit(int status) {
 
-}
+} // check
 
 int sys_mbox_call(unsigned char ch, unsigned int *mbox) {
 

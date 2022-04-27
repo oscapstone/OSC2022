@@ -18,6 +18,8 @@
 #define TASK_ZOMBIE		        3
 #define TASK_STOPPED		    4
 
+#define PF_KTHREAD              0x00000002
+
 extern struct task_struct *current;
 extern struct task_struct *task[NR_TASKS];
 extern int nr_tasks;
@@ -44,6 +46,8 @@ struct task_struct {
     long counter;
     long priority;
     long preempt_count;
+    unsigned long stack;
+    unsigned long flags;
     long id;
 };
 
@@ -54,11 +58,12 @@ extern void preempt_disable();
 extern void preempt_enable();
 extern void switch_to(struct task_struct *);
 extern void cpu_switch_to(struct task_struct *, struct task_struct *);
+extern void exit_process();
 
 #define INIT_TASK \
 { \
 {0,0,0,0,0,0,0,0,0,0,0,0,0},\
-0, 0, 1, 0 \
+0, 0, 1, 0, 0, PF_KTHREAD, 0 \
 }
 
 #endif
