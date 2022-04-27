@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include "string.h"
+#include "io.h"
 #include "cpio.h"
 #include "utils.h"
 #include "mini_uart.h"

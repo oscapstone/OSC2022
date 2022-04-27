@@ -1,6 +1,14 @@
-#include "thread.h"
-#include "timer.h"
 #include "commands.h"
+#include "power.h"
+#include "mbox.h"
+#include "string.h"
+#include "mini_uart.h"
+#include "exception.h"
+#include "memory.h"
+#include "commands.h"
+#include "cpio.h"
+#include "timer.h"
+#include "thread.h"
 
 //extern commads cmd_list[];
 
@@ -39,7 +47,7 @@ void execute_command(const char* cmd){
     uart_puts("\0"); // I'dont konw why if you remove this bugs occurs
     int command_found = 0;
     for(int i=0; i<cmd_num; i++){
-        if(find_command(cmd, cmd_list[i].cmd) == 1){
+        if(find_substr(cmd, cmd_list[i].cmd, 0) == 1){
             command_found = 1;
             char *args;
             int args_start = strlen(cmd_list[i].cmd) + 1;
@@ -47,7 +55,7 @@ void execute_command(const char* cmd){
                 // command with no argument
                 args = "foo";
             } else {
-                args = &cmd[args_start];
+                args = (char *)&cmd[args_start];
             }
             
             cmd_list[i].func(args);

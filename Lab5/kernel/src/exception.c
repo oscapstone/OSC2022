@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "exception.h"
 #include "thread.h" 
 #include "io.h"
@@ -38,7 +39,7 @@ void lower_64_EL_sync_handler(uint64_t sp){
   asm volatile("mrs %0, esr_el1" : "=r"(esr_el1));
   // https://developer.arm.com/documentation/ddi0595/2021-06/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-
   int ec = (esr_el1 >> 26) & 0x3f; // exception class
-  int iss = esr_el1 & ((1 << 25) - 1); // [24:0], instruction specific syndrome {svc <iss>}
+  //int iss = esr_el1 & ((1 << 25) - 1); // [24:0], instruction specific syndrome {svc <iss>}
 
   if(ec == 0b010101){
     // according the lab spec, the number of the systme call is store in x8
@@ -59,32 +60,44 @@ void lower_64_EL_sync_handler(uint64_t sp){
     //  print_s("\r\n");
     //}
 
-    delay(100000000);
+    delay(5000000);
 
     if(sys_call_num == 0){ // int getpid()
       uint32_t pid = get_current()->pid;
       asm volatile("mov x0, %0" : "=r"(pid)); // function reture value
-    }else if(sys_call_num == 1){ // uartread(char buf[], size_t size)
+    }else if(sys_call_num == 1){ // uart_read(char buf[], size_t size)
       char *str = (char *)(trap_frame->x[0]);
       uint32_t size = (uint32_t)(trap_frame->x[1]);
       size = uart_gets(str, size);
       trap_frame->x[0] = size;
     }else if(sys_call_num == 2){ // uartread(char buf[], size_t size)
-      char* str = trap_frame->x[0];
+      char* str = (char*) trap_frame->x[0];
       uint32_t size = (uint32_t)(trap_frame->x[1]);
       //uart_puts("[size: ");
       //print_i(size);
       //uart_puts(", ");
-      uart_write(str, size);
+      uart_write(str, size);  
       //uart_puts(":");
       //for(int i = 0; i< size; i++){
       //  print_i(str[i]);
       //}
       //uart_puts("]\n");
+    }else if(sys_call_num == 3){
+      print_s("exec called\r\n");
+    }else if(sys_call_num == 4){
+      print_s("fork called\r\n");
+    }else if(sys_call_num == 5){
+      print_s("exit called\r\n");
+    }else if(sys_call_num == 6){
+      print_s("mbox_call called\r\n");
+    }else if(sys_call_num == 7){
+      print_s("kill called\r\n");
     }else{
       print_s("unhandled system call number\r\n");
     }
   }
+
+      //
   //if(ec == 0b010101){
   //  trap_frame_t *trap_frame = (trap_frame_t *)sp;
   //  int sys_call_num = trap_frame->x[8];

@@ -67,10 +67,10 @@ char uart_getc() {
 uint32_t uart_gets(char *buf, uint32_t size) {
   for (int i = 0; i < size; ++i) {
     buf[i] = uart_getc();
-    uart_send(buf[i]);
+    //uart_send(buf[i]);
     if (buf[i] == '\n' || buf[i] == '\r') {
-      uart_send('\r');
-      buf[i] = '\0';
+      //uart_send('\r');
+      //buf[i] = '\0';
       return i;
     }
   }

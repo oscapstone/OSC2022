@@ -1,14 +1,15 @@
-#pragma once
 #include "commands.h"
 #include "power.h"
 #include "mbox.h"
 #include "string.h"
+#include "io.h"
 #include "mini_uart.h"
 #include "memory.h"
 #include "commands.h"
 #include "cpio.h"
 #include "timer.h"
 #include "thread.h"
+#include "printf.h"
 
 commads cmd_list[]=
 {
@@ -207,7 +208,7 @@ void shell_alloc(char* args){
         array[i] = 'a'+i;
     }
     for(int i = 0; i< 26; i++){
-        uart_puts(array[i]);
+        uart_send(array[i]);
     }
     uart_puts("\r\n");
 
@@ -249,7 +250,9 @@ void shell_test(char* args){
     //add_timer(print_message, "testst", 10);
     //update_event_time(head_event, 3);
     //core_timer_disable();
-    set_next_timer(4);
+    //set_next_timer(4);
+    bp("printf");
+    printf("int print test:%d\n", 69420);
 }
 
 void shell_settimeout(char* args){

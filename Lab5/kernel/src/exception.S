@@ -17,6 +17,12 @@
     stp x26, x27, [sp, 16 * 13]
     stp x28, x29, [sp, 16 * 14]
     str x30, [sp, 16 * 15]
+    ////str x30, [sp, 16 * 15]
+    //mrs x10, spsr_el1
+	//mrs x11, elr_el1
+	//mrs x12, sp_el0
+    //stp x30, x10, [sp, 16 * 15]
+    //stp x11, x12, [sp, 16 * 16]
 .endm
 
 // load general registers from stack
@@ -37,6 +43,11 @@
     ldp x26, x27, [sp, 16 * 13]
     ldp x28, x29, [sp, 16 * 14]
     ldr x30, [sp, 16 * 15]
+    //ldp x30, x10, [sp, 16 * 15]
+    //ldp x11, x12, [sp, 16 * 16]
+    //msr spsr_el1, x10
+	//msr elr_el1, x11
+	//msr sp_el0, x12
     add sp, sp, 32 * 8
 .endm
 

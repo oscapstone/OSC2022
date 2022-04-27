@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "io.h"
 
 void buddy_test() {
   print_frame_lists();
@@ -94,6 +95,7 @@ void buddy_init() {
     frames[0].order = MAX_FRAME_ORDER;
     free_frame_lists[MAX_FRAME_ORDER] = &frames[0];
     free_dma_list = 0;
+    heap_offset = 0; // for simple_malloc
 }
 
 page_frame *buddy_allocate(uint64_t size) {
@@ -421,7 +423,7 @@ void __stack_chk_fail(void)
 }// will be called when guard variable is corrupted 
 
 
-void *memcpy(void *dest, const void *src, unsigned int n)
+void memcpy(void *dest, const void *src, unsigned int n)
 {
     for (unsigned int i = 0; i < n; i++)
     {

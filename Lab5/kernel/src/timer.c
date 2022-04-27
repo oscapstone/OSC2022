@@ -1,5 +1,5 @@
 #include "timer.h"
-//#include "memory.h"
+#include "memory.h"
 #include "io.h"
 #include "utils.h"
 
@@ -70,7 +70,7 @@ void set_next_timer(int secs){
 
 void add_timer(callback func, char* args, int duration){
   //func(args);
-  timeout_event* new_event = (timeout_event*)simple_malloc(sizeof(timeout_event));
+  timeout_event* new_event = (timeout_event*)malloc(sizeof(timeout_event));
   
   // fill values in the new event
   new_event->func = func;
@@ -106,8 +106,6 @@ void add_timeout_event(timeout_event* new_event){
   head_event->queue_time = head_time_left;
 
   while(curr_event != 0){
-    print_i(curr_event);
-    print_s("\n");
     if((new_event->queue_time) < (curr_event->queue_time)){
       // do insert
       if(curr_event == head_event){

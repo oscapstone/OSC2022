@@ -2,9 +2,9 @@
 #include "utils.h"
 //#include "stdint.h"
 
-//extern uint32_t HEAP_START;
+// for simple_malloc
 #define HEAP_START 0x30000000
-static size_t heap_offset=0;
+size_t heap_offset;
 
 #define PAGE_BASE_ADDR ((uint64_t)0x10000000)
 #define PAGE_END_ADDR ((uint64_t)0x20000000)
@@ -53,6 +53,6 @@ void* simple_malloc(size_t size);
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void);
 void __stack_chk_fail(void);
-void *memcpy(void *dest, const void *src, unsigned int n);
+void memcpy(void *dest, const void *src, unsigned int n);
 
 

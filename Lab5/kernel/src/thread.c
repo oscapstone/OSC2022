@@ -1,5 +1,6 @@
 #include "thread.h"
-
+#include "string.h"
+#include "io.h"
 #include "memory.h"
 #include "printf.h"
 #include "utils.h"
@@ -23,6 +24,8 @@ void thread_test() {
   thread_info *idle_t = thread_create(0);
   asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
   for (int i = 0; i < 5; ++i) {
+    print_i(i);
+    print_s("\r\n");
     thread_create(foo);
   }
   idle();
@@ -63,6 +66,7 @@ void run_queue_push(thread_info *thread) {
 }
 
 void schedule() {
+  //print_s("scheduling\r\n");
   if (run_queue.head == 0) {
     return;
   }
@@ -75,36 +79,38 @@ void schedule() {
   }
 
   do {
+    //print_s("lalala\r\n");
     run_queue.tail->next = run_queue.head;
     run_queue.tail = run_queue.head;
     run_queue.head = run_queue.head->next;
     run_queue.tail->next = 0;
-  } while (run_queue.head->status != ALIVE);
+  } while (run_queue.head->status != THREAD_READY);
   // unsigned long sp_addr;
   // asm volatile("ldr %0, [sp]\n":"=r"(sp_addr):);
   // printf("[schedule]svc, sp: %x\n", sp_addr);
-  switch_to(get_current(), (uint64_t)&run_queue.head->context);
+  //print_s("switching\r\n");
+  switch_to((uint64_t)get_current(), (uint64_t)&run_queue.head->context);
 }
 
 void idle() {
   while (1) {
     kill_zombies();
     schedule();
-    //print_s("asdfasdf\r\n");
+    //print_s("reee\r\n");
   }
 }
 
 void exit() {
   // read this?????
   thread_info *cur = current_thread();
-  cur->status = DEAD;
+  cur->status = THREAD_DEAD;
   schedule();
 }
 
 void kill_zombies() {
   if (run_queue.head == 0) return;
   for (thread_info *ptr = run_queue.head; ptr->next != 0; ptr = ptr->next) {
-    for (thread_info *cur = ptr->next; cur != 0 && cur->status == DEAD;) {
+    for (thread_info *cur = ptr->next; cur != 0 && cur->status == THREAD_DEAD;) {
       thread_info *tmp = cur->next;
       // printf("find dead thread %d\n", cur->tid);
       free((void *)cur);

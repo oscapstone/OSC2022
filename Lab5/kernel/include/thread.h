@@ -1,5 +1,6 @@
 #pragma once
-
+#include <stdint.h>
+#include <stddef.h>
 #include "utils.h"
 
 #define STACK_SIZE 4096
@@ -26,12 +27,12 @@ typedef struct {
   uint64_t sp;
 } cpu_context;
 
-typedef enum {
-  ALIVE,
-  ACTIVE,
-  DEAD,
-  WAIT,
-} thread_status;
+//typedef enum {
+//  ALIVE,
+//  ACTIVE,
+//  DEAD,
+//  WAIT,
+//} thread_status;
 
 typedef struct thread_info {
   cpu_context context;

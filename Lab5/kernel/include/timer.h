@@ -28,6 +28,7 @@ void core_timer_disable();
 
 void core_timer_handler();
 
+void add_timeout_event(timeout_event* new_event);
 void timeout_event_handler();
 
 void set_next_timer(int secs);

@@ -34,7 +34,7 @@
 #include <stdint.h>
 
 #include "printf.h"
-
+#include "io.h"
 
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
@@ -120,7 +120,7 @@
 // my custom implementation of _putchar
 #include "mini_uart.h"
 void _putchar(char character) {
-    print_s("asdfasdffffff\r\n");
+  print_s("asdfasdffffff\r\n");
   if (character == '\n') uart_send('\r');
   uart_send(character);
 }

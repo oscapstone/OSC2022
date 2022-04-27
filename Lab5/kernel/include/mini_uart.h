@@ -1,5 +1,5 @@
 #pragma once
-
+#include <stdint.h>
 #include "gpio.h"
 #include "utils.h"
 
@@ -34,14 +34,21 @@ int read_buf_start, read_buf_end;
 int write_buf_start, write_buf_end;
 
 void uart_init();
-void uart_send(unsigned int c);
+
+// uart reading functions
 char uart_getb();
 char uart_getc();
 uint32_t uart_gets(char *buf, uint32_t size);
+
+// uart writing functions
+void uart_send(unsigned int c);
 void uart_puts(char *s);
 void uart_hex(unsigned int d);
-void uart_write(const char buf[], size_t size); // for user program
 
+// user program function
+void uart_write(const char buf[], size_t size); 
+
+// uart interrupt util functions
 void enable_uart_interrupt();
 void disable_uart_interrupt();
 void assert_transmit_interrupt();
