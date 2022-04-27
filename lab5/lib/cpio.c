@@ -5,6 +5,9 @@
 
 int read_header(char *str, int size);
 
+char * CPIO_DEFAULT_PLACE;
+char * CPIO_DEFAULT_PLACE_END;
+
 void cpio_ls(){
   cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
   char *header = cpio->c_magic;

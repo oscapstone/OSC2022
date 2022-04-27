@@ -2,6 +2,10 @@
 #include "printf.h"
 #include "utilities.h"
 #include "string.h"
+#include "cpio.h"
+
+char* dtb_place;
+uint32_t dtb_size;
 
 void fdt_traverse(dtb_callback callback){
   struct fdt_header* header = (struct fdt_header*) dtb_place;
@@ -25,7 +29,7 @@ void fdt_traverse(dtb_callback callback){
     if(token_type == FDT_BEGIN_NODE) { 
       callback(token_type, pointer, 0, 0);
       pointer += strlen(pointer);
-      pointer += 4 - (unsigned long long)pointer%4;           //alignment 4 byte
+      pointer += 4 - (uint64_t)pointer%4;           //alignment 4 byte
     }else if(token_type == FDT_PROP) {
       prod_ptr = (struct fdt_prod *) pointer;
       pointer += 8;  // add the fdt_prod len
@@ -33,8 +37,8 @@ void fdt_traverse(dtb_callback callback){
       char* name = (char*)dt_strings_ptr + little_2_big_u32(prod_ptr->nameoff);
       callback(token_type, name, pointer, len);
       pointer += len;
-      if((unsigned long long)pointer % 4 !=0){
-        pointer += 4 - (unsigned long long)pointer%4;   //alignment 4 byte
+      if((uint64_t)pointer % 4 !=0){
+        pointer += 4 - (uint64_t)pointer%4;   //alignment 4 byte
       }
     }
   }
@@ -42,9 +46,9 @@ void fdt_traverse(dtb_callback callback){
 
 void initramfs_callback(uint32_t node_type, char *name, void *value, uint32_t name_size) {
   if(node_type==FDT_PROP && strcmp(name,"linux,initrd-start")==0){
-    CPIO_DEFAULT_PLACE = (void *)(unsigned long long)little_2_big_u32(*(uint32_t*)value);
+    CPIO_DEFAULT_PLACE = (void *)(uint64_t)little_2_big_u32(*(uint32_t*)value);
   }
   if(node_type==FDT_PROP && strcmp(name,"linux,initrd-end")==0){
-    CPIO_DEFAULT_PLACE_END = (void *)(unsigned long long)little_2_big_u32(*(uint32_t*)value);
+    CPIO_DEFAULT_PLACE_END = (void *)(uint64_t)little_2_big_u32(*(uint32_t*)value);
   }
 }

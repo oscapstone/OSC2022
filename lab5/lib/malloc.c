@@ -1,11 +1,8 @@
+#include "stdint.h"
 #include "printf.h"
 #include "malloc.h"
-#include "stdint.h"
-
-#define PAGE_MAX_ORDER 15
-#define PAGE_FREE -1 
-#define PAGE_ALLOCATED -2 
-#define PAGE_RESERVED -3
+#include "cpio.h"
+#include "dtb.h"
 
 static void* simple_malloc(size_t size);
 static void add_page_item(int index);
@@ -17,17 +14,13 @@ static void *open_page(size_t size);
 static void remove_page(void *addr);
 static int log2(int value);
 static int power2(int value);
-
-extern char *CPIO_DEFAULT_PLACE;
-extern char *CPIO_DEFAULT_PLACE_END;
-extern char *dtb_place;
-extern unsigned long dtb_size;
+static int aling8(int value);
 
 static char* heap_top = (char*) &_heap_start + 0x1000;
 static unsigned int PAGE_MAX_ENTRY = 0x3c000000/0x1000;
-frame_info *frame;
-page_item *page_list[PAGE_MAX_ORDER+1] = {0};
-pool_header *pool = NULL;
+static frame_info *frame;
+static page_item *page_list[PAGE_MAX_ORDER+1] = {0};
+static pool_header *pool = NULL;
 
 void* simple_malloc(size_t size) {
   size = 0x10 + size - size%0x10;  // ALIGN 16
@@ -58,6 +51,7 @@ void page_init(){
   memory_reserve((unsigned long)sim_alloc_start, (unsigned long)sim_alloc_end); // for simple_malloc
   memory_reserve(0x0000, 0x1000); //spin table
   memory_reserve((unsigned long)&_kernel_start, (unsigned long)&_kernel_end); // kernel
+  memory_reserve((unsigned long)&_kernel_start - 0x2000, (unsigned long)&_kernel_start-0x1000); // stack
   memory_reserve((unsigned long)CPIO_DEFAULT_PLACE, (unsigned long)CPIO_DEFAULT_PLACE_END); // cpio size
   memory_reserve((unsigned long)dtb_place, (unsigned long)dtb_place+dtb_size);   // dtb
   non_init = PAGE_MAX_ENTRY;
@@ -237,11 +231,11 @@ void *malloc(size_t size){
       cur = cur->next;
     else{
       cur->used += 1;
-      uint8_t *page_info = (uint8_t *)((unsigned long long)cur + sizeof(pool_header));
+      uint8_t *page_info = (uint8_t *)((uint64_t)cur + sizeof(pool_header));
       for(int i=0; i<cur->total; i++){
         if(page_info[i] == 0){
           page_info[i] = 1;
-          return (void *)((unsigned long long)cur + sizeof(pool_header) + cur->total + cur->size*i);
+          return (void *)((uint64_t)cur + sizeof(pool_header) + aling8(cur->total) + cur->size*i);
         }
       }
     }
@@ -250,10 +244,10 @@ void *malloc(size_t size){
 }
 
 void *open_page(size_t size){
-  unsigned long long page_index = page_allocate(size);
+  uint64_t page_index = page_allocate(size);
   pool_header *page = (pool_header *)(0x1000*page_index);
   page->size = size;
-  page->total = (0x1000 - sizeof(pool_header))/(size+1);
+  page->total = (0x1000 - sizeof(pool_header)-8)/(size+1); // sub 8 for aling 8 of use array
   page->used = 1;
   page->next = pool;
   pool = page;
@@ -261,12 +255,12 @@ void *open_page(size_t size){
   *page_info = 1;
   for(int i=1; i<page->total; i++)
     *(page_info+i) = 0;
-  return (void *)(0x1000*page_index+sizeof(pool_header)+page->total);
+  return (void *)(0x1000*page_index+sizeof(pool_header)+aling8(page->total));
 }
 
 void free(void *addr){
-  unsigned long long index = (unsigned long long)addr % 0x1000;
-  addr -= ((unsigned long long)addr % 0x1000);
+  uint64_t index = (uint64_t)addr % 0x1000;
+  addr -= ((uint64_t)addr % 0x1000);
   pool_header *page = (pool_header *)addr;
   index = (index - page->total - sizeof(pool_header))/page->size;
   if(page->used != 1){
@@ -279,7 +273,7 @@ void free(void *addr){
 }
 
 void remove_page(void *addr){
-  int index = (unsigned long long)addr / 0x1000;
+  int index = (uint64_t)addr / 0x1000;
   pool_header *cur = pool;
   pool_header *pre = NULL;
   while (cur != addr){
@@ -331,4 +325,10 @@ void show_page_list(){
     }
     printf("\n\r");
   }
+}
+
+int aling8(int value){
+  if(value%8 == 0)
+    return value;
+  return 8+value-value%8;
 }

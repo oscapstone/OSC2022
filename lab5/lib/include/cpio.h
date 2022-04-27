@@ -1,5 +1,4 @@
-char * CPIO_DEFAULT_PLACE;
-char * CPIO_DEFAULT_PLACE_END;
+
 typedef struct cpio_newc_header cpio_header;
 struct cpio_newc_header {
   char	   c_magic[6];
@@ -21,3 +20,6 @@ struct cpio_newc_header {
 void cpio_ls();
 void cpio_cat(char *str);
 void cpio_exec(char *str);
+
+extern char * CPIO_DEFAULT_PLACE;
+extern char * CPIO_DEFAULT_PLACE_END;

@@ -1,3 +1,7 @@
+#define PAGE_MAX_ORDER 15
+#define PAGE_FREE -1 
+#define PAGE_ALLOCATED -2 
+#define PAGE_RESERVED -3
 
 extern unsigned long _kernel_start;
 extern unsigned long _kernel_end;

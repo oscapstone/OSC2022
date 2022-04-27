@@ -31,13 +31,13 @@ void core_timer_interrupt_disable(void){
 }
 
 unsigned long clock_time(void){
-  unsigned long long cntpct_el0;
+  uint64_t cntpct_el0;
   __asm__ __volatile__(
     "mrs %0, cntpct_el0\n\t"
     : "=r"(cntpct_el0)
   ); //tick now
 
-  unsigned long long cntfrq_el0;
+  uint64_t cntfrq_el0;
   __asm__ __volatile__(
     "mrs %0, cntfrq_el0\n\t"
     : "=r"(cntfrq_el0)
@@ -46,13 +46,13 @@ unsigned long clock_time(void){
 }
 
 void clock_alert(char *str){
-  unsigned long long cntpct_el0;
+  uint64_t cntpct_el0;
   __asm__ __volatile__(
     "mrs %0, cntpct_el0\n\t"
     : "=r"(cntpct_el0)
   ); //tick now
 
-  unsigned long long cntfrq_el0;
+  uint64_t cntfrq_el0;
   __asm__ __volatile__(
     "mrs %0, cntfrq_el0\n\t"
     : "=r"(cntfrq_el0)
@@ -70,13 +70,13 @@ void timeout_print(char *str){
 }
 
 void print_time(void){
-  unsigned long long cntpct_el0;
+  uint64_t cntpct_el0;
   __asm__ __volatile__(
     "mrs %0, cntpct_el0\n\t"
     : "=r"(cntpct_el0)
   ); //tick now
 
-  unsigned long long cntfrq_el0;
+  uint64_t cntfrq_el0;
   __asm__ __volatile__(
     "mrs %0, cntfrq_el0\n\t"
     : "=r"(cntfrq_el0)
@@ -84,7 +84,7 @@ void print_time(void){
   printf("seconds after booting : %d\n\r", cntpct_el0 / cntfrq_el0);
 }
 
-void set_core_timer_interrupt(unsigned long long expired_time){
+void set_core_timer_interrupt(uint64_t expired_time){
   __asm__ __volatile__(
     "mrs x1, cntfrq_el0\n\t" //cntfrq_el0 -> relative time
     "mul x1, x1, %0\n\t"
@@ -95,7 +95,7 @@ void set_core_timer_interrupt(unsigned long long expired_time){
 
 void add_timer(callback_typ callback, char *msg, int time) {
   timer_list *timer = (timer_list*)malloc(sizeof(timer_list));
-  timer->expired_time = (unsigned long long)time + clock_time();
+  timer->expired_time = (uint64_t)time + clock_time();
   timer->call_back = callback;
   for(int i=0; i<=strlen(msg); i++)
     timer->msg[i] = *(msg+i);
