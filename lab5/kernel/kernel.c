@@ -5,6 +5,7 @@
 #include "mm.h"
 #include "timer.h"
 #include "exception.h"
+#include "fork.h"
 
 void kernel_main(void)
 {
@@ -16,5 +17,10 @@ void kernel_main(void)
 	enable_interrupt();
 	uart_send_string("OSDI 2022 Spring\n");
 
-	shell_loop();
+	copy_process(PF_KTHREAD, (unsigned long)&shell_loop, 0, 0);
+
+	while (1) {
+		kill_zombies();
+		schedule();
+	}
 }

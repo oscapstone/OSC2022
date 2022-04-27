@@ -18,13 +18,13 @@ void preempt_enable() {
 
 void _schedule() {
     
-    
     int next, c;
     struct task_struct *p;
     while (1) {
         c = -1;
         next = 0;
         for (int i=0; i<NR_TASKS; i++) {
+            if (task[i] == NULL) continue;
             p = task[i];
             if (p && p->state == TASK_RUNNING && p->counter > c) {
                 c = p->counter;
@@ -35,6 +35,7 @@ void _schedule() {
             break;
         }
         for (int i=0; i<NR_TASKS; i++) {
+            if (task[i] == NULL) continue;
             p = task[i];
             if (p)
                 p->counter = (p->counter >> 1) + p->priority;
@@ -74,4 +75,33 @@ void timer_tick() {
     _schedule();
     disable_interrupt();
 
+}
+
+void exit_process() {
+    // should only be accessed using syscall
+    preempt_disable();
+    current->state = TASK_ZOMBIE;
+    free((void*)current->stack);
+    preempt_enable();
+    schedule();
+}
+
+void kill_zombies() {
+
+    struct task_struct *p;
+    for (int i=0; i<NR_TASKS; i++) {
+        
+        if (task[i] == NULL) {
+            continue;
+        }
+
+        p = task[i];
+        if (p && p->state == TASK_ZOMBIE) {
+            printf("Zombie found with pid: %d.\n", p->id);
+            free(p);
+            task[i] = NULL;
+        }
+        
+    }
+    
 }

@@ -11,6 +11,8 @@
 #include "math.h"
 #include "mm.h"
 #include "../include/sched.h"
+#include "syscall.h"
+#include "peripherals/mailbox.h"
 #include "fork.h"
 
 
@@ -24,25 +26,39 @@ void foo() {
         delay(1000000);
         schedule();
     }
+
     current->state = TASK_ZOMBIE;
     while(1);
 }
 
 void user_foo() {
-    for(int i = 0; i < 10; ++i) {
-        printf("User thread id: %d %d\n", current->id, i);
-        delay(1000000);
-    }
-    current->state = TASK_ZOMBIE;
-    while(1);
-}
 
-void kernel_process(){
-	printf("Kernel process started.\n");
-	int err = move_to_user_mode((unsigned long)&user_foo);
-	if (err < 0){
-		printf("Error while moving process to user mode\n\r");
-	} 
+    printf("User thread id: %d\n", getpid());
+
+    volatile unsigned int __attribute__((aligned(16))) mailbox[7];
+    mailbox[0] = 7 * 4;
+    mailbox[1] = REQUEST_CODE;
+    mailbox[2] = GET_BOARD_REVISION;
+    mailbox[3] = 4;
+    mailbox[4] = TAG_REQUEST_CODE;
+    mailbox[5] = 0;
+    mailbox[6] = END_TAG;
+    mbox_call(0x8, mailbox);
+    printf("Board Revision:\t\t%x\n", mailbox[5]);
+
+    int pid = fork();
+    if (pid == 0) {
+        printf("Child says hello!\n");
+    } else if (pid > 0) {
+        printf("Parent says, \"My child has pid %d\"\n", pid);
+    }
+
+    char buf[4] = {0};
+    //uart_read(buf, 3);
+    //uart_write(buf, 3);
+
+    exit();
+
 }
 
 void read_cmd()
@@ -97,7 +113,10 @@ void parse_cmd()
         }
     }
     else if (stringcmp(buffer, "to_user") == 0) {
-        copy_process(PF_KTHREAD, (unsigned long)&kernel_process, 0, 0);
+        copy_process(PF_KTHREAD, (unsigned long)&new_user_process, (unsigned long)&user_foo, 0);
+    }
+    else if (stringcmp(buffer, "video") == 0) {
+        //...
     }
     else if (stringcmp(buffer, "help") == 0) {
         uart_send_string("help:\t\tprint list of available commands\n");
@@ -116,8 +135,6 @@ void parse_cmd()
 void shell_loop() 
 {
     while (1) {
-        // kill zombies
-        // schedule
         uart_send_string("% ");
         read_cmd();
         parse_cmd();

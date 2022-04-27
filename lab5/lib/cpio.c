@@ -1,5 +1,7 @@
-#include "cpio.h"
+#include "../include/cpio.h"
 #include "mini_uart.h"
+#include "../include/sched.h"
+#include "fork.h"
 #include "string.h"
 
 static void *DEVTREE_CPIO_BASE = 0;
@@ -202,7 +204,7 @@ void cpio_exec() {
         filesize = hexstr_to_uint(header->c_filesize, 8);
 
         if (stringncmp(filename, input, namesize) == 0) {
-            
+
             char *code_loc = ((void*)header) + offset;
             unsigned int sp_val = 0x600000;
             asm volatile(
@@ -214,7 +216,7 @@ void cpio_exec() {
                 "r" (code_loc),
                 "r" (sp_val)
             );
-
+            
             break;
         }
 

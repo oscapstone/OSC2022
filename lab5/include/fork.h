@@ -14,6 +14,7 @@
 int copy_process(unsigned long, unsigned long, unsigned long, unsigned long);
 int move_to_user_mode(unsigned long);
 struct pt_regs *task_pt_regs(struct task_struct *);
+void new_user_process(unsigned long);
 
 struct pt_regs {
     unsigned long regs[31];
