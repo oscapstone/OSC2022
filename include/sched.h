@@ -47,7 +47,7 @@ typedef struct task_struct{
 	char * data;
 }task_struct_t;
 
-task_struct_t * current;
+//task_struct_t * current;
 
 void scheduler_init();
 
@@ -59,13 +59,13 @@ void idle();
 
 int thread_create(unsigned long fn);
 
-int exec_thread(unsigned long fn, int filesize);
+void exec_thread();
 
 void schedule();
 
 void context_switch(task_struct_t * next);
 
-void do_exec(void(*func)());
+void do_exec(char * func);
 
 void do_exit();
 
@@ -79,4 +79,5 @@ void zombie_queue_list_traversal();
 
 int zombie_queue_list_size();
 
+void syscall();
 #endif

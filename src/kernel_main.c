@@ -21,13 +21,14 @@ void kernel_main(void){
 		shell_standby();
 	}*/
 	
-	char *str = "syscall.img";
-	void * user_program = get_usr_program_address(str);
-	int filesize = get_usr_program_size(str);
-	exec_thread(user_program,filesize);
+	thread_create(exec_thread);
 	
 	uart_printf("thread create done\n");
 	uart_printf("run queue list size: %d\n", run_queue_list_size());
 	uart_printf("zombie queue list size: %d\n", zombie_queue_list_size());
-	idle();
+	while(1){
+		//uart_printf("idle\n");
+		//uart_printf("thread : 0\n");
+		schedule();
+	}
 }

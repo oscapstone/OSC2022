@@ -14,6 +14,7 @@ void scheduler_init(){
 	task_init();
 	run_queue_init();
 	core_timer_init_enable();
+	thread_create(idle);
 }
 
 void task_init(){
@@ -30,7 +31,8 @@ void task_init(){
 
 	task[0].state = RUNNING;
 	task[0].counter = TASKEPOCH;
-	current = &task[0];
+	
+	//current = &task[0];
 	set_current_task(&task[0]);
 }
 
@@ -49,6 +51,7 @@ void run_queue_init(){
 
 void idle(){
 	while(1){
+		//uart_printf("thread : 1\n");
 		//disable_interrupt();
 		kill_zombie();
 		//enable_interrupt();
@@ -57,6 +60,7 @@ void idle(){
 }
 
 int thread_create(unsigned long fn){// kernel thread
+	lock();
 	task_struct_t *new_task;
 	for(int i = 0 ; i < TASK_POOL_SIZE ; i++){
 		if(task[i].state == EXIT){
@@ -66,7 +70,7 @@ int thread_create(unsigned long fn){// kernel thread
 	}
 
 	new_task->state = RUNNING;
-	new_task->counter = 1;
+	new_task->counter = TASKEPOCH;
 	new_task->need_resched = 0;
 	
 	new_task->kstack_alloc = (unsigned long) alloc_page(PAGE_SIZE);
@@ -82,81 +86,67 @@ int thread_create(unsigned long fn){// kernel thread
 	new_task->user_sp = new_task->ustack_alloc + (PAGE_SIZE - 16);
 	uart_printf("new_task tid: %d\n", new_task->tid);
 	list_add_tail(&new_task->head, &run_queue_list);
+	unlock();
 	return new_task->tid;
 }
 
-int exec_thread(unsigned long fn, int filesize){
-	int pid = thread_create(fn);
-	task_struct_t *exec_task = &task[pid];
-	exec_task[0].counter = 1;
-	exec_task->data = alloc_page(filesize);
-	exec_task->filesize = filesize;
-	exec_task->cpu_context.lr = (uint64_t)exec_task->data;
-	char* data = (char *)fn;
-	//copy file into thread's data
-	for(int i = 0; i < filesize ; i++){
-		*(exec_task->data+i) = *(data+i);
-	}
-	
-	current = exec_task;
-	set_current_task(exec_task);
-	
-	asm volatile("msr sp_el0, %0" : : "r"(current->user_sp));
-    	asm volatile("msr elr_el1, %0": : "r"(current->data));
-    	asm volatile("msr spsr_el1, xzr");
-    	current = &task[0];
-    	set_current_task(&task[0]);
-    	//asm volatile("eret");
-	
-
-	return 0;
+void exec_thread(){
+	char * str = "syscall.img";
+	task_struct_t * current = get_current_task();
+	do_exec(str);
 }
 
+
 void schedule(){
-	//lock();
+	lock();
+	task_struct_t * current = get_current_task();
         current = (task_struct_t *) current->head.next;
     	if(list_is_head(&current->head, &run_queue_list)){
     		current = (task_struct_t *) current->head.next;
     	}
-	//unlock();
+    	//uart_printf("tid: %d\n", current->tid);
+	//set_current_task(current);
 	context_switch(current);
+	unlock();
 }
 
 void context_switch(task_struct_t * next){
+	
 	//core_timer_disable();
 	task_struct_t * prev = get_current_task();
 	if(prev->state == RUNNING){
 		//list_add_tail(&prev->head, &run_queue_list);
 	}
-	current = next;
 	set_current_task(next);
 	//enable_interrupt();
 	cpu_switch_to(&prev->cpu_context, &next->cpu_context);
 }
 
-void do_exec(void(*func)()){
-	task_struct_t * current;
+void do_exec(char *func){
+	task_struct_t * current = get_current_task();
 	void * user_program = get_usr_program_address(func);
 	int filesize = get_usr_program_size(func);
+	
 	current->data = alloc_page(filesize);
 	current->filesize = filesize;
-	current->cpu_context.lr = (uint64_t)current->data;
+	//current->cpu_context.lr = (uint64_t)current->data;
 	char* data = (char *)user_program;
 	//copy file into thread's data
+	uart_printf("fs %d\n", filesize);
 	for(int i = 0; i < filesize ; i++){
 		*(current->data+i) = *(data+i);
 	}
-	uart_printf("do exec current->user_sp %d\n ",current->user_sp);
-	asm volatile("msr sp_el0, %0" : : "r"(current->user_sp));
-	asm volatile("msr elr_el1, %0" : : "r"(current->cpu_context.lr));
-	asm volatile("msr spsr_el1, %0" : : "r"(SPSR_EL1_VALUE));
+	uart_printf("current pid %d...\n", current->tid);
+	asm volatile("msr sp_el0, %0" : : "r"(current->ustack_alloc+PAGE_SIZE-16));
+	asm volatile("msr elr_el1, %0" : : "r"(current->data));
+	asm volatile("msr spsr_el1, xzr");
 	asm volatile("eret");
 }
 
 
 void do_exit(){
-	//task_struct_t * current;
 	lock();
+	task_struct_t * current = get_current_task();
 	uart_printf("exit tid: %d\n", current->tid);
 	current->state = ZOMBIE;
 	task_struct_t * zombie = current;
@@ -219,4 +209,9 @@ int zombie_queue_list_size(){
 		count++;
 	}
 	return count;
+}
+
+void syscall(){
+	char * str = "syscall.img";
+	exec_thread(str);
 }

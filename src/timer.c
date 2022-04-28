@@ -66,7 +66,8 @@ void core_timer_handler(){
 		unsigned long long cntfrq_el0;
 		__asm__ __volatile__("mrs %0, cntfrq_el0": "=r"(cntfrq_el0)); //tick frequency
 		register unsigned int expired_time = (cntfrq_el0 >> 5);
-		__asm__ __volatile__("msr cntp_tval_el0, %0": "=r"(expired_time)); //tick frequency
+		__asm__ __volatile__("msr cntp_tval_el0, %0": :"r"(expired_time)); //tick frequency
+		task_struct_t * current = get_current_task();
 		if(--current->counter <= 0){
 			current->counter = 0;
 			current->need_resched = 1;

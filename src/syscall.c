@@ -49,6 +49,7 @@ void sys_exec(trapframe_t * trapframe){
 	const char * name = (const char *)trapframe->x[0];
 	char * const argv = (char * const)trapframe->x[1];
 	char * newdata = (unsigned long)get_usr_program_address(name);
+	task_struct_t * current = get_current_task();
 	current->filesize = get_usr_program_size(name);
 	for(int i = 0; i < current->filesize ; i++){
 		*(current->data+i) = *(newdata+i);
@@ -61,7 +62,7 @@ void sys_exec(trapframe_t * trapframe){
 void sys_fork(trapframe_t * trapframe){
 
 	//lock();
-	task_struct_t * parent = current;
+	task_struct_t * parent = get_current_task();
 	int child_id = thread_create(ret_from_fork);
 	task_struct_t * child = &task[child_id];
 
@@ -132,19 +133,22 @@ void sys_mbox_call(trapframe_t * trapframe){
 }
 
 void sys_kill(trapframe_t * trapframe){
-	//lock();
+	lock();
 	int pid = trapframe->x[0];
 	if(!(pid >= 0 && pid < TASK_POOL_SIZE) || (task[pid].state != RUNNING)){
 		//nothing
 		uart_printf("kill process not exist, error\n");
-	//	unlock();
+		unlock();
 		return;
 	}
 	else{
 		task_struct_t * zombie = &task[pid];
 		zombie->state = ZOMBIE;
+		list_del_entry( (struct list_head *) zombie);
+		list_add_tail(&zombie->head, &zombie_queue_list);
+		
 	}
-//	unlock();
+	unlock();
 }
 
 
