@@ -4,7 +4,7 @@
 #include "fork.h"
 #include "string.h"
 
-static void *DEVTREE_CPIO_BASE = 0;
+void *DEVTREE_CPIO_BASE = 0;
 
 unsigned int hexstr_to_uint(char *s, unsigned int len) {
 
@@ -216,7 +216,7 @@ void cpio_exec() {
                 "r" (code_loc),
                 "r" (sp_val)
             );
-            
+
             break;
         }
 

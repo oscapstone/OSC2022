@@ -20,6 +20,8 @@ pathname "TRAILER!!!"
 
 #include "devtree.h"
 
+extern void *DEVTREE_CPIO_BASE;
+
 struct cpio_newc_header {
     char	   c_magic[6]; // 070701
     char	   c_ino[8];
@@ -41,5 +43,7 @@ void initramfs_callback (char *, char *, struct fdt_prop *);
 void cpio_ls ();
 void cpio_cat ();
 void cpio_exec ();
+
+unsigned int hexstr_to_uint(char *s, unsigned int len);
 
 #endif

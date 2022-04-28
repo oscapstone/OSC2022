@@ -294,7 +294,7 @@ void init_mm_reserve() {
     n_frames = (MEM_REGION_END-MEM_REGION_BEGIN) / PAGE_SIZE;
 
     memory_reserve((void*)0x0, __kernel_end_ptr); // spin tables, kernel image
-    memory_reserve((void*)0x20000000, (void*)0x20000800); // hard code reserve initramfs
+    memory_reserve((void*)0x20000000, (void*)0x20010000); // hard code reserve initramfs
     
     for (unsigned int i=0; i<n_frames; i++) {
         frame_array[i].index = i;

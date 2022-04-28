@@ -4,7 +4,7 @@
 #include "mailbox.h"
 #include "reboot.h"
 #include "string.h"
-#include "cpio.h"
+#include "../include/cpio.h"
 #include "memory.h"
 #include "timer.h"
 #include "exception.h"
@@ -19,6 +19,7 @@
 #define MAX_BUFFER_SIZE 256u
 
 static char buffer[MAX_BUFFER_SIZE];
+static int shared = 1;
 
 void foo() {
     for(int i = 0; i < 10; ++i) {
@@ -49,15 +50,95 @@ void user_foo() {
     int pid = fork();
     if (pid == 0) {
         printf("Child says hello!\n");
+        while(1) {
+            printf("Please don't kill me :(\n");
+            shared++;
+        }
     } else if (pid > 0) {
         printf("Parent says, \"My child has pid %d\"\n", pid);
+        printf("Shared? %d\n", shared);
+        delay(10000000);
+        printf("Kill my own child :(\n");
+        kill(pid);
+        delay(10000000);
+        printf("shared %d\n", shared);
     }
 
-    char buf[4] = {0};
+    //char buf[4] = {0};
     //uart_read(buf, 3);
     //uart_write(buf, 3);
 
     exit();
+
+}
+
+void start_video() {
+    // ... go to cpio, find location and size of syscall.img
+    // allocate pages
+    // move syscall.img to allocated memory
+    // preempt disable
+    // change this shell thread to not runnable
+    // start sycall.img user process
+    // preempt enable
+    struct cpio_newc_header *header;
+    unsigned int filesize;
+    unsigned int namesize;
+    unsigned int offset;
+    char *filename;
+    void *code_loc;
+
+    header = DEVTREE_CPIO_BASE;
+    while (1) {
+        
+        filename = ((void*)header) + sizeof(struct cpio_newc_header);
+        
+        if (stringncmp((char*)header, CPIO_HEADER_MAGIC, 6) != 0) {
+            uart_send_string("invalid magic\n");
+            break;
+        }
+        if (stringncmp(filename, CPIO_FOOTER_MAGIC, 11) == 0) {
+            uart_send_string("file does not exist!\n");
+            break;
+        }
+
+        namesize = hexstr_to_uint(header->c_namesize, 8);
+        
+        offset = sizeof(struct cpio_newc_header) + namesize;
+        if (offset % 4 != 0) 
+            offset = ((offset/4) + 1) * 4;
+
+        filesize = hexstr_to_uint(header->c_filesize, 8);
+
+        if (stringncmp(filename, "syscall.img", namesize) == 0) {
+            code_loc = ((void*)header) + offset;
+            break;
+        }
+
+        if (filesize % 4 != 0)
+            filesize = ((filesize/4) + 1) * 4;
+
+        offset = offset + filesize;
+
+        header = ((void*)header) + offset;
+        
+    }
+    printf("syscall.img found in cpio at location 0x%x.\n", code_loc);
+    printf("syscall.img has size of %d bytes.\n", (int)filesize);
+    
+    void *move_loc = malloc(filesize + 4096); // an extra page for bss just in case
+    if(move_loc == NULL) return;
+    for (int i=0; i<filesize; i++) {
+        ((char*)move_loc)[i] = ((char*)code_loc)[i];
+    }
+
+    preempt_disable();
+    current->state = TASK_STOPPED;
+    unsigned long long tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
+    copy_process(PF_KTHREAD, (unsigned long)&new_user_process, (unsigned long)move_loc, 0);
+    preempt_enable();
 
 }
 
@@ -116,7 +197,7 @@ void parse_cmd()
         copy_process(PF_KTHREAD, (unsigned long)&new_user_process, (unsigned long)&user_foo, 0);
     }
     else if (stringcmp(buffer, "video") == 0) {
-        //...
+        start_video();
     }
     else if (stringcmp(buffer, "help") == 0) {
         uart_send_string("help:\t\tprint list of available commands\n");

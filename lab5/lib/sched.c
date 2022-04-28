@@ -79,10 +79,10 @@ void timer_tick() {
 
 void exit_process() {
     // should only be accessed using syscall
-    preempt_disable();
+    // preempt_disable();
     current->state = TASK_ZOMBIE;
     free((void*)current->stack);
-    preempt_enable();
+    // preempt_enable();
     schedule();
 }
 

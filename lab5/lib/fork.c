@@ -1,5 +1,6 @@
 #include "fork.h"
 #include "mm.h"
+#include "mini_uart.h"
 #include "../include/sched.h"
 #include "../include/entry.h"
 

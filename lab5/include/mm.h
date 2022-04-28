@@ -4,7 +4,7 @@
 #define MEM_REGION_BEGIN    0x0
 #define MEM_REGION_END      0x3C000000
 #define PAGE_SIZE           4096
-#define MAX_ORDER           6 // largest: PAGE_SIZE*2^(MAX_ORDER)
+#define MAX_ORDER           8 // largest: PAGE_SIZE*2^(MAX_ORDER)
 
 #define ALLOCABLE           0
 #define ALLOCATED           -1
