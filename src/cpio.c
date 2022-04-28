@@ -4,23 +4,11 @@
 #include "devicetree.h"
 #include "exception.h"
 #include "test.h"
+#include "cpio.h"
 
-typedef struct {//cpio_newc_header
-	char	c_magic[6];
-	char	c_ino[8];
-	char	c_mode[8];
-	char	c_uid[8];
-	char	c_gid[8];
-	char	c_nlink[8];
-	char	c_mtime[8];
-	char	c_filesize[8];
-	char	c_devmajor[8];
-	char	c_devminor[8];
-	char	c_rdevmajor[8];
-	char	c_rdevminor[8];
-	char	c_namesize[8];
-	char	c_check[8];
-} cpio_header_type;
+char str[256];
+
+
 
 char * base_address;
 void init_cpio(){
@@ -39,8 +27,13 @@ void ls(){
         cpio_header_type * cpio_header = (cpio_header_type *)address;
         int namesize = hex2dec(cpio_header->c_namesize,8);
         int filesize = hex2dec(cpio_header->c_filesize,8);
-        uart_puts_width(address + sizeof(cpio_header_type),namesize);
-        uart_send_string("\r\n");
+        
+        for(int i = 0; i < namesize ; i++){
+        	str[i] = *(address + sizeof(cpio_header_type) + i);
+        }
+        str[namesize] = '\0';
+        
+	uart_printf("%s size: %d \n", str, filesize);   
 
         if ((sizeof(cpio_header_type) + namesize) % 4){
             address += (((sizeof(cpio_header_type)+namesize) / 4) +1 ) * 4;
@@ -68,7 +61,7 @@ void cat(char * str){
         int namesize = hex2dec(cpio_header->c_namesize,8);
         int filesize = hex2dec(cpio_header->c_filesize,8);
         filename = address + sizeof(cpio_header_type);
-        if(!memcmp(str+4,filename,strlen(str+4)+1)){
+        if(!memcmp(str,filename,strlen(str)+1)){
         
             uart_puts_width(address + sizeof(cpio_header_type)+namesize,filesize);
            // uart_send_string("\r\n");
@@ -99,18 +92,54 @@ int get_usr_program_address(char * str){
 	char * address = (char *)base_address;
     char * filename;
     int found = 0;
+    char * file;
     while(!memcmp(address,"070701",6) && memcmp(address+sizeof(cpio_header_type),"TRAILER!!",9)){
         cpio_header_type * cpio_header = (cpio_header_type *)address;
         int namesize = hex2dec(cpio_header->c_namesize,8);
         int filesize = hex2dec(cpio_header->c_filesize,8);
         filename = address + sizeof(cpio_header_type);
-        if(!memcmp(str+5,filename,strlen(str+5)+1)){
+        if(!memcmp(str,filename,strlen(str)+1)){
            // uart_send_string("\r\n");
             found = 1;
             unsigned int offset = sizeof(cpio_header_type) + namesize;
             offset = offset%4==0 ? offset : (offset+4-offset%4);
-            return address + offset;
+            return address + offset ;
             //return filesize;
+            break;
+        }
+        if ((sizeof(cpio_header_type) + namesize) % 4){
+            address += (((sizeof(cpio_header_type)+namesize) / 4) +1 ) * 4;
+        }
+        else{
+            address += sizeof(cpio_header_type) + namesize;
+        }
+        
+        if ((filesize)%4){
+            address += ((filesize / 4 ) +1) * 4;
+        }
+        else{
+            address += filesize;
+        }
+    }
+    if(!found){
+        uart_send_string("file not found!\r\n");
+    }
+    filename = NULL;
+}
+
+int get_usr_program_size(char * str){
+	char * address = (char *)base_address;
+    char * filename;
+    int found = 0;
+    while(!memcmp(address,"070701",6) && memcmp(address+sizeof(cpio_header_type),"TRAILER!!",9)){
+        cpio_header_type * cpio_header = (cpio_header_type *)address;
+        int namesize = hex2dec(cpio_header->c_namesize,8);
+        int filesize = hex2dec(cpio_header->c_filesize,8);
+        filename = address + sizeof(cpio_header_type);
+        if(!memcmp(str,filename,strlen(str)+1)){
+           // uart_send_string("\r\n");
+            found = 1;
+            return filesize;
             break;
         }
         if ((sizeof(cpio_header_type) + namesize) % 4){

@@ -1,1 +1,1 @@
-build/tool_c.o: src/tool.c
+build/tool_c.o: src/tool.c include/tool.h

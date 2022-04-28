@@ -1,4 +1,5 @@
 #include "mini_uart.h"
+#include "string.h"
 
 typedef unsigned int uint32_t;
 typedef unsigned long uint64_t;

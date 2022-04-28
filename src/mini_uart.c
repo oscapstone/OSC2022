@@ -4,22 +4,27 @@
 #include "string.h"
 #include "printf.h"
 typedef unsigned long uint32_t;
-void uart_send ( char c )
+void uart_send( char c )
 {
+	//core_timer_disable();
 	while(1) {
 		if(get32(AUX_MU_LSR_REG)&0x20) 
 			break;
 	}
 	put32(AUX_MU_IO_REG,c);
+	//core_timer_enable();
 }
 
-char uart_recv ( void )
+char uart_recv( void )
 {
+	//core_timer_disable();
 	while(1) {
 		if(get32(AUX_MU_LSR_REG)&0x01) 
 			break;
 	}
 	return(get32(AUX_MU_IO_REG)&0xFF);
+	//core_timer_enable();
+
 }
 
 void uart_puts_width(unsigned char* str, int width){

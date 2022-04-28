@@ -7,12 +7,8 @@
 extern unsigned char _begin;
 extern unsigned char _end;
 
-
-
-
-
-#define BUDDY_BASE_ADDRESS  0x00 //0x10000000
-#define BUDDY_END_ADDRESS   0x3C000000//0x20000000
+#define BUDDY_BASE_ADDRESS  0x10000000 //0x00 //0x10000000
+#define BUDDY_END_ADDRESS   0x20000000 //0x3C000000//0x20000000
 
 #define PAGE_SIZE 4096 // 4kb
 
@@ -65,10 +61,10 @@ void buddy_init(){
 	}
 	// reserve
 	//memory_reserve(0x10000000+2077,  0x10000000+43242);
-	memory_reserve(0x0000,  0x1000);//multicore boot
-	memory_reserve(&_begin,  &_end); // kernel
-	memory_reserve(get_cpio_address(),  get_cpio_address() + 0x100000); //initramfs
-	memory_reserve(get_dtb_address(), get_dtb_address() + 0x100000); //devicetree
+	//memory_reserve(0x0000,  0x1000);//multicore boot
+	//memory_reserve(&_begin,  &_end); // kernel
+	//memory_reserve(get_cpio_address(),  get_cpio_address() + 0x100000); //initramfs
+	//memory_reserve(get_dtb_address(), get_dtb_address() + 0x100000); //devicetree
 	//memory_reserve(get_mailbox_vc_memory(),BUDDY_END_ADDRESS-1);
 	
 	//

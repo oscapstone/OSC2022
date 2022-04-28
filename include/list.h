@@ -5,9 +5,6 @@ typedef struct list_head {
 	struct list_head *next, *prev;
 }list_head_t;
 
-struct list_head_single {
-	struct list_head *next;
-};
 
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 

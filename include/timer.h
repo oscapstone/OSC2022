@@ -16,10 +16,26 @@ typedef struct timer_event{
 	
 } timer_event_t;
 
-void core_timer_enable(void);
+void timer_list_init();
 
-void core_timer_handler(void);
+void core_timer_enable();
 
-void add_timer(void *callback, unsigned long long after, char *agrs);
+void core_timer_disable();
+
+void core_timer_handler();
+
+void timer_event_callback(timer_event_t * timer_event);
+
+
+void add_timer(void *callback, unsigned long long after, char * args);
+
 unsigned long long get_tick_second(unsigned long long second);
+
+// set timer interrupt time to [expired_time] second after now (relatively)
+void set_core_timer_interrupt(unsigned long long expired_time);
+
+// set the timer interrupt by tick (directly) (absolutely)
+void set_core_timer_interrupt_by_tick(unsigned long long tick);
+
+int timer_list_size();
 #endif

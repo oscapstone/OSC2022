@@ -1,6 +1,6 @@
 ARMGNU ?= aarch64-linux-gnu
 
-COPS = -Wall -nostdlib -nostartfiles -Iinclude -g
+COPS = -Wall -nostdlib -ffreestanding -nostdinc -nostartfiles -Iinclude -g
 ASMOPS = -Iinclude 
 
 BUILD_DIR = build
@@ -33,7 +33,7 @@ run: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -serial null -serial stdio -display none -dtb bcm2710-rpi-3-b-plus.dtb 
 	
 cpio:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -serial null -serial stdio -display none -initrd ./initramfs.cpio
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img  -serial null -serial stdio -initrd ./initramfs.cpio
 
 remote:
 	sudo chmod 777 /dev/ttyUSB0

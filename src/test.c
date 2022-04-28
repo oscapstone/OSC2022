@@ -1,5 +1,7 @@
 #include "alloc.h"
 #include "mini_uart.h"
+#include "list.h"
+#include "test.h"
 void test_alloc(){
     int i;
     unsigned int size = 5;
@@ -11,12 +13,8 @@ void test_alloc(){
     uart_send_string(ptr);
 }
 
-void test(){
-	uart_printf("A\n");
-}
-//void (*p_get_el_value)(void) = &get_el_value;
-
 void get_el_value(){
 	int el = get_el();
 	uart_printf("Exception level %d \n",el); 
 }
+

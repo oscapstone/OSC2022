@@ -4,6 +4,7 @@
 #include "test.h"
 #include "devicetree.h"
 #include "buddy.h"
+#include "string.h"
  
 void input_buffer_overflow_message(char *str){
     uart_send_string("input buffer overflow message\n");
@@ -21,8 +22,8 @@ void command_help(){
     uart_send_string("fdt_traverse\t: fdt_traverse\r\n");
     uart_send_string("exec\t: exec FILENAME\r\n");
     uart_send_string("settimeout\t: settimeout MESSAGE SECONDS\r\n");
-    uart_printf("test\t: test buddy print\n");
-    uart_printf("test1\t; test dynamic alloc\n");
+    //uart_printf("test\t: test buddy print\n");
+    //uart_printf("test1\t; test dynamic alloc\n");
 	uart_send_string("\r\n");
 }
 
@@ -48,7 +49,12 @@ void command_ls(){
 }
 
 void command_cat(char *str){
-    cat(str);
+    char * filename;
+    for(int i = 0 ; i < strlen(str+4) ; i++){
+    	*(filename + i) = *(str+4+i);
+    }
+    filename[strlen(str+4)] = '\0';
+    cat(filename);
 }
 
 void command_test_alloc(){
@@ -60,7 +66,12 @@ void command_fdt_traverse(){
 }
 
 void command_lab3_basic_1(char *str){
-	lab3_basic_1(str);
+	char * filename;
+	for(int i = 0 ; i < strlen(str+5) ; i++){
+    	*(filename + i) = *(str+5+i);
+    }
+    filename[strlen(str+5)] = '\0';
+	lab3_basic_1(filename);
 }
 
 void command_settimeout(char *str){
