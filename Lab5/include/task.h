@@ -66,5 +66,6 @@ void pop_task_from_queue(task_queue *queue, task_struct *task);
 
 /* Helper functions */
 void put_args(char *const argv[]);
+task_struct *find_task_by_id(task_queue *queue, int pid);
 
 #endif

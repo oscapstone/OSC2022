@@ -21,7 +21,7 @@ size_t sys_uartwrite(const char buf[], size_t size);
 int sys_exec(trap_frame *tf, const char *name, char *const argv[]);
 void sys_fork(trap_frame *tf);
 void sys_exit();
-int sys_mbox_call(unsigned char ch, unsigned int *mbox);
+int sys_mbox_call(unsigned char ch, volatile unsigned int *mbox);
 void sys_kill(int pid);
 
 #endif

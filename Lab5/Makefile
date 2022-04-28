@@ -6,7 +6,7 @@ FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g 
 INC = include
 LIB = lib
 CPIO = archive/initramfs.cpio
-USER_PROG = timer_test
+USER_PROG = mbox_test
 
 all: kernel8.img bootloader.img $(CPIO) $(USER_PROG).img
 
@@ -28,12 +28,19 @@ $(CPIO): $(USER_PROG).img
 rd.o:$(CPIO)
 	aarch64-linux-gnu-ld -r -b binary -o rd.o $(CPIO)
 
-qemu-kernel: $(CPIO)
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd $(CPIO)
+qemu-kernel:
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img  -serial null -serial stdio -initrd archive/ta_initramfs.cpio
 
-qemu-debug: $(CPIO)
+qemu-debug:
 	aarch64-linux-gnu-objdump -d kernel8.elf > kernel8.S
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd $(CPIO) -d in_asm
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd archive/initramfs.cpio -d in_asm
+
+# qemu-kernel:
+# 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd $(CPIO)
+
+# qemu-debug:
+# 	aarch64-linux-gnu-objdump -d kernel8.elf > kernel8.S
+# 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd $(CPIO) -d in_asm
 
 qemu-bootloader: $(CPIO)
 	qemu-system-aarch64 -M raspi3 -kernel bootloader.img -display none -serial null -serial pty -initrd $(CPIO)
@@ -48,4 +55,4 @@ on-board:
 	sudo screen /dev/ttyUSB0 115200
 
 clean:
-	rm -f *.elf *.img *.cpio *.o archive/*.cpio *.S *.s
+	rm -f *.elf *.img *.cpio *.o *.S *.s

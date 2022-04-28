@@ -2,6 +2,8 @@
 #include "switch.h"
 #include "task.h"
 #include "printf.h"
+#include "mini_uart.h"
+
 
 /* helper functions for user programs, not the real system calls */
 int get_pid() {
@@ -63,10 +65,10 @@ void kill(int pid) {
 }
 
 unsigned int printf(char* fmt,...) {
-	char dst[100];
+    char dst[100];
     __builtin_va_list args;
     __builtin_va_start(args,fmt);
-    unsigned int ret = vsprintf(dst,fmt,args);
-    uart_write(dst, 100);
+    unsigned int ret=vsprintf(dst,fmt,args);
+    uart_send_string(dst);
     return ret;
 }

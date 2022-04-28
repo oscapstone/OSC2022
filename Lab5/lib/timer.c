@@ -102,6 +102,7 @@ void normal_timer() {
     unsigned long cntpct = read_sysreg(cntpct_el0);
 	unsigned long cntfrq = read_sysreg(cntfrq_el0);
 	unsigned long tmp = cntpct * 10 / cntfrq;
-    uart_printf("[DEBUG][normal_timer] time elapsed: %d.%ds\n", tmp/10, tmp%10);
+    debug_printf("[DEBUG][normal_timer] time elapsed: %d.%ds\n", tmp/10, tmp%10);
     add_timer(cntfrq >> 5, normal_timer, NULL);
+    thread_schedule();
 }

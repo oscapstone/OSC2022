@@ -10,7 +10,7 @@
 #endif
 #define MAX_INITRAMFS_SIZE 0x100000  // 1M
 
-#define USER_PROGRAM_ADDR 0x30000000
+#define USER_PROGRAM_ADDR 0x900000
 #define MAX_USER_PROGRAM_SIZE 0x100000  // 1M
 
 typedef struct

@@ -45,13 +45,13 @@ task_struct* thread_create(void *func) {
     new_task->context.fp = (unsigned long)new_task + PAGE_SIZE_4K - 1;
     new_task->context.lr = (unsigned long)func;
     new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 1;  // kernel stack pointer for the thread
-    new_task->user_fp = page_malloc(0) + PAGE_SIZE_4K - 1;  // user stack frame pointer
+    new_task->user_fp = page_malloc(0) + PAGE_SIZE_4K - 16;  // user stack frame pointer
 
     new_task->state = RUNNING;
     new_task->id = task_cnt++;
 
     debug_printf("[DEBUG][thread_create] id: %d\n", new_task->id);
-
+    uart_printf("thread %d, %x\n", new_task->id, new_task->user_fp);
     push_task_to_queue(&run_queue, new_task);
     return new_task;
 }
@@ -134,4 +134,14 @@ void put_args(char *const argv[]) {
     char **iter = (char**) argv;
     for (int i = 0; iter[i]; ++i)
         asm volatile("mov %0,   %1   \n"::"r"(i), "r"(iter[i]));
+}
+
+task_struct *find_task_by_id(task_queue *queue, int pid) {
+    task_struct *task = queue->begin;
+    while (task) {
+        if (task->id == pid)
+            break;
+        task = task->next;
+    }
+    return task;
 }

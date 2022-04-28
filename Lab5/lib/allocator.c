@@ -172,7 +172,7 @@ void memory_reserve(uint64_t start, uint64_t end) {
 void init_reserve() {
     memory_reserve(0x0000, 0x1000);     // spin tables for multicore boot
     memory_reserve(0x80000, 0x800000);  // kernel and heap/stack space
-    memory_reserve((uint64_t)CPIO_ADDR, (uint64_t)CPIO_ADDR + MAX_INITRAMFS_SIZE);  // initramfs
-    memory_reserve((uint64_t)USER_PROGRAM_ADDR, (uint64_t)USER_PROGRAM_ADDR + MAX_USER_PROGRAM_SIZE);
+    // memory_reserve((uint64_t)CPIO_ADDR, (uint64_t)CPIO_ADDR + MAX_INITRAMFS_SIZE);  // initramfs
+    // memory_reserve((uint64_t)USER_PROGRAM_ADDR, (uint64_t)USER_PROGRAM_ADDR + MAX_USER_PROGRAM_SIZE);
     debug_printf("[DEBUG][init_reserve] reserves 0X%x 4K pages\n", get_allocated_num());
 }

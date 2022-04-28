@@ -9,6 +9,7 @@
 #include "memory.h"
 #include "cpio.h"
 #include "shell.h"
+#include "mail_box.h"
 
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
@@ -22,9 +23,11 @@ void lower_sync_handler(trap_frame *tf) {
     if (((esr >> 26) & 0x3f) == 0x15) {
         svc = esr & 0x1ffffff;
         if (svc == 0) {
+            
             switch(regs[8]) {
                 case 0:
                     regs[0] = sys_getpid();
+                    thread_schedule();
                     break;
                 case 1:
                     regs[0] = sys_uartread((char*)regs[0], (size_t)regs[1]);
@@ -34,24 +37,28 @@ void lower_sync_handler(trap_frame *tf) {
                     break;
                 case 3:
                     sys_exec(tf, (const char*)regs[0], (char * const*)regs[1]);
+                    thread_schedule();
                     break;
                 case 4:
                     sys_fork(tf);
+                    thread_schedule();
                     break;
                 case 5:
                     sys_exit(regs[0]);
+                    thread_schedule();
                     break;
                 case 6:
-                    regs[0] = sys_mbox_call((unsigned char)regs[0], (unsigned int*)regs[1]);
+                    regs[0] = sys_mbox_call((unsigned char)regs[0], (volatile unsigned int*)regs[1]);
+                    thread_schedule();
                     break;
                 case 7:
                     sys_kill(regs[0]);
+                    thread_schedule();
                     break;
                 default:
                     uart_printf("[ERROR][lower_sync_handler] unknown svc!\n");
                     break;
             }
-            thread_schedule();
         }
         else
             uart_printf("[ERROR][lower_sync_handler] unknown exception!\n");
@@ -60,7 +67,6 @@ void lower_sync_handler(trap_frame *tf) {
 
 void lower_iqr_handler() {
 	pop_timer();
-    thread_schedule();
 }
 
 void curr_sync_handler() {
@@ -98,15 +104,20 @@ int sys_getpid() {
 }
 
 size_t sys_uartread(char buf[], size_t size) {
-    return 0;
+    char recv;
+    for (int i = 0; i < size; ++i) {
+        recv = uart_recv();
+        buf[i] = recv;
+    }
+    debug_printf("[DEBUG][sys_uartread]\n");
+    return size;
 }
 
 size_t sys_uartwrite(const char buf[], size_t size) {
-    size_t cnt = 0;
-    for (int i = 0; buf[i] != '\0' && cnt < size; ++i, ++cnt)
+    for (int i = 0; i < size; ++i)
 		uart_send((char)buf[i]);
     debug_printf("[DEBUG][sys_uartwrite]\n");
-    return cnt;
+    return size;
 }
 
 int sys_exec(trap_frame *tf, const char *name, char *const argv[]) {
@@ -176,10 +187,20 @@ void sys_exit() {
     debug_printf("[DEBUG][sys_exit] thread: %d\n", cur_task->id);
 }
 
-int sys_mbox_call(unsigned char ch, unsigned int *mbox) {
-    return 0;
+int sys_mbox_call(unsigned char ch, volatile unsigned int *mbox) {
+    debug_printf("[DEBUG][sys_mbox_call]");
+    return mailbox_call(ch, mbox);
 }
 
 void sys_kill(int pid) {
-
+    task_struct *task = NULL;
+    if ((task = find_task_by_id(&run_queue, pid)))
+        pop_task_from_queue(&run_queue, task);
+    else if ((task = find_task_by_id(&wait_queue, pid)))
+        pop_task_from_queue(&wait_queue, task);
+    if (task) {
+        task->state = TERMINATED;
+        push_task_to_queue(&terminated_queue, task);
+    }
+    debug_printf("[DEBUG][sys_kill]");
 }
