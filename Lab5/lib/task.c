@@ -16,22 +16,27 @@ int run_queue_sz = 0;
 char **_argv = NULL;
 static int task_cnt = 0;
 
+unsigned long user_addr;
+unsigned long user_sp;
+
 
 void run_user_program(const char* name, char *const argv[]) {
     load_program((char*)name);
     _argv = (char**)argv;
-    thread_create(switch_to_user_space);
+    
+    task_struct *task = thread_create(switch_to_user_space);
+    user_addr = USER_PROGRAM_ADDR;
+    user_sp = task->user_fp;
     add_timer(read_sysreg(cntfrq_el0) >> 5, normal_timer, NULL); // < 0.1s
     core_timer_enable();
     idle();
 }
 
 void switch_to_user_space() {
-    task_struct* cur_task = get_current();
     asm volatile("mov x0, 0x340   \n"::);
     asm volatile("msr spsr_el1, x0   \n"::);
-    asm volatile("msr elr_el1,  %0   \n"::"r"(USER_PROGRAM_ADDR));
-    asm volatile("msr sp_el0,   %0   \n"::"r"(cur_task->user_fp));
+    asm volatile("msr elr_el1,  %0   \n"::"r"(user_addr));
+    asm volatile("msr sp_el0,   %0   \n"::"r"(user_sp));
     asm volatile("eret  \n"::);
 }
 
@@ -49,6 +54,7 @@ task_struct* thread_create(void *func) {
 
     new_task->state = RUNNING;
     new_task->id = task_cnt++;
+    new_task->handler = NULL;
 
     debug_printf("[DEBUG][thread_create] id: %d\n", new_task->id);
 

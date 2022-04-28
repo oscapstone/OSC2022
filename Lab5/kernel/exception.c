@@ -58,6 +58,14 @@ void lower_sync_handler(trap_frame *tf) {
                     sys_kill(regs[0]);
                     thread_schedule();
                     break;
+                case 8:
+                    sys_signal((int)regs[0], (void (*)())regs[1]);
+                    thread_schedule();
+                    break;
+                case 9:
+                    sys_signal_kill((int)regs[0], (int)regs[1]);
+                    thread_schedule();
+                    break;
                 default:
                     uart_printf("[ERROR][lower_sync_handler] unknown svc!\n");
                     break;
@@ -169,6 +177,8 @@ void sys_fork(trap_frame *tf) {
     child_tf->regs[29] = child->context.fp;
     tf->regs[0] = child->id;
 
+    child->handler = parent->handler;
+
     /* copy the user stack of parent to child */
     char *src_stack = (char*)(tf->sp_el0);
     char *dst_stack = (char*)(child_tf->sp_el0);
@@ -206,4 +216,31 @@ void sys_kill(int pid) {
         push_task_to_queue(&terminated_queue, task);
     }
     debug_printf("[DEBUG][sys_kill]");
+}
+
+void sys_signal(int SIGNAL, void (*handler)()) {
+    get_current()->handler = handler;
+}
+
+void sys_signal_kill(int pid, int SIGNAL) {
+    task_struct *task = NULL;
+    if (!(task = find_task_by_id(&run_queue, pid)))
+        task = find_task_by_id(&wait_queue, pid);
+    if (!task)
+        return;
+    _handler = task->handler;
+    _pid = pid;
+    task_struct *handler_task = thread_create(switch_to_user_space);
+    user_addr = (unsigned long)signal_handler_wrapper;
+    user_sp = handler_task->user_fp;
+}
+
+/* helper functions */
+void (*_handler)() = NULL;
+int _pid = 0;
+void signal_handler_wrapper() {
+    if (_handler)
+        _handler();
+    kill(_pid);
+    exit();
 }

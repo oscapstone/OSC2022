@@ -36,6 +36,7 @@ typedef struct task_struct {
     int id;
     int state;
     unsigned long user_fp;
+    void (*handler)();
     struct task_struct *prev;
     struct task_struct *next;
 } task_struct;
@@ -51,6 +52,9 @@ extern task_queue wait_queue;
 extern task_queue terminated_queue;
 extern int run_queue_sz;
 extern char **_argv;
+
+extern unsigned long user_addr;
+extern unsigned long user_sp;
 
 task_struct* thread_create(void* func);
 void thread_schedule();

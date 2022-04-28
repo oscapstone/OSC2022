@@ -23,5 +23,12 @@ void sys_fork(trap_frame *tf);
 void sys_exit();
 int sys_mbox_call(unsigned char ch, volatile unsigned int *mbox);
 void sys_kill(int pid);
+void sys_signal(int SIGNAL, void (*handler)());
+void sys_signal_kill(int pid, int SIGNAL);
+
+/* helper functions */
+extern void (*_handler)();
+extern int _pid;
+void signal_handler_wrapper();
 
 #endif
