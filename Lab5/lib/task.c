@@ -51,7 +51,7 @@ task_struct* thread_create(void *func) {
     new_task->id = task_cnt++;
 
     debug_printf("[DEBUG][thread_create] id: %d\n", new_task->id);
-    uart_printf("thread %d, %x\n", new_task->id, new_task->user_fp);
+
     push_task_to_queue(&run_queue, new_task);
     return new_task;
 }

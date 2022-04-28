@@ -11,7 +11,6 @@ volatile unsigned int  __attribute__((aligned(16))) mailbox[36];
  */
 int mailbox_call(unsigned char ch, volatile unsigned int *mailbox)
 {
-    uart_printf("[debug]  %x\n", mailbox);
     volatile unsigned int r = (((volatile unsigned int)((volatile unsigned long)mailbox)&~0xF) | (ch&0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);

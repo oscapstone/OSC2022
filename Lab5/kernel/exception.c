@@ -23,17 +23,20 @@ void lower_sync_handler(trap_frame *tf) {
     if (((esr >> 26) & 0x3f) == 0x15) {
         svc = esr & 0x1ffffff;
         if (svc == 0) {
-            
             switch(regs[8]) {
                 case 0:
                     regs[0] = sys_getpid();
                     thread_schedule();
                     break;
                 case 1:
+                    enable_interrupt();
                     regs[0] = sys_uartread((char*)regs[0], (size_t)regs[1]);
+                    disable_interrupt();
                     break;
                 case 2:
+                    enable_interrupt();
                     regs[0] = sys_uartwrite((const char*)regs[0], (size_t)regs[1]);
+                    disable_interrupt();
                     break;
                 case 3:
                     sys_exec(tf, (const char*)regs[0], (char * const*)regs[1]);
