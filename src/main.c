@@ -47,14 +47,14 @@ int main(){
     *IRQ_ENABLE1 = 1<<29;
 
     writes_uart("\r\n");
-    // writes_uart("██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗\r\n");
-    // writes_uart("██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝\r\n");
-    // writes_uart("██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  \r\n");
-    // writes_uart("██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  \r\n");
-    // writes_uart("╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗\r\n");
-    // writes_uart("╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
+    writes_uart("██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗\r\n");
+    writes_uart("██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝\r\n");
+    writes_uart("██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  \r\n");
+    writes_uart("██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  \r\n");
+    writes_uart("╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗\r\n");
+    writes_uart("╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
     
-    writes_uart("Hello World!\r\n");
+    // writes_uart("Hello World!\r\n");
     
     // unsigned long long cur_excep_lvl;
     // asm volatile(
@@ -72,23 +72,33 @@ int main(){
     // fdt_traverse(initramfs_start_callback);
     // fdt_traverse(initramfs_end_callback);
 
-    // unsigned int got_freeaddr[10];
-    // for (int i = 0; i < 10; i++)
+    // list_freeChunkNode();
+    // list_freeFrameNode();
+    
+    // unsigned long long got_freeaddr[16];
+    // for (int i = 0; i < 16; i++)
     // {
     //     unsigned int* f_addr;
-    //     f_addr = get_freeframe_addr(0x3000);
+    //     writes_uart("Mallocing ");
+    //     write_int_uart(power(2,i),TRUE);
+    //     f_addr = my_malloc(power(2,i));
+
     //     got_freeaddr[i]=f_addr;
     //     writes_uart("Got address ");
     //     writehex_uart((unsigned int)f_addr,TRUE);
+    //     // list_freeFrameNode();
     // }
-    // for (int i = 0; i < 10; i++)
+    // list_freeChunkNode();
+    // list_freeFrameNode();
+
+    // for (int i = 0; i < 16; i++)
     // {
     //     writes_uart("Free address ");
     //     writehex_uart(got_freeaddr[i],TRUE);
     //     free(got_freeaddr[i]);
     // }
-
-    
+    // list_freeChunkNode();
+    // list_freeFrameNode();
     
     while(1)
     { 

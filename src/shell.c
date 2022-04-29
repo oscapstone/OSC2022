@@ -5,6 +5,7 @@
 #include "cpio.h"
 #include "stdlib.h"
 #include "timer.h"
+#include "allocator.h"
 int match_command(char *buffer){
     
     if(strcmp(buffer,"help")==0){
@@ -37,6 +38,21 @@ int match_command(char *buffer){
     }
     else if(strncmp(buffer,"timeout",strlen("timeout"))==0){
         return timeout;
+    }
+    else if(strncmp(buffer,"mmalloc",strlen("mmalloc"))==0){
+        return mmalloc;
+    }
+    else if(strncmp(buffer,"mfree",strlen("mfree"))==0){
+        return mfree;
+    }
+    else if(strncmp(buffer,"mlistc",strlen("mlistc"))==0){
+        return mlistc;
+    }
+    else if(strncmp(buffer,"mlistf",strlen("mlistf"))==0){
+        return mlistf;
+    }
+    else if(strncmp(buffer,"mtest",strlen("mtest"))==0){
+        return mtest;
     }
     else{
         return unknown;
@@ -85,43 +101,6 @@ void read_command(){
     return;
 }
 
-// void read_command(){
-//     char buffer[256];
-//     int count=0;
-//     int action = 0;
-//     writes_uart("# ");
-//     while(1){
-//         char c = read_uart();
-//         if(c!='\n' && count<256){
-//             if(c=='\x7f'){
-//                 if(count >0 ){
-//                     writec_uart('\b');
-//                     writec_uart(' ');
-//                     writec_uart('\b');
-//                     buffer[--count]='\0';
-//                 }
-                
-//             }
-//             else if(c>=0 && c<=127){ // only accept the value is inside 0~127(ASCII).
-//                 writec_uart(c);
-//                 buffer[count++] = c; 
-//             }
-            
-//         }else{
-//             writec_uart('\r');
-//             writec_uart('\n');
-            
-//             buffer[count]='\0';
-//             if(buffer[0] != '\0'){
-//                 action = match_command(buffer);
-//                 handle_command(action, buffer);
-//             }
-//             break;
-//         }
-        
-//     }
-//     return;
-// }
 void read_string(char **s){
     char *buffer= simple_malloc(256);
     int count=0;
@@ -159,13 +138,6 @@ void read_string(char **s){
     return;
 }
 int read_int(){
-    // int n=0;
-    // for(int i=0;i<4;i++){
-    //     char c = read_uart();
-    //     n = n << 8;
-    //     n += (int) c;
-    // }
-    // return n;
     char* s;
     read_string(&s);
     int n=0;
@@ -225,6 +197,7 @@ char* get_para_by_num(int num,char *buffer){
 }
 
 void handle_command(enum Action action, char *buffer){
+    // static void* got_freeaddr[16];
     switch (action)
     {
         case help:
@@ -238,6 +211,9 @@ void handle_command(enum Action action, char *buffer){
             writes_uart("cat        : print the file information\r\n");
             writes_uart("usrprog    : load user program and run it\r\n");
             writes_uart("timeout    : set timer timeout events\r\n");
+            writes_uart("mmalloc    : test the malloc function\r\n");
+            writes_uart("mfree      : free testing malloc address\r\n");
+            writes_uart("mlistc/f   : list the free chunks/frames\r\n");
             break;
         case hello:
             writes_uart("Hello World!\r\n");
@@ -293,33 +269,6 @@ void handle_command(enum Action action, char *buffer){
         }
         case timeout:
         {
-            // writes_uart("Input message:");
-            // char *s;
-            // read_string(&s);
-            // writes_uart("Input time:");
-            // unsigned int after = read_int();
-            
-            // if(get_para_num(buffer)!=2)
-            // {
-            //     writes_uart("Please input at least 2 parameters\r\n");
-            //     return;
-            // }
-            // else{
-            //     //busy_wait_writes(buffer,TRUE);
-            //     //busy_wait_writes("add timer shell1",TRUE);
-            //     char *message = get_para_by_num(1,buffer);
-            //     //busy_wait_writes(message,TRUE);
-            //     //busy_wait_writes("add timer shell2",TRUE);
-            //     char *after = get_para_by_num(2,buffer);
-            //     //busy_wait_writes("add timer shell3",TRUE);
-            //     int after_int = str2int(after);
-            //     //busy_wait_writes(after,TRUE);
-            //     //busy_wait_writes("add timer shell4",TRUE);
-            //     add_timer(writes_nl_uart,"3",3);
-            // }
-            // timeout 3 3
-
-
             int space_count=0;
             int message_start=0,message_end=0,after_start=0,after_end=strlen(buffer);
             for (int i = 0; i < strlen(buffer); i++)
@@ -364,6 +313,93 @@ void handle_command(enum Action action, char *buffer){
             // write_int_uart(after_start,TRUE);
             // write_int_uart(after_end,TRUE);
             add_timer(writes_nl_uart,message_buffer,after);
+            break;
+        }
+        case mmalloc:
+        {
+            int space_count=0;
+            int message_start=0;
+            for (int i = 0; i < strlen(buffer); i++)
+            {
+                if(buffer[i]==' '){
+                    space_count++;
+                    if(message_start == 0){
+                        message_start = i+1;
+                    }
+                }
+            }
+            unsigned int num_count=0;
+            if(space_count == 1)
+                for(int i=message_start;i<strlen(buffer);i++){
+                    num_count=num_count*10+(buffer[i]-'0');
+                }
+            else{
+                writes_uart("wrong malloc format\r\n");
+            }
+            writes_uart("Mallocing ");
+            write_int_uart(num_count,TRUE);
+            void *f_addr = my_malloc(num_count);
+            writes_uart("Got address ");
+            write_int_uart((unsigned long long)f_addr,TRUE);
+            // for (int i = 0; i < 16; i++)
+            // {
+            //     void* f_addr;
+            //     writes_uart("Mallocing ");
+            //     write_int_uart(power(2,i),TRUE);
+            //     f_addr = my_malloc(power(2,i));
+
+            //     got_freeaddr[i]=f_addr;
+            //     writes_uart("Got address ");
+            //     writehex_uart((unsigned int)f_addr,TRUE);
+            //     // list_freeFrameNode();
+            // }
+            break;
+        }
+        case mfree:
+        {
+            int space_count=0;
+            int message_start=0;
+            for (int i = 0; i < strlen(buffer); i++)
+            {
+                if(buffer[i]==' '){
+                    space_count++;
+                    if(message_start == 0){
+                        message_start = i+1;
+                    }
+                }
+            }
+            unsigned long long num_count=0;
+            if(space_count == 1)
+                for(int i=message_start;i<strlen(buffer);i++){
+                    num_count=num_count*10+(buffer[i]-'0');
+                }
+            else{
+                writes_uart("wrong malloc format\r\n");
+            }
+            writes_uart("Freeing address ");
+            writehex_uart((unsigned int)num_count,TRUE);
+            free((void*)num_count);
+
+            // for (int i = 0; i < 16; i++)
+            // {
+            //     writes_uart("Free address ");
+            //     writehex_uart((unsigned int)got_freeaddr[i],TRUE);
+            //     free(got_freeaddr[i]);
+            // }
+            break;
+        }
+        case mlistc:
+        {
+            list_freeChunkNode();
+            break;
+        }
+        case mlistf:
+        {
+            list_freeFrameNode();
+            break;
+        }
+        case mtest:
+        {
             break;
         }
         default:

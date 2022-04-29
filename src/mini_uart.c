@@ -285,6 +285,33 @@ void busy_wait_writes(char *s,bool newline){
             busy_wait_writec('\r');
         busy_wait_writec(*s++);
     }
-    busy_wait_writec('\r');
-    busy_wait_writec('\n');
+    if(newline){
+        busy_wait_writec('\r');
+        busy_wait_writec('\n');
+    }
+    
+}
+void busy_wait_writeint(int s,bool newline){
+    if(s==0){
+        busy_wait_writec('0');
+        if(newline)
+            busy_wait_writes("\r\n",FALSE);
+        return;
+    }
+    char a[128];
+    int i=0,n=s;
+    while(n!=0){
+        a[i] = '0' + n%10;
+        n/=10;
+        i++;
+    }
+    a[i]='\0';
+    for (int j = i-1; j>=0; j--)
+    {
+        busy_wait_writec(a[j]);
+        /* code */
+    }
+    
+    if(newline)
+        busy_wait_writes("\r\n",FALSE);
 }

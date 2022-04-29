@@ -9,6 +9,7 @@ void init_timer(){
     // head->value = null;
     
     head = nullptr;
+    disable_timer_interrupt();
     // writes_uart("Core timer: ");
     //writehex_uart(*CORE0_TIMER_IRQ_CTRL,1);
 }
@@ -50,7 +51,7 @@ void add_timer(void (*callback)(char* s),char *message,int after){
     // }
     
     if(head==nullptr){
-        writes_nl_uart("Add new timer to null queue");
+        writes_nl_uart("Adding new timer to empty timer queue");
         node = (timer*)simple_malloc(sizeof(timer));
         node->next=nullptr;
         get_current_time(&time_count,&time_freq);
@@ -62,7 +63,7 @@ void add_timer(void (*callback)(char* s),char *message,int after){
         enable_timer_interrupt();
     }else{
         // busy_wait_writes("ADDing new timer busy2",TRUE);
-        writes_nl_uart("Add new timer to non-null queue");
+        writes_nl_uart("Adding new timer to non-empty queue");
         timer* newNode = (timer*)simple_malloc(sizeof(timer));
         get_current_time(&time_count,&time_freq);
         newNode->value=(time_count/time_freq) + after;

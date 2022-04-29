@@ -156,13 +156,13 @@ void Timer_interrupt_handler(){
         // writes_uart("DEBUG:");
         // writes_nl_uart(h->message);
         if(h->next==nullptr){
-            writes_uart("next timer is null\r\n");
+            writes_uart("next timer is not exist.\r\n");
             h = to_next_timer();
             disable_timer_interrupt();
         }
         else{
             h = to_next_timer();
-            writes_uart("Now find next timer in ");
+            writes_uart("Found next timer in ");
             write_int_uart(h->value,TRUE);
             unsigned long long time_count=0;
             unsigned long long time_freq=0;

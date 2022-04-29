@@ -1,5 +1,5 @@
 #include "stdlib.h"
-#define _smalloc_size 0x50000
+#define _smalloc_size 0xffffff
 extern unsigned long _head_start_brk;
 void* heap_top = &_head_start_brk;
 void* simple_malloc(size_t size) {

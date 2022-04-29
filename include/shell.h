@@ -12,6 +12,11 @@ enum Action{
     cat,
     prog,
     timeout,
+    mmalloc,
+    mfree,
+    mlistc,
+    mlistf,
+    mtest,
     unknown
 };
 
