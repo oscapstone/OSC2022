@@ -100,7 +100,13 @@ void bp(char*msg){
   print_s("\n");
 }
 
+//void delay(int num) {
+//  while (num--){
+//    print_i(num);
+//    print_s(",");
+//  }
+//  print_s("\r\n");
+//}
 void delay(int num) {
-  while (num--)
-    ;
+  while (num--){}
 }

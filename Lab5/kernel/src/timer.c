@@ -1,13 +1,19 @@
 #include "timer.h"
+#include "thread.h"
 #include "memory.h"
 #include "io.h"
 #include "utils.h"
 
-void core_timer_enable() {
+void core_timer_enable(int tval) {
   asm volatile("mov x0, 1");
   asm volatile("msr cntp_ctl_el0, x0");  // enable interrupt in EL0
-  asm volatile("mrs x0, cntfrq_el0"); // system constant
-  asm volatile("msr cntp_tval_el0, x0");  // set expired time
+  if(tval == -1){ // uses system default frequency * 1 as time interval
+    asm volatile("mrs x0, cntfrq_el0"); // system constant
+    asm volatile("msr cntp_tval_el0, x0");  // set expired time
+  }else{
+    plan_next_interrupt_tval(tval);
+    //asm volatile("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0 * secs));
+  }
   asm volatile("mov x0, 2");
   asm volatile("ldr x1, =0x40000040");
   asm volatile("str w0, [x1]");  // unmask timer interrupt
@@ -49,23 +55,38 @@ int get_timestamp(){
 
 void timeout_event_handler(){ // EL1-> EL1 irq
   print_s("timout event handler\n");
-  head_event->func(head_event->args);
 
+  // check if head event id valid
+  if(head_event ==  0){
+    print_s("no timeout event\n");
+    return;
+  }
+  // execute the timeout callback function
+  head_event->func(head_event->args);
   head_event = head_event->next_event;
   
+  // switch to next timeout event if there's any
   if(head_event == 0){
     core_timer_disable();
     head_event = 0;
     print_s("all events done\n");
   }else{
-    set_next_timer(head_event->queue_time);
+    // you need to manually set the next timer other wise the tval will
+    // go back to the defaul value
+    plan_next_interrupt_sec(head_event->queue_time);
   }
 }
 
-void set_next_timer(int secs){
+void plan_next_interrupt_sec(int secs){
   uint64_t cntfrq_el0;
   asm volatile("mrs %0, cntfrq_el0" : "=r"(cntfrq_el0));
+  print_i(cntfrq_el0);
   asm volatile("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0 * secs));
+}
+
+void plan_next_interrupt_tval(int tval){
+  //print_i(tval);
+  asm volatile("msr cntp_tval_el0, %0" : : "r"(tval));
 }
 
 void add_timer(callback func, char* args, int duration){
@@ -92,8 +113,8 @@ void add_timeout_event(timeout_event* new_event){
   if(head_event == 0){
     print_s(""); // I don't know why you need this line.
     head_event = new_event;
-    core_timer_enable();
-    set_next_timer(new_event->queue_time);
+    core_timer_enable(-1); // uses defualt timer frequency
+    plan_next_interrupt_sec(new_event->queue_time);
     return;
   }
   // event pointers
@@ -112,7 +133,7 @@ void add_timeout_event(timeout_event* new_event){
         head_event = new_event;
         new_event->next_event = curr_event;
         // replace the intrrupt
-        set_next_timer(head_event->queue_time);
+        plan_next_interrupt_sec(head_event->queue_time);
       }else{
         prev_event->next_event = new_event;
         new_event->next_event = curr_event;
@@ -162,7 +183,7 @@ void show_all_events(){
   }
 }
 
-void print_message(char* msg){
+void print_callback(char* msg){
   print_s(msg);
   print_s("\n");
 }

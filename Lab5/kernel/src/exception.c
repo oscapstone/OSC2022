@@ -4,6 +4,7 @@
 #include "io.h"
 #include "mini_uart.h"
 #include "timer.h"
+#include "printf.h"
 #include "utils.h"
 
 int count = 0;
@@ -28,6 +29,7 @@ void sync_handler() {
   print_s("ESR_EL1: "); 
   print_h(esr_el1); // cause of the exception
   print_s("\n\n");
+  while(1){}
 }
 
 void lower_64_EL_sync_handler(uint64_t sp){
@@ -60,7 +62,7 @@ void lower_64_EL_sync_handler(uint64_t sp){
     //  print_s("\r\n");
     //}
 
-    delay(5000000);
+    //delay(5000000);
 
     if(sys_call_num == 0){ // int getpid()
       uint32_t pid = get_current()->pid;
@@ -84,8 +86,12 @@ void lower_64_EL_sync_handler(uint64_t sp){
       //uart_puts("]\n");
     }else if(sys_call_num == 3){
       print_s("exec called\r\n");
+      //char *program_name = (char *)trap_frame->x[0];
+      //const char **argv = (const char **)trap_frame->x[1];
+      exec();
     }else if(sys_call_num == 4){
       print_s("fork called\r\n");
+      fork(sp);
     }else if(sys_call_num == 5){
       print_s("exit called\r\n");
     }else if(sys_call_num == 6){
@@ -128,6 +134,7 @@ void lower_64_EL_sync_handler(uint64_t sp){
   ////}
 }
 
+// user timer handler
 void el0_to_el1_irq_handler() {
   disable_interrupt();
   uint32_t is_uart = (*IRQ_PENDING_1 & AUX_IRQ);
@@ -135,22 +142,67 @@ void el0_to_el1_irq_handler() {
   if (is_uart) {
     uart_handler();
   } else {
-    core_timer_handler();
+    core_timer_handler(); 
   }
   enable_interrupt();
 }
 
-void el1_to_el1_irq_handler() {
+// kernel timer handler
+uint64_t el1_to_el1_irq_handler(uint64_t sp) {
+
   disable_interrupt();
   uint32_t is_uart = (*IRQ_PENDING_1 & AUX_IRQ);
-
+  uint32_t is_core_timer = 1;
   if (is_uart) {
     uart_handler();
-  } else {
-    //core_timer_handler();
-    timeout_event_handler();
+  } else if(is_core_timer){
+    ////print_s("timer handler\r\n");
+    //// core_timer_handler();
+    //
+    ////timeout_event_handler(); 
+    //// timeout event does not work with timer schedular, temp ignored this function.
+    //exception_frame_t* exception_context = (exception_frame_t*) sp;
+    //if(from_kernel == 0){
+    //  printf("saving context\r");
+    //  save_thread_info(exception_context);
+    //  //from_kernel = 0;
+    //}else{
+    //  from_kernel = 0;
+    //}
+    //print_s("\r\n=================\r\npid stack: ");
+    //print_i( ((thread_info*)exception_context->tpidr_el1)->pid);
+    //printf("tpid location: %d\n", exception_context->tpidr_el1);
+    ////print_s("\r\n");
+    //timer_schedular_handler();
+    //if(run_queue.head != 0){
+    //  if(run_queue.head->context.lr == 0){
+    //    printf("lr == 0!!!\n");
+    //  }else{
+    //    load_thread_info(run_queue.head, exception_context);
+    //    //print_s("\r\n======================================\r\n");
+    //    print_s("pid: ");
+    //    print_i( ((thread_info*)exception_context->tpidr_el1)->pid);
+    //    print_s("\r\nrun_queue.head: ");
+    //    print_i(run_queue.head);
+    //    print_s("\r\n");
+    //  }
+    //}else{
+    //  printf("nononononono\n");
+    //}
+    ////print_s("pid: ");
+    ////print_i(get_current());
+    ////print_s("\r\n");
+    kill_zombies();
+    handle_fork();
+    ////schedule();
+    //plan_next_interrupt_sec(1);
+    plan_next_interrupt_tval(SCHEDULE_TVAL);
+    
+    schedule();
   }
+  //plan_next_interrupt_tval(SCHEDULE_TVAL);
   enable_interrupt();
+  return sp;
 }
 
 

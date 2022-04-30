@@ -35,11 +35,13 @@ void uart_init() {
 
 void uart_send(unsigned int c) {
   // wait until we can send
+  //disable_interrupt();
   while (!(*AUX_MU_LSR_REG & 0x20)) {
     asm volatile("nop");
   }
   // write the character to the buffer
   *AUX_MU_IO_REG = c;
+  //enable_interrupt();
 }
 
 char uart_getb() {

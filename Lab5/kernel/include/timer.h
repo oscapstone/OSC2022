@@ -1,13 +1,11 @@
 #pragma once
 #include "utils.h"
-#define CORE0_TIMER_IRQ_CTRL 0x40000040
 
+#define CORE0_TIMER_IRQ_CTRL 0x40000040
+#define MAX_EVENT_MSG_LEN 20
 
 typedef void(*callback)(char *); //message callback
-
 typedef struct timeout_event timeout_event;
-
-#define MAX_EVENT_MSG_LEN 20
 
 struct timeout_event
 {
@@ -19,22 +17,23 @@ struct timeout_event
     char args[MAX_EVENT_MSG_LEN];
 };
 
-//uint64_t curr_time;
-
 timeout_event* head_event;
 
+// core timer utils
 void core_timer_enable();
 void core_timer_disable();
-
 void core_timer_handler();
 
+// timeout event API
+void add_timer(callback func, char* args, int duration);
+// timeout event API utils
 void add_timeout_event(timeout_event* new_event);
 void timeout_event_handler();
-
-void set_next_timer(int secs);
-
+void plan_next_interrupt_sec(int secs);
+void plan_next_interrupt_tval(int tval);
 void show_all_events();
 void update_event_time(timeout_event* start, int time);
 
-void print_message(char* msg);
-void add_timer(callback func, char* args, int duration);
+// test callback function
+void print_callback(char* msg);
+

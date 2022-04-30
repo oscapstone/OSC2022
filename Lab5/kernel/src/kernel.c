@@ -9,7 +9,7 @@
 #include "cpio.h"
 #include "timer.h"
 #include "thread.h"
-
+#include "kernel.h"
 //extern commads cmd_list[];
 
 #define BUFFER_LEN 1000
@@ -38,9 +38,6 @@ void clear_buffer(char* buffer, int size){
     }
 }
 
-void parse_command(char* cmd){
-    
-}
 
 void execute_command(const char* cmd){
     //int cmd_len = sizeof(cmd_list)/sizeof(commads);
@@ -67,9 +64,35 @@ void execute_command(const char* cmd){
     }
 }
 
+void cmd_interface(){
+    char input_buffer[BUFFER_LEN];
+    while(1) {
+        //print_s("ddd\r\n");
+        // echo everything back
+        clear_buffer(input_buffer, BUFFER_LEN);
+        // read command
+        //print_s("read\r\n");
+        //read_command(input_buffer);
+        //print_s("yaya\r\n");
+        //// uart_puts(input_buffer); // echo input
+        //execute_command(input_buffer);
+        //
+    }
+}
+
+void run_shell(){
+    while(1) {
+        // echo everything back
+        clear_buffer(input_buffer, BUFFER_LEN);
+        // read command
+        read_command(input_buffer);
+        // uart_puts(input_buffer); // echo input
+        execute_command(input_buffer);
+    }
+}
+
 void main()
 {
-    char input_buffer[BUFFER_LEN];
 
     // set up serial console
     uart_init();
@@ -80,16 +103,16 @@ void main()
     // say hello
     uart_puts("Wellcome!\r\n");
     // enables interrupt in EL1 (for uart async IO)
-    enable_interrupt(); // msr DAIFClr, 0xf
+    //enable_interrupt(); // msr DAIFClr, 0xf
 
     head_event = 0;
 
-    while(1) {
-        // echo everything back
-        clear_buffer(input_buffer, BUFFER_LEN);
-        // read command
-        read_command(input_buffer);
-        // uart_puts(input_buffer); // echo input
-        execute_command(input_buffer);
-    }
+    plan_next_interrupt_tval(SCHEDULE_TVAL);
+
+    core_timer_enable(SCHEDULE_TVAL);
+    enable_interrupt();
+    
+    //thread_create(foo2);
+    //timer_schedular_init();
+    //while(1){}
 }

@@ -28,6 +28,7 @@ void shell_events(char* args);
 void shell_buddy_test(char* args);
 void shell_dma_test(char* args);
 void shell_thread_test(char* args);
+void shell_thread_timer_test(char* args);
 
 extern commads cmd_list[];
 extern int cmd_num;

@@ -3,14 +3,21 @@
 #include <stddef.h>
 #include "utils.h"
 
+// thread process setting
 #define STACK_SIZE 4096
 #define USER_PROGRAM_BASE 0x30000000
 #define USER_PROGRAM_SIZE (1 * mb)
 
+// thread status number
 #define THREAD_DEAD 1
 #define THREAD_FORK 2
 #define THREAD_READY 4
 
+// scheduling constant
+#define SCHEDULE_TVAL 62500000 >> 5
+#define SCHEDULE_TVAL_TEST 62500000 // 1 sec
+
+int from_kernel;
 typedef struct {
   uint64_t x19;
   uint64_t x20;
@@ -27,14 +34,15 @@ typedef struct {
   uint64_t sp;
 } cpu_context;
 
-//typedef enum {
-//  ALIVE,
-//  ACTIVE,
-//  DEAD,
-//  WAIT,
-//} thread_status;
+typedef struct {
+  uint64_t x[31];
+  uint64_t fp;
+  uint64_t lr;
+  uint64_t sp;
+} cpu_context_full;
 
 typedef struct thread_info {
+  //cpu_context context;
   cpu_context context;
   uint32_t pid;
   uint32_t child_pid;
@@ -53,6 +61,7 @@ typedef struct {
 
 thread_queue run_queue;
 uint32_t thread_cnt;
+thread_info *idle_t;
 
 extern thread_info *get_current();
 extern void switch_to(uint64_t, uint64_t);
@@ -61,13 +70,44 @@ typedef struct {
   uint64_t x[31];
 } trap_frame_t;
 
-void foo();
-void thread_test();
+typedef struct {
+  uint64_t x[31];
+  uint64_t tpidr_el1;
+  uint64_t lr;
+  uint64_t sp;
+} exception_frame_t;
+
+// thread API
 void thread_init();
 thread_info *thread_create(void (*func)());
+thread_info *current_thread();
+
+// thread API utils
 void run_queue_push(thread_info *thread);
 void schedule();
 void idle();
+void idle_thread();
 void exit();
 void kill_zombies();
-thread_info *current_thread();
+
+// fork 
+void fork(uint64_t sp);
+void handle_fork();
+void create_child(thread_info *parent, thread_info *child);
+
+// timer interrupt schedular
+void timer_schedular_init();
+void timer_schedular_handler();
+void timer_schedule();
+void save_thread_info(exception_frame_t* ef);
+void load_thread_info(thread_info * next, exception_frame_t* ef);
+
+// thread testing functions
+void foo();
+void foo2();
+void thread_test();
+void thread_timer_test();
+
+
+// exec
+void exec();

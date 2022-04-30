@@ -28,7 +28,8 @@ commads cmd_list[]=
     {.cmd="events", .help="show all timeout events", .func=shell_events},
     {.cmd="buddy", .help="buddy memory system test", .func=shell_buddy_test},
     {.cmd="dma", .help="dynamic memory allocation test", .func=shell_dma_test},
-    {.cmd="thread", .help="basic thread function testing", .func=shell_thread_test}
+    {.cmd="thread", .help="basic thread function testing", .func=shell_thread_test}, 
+    {.cmd="thread-timer", .help="thread scheduling with timer interrrupt", .func=shell_thread_timer_test}
 };
 
 int cmd_num = sizeof(cmd_list)/sizeof(commads);
@@ -217,7 +218,7 @@ void shell_alloc(char* args){
 void shell_user_program(char* args){
     //print_s(args);
     uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
-    uint64_t target_addr = 0x30000000; // load your program here
+    uint64_t target_addr = 0x30100000; // load your program here
     uint64_t target_sp = 0x31000000;
 
     //cpio_load_user_program("user_program.img", target_addr);
@@ -237,7 +238,7 @@ void shell_ls(char* args){
 
 void shell_start_timer(char* args){
     uart_puts("timer enable\n");
-    core_timer_enable();
+    core_timer_enable(-1);
 }
 
 void shell_async_puts(char* args){
@@ -251,8 +252,11 @@ void shell_test(char* args){
     //update_event_time(head_event, 3);
     //core_timer_disable();
     //set_next_timer(4);
-    bp("printf");
-    printf("int print test:%d\n", 69420);
+    //bp("printf");
+    printf("asdfasdf%d", 10);
+    //exception_frame_t e;
+    //print_s("sizeof: ");
+    //print_i(sizeof(e));
 }
 
 void shell_settimeout(char* args){
@@ -276,7 +280,7 @@ void shell_settimeout(char* args){
     print_i(timeout_time);
     print_s("\n");
 
-    add_timer(print_message, timeout_message, timeout_time);
+    add_timer(print_callback, timeout_message, timeout_time);
 
 }
 
@@ -294,4 +298,8 @@ void shell_dma_test(char* args){
 
 void shell_thread_test(char* args){
     thread_test();
+}
+
+void shell_thread_timer_test(char* args){
+    thread_timer_test();
 }
