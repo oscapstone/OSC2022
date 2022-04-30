@@ -8,8 +8,6 @@ switch_to:
     stp fp, lr, [x0, 16 * 5]
     mov x9, sp
     str x9, [x0, 16 * 6]
-    mrs x9, spsr_el1
-    str x9, [x0, 16 * 6 + 8]
 
     ldp x19, x20, [x1, 16 * 0]
     ldp x21, x22, [x1, 16 * 1]
@@ -19,8 +17,7 @@ switch_to:
     ldp fp, lr, [x1, 16 * 5]
     ldr x9, [x1, 16 * 6]
     mov sp,  x9
-    ldr x9, [x1, 16 * 6 + 8]
-    msr spsr_el1, x9
+
     msr tpidr_el1, x1
     ret
 
@@ -34,8 +31,6 @@ store_context:
     stp fp, lr, [x0, 16 * 5]
     mov x9, sp
     str x9, [x0, 16 * 6]
-    mrs x9, spsr_el1
-    str x9, [x0, 16 * 6 + 8]
     ret
 
 .global load_context
@@ -48,8 +43,6 @@ load_context:
     ldp fp, lr, [x0, 16 * 5]
     ldr x9, [x0, 16 * 6]
     mov sp,  x9
-    ldr x9, [x0, 16 * 6 + 8]
-    msr spsr_el1, x9
     ret
 
 .global get_current

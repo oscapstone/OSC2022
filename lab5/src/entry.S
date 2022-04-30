@@ -27,6 +27,8 @@
     mrs x0,  sp_el0
     str x0,  [sp, 16 * 16 + 8]
 
+    ldp x0, x1, [sp ,16 * 0]  // restore x0
+
 .endm
 
 // load general registers from 

@@ -28,7 +28,6 @@ typedef struct thread_context
     unsigned long fp;
     unsigned long lr;
     unsigned long sp;
-    unsigned long spsr_el1;
 } thread_context_t;
 
 typedef struct thread

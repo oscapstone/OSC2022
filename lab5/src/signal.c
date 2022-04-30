@@ -1,9 +1,6 @@
 #include "signal.h"
-#include "syscall.h"
-#include "sched.h"
-#include "malloc.h"
 
-void check_signal()
+void check_signal(trapframe_t *tpf)
 {
     lock();
     if(curr_thread->signal_is_checking)return;
@@ -18,7 +15,7 @@ void check_signal()
             lock();
             curr_thread->sigcount[i]--;
             unlock();
-            run_signal(i);
+            run_signal(tpf,i);
         }
     }
     lock();
@@ -26,7 +23,7 @@ void check_signal()
     unlock();
 }
 
-void run_signal(int signal)
+void run_signal(trapframe_t* tpf,int signal)
 {
     curr_thread->curr_signal_handler = curr_thread->singal_handler[signal];
 
@@ -41,9 +38,10 @@ void run_signal(int signal)
 
     asm("msr elr_el1, %0\n\t"
         "msr sp_el0, %1\n\t"
+        "msr spsr_el1, %2\n\t"
         "eret\n\t" ::"r"(signal_handler_wrapper),
-        "r"(temp_signal_userstack + USTACK_SIZE));
-
+        "r"(temp_signal_userstack + USTACK_SIZE),
+        "r"(tpf->spsr_el1));
 }
 
 void signal_handler_wrapper()

@@ -133,10 +133,9 @@ void irq_router(trapframe_t* tpf)
     //only do signal handler when return to user mode
     if ((tpf->spsr_el1 & 0b1100) == 0)
     {
-        check_signal();
+        check_signal(tpf);
     }
 
-    disable_interrupt();
 }
 
 void invalid_exception_router(unsigned long long x0){
