@@ -264,7 +264,7 @@ void *malloc(uint64_t size) {
   // uart_int(allocated_size);
   // printf("\n");
   if (free_slot) {
-    printf("have free_slot\n");
+    // printf("have free_slot\n");
 
     uint64_t addr = (uint64_t)free_slot;
     uint64_t total_size = free_slot->total_size;
@@ -288,7 +288,7 @@ void *malloc(uint64_t size) {
     free_slot->next = 0;
 
     // create another free slot if remaining size is big enough
-    uint64_t free_size =
+    int64_t free_size =
         total_size - allocated_size - align_up(sizeof(dma_header), 8);
     if (free_size > 0) {
       dma_header *new_header = (dma_header *)(addr + allocated_size);
@@ -324,7 +324,7 @@ void *malloc(uint64_t size) {
     // create another free slot if remaining size is big enough
     uint64_t order = frame_ptr->order;
     uint64_t total_size = (1 << order) * 4 * kb;
-    uint64_t free_size = total_size - allocated_size - align_up(sizeof(dma_header), 8);
+    int64_t free_size = total_size - allocated_size - align_up(sizeof(dma_header), 8);
     // printf("order :");
     // uart_int(order);
     // printf("\n");

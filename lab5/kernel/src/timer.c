@@ -2,6 +2,7 @@
 #include "alloc.h"
 #include "uart.h"
 #include "utils.h"
+#include "thread.h"
 
 void timeout_event_init() {
   timeout_queue_head = 0;
@@ -42,10 +43,11 @@ void core_timer_disable() {
 }
 
 void core_timer_handler_lowerEL_64() {  // required 2
-  set_expired_time(2);
-  uart_puts("Time elapsed after booting: ");
-  uart_int(get_current_time());
-  uart_puts("s\n");
+  set_expired_time(1);
+  // uart_puts("Time elapsed after booting: ");
+  // uart_int(get_current_time());
+  // uart_puts("s\n");
+  schedule();
 }
 
 void core_timer_handler_currentEL_ELx() {  // elective 2
@@ -129,7 +131,7 @@ uint64_t get_current_time() {
 void set_expired_time(uint32_t duration) {
   uint64_t cntfrq_el0;
   asm volatile("mrs %0, cntfrq_el0" : "=r"(cntfrq_el0));
-  asm volatile("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0 * duration));
+  asm volatile("msr cntp_tval_el0, %0" : : "r"(cntfrq_el0 * duration / 32));
 }
 
 void timer_callback(char *msg) {

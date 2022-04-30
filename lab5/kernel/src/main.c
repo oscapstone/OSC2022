@@ -8,6 +8,7 @@
 #include "alloc.h"
 #include "utils.h"
 #include "thread.h"
+#include "printf.h"
 // #include "device_tree.h"
 #define RAMFS_ADDR 0x8000000
 
@@ -50,93 +51,12 @@ void command_not_found(char * buffer)
 }
 
 void command_ls(){
-    uint64_t cur_addr = RAMFS_ADDR;
-    cpio_newc_header* cpio_ptr;
-    uint64_t name_size, file_size;
-    char *file_name;
-    // char *file_content;
-    uart_puts("\r");
-
-    while(1){
-        cpio_ptr = (cpio_newc_header*)cur_addr;
-        name_size = hex_to_int64(cpio_ptr->c_namesize);
-        file_size = hex_to_int64(cpio_ptr->c_filesize);
-
-        cur_addr += sizeof(cpio_newc_header);
-        file_name = (char*)cur_addr;
-        if(!strcmp(file_name, "TRAILER!!!"))
-            break;            
-        uart_puts(file_name);
-        uart_puts("\r\n");
-
-        cur_addr = (uint64_t)((cur_addr + name_size + 3) & (~3));
-        cur_addr = (uint64_t)((cur_addr + file_size + 3) & (~3));
-    }
+    cpio_ls();
 }
 
-void cpio_load_user_program(char *target_program, uint64_t target_addr) {
-    uint64_t cur_addr = RAMFS_ADDR;
-    cpio_newc_header* cpio_ptr;
-    uint64_t name_size, file_size;
-    char *file_name;
-
-    while (1) {
-        cpio_ptr = (cpio_newc_header *)cur_addr;
-        name_size = hex_to_int64(cpio_ptr->c_namesize);
-        file_size = hex_to_int64(cpio_ptr->c_filesize);
-
-
-        cur_addr += sizeof(cpio_newc_header);
-        file_name = (char *)cur_addr;
-        // the end is indicated by a special record with pathname "TRAILER!!!"
-        if (strcmp(file_name, "TRAILER!!!") == 0) break;
-
-        cur_addr = (uint64_t)((cur_addr + name_size + 3) & (~3));
-        if (strcmp(file_name, target_program) == 0) {
-            char *file_content = (char *)cur_addr;
-            char *target_content = (char *)target_addr;
-            for (unsigned long long i = 0; i < file_size; i++) {
-                target_content[i] = file_content[i];
-            }
-            return;
-        }
-        cur_addr = (uint64_t)((cur_addr + file_size + 3) & (~3));
-    }
-    uart_puts("No such file\n");
-}
 
 void command_cat(char* pathname){
-    uint64_t cur_addr = RAMFS_ADDR;
-    cpio_newc_header* cpio_ptr;
-    uint64_t name_size, file_size;
-    char *file_name;
-
-    while(1){
-        cpio_ptr = (cpio_newc_header*)cur_addr;
-        name_size = hex_to_int64(cpio_ptr->c_namesize);
-        file_size = hex_to_int64(cpio_ptr->c_filesize);
-
-        cur_addr += sizeof(cpio_newc_header);
-        file_name = (char*)cur_addr;
-        if(!strcmp(file_name, "TRAILER!!!")){
-            uart_puts("The file is not exist\r\n");
-            break;            
-        }
-       
-        cur_addr = (uint64_t)((cur_addr + name_size + 3) & (~3));
-        if(!strcmp(file_name, pathname)){
-            char *file_content = (char *)cur_addr;
-            for(uint64_t i=0; i<file_size; i++){
-                if(file_content[i] == '\n')
-                    uart_send('\r');
-                uart_send(file_content[i]);
-            }
-            uart_puts("\r\n");
-            break;
-        }
-        cur_addr = (uint64_t)((cur_addr + file_size + 3) & (~3));
-    }
-
+    cpio_cat(pathname);
 }
 
 void command_mailbox()
@@ -219,12 +139,12 @@ void command_test()
     uart_puts("\r\n");
 }
 
-void command_load_user_program() {
+void command_load_user_program(const char *program_name) {
     uint64_t spsr_el1 = 0x0; // EL0t with interrupt enabled
-    uint64_t target_addr = 0x30000000;
+    uint64_t target_addr = 0x30100000;
     uint64_t target_sp = 0x31000000;
-    cpio_load_user_program("user_program.img", target_addr);
-    core_timer_enable();
+    cpio_load_user_program(program_name, target_addr);
+    // core_timer_enable();
     asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1));
     asm volatile("msr elr_el1, %0" : : "r"(target_addr));
     asm volatile("msr sp_el0, %0" : : "r"(target_sp));
@@ -251,8 +171,11 @@ void command_buddy_test() {
 void command_dma_test() { 
     dma_test();
 }
-void command_thread_test() { 
-    thread_test();
+void command_thread_test1() { 
+    thread_test1(); 
+}
+void command_thread_test2() {
+    thread_test2(); 
 }
 void parse_command(char * buffer)
 {
@@ -263,13 +186,14 @@ void parse_command(char * buffer)
     else if ( !strncmp(buffer, "cat", 3)) command_cat(&buffer[4]);
     else if ( !strcmp(buffer, "test")) command_test();
     else if ( !strcmp(buffer, "reboot")) reset();
-    else if ( !strcmp(buffer, "user")) command_load_user_program();
+    else if ( !strncmp(buffer, "run", 3)) command_load_user_program(&buffer[4]);
     else if ( !strcmp(buffer, "puts")) uart_async_puts("Test Message!\n");
     else if ( !strcmp(buffer, "timer")) core_timer_enable();
     else if ( !strncmp(buffer, "setTimeout", 10)) command_set_timeout(&buffer[11]);
     else if ( !strcmp(buffer, "buddy test")) command_buddy_test();
     else if ( !strcmp(buffer, "dma test")) command_dma_test();
-    else if ( !strcmp(buffer, "t1")) command_thread_test();
+    else if ( !strcmp(buffer, "t1")) command_thread_test1();
+    else if ( !strcmp(buffer, "t2")) command_thread_test2();
     else command_not_found(buffer);
 }
 

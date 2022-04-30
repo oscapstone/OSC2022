@@ -25,6 +25,7 @@
  
 #pragma once
 #include "gpio.h"
+#include <stdint.h>
 #define ARM_IRQ_REG_BASE (MMIO_BASE + 0x0000b000)
 
 #define IRQ_PENDING_1 ((volatile unsigned int *)(ARM_IRQ_REG_BASE + 0x00000204))
@@ -43,10 +44,12 @@ int write_buf_start, write_buf_end;
 void uart_init();
 void uart_send(unsigned int c);
 char uart_getc();
+uint32_t uart_gets(char *buf, uint32_t size);
 void uart_puts(char *s);
 void uart_hex(unsigned int d);
 void uart_putc(char c);
 void uart_int(int x);
+uint32_t uart_write(char *s, uint32_t size);
 
 void enable_uart_interrupt();
 void disable_uart_interrupt();

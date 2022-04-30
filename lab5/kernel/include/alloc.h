@@ -1,6 +1,6 @@
 #pragma once
 #include "utils.h"
-
+#include <stdint.h>
 #define PAGE_BASE_ADDR ((uint64_t)0x10000000)
 #define PAGE_END_ADDR ((uint64_t)0x20000000)
 #define PAGE_SIZE ((uint64_t)(4 * kb))

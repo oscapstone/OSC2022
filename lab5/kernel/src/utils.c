@@ -46,3 +46,20 @@ void delay(int num) {
   while (num--)
     ;
 }
+
+uint64_t hex2int(char *hex, int len) {
+  uint64_t val = 0;
+  for (int i = 0; i < len; i++) {
+    // get current character then increment
+    uint64_t byte = *(hex + i);
+    if (byte >= '0' && byte <= '9')
+      byte = byte - '0';
+    else if (byte >= 'A' && byte <= 'F')
+      byte = byte - 'A' + 10;
+    else if (byte >= 'a' && byte <= 'f')
+      byte = byte - 'a' + 10;
+
+    val = (val << 4) | (byte & 0xF);
+  }
+  return val;
+}

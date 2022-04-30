@@ -1,12 +1,6 @@
-#ifndef STRING_H
-#define STRING_H
+#pragma once
 
-void strset     ( char * s1, int c, int size );
-int  strlen     ( char * s );
-void _itoa       ( int x, char str[], int d);
-void ftoa       ( float n, char* res, int afterpoint ); 
-void reverse    ( char *s );
-int strcmp(char*, char*);
+int strcmp(const char *p1, const char *p2);
 int strncmp(const char *s1, const char *s2, unsigned n);
-
-#endif
+int strlen(const char *s);
+char *strstr(const char *s, const char *find);

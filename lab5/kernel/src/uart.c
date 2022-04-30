@@ -95,6 +95,19 @@ char uart_getc() {
     return r=='\r'?'\n':r;
 }
 
+uint32_t uart_gets(char *buf, uint32_t size) {
+  for (int i = 0; i < size; ++i) {
+    buf[i] = uart_getc();
+    // uart_send(buf[i]);
+    if (buf[i] == '\n' || buf[i] == '\r') {
+      // uart_send('\r');
+      // buf[i] = '\0';
+      return i;
+    }
+  }
+  return size;
+}
+
 /**
  * Display a string
  */
@@ -105,6 +118,15 @@ void uart_puts(char *s) {
             uart_send('\r');
         uart_send(*s++);
     }
+}
+
+uint32_t uart_write(char *s, uint32_t size) {
+    for(int i = 0 ; i<size ;i++){
+      uart_send(s[i]);
+      if(s[i]=='\n' || s[i] =='\r')
+        return i;
+    }
+    return size;
 }
 
 /**

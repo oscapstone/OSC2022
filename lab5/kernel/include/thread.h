@@ -1,8 +1,9 @@
 #pragma once
 
-#include "utils.h"
-
-#define THREAD_SIZE 4096
+#include <stdint.h>
+#define STACK_SIZE 4096
+#define USER_PROGRAM_BASE 0x30000000
+#define USER_PROGRAM_SIZE (1 * mb)
 
 typedef struct {
   uint64_t x19;
@@ -31,6 +32,11 @@ typedef struct thread_info {
   cpu_context context;
   uint32_t tid;
   thread_status status;
+  uint64_t user_sp;
+  uint64_t user_stack_base;
+  uint64_t user_stack_size;
+  uint64_t user_program_base;
+  uint32_t user_program_size;
   struct thread_info *next;
 } thread_info;
 
@@ -38,14 +44,20 @@ typedef struct {
   thread_info *head, *tail;
 } thread_queue;
 
+typedef struct {
+  uint64_t x[31];
+} trap_frame_t;
+
 thread_queue run_queue;
 uint32_t thread_cnt;
 
-extern uint64_t get_current();
-extern void switch_to(uint64_t, uint64_t);
+extern thread_info *get_current();
+extern void switch_to(thread_info *, thread_info *);
 
 void foo();
-void thread_test();
+void thread_test1();
+void user_test();
+void thread_test2();
 void thread_init();
 thread_info *thread_create(void (*func)());
 void run_queue_push(thread_info *thread);
@@ -53,4 +65,4 @@ void schedule();
 void idle();
 void exit();
 void kill_zombies();
-thread_info *current_thread();
+void exec(const char *program_name, const char **argv);
