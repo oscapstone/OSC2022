@@ -58,7 +58,7 @@ void cpio_cat(char *pathname_to_cat) {
   print_s("No such file\n");
 }
 
-void cpio_load_user_program(char *target_program, uint64_t target_addr) {
+int cpio_load_user_program(char *target_program, uint64_t target_addr) {
   unsigned long long ptr = RAMFS_ADDR;
   cpio_newc_header *header;
   char *pathname;
@@ -81,9 +81,10 @@ void cpio_load_user_program(char *target_program, uint64_t target_addr) {
       for (unsigned long long i = 0; i < filesize; i++) {
         target_content[i] = content[i];
       }
-      return;
+      return 1;
     }
     ptr = align_up(ptr + filesize, 4);
   }
   print_s("No such file\n");
+  return 0;
 }

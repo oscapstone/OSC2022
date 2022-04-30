@@ -1,5 +1,5 @@
 #include "mini_uart.h"
-
+#include "printf.h"
 #include "gpio.h"
 
 void uart_init() {
@@ -59,6 +59,7 @@ char uart_getc() {
   // wait until something is in the buffer
   while (!(*AUX_MU_LSR_REG & 0x01)) {
     asm volatile("nop");
+    //printf("adfasd");
   }
   // read character
   char r = (char)(*AUX_MU_IO_REG);
@@ -70,6 +71,22 @@ uint32_t uart_gets(char *buf, uint32_t size) {
   for (int i = 0; i < size; ++i) {
     buf[i] = uart_getc();
     //uart_send(buf[i]);
+    if (buf[i] == '\n' || buf[i] == '\r') {
+      //uart_send('\r');
+      //buf[i] = '\0';
+      return i;
+    }
+  }
+  return size;
+}
+
+uint32_t uart_async_gets(char *buf, uint32_t size) {
+  //printf("buff size:%d\n", size);
+  for (int i = 0; i < size; ++i) {
+    buf[i] = uart_async_getc();
+    //if(buf[i] == 0) return 0;
+    //uart_send(buf[i]);
+    //printf("size: %d\n" ,i);
     if (buf[i] == '\n' || buf[i] == '\r') {
       //uart_send('\r');
       //buf[i] = '\0';
@@ -105,6 +122,7 @@ void clear_transmit_interrupt() { *AUX_MU_IER_REG &= ~(0x2); }
 
 void uart_handler() {
   disable_uart_interrupt();
+  //printf("uart_handler\n");
   int is_read = (*AUX_MU_IIR_REG & 0x4);
   int is_write = (*AUX_MU_IIR_REG & 0x2);
 
@@ -131,6 +149,7 @@ char uart_async_getc() {
   while (read_buf_start == read_buf_end) {
     asm volatile("nop");
   }
+  //if(read_buf_start == read_buf_end) return 0;
   char c = read_buf[read_buf_start++];
   if (read_buf_start == UART_BUFFER_SIZE) read_buf_start = 0;
   // '\r' => '\n'

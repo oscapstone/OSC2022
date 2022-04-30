@@ -217,20 +217,34 @@ void shell_alloc(char* args){
 
 void shell_user_program(char* args){
     //print_s(args);
-    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
-    uint64_t target_addr = 0x30100000; // load your program here
-    uint64_t target_sp = 0x31000000;
-
-    //cpio_load_user_program("user_program.img", target_addr);
-    cpio_load_user_program(args, target_addr);
-    //core_timer_enable();
-    //bp("bp1");
-    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer
-    asm volatile("msr elr_el1, %0" : : "r"(target_addr)); // link register at 
-    asm volatile("msr sp_el0, %0" : : "r"(target_sp));
-    asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
-                          // we set the register manually to perform a "jump" or switchning between kernel and user space.
+    //uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
+    //uint64_t target_addr = 0x30100000; // load your program here
+    //uint64_t target_sp = 0x31000000;
+    //
+    ////cpio_load_user_program("user_program.img", target_addr);
+    //int program_found = cpio_load_user_program(args, target_addr);
+    ////bp("bp1");
+    //if(program_found == 1){
+    //    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer
+    //    asm volatile("msr elr_el1, %0" : : "r"(target_addr)); // link register at 
+    //    asm volatile("msr sp_el0, %0" : : "r"(target_sp));
+    //    asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
+    //                          // we set the register manually to perform a "jump" or switchning between kernel and user space.
+    //}
+    printf("user:\n");
+    //thread_create(0);
+    idle_t = thread_create(0);
+    asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+    thread_create(exec);
+    //
+    core_timer_enable(SCHEDULE_TVAL);
+    plan_next_interrupt_tval(SCHEDULE_TVAL);
+    enable_interrupt();
+    //enable_uart_interrupt();
+    //exec()
 }
+
+//void 
 
 void shell_ls(char* args){
     cpio_ls();
@@ -253,10 +267,12 @@ void shell_test(char* args){
     //core_timer_disable();
     //set_next_timer(4);
     //bp("printf");
-    printf("asdfasdf%d", 10);
+    //printf("asdfasdf%d", 10);
     //exception_frame_t e;
     //print_s("sizeof: ");
     //print_i(sizeof(e));
+    disable_interrupt();
+    exec();
 }
 
 void shell_settimeout(char* args){

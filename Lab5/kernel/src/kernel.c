@@ -15,12 +15,13 @@
 #define BUFFER_LEN 1000
 
 void read_command(char* buffer){
+    enable_uart_interrupt();
     uart_puts("\r\n# ");
     int idx=0;
     while(1){
         if(idx >= BUFFER_LEN) break;
         //char c = uart_getc();
-        char c = uart_getc();
+        char c = uart_async_getc();
         if(c=='\n') {
             uart_puts("\r\n"); // echo
             break;
@@ -30,6 +31,7 @@ void read_command(char* buffer){
         }
         uart_send(c); // echo
     }
+    disable_uart_interrupt();
 }
 
 void clear_buffer(char* buffer, int size){
@@ -107,11 +109,18 @@ void main()
 
     head_event = 0;
 
-    plan_next_interrupt_tval(SCHEDULE_TVAL);
+    enable_interrupt();
+    //enable_uart_interrupt();
+    run_shell();
 
+    plan_next_interrupt_tval(SCHEDULE_TVAL);
     core_timer_enable(SCHEDULE_TVAL);
     enable_interrupt();
-    
+    // once the timer interrupt starts
+    // the prgrames enters thread scheduling
+    // if there's no other thread to run, the scheduler will call the
+    // run_shell function.
+
     //thread_create(foo2);
     //timer_schedular_init();
     //while(1){}

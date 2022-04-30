@@ -12,7 +12,11 @@ void thread_init() {
   run_queue.tail = 0;
   thread_cnt = 0;
 
-  from_kernel = 1;
+  //printf("init idel thread\n");
+  //idle_t = thread_create(idle);
+  //asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+
+  //from_kernel = 1;
 }
 
 thread_info *thread_create(void (*func)()) {
@@ -79,6 +83,7 @@ void schedule() {
 
   //enable_interrupt();
   //plan_next_interrupt_tval(SCHEDULE_TVAL);
+  //printf("pid: %d\n", run_queue.head->pid);
   plan_next_interrupt_tval(SCHEDULE_TVAL);
   enable_interrupt();
   switch_to((uint64_t)get_current(), (uint64_t)&run_queue.head->context);
@@ -111,8 +116,11 @@ void timer_schedule() {
 
 void idle() {
   while (1) {
+    disable_interrupt();
     kill_zombies();
     schedule();
+    printf("killing zomebies\n");
+    enable_interrupt();
   }
 }
 
@@ -346,7 +354,7 @@ void thread_test() {
   //  print_s("\r\n");
   //  thread_create(foo);
   //}
-  thread_create(exec);
+  //thread_create(exec);
   idle();
 }
 
@@ -354,7 +362,7 @@ void thread_timer_test(){
   // scheduling using timer interrupt
   print_s("timer schedular test\r\n");
   //timer_schedular_init();
-  idle_t = thread_create(foo3);
+  idle_t = thread_create(0);
   asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
 
   for (int i = 0; i <5; ++i) {
@@ -364,7 +372,8 @@ void thread_timer_test(){
   }
   //timer_schedular_init();
   bp("start timer\r\n");
-  core_timer_enable(SCHEDULE_TVAL);
+  //core_timer_enable(SCHEDULE_TVAL);
+  plan_next_interrupt_tval(SCHEDULE_TVAL);
   enable_interrupt();
   //idle_thread();
 }
@@ -378,7 +387,8 @@ void exec() {
     uint64_t target_sp = 0x21000000;
 
     //cpio_load_user_program("user_program.img", target_addr);
-    cpio_load_user_program("syscall.img", target_addr);
+    //cpio_load_user_program("syscall.img", target_addr);
+    cpio_load_user_program("test_loop", target_addr);
     //core_timer_enable();
     //bp("bp1");
     asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer

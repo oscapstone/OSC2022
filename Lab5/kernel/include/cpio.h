@@ -27,4 +27,4 @@ typedef struct {
 
 void cpio_ls();
 void cpio_cat(char *pathname_to_cat);
-void cpio_load_user_program(char *target_program, uint64_t target_addr);
+int cpio_load_user_program(char *target_program, uint64_t target_addr);

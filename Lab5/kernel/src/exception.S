@@ -138,23 +138,23 @@ exception_vector_table:
     .align 7
 
 _sync_handler:
-    save_reg
+    save_reg_thread
     mov x0, sp      // load stack pointer into function argument
     bl sync_handler // exception.c
-    load_reg
+    load_reg_thread
     eret            // back to original EL
 
 _lower_64_EL_sync_handler:
-    save_reg
+    save_reg_thread
     mov x0, sp      // load stack pointer into function argument
     bl lower_64_EL_sync_handler // exception.c
-    load_reg
+    load_reg_thread
     eret 
 
 _el0_to_el1_irq_handler:
-    save_reg
+    save_reg_thread
     bl el0_to_el1_irq_handler // exception.c
-    load_reg
+    load_reg_thread
     eret
 
 _el1_to_el1_irq_handler:

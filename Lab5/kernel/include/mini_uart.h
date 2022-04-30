@@ -38,7 +38,7 @@ void uart_init();
 // uart reading functions
 char uart_getb();
 char uart_getc();
-uint32_t uart_gets(char *buf, uint32_t size);
+
 
 // uart writing functions
 void uart_send(unsigned int c);
@@ -47,6 +47,8 @@ void uart_hex(unsigned int d);
 
 // user program function
 void uart_write(const char buf[], size_t size); 
+uint32_t uart_gets(char *buf, uint32_t size);
+uint32_t uart_async_gets(char *buf, uint32_t size);
 
 // uart interrupt util functions
 void enable_uart_interrupt();
