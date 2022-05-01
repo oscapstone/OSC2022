@@ -36,11 +36,13 @@ exec:
     ret
     
 fork:
-    svc 57
+    mov x8, #4
+    svc 0
     ret
 
 exit:
-    svc 60
+    mov x8, #5
+    svc 0
     ret
 
 

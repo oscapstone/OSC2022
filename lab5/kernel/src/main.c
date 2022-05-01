@@ -20,7 +20,7 @@ void clean_buffer(char * buffer, int buffer_len)
 
 void command_help()
 {
-    uart_puts("\n");
+    uart_puts("This is kerenel shell\n");
     uart_puts("help\t\t: print this help menu\n");
     uart_puts("hello\t\t: print Hello World!\n");
     uart_puts("reboot\t\t: reboot the device\n");
@@ -177,6 +177,9 @@ void command_thread_test1() {
 void command_thread_test2() {
     thread_test2(); 
 }
+void command_thread_test3() {
+    thread_test3(); 
+}
 void parse_command(char * buffer)
 {
     if ( !strcmp(buffer, "help")) command_help();
@@ -194,6 +197,7 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "dma test")) command_dma_test();
     else if ( !strcmp(buffer, "t1")) command_thread_test1();
     else if ( !strcmp(buffer, "t2")) command_thread_test2();
+    else if ( !strcmp(buffer, "t3")) command_thread_test3();
     else command_not_found(buffer);
 }
 
@@ -216,7 +220,7 @@ void main()
     clean_buffer(buffer, 64);
     // echo everything back
     while(1) {
-        uart_send('#');
+        printf("# ");
         while(1){
             char c = uart_async_getc();
             if(c=='\n')uart_send('\r');

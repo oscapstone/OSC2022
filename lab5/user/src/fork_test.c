@@ -1,25 +1,46 @@
 #include "start.h"
 
 int main() {
-  print_s("Test3, pid ");
+  // printf("Fork Test, pid %d\n", getpid());
+  print_s("Fork Test, pid ");
   print_i(getpid());
   print_s("\n");
-  print_s("Test3 End\n");
-  // printf("Fork Test, pid %d\n", getpid());
-  // int cnt = 1;
-  // int ret = 0;
-  // if ((ret = fork()) == 0) {  // child
-  //   printf("pid: %d, cnt: %d, ptr: %p\n", getpid(), cnt, &cnt);
-  //   ++cnt;
-  //   fork();
-  //   while (cnt < 5) {
-  //     printf("pid: %d, cnt: %d, ptr: %p\n", getpid(), cnt, &cnt);
-  //     delay(1000000);
-  //     ++cnt;
-  //   }
-  // } else {
-  //   printf("parent here, pid %d, child %d\n", getpid(), ret);
-  // }
-  while(1);
+  int cnt = 1;
+  int ret = 0;
+  if ((ret = fork()) == 0) {  // child
+    // printf("pid: %d, cnt: %d, ptr: %p\n", getpid(), cnt, &cnt);
+    print_s("pid: ");
+    print_i(getpid());
+    print_s(", cnt: ");
+    print_i(cnt);
+    print_s(", ptr: ");
+    print_h((unsigned long long)&cnt);
+    print_s("\n");
+    ++cnt;
+    fork();
+    while (cnt < 5) {
+      // printf("pid: %d, cnt: %d, ptr: %p\n", getpid(), cnt, &cnt);
+      print_s("pid: ");
+      print_i(getpid());
+      print_s(", cnt: ");
+      print_i(cnt);
+      print_s(", ptr: ");
+      print_h((unsigned long long)&cnt);
+      print_s("\n");
+      delay(1000000000);
+      ++cnt;
+    }
+  } else {
+    // printf("parent here, pid %d, child %d\n", getpid(), ret);
+    for(int i = 0 ; i < 5;i++){
+      print_s("parent here, pid: ");
+      print_i(getpid());
+      print_s(", child: ");
+      print_i(ret);
+      print_s("\n");
+      delay(1000000000);
+    }
+  }
+  // while(1);
   return 0;
 }
