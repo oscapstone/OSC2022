@@ -69,6 +69,7 @@ char uart_getc() {
 
 uint32_t uart_gets(char *buf, uint32_t size) {
   for (int i = 0; i < size; ++i) {
+    //printf("uart_gets size: %d\n", size);
     buf[i] = uart_getc();
     //uart_send(buf[i]);
     if (buf[i] == '\n' || buf[i] == '\r') {

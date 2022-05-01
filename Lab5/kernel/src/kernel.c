@@ -15,6 +15,8 @@
 #define BUFFER_LEN 1000
 
 void read_command(char* buffer){
+    //core_timer_disable();
+    //enable_interrupt();
     enable_uart_interrupt();
     uart_puts("\r\n# ");
     int idx=0;
@@ -66,22 +68,6 @@ void execute_command(const char* cmd){
     }
 }
 
-void cmd_interface(){
-    char input_buffer[BUFFER_LEN];
-    while(1) {
-        //print_s("ddd\r\n");
-        // echo everything back
-        clear_buffer(input_buffer, BUFFER_LEN);
-        // read command
-        //print_s("read\r\n");
-        //read_command(input_buffer);
-        //print_s("yaya\r\n");
-        //// uart_puts(input_buffer); // echo input
-        //execute_command(input_buffer);
-        //
-    }
-}
-
 void run_shell(){
     while(1) {
         // echo everything back
@@ -120,8 +106,4 @@ void main()
     // the prgrames enters thread scheduling
     // if there's no other thread to run, the scheduler will call the
     // run_shell function.
-
-    //thread_create(foo2);
-    //timer_schedular_init();
-    //while(1){}
 }

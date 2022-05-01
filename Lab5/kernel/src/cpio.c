@@ -4,6 +4,7 @@
 #include "cpio.h"
 #include "utils.h"
 #include "mini_uart.h"
+
 void cpio_ls() {
   unsigned long long ptr = RAMFS_ADDR;
   cpio_newc_header *header;

@@ -68,6 +68,9 @@ extern void switch_to(uint64_t, uint64_t);
 
 typedef struct {
   uint64_t x[31];
+  uint64_t spsr_el1;
+  uint64_t elr_el1;
+  uint64_t sp_el0;
 } trap_frame_t;
 
 typedef struct {
@@ -88,6 +91,7 @@ void schedule();
 void idle();
 void idle_thread();
 void exit();
+void kill(int pid);
 void kill_zombies();
 
 // fork 
@@ -96,11 +100,7 @@ void handle_fork();
 void create_child(thread_info *parent, thread_info *child);
 
 // timer interrupt schedular
-void timer_schedular_init();
 void timer_schedular_handler();
-void timer_schedule();
-void save_thread_info(exception_frame_t* ef);
-void load_thread_info(thread_info * next, exception_frame_t* ef);
 
 // thread testing functions
 void foo();
@@ -110,4 +110,5 @@ void thread_timer_test();
 
 
 // exec
-void exec();
+void exec(); // calls syscall.img
+void exec_my_user_shell(); // calls user_shell

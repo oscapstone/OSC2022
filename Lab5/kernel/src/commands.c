@@ -20,7 +20,8 @@ commads cmd_list[]=
     {.cmd="cpio", .help="cpio file system demo", .func=shell_cpio},
     {.cmd="ls", .help="list directory", .func=shell_ls},
     {.cmd="alloc", .help="memory allocation test", .func=shell_alloc},
-    {.cmd="user", .help="run user program", .func=shell_user_program}, 
+    {.cmd="user", .help="run syscall.img in thread", .func=shell_user_program}, 
+    {.cmd="user2", .help="run user_program in thread", .func=shell_user_program}, 
     {.cmd="timer-start", .help="start timer", .func=shell_start_timer},
     {.cmd="async-puts", .help="uart async send test", .func=shell_async_puts},
     {.cmd="test", .help="test your command here", .func=shell_test},
@@ -29,7 +30,8 @@ commads cmd_list[]=
     {.cmd="buddy", .help="buddy memory system test", .func=shell_buddy_test},
     {.cmd="dma", .help="dynamic memory allocation test", .func=shell_dma_test},
     {.cmd="thread", .help="basic thread function testing", .func=shell_thread_test}, 
-    {.cmd="thread-timer", .help="thread scheduling with timer interrrupt", .func=shell_thread_timer_test}
+    {.cmd="thread-timer", .help="thread scheduling with timer interrrupt", .func=shell_thread_timer_test},
+    {.cmd="run", .help="run user program", .func=shell_run}
 };
 
 int cmd_num = sizeof(cmd_list)/sizeof(commads);
@@ -216,33 +218,29 @@ void shell_alloc(char* args){
 }
 
 void shell_user_program(char* args){
-    //print_s(args);
-    //uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
-    //uint64_t target_addr = 0x30100000; // load your program here
-    //uint64_t target_sp = 0x31000000;
-    //
-    ////cpio_load_user_program("user_program.img", target_addr);
-    //int program_found = cpio_load_user_program(args, target_addr);
-    ////bp("bp1");
-    //if(program_found == 1){
-    //    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer
-    //    asm volatile("msr elr_el1, %0" : : "r"(target_addr)); // link register at 
-    //    asm volatile("msr sp_el0, %0" : : "r"(target_sp));
-    //    asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
-    //                          // we set the register manually to perform a "jump" or switchning between kernel and user space.
-    //}
-    printf("user:\n");
-    //thread_create(0);
+    printf("user program test:\n");
     idle_t = thread_create(0);
     asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+
     thread_create(exec);
-    //
+    
     core_timer_enable(SCHEDULE_TVAL);
     plan_next_interrupt_tval(SCHEDULE_TVAL);
     enable_interrupt();
-    //enable_uart_interrupt();
-    //exec()
 }
+
+void shell_user_program_2(char* args){
+    printf("user program test:\n");
+    idle_t = thread_create(0);
+    asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+    
+    thread_create(exec_my_user_shell);
+    
+    core_timer_enable(SCHEDULE_TVAL);
+    plan_next_interrupt_tval(SCHEDULE_TVAL);
+    enable_interrupt();
+}
+
 
 //void 
 
@@ -262,21 +260,10 @@ void shell_async_puts(char* args){
 }
 
 void shell_test(char* args){
-    //add_timer(print_message, "testst", 10);
-    //update_event_time(head_event, 3);
-    //core_timer_disable();
-    //set_next_timer(4);
-    //bp("printf");
-    //printf("asdfasdf%d", 10);
-    //exception_frame_t e;
-    //print_s("sizeof: ");
-    //print_i(sizeof(e));
-    disable_interrupt();
     exec();
 }
 
 void shell_settimeout(char* args){
-
     // parse arg message
     char* timeout_message = args;
     char* ptr = args;
@@ -297,7 +284,23 @@ void shell_settimeout(char* args){
     print_s("\n");
 
     add_timer(print_callback, timeout_message, timeout_time);
+}
 
+void shell_run(char* args){
+     //print_s(args);
+    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
+    uint64_t target_addr = 0x30100000; // load your program here
+    uint64_t target_sp = 0x31000000;
+
+    //cpio_load_user_program("user_program.img", target_addr);
+    cpio_load_user_program(args, target_addr);
+    //cpio_load_user_program("test_loop", target_addr);
+    //core_timer_enable();
+    asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer
+    asm volatile("msr elr_el1, %0" : : "r"(target_addr)); // link register at 
+    asm volatile("msr sp_el0, %0" : : "r"(target_sp));
+    asm volatile("eret"); // eret will fetch spsr_el1, elr_el1.. and jump (return) to user program.
+                          // we set the register manually to perform a "jump" or switchning between kernel and user space.
 }
 
 void shell_events(char* args){

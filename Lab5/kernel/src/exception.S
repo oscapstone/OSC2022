@@ -16,7 +16,12 @@
     stp x24, x25, [sp, 16 * 12]
     stp x26, x27, [sp, 16 * 13]
     stp x28, x29, [sp, 16 * 14]
-    str x30, [sp, 16 * 15]
+    //str x30, [sp, 16 * 15]
+    mrs x10, spsr_el1 // this is very important, I'm still not sure why
+	mrs x11, elr_el1
+	mrs x12, sp_el0
+    stp x30, x10, [sp, 16 * 15]
+    stp x11, x12, [sp, 16 * 16]
 .endm
 
 .macro load_reg
@@ -35,7 +40,13 @@
     ldp x24, x25, [sp, 16 * 12]
     ldp x26, x27, [sp, 16 * 13]
     ldp x28, x29, [sp, 16 * 14]
-    ldr x30, [sp, 16 * 15]
+    //ldr x30, [sp, 16 * 15]
+    ldp x30, x10, [sp, 16 * 15]
+    ldp x11, x12, [sp, 16 * 16]
+    msr spsr_el1, x10
+	msr elr_el1, x11
+	msr sp_el0, x12
+    add sp, sp, 32 * 9
 .endm
 
 // save general registers to stack
@@ -57,7 +68,7 @@
     stp x26, x27, [sp, 16 * 13]
     stp x28, x29, [sp, 16 * 14]
     //str x30, [sp, 16 * 15]
-    mrs x10, tpidr_el1
+    mrs x10, tpidr_el1  // not work if you forget to store spsr
 	mrs x11, elr_el1
 	mrs x12, sp_el0
     stp x30, x10, [sp, 16 * 15]
@@ -109,7 +120,7 @@ exception_vector_table:
     .align 7
     
     // EL1 -> EL1 
-    b _sync_handler // kernel exceptions
+    b _currentEL_ELx_sync_handler // kernel exceptions
     .align 7
     b _el1_to_el1_irq_handler  // uart and EL1 timer interrupt
     .align 7
@@ -137,42 +148,34 @@ exception_vector_table:
     b _default_handler
     .align 7
 
-_sync_handler:
-    save_reg_thread
+_currentEL_ELx_sync_handler:
+    save_reg
     mov x0, sp      // load stack pointer into function argument
-    bl sync_handler // exception.c
-    load_reg_thread
+    bl currentEL_ELx_sync_handler// exception.c
+    load_reg
     eret            // back to original EL
 
 _lower_64_EL_sync_handler:
-    save_reg_thread
+    save_reg
     mov x0, sp      // load stack pointer into function argument
     bl lower_64_EL_sync_handler // exception.c
-    load_reg_thread
+    load_reg
     eret 
 
 _el0_to_el1_irq_handler:
-    save_reg_thread
+    save_reg
     bl el0_to_el1_irq_handler // exception.c
-    load_reg_thread
+    load_reg
     eret
 
 _el1_to_el1_irq_handler:
-    save_reg_thread
+    save_reg
     mov x0, sp 
     bl el1_to_el1_irq_handler // exception.c
     //mov sp, x0
-    load_reg_thread
+    load_reg
     eret
-
-//_el1_to_el1_irq_handler:
-//    save_reg_thread
-//    mov x0, sp 
-//    bl el1_to_el1_irq_handler // exception.c
-//    //mov sp, x0
-//    load_reg_thread
-//    eret
-
+    
 _default_handler:
     save_reg
     bl default_handler // exception.c
