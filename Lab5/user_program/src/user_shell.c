@@ -1,30 +1,66 @@
 #include "start.h"
+#include "printf.h"
 #define BUF_SIZE 100
 
+void clear_buffer(char* buffer, int size){
+    for(int i = 0; i< size; i++){
+        buffer[i] ='\0';
+    }
+}
 int main(){
+
+    // print pid of the shell
     int pid = getpid();
-    
-    //test("asdfasdf", 420);
-    //uart_write("aa\n", 420);
-    //uart_write("bb\n", 420);
-    //uart_write("pid: ", pid);
-    //uart_read(buff, 100);
-    //uart_write("read result: \n", 420);
-    //uart_write(buff);
-    //uart_write()
-    uart_write("pid: \n", 7);
-    print_i(getpid());
-    //uart_write("fork test\n");
-    //fork_test();
+    printf("\n[user shell] shell pid = %d\n", pid);
     
     while(1){
         char buff[100];
+        clear_buffer(buff, BUF_SIZE);
+        printf("# ");
         int read_len = uart_read(buff, 100);
-        uart_write("read result: \n", 16);
-        uart_write(buff, read_len);
-        uart_write(", read len: ", 12);
-        print_i(read_len);
-        uart_write("\n", 1);
+        buff[read_len] = '\0';
+        if(buff[0] == '0'){
+            printf("Test command:\n");
+            printf("\t1: fork child process test\n");
+            printf("\t2: kill forked child process\n");
+        }else if(buff[0] == '1'){
+            pid = fork();
+            if(pid > 0){
+                // parent process
+                // print frame pointer of the parent process
+                int fp;
+                asm volatile("mov %0, fp" : "=r"(fp));
+                printf("[parent], frame pointer: %d\n", fp);
+                // print pid, a variable before pid
+                printf("[parent], pid address: %d\n", &pid);
+                // parnet pid
+                printf("[parent], pid: %d\n", pid);
+            }else{
+                // child process
+                int fp;
+                asm volatile("mov %0, fp" : "=r"(fp));
+                printf("\n[child], frame pointer: %d\n", fp);
+                // print pid, a variable before pid
+                printf("[child], pid address: %d\n", &pid);
+                // parnet pid
+                printf("[child], pid: %d\n", pid);
+                while(1){
+                    // print frame pointer of the parent process
+                    printf("[child], child process loop...\n");
+                    
+                    delay(100000000);
+                }
+                exit(); // for fail safe
+            }
+        }else if(buff[0] == '2'){
+            printf("[parent] killing child with pid = %d\n", pid);
+            kill(pid);
+        }else{
+            printf("command no supported\n");
+            printf("Test command\n");
+            printf("\t1: fork child process test\n");
+            printf("\t2: kill forked child process\n");
+        }
     }
     return 0;
 }

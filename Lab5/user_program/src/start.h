@@ -28,7 +28,7 @@ void print_c(char c) {
   char s[2];
   s[0] = c;
   s[1] = '\0';
-  uart_write(s, strlen(s));
+  uart_write(s, 1);
 }
 
 void print_s(char *s) { uart_write(s, strlen(s)); }
