@@ -312,7 +312,7 @@ void exec_my_user_shell() {
     uint64_t target_addr = 0x30100000; // load your program here
     uint64_t target_sp = 0x31000000;
 
-    cpio_load_user_program("user_program.img", target_addr);
+    cpio_load_user_program("user_shell", target_addr);
 
     asm volatile("msr spsr_el1, %0" : : "r"(spsr_el1)); // set PSTATE, executions state, stack pointer
     asm volatile("msr elr_el1, %0" : : "r"(target_addr)); // link register at 

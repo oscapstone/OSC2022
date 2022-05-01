@@ -21,7 +21,7 @@ commads cmd_list[]=
     {.cmd="ls", .help="list directory", .func=shell_ls},
     {.cmd="alloc", .help="memory allocation test", .func=shell_alloc},
     {.cmd="user", .help="run syscall.img in thread", .func=shell_user_program}, 
-    {.cmd="user2", .help="run user_program in thread", .func=shell_user_program}, 
+    {.cmd="user2", .help="run user_program in thread", .func=shell_user_program_2}, 
     {.cmd="timer-start", .help="start timer", .func=shell_start_timer},
     {.cmd="async-puts", .help="uart async send test", .func=shell_async_puts},
     {.cmd="test", .help="test your command here", .func=shell_test},
@@ -230,7 +230,7 @@ void shell_user_program(char* args){
 }
 
 void shell_user_program_2(char* args){
-    printf("user program test:\n");
+    printf("user 2 program test:\n");
     idle_t = thread_create(0);
     asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
     

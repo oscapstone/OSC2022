@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "exception.h"
+#include "mbox.h"
 #include "thread.h" 
 #include "io.h"
 #include "mini_uart.h"
@@ -20,10 +21,11 @@ void currentEL_ELx_sync_handler() {
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
   asm volatile("mrs %0, elr_el1" : "=r"(elr_el1));
   asm volatile("mrs %0, esr_el1" : "=r"(esr_el1));
-  // printf("SPSR_EL1: 0x%08x\n", spsr_el1);
-  // printf("ELR_EL1: 0x%08x\n", elr_el1);
-  // printf("ESR_EL1: 0x%08x\n", esr_el1);
-  // printf("hi\n");
+  printf("SPSR_EL1: 0x%08x\n", spsr_el1);
+  printf("ELR_EL1: 0x%08x\n", elr_el1);
+  printf("ESR_EL1: 0x%08x\n", esr_el1);
+  while(1){}
+  // 0x96000000 = 10010110000000000000000000000000, MMU fault
 }
 
 void lower_64_EL_sync_handler(uint64_t sp){
@@ -78,6 +80,12 @@ void lower_64_EL_sync_handler(uint64_t sp){
       exit();
     }else if(sys_call_num == 6){
       print_s("mbox_call called\r\n");
+      unsigned char ch = (unsigned char) trap_frame->x[0];
+      unsigned int *user_mbox = (unsigned int*)(trap_frame->x[1]);
+      printf("mbox ch: %d, *mbox: %d\n", ch, user_mbox);
+      int valid = mbox_call_user(ch, user_mbox);
+      printf("mbox call valid: %d\n", valid);
+      trap_frame->x[0] = valid;
     }else if(sys_call_num == 7){
       print_s("kill called\r\n");
       int pid = trap_frame->x[0];
