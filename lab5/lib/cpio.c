@@ -87,3 +87,32 @@ int read_header(char *str, int size){
   }
   return myHex2Int(a);
 }
+
+void *load_program(char *name){
+  cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
+  char *header = cpio->c_magic;
+  char *data;
+  while(strcmp(header+110, "TRAILER!!!")){
+    int namesize = read_header(header + 94, 8);
+    int filesize = read_header(header + 54, 8);
+    namesize = namesize + namesize%2;
+    if((namesize+110)%4){
+      namesize += (4 - (namesize+110)%4);
+    }
+    if(filesize%4){
+      filesize += (4 - filesize%4);
+    }
+    if(!strcmp(header+110, name) && filesize != 0){
+      data = header+110+namesize;
+      // allocate a space and copy the file which need to be executed
+      char *addr = malloc(filesize);
+      for(int i=0; i<filesize; i++){
+        *(addr+i) = *(data+i);
+      }
+      return addr;
+    }
+    header = header + namesize + filesize + 110;
+  }
+  printf("can't find this file named \"%s\"\n\r", name);
+  return 0;
+}

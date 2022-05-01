@@ -8,7 +8,7 @@
 #include "malloc.h"
 #include "scheduler.h"
 #include "system.h"
-
+#include "delay.h"
 
 void shell(){
   char *input = malloc(sizeof(char) * BUF_MAX_SIZE);
@@ -36,8 +36,6 @@ void shell(){
         if(!strcmp(args[0], "help")){
           printf("reboot    : reboot the device\n\r");
           printf("exec <file>: exec the content of the file\n\r");
-          printf("clock      : print the core timer time every 2 seconds\n\r");
-          printf("setTimeout <MESSAGE> <TIME>: Print the message when timeout\n\r");
         }else if(!strcmp(args[0], "reboot")){
           printf("Bye bye~\n\r");
           reset(300);
@@ -49,22 +47,17 @@ void shell(){
         }else if(!strcmp(args[0], "exec")){
           if(args_num == 2)
             cpio_exec(args[1]);
-        }else if(!strcmp(input, "clock")){
-          add_timer(clock_alert, args[1], 2);
-        }else if(!strcmp(input, "setTimeout")){
-          if (args_num == 3)
-            add_timer(timeout_print, args[1], atoi(args[2]));
-        }else if(!strcmp(input, "p")){
-          // __asm__ __volatile__(
-          //   "bl from_el1_to_el0"
-          // );
-          while(1);
+        }else if(!strcmp(args[0], "d")){
+          show_page_list();
+        }else if(!strcmp(args[0], "m")){
+          if (args_num == 2)
+            printf("alloc the memory form: 0x%x\n\r", malloc(atoi(args[1])));
         }
         printf("raspberryPi: ");
         input[0] = 0;
       }else{
         printf("\n\rraspberryPi: ");
-      }  
+      }
     }
   }
 }

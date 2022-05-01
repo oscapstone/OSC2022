@@ -7,7 +7,7 @@
 #define FDT_END 0x00000009
 
 // big-endian
-struct fdt_header {
+typedef struct fdt_header {
   uint32_t magic;
   uint32_t totalsize;
   uint32_t off_dt_struct;
@@ -18,12 +18,12 @@ struct fdt_header {
   uint32_t boot_cpuid_phys;
   uint32_t size_dt_strings;
   uint32_t size_dt_struct;
-};
+} fdt_header;
 
-struct fdt_prod{
+typedef struct fdt_prod{
   uint32_t len;
   uint32_t nameoff;
-};
+} fdt_prod;
 
 extern char* dtb_place;
 extern uint32_t dtb_size;

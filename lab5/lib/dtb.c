@@ -8,7 +8,7 @@ char* dtb_place;
 uint32_t dtb_size;
 
 void fdt_traverse(dtb_callback callback){
-  struct fdt_header* header = (struct fdt_header*) dtb_place;
+  fdt_header* header = (fdt_header*) dtb_place;
 
   if(little_2_big_u32(header->magic) != 0xD00DFEED){
     printf("fdt_traverse : wrong magic in fdt_traverse\n\r");
@@ -21,7 +21,7 @@ void fdt_traverse(dtb_callback callback){
   char* dt_strings_ptr = (char*)((char*)header + little_2_big_u32(header->off_dt_strings));
   char* end = (char*)dt_struct_ptr + struct_size;
   char* pointer = dt_struct_ptr;
-  struct fdt_prod *prod_ptr;
+  fdt_prod *prod_ptr;
 
   while(pointer < end){
     uint32_t token_type = little_2_big_u32(*(uint32_t*)pointer);
@@ -31,7 +31,7 @@ void fdt_traverse(dtb_callback callback){
       pointer += strlen(pointer);
       pointer += 4 - (uint64_t)pointer%4;           //alignment 4 byte
     }else if(token_type == FDT_PROP) {
-      prod_ptr = (struct fdt_prod *) pointer;
+      prod_ptr = (fdt_prod *) pointer;
       pointer += 8;  // add the fdt_prod len
       uint32_t len = little_2_big_u32(prod_ptr->len);
       char* name = (char*)dt_strings_ptr + little_2_big_u32(prod_ptr->nameoff);

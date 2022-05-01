@@ -2,10 +2,24 @@
 #include "printf.h"
 #include "malloc.h"
 #include "string.h"
+#include "uart.h"
+#include "scheduler.h"
 
 static timer_list *timer_queue = NULL;
 
 task_list *task_queue = NULL;
+
+void interrupt_enable(void){
+  __asm__ __volatile__(
+    "msr DAIFClr, 0xf" // enable interrupt el1 -> el1
+  ); 
+}
+
+void interrupt_disable(void){
+  __asm__ __volatile__(
+    "msr DAIFSet, 0xf" // enable interrupt el1 -> el1
+  ); 
+}
 
 void core_timer_enable(void){
   __asm__ __volatile__(
@@ -30,78 +44,47 @@ void core_timer_interrupt_disable(void){
   );
 }
 
-unsigned long clock_time(void){
+uint64_t get_timer_tick(){
   uint64_t cntpct_el0;
   __asm__ __volatile__(
     "mrs %0, cntpct_el0\n\t"
     : "=r"(cntpct_el0)
   ); //tick now
+  return cntpct_el0;
+}
 
+uint64_t get_timer_freq(){
   uint64_t cntfrq_el0;
   __asm__ __volatile__(
     "mrs %0, cntfrq_el0\n\t"
     : "=r"(cntfrq_el0)
   ); //tick frequency
+  return cntfrq_el0;
+}
+
+uint64_t clock_time_s(void){
+  uint64_t cntpct_el0 = get_timer_tick();
+  uint64_t cntfrq_el0 = get_timer_freq();
   return cntpct_el0 / cntfrq_el0;
-}
-
-void clock_alert(char *str){
-  uint64_t cntpct_el0;
-  __asm__ __volatile__(
-    "mrs %0, cntpct_el0\n\t"
-    : "=r"(cntpct_el0)
-  ); //tick now
-
-  uint64_t cntfrq_el0;
-  __asm__ __volatile__(
-    "mrs %0, cntfrq_el0\n\t"
-    : "=r"(cntfrq_el0)
-  ); //tick frequency
-  printf("This is form clock_alert function.\n\r");
-  printf("seconds after booting : %d\n\r", cntpct_el0 / cntfrq_el0);
-  // set_core_timer_interrupt(2);
-  add_timer(clock_alert, "clock", 2);
-}
-
-void timeout_print(char *str){
-  printf("This is form timeout function.\n\r");
-  print_time();
-  printf("Message: %s.\n\r", str);
-}
-
-void print_time(void){
-  uint64_t cntpct_el0;
-  __asm__ __volatile__(
-    "mrs %0, cntpct_el0\n\t"
-    : "=r"(cntpct_el0)
-  ); //tick now
-
-  uint64_t cntfrq_el0;
-  __asm__ __volatile__(
-    "mrs %0, cntfrq_el0\n\t"
-    : "=r"(cntfrq_el0)
-  ); //tick frequency
-  printf("seconds after booting : %d\n\r", cntpct_el0 / cntfrq_el0);
 }
 
 void set_core_timer_interrupt(uint64_t expired_time){
   __asm__ __volatile__(
-    "mrs x1, cntfrq_el0\n\t" //cntfrq_el0 -> relative time
-    "mul x1, x1, %0\n\t"
-    "msr cntp_tval_el0, x1\n\t" // set expired time
+    // "mrs x1, cntfrq_el0\n\t"       //cntfrq_el0 -> relative time
+    // "mul x1, x1, %0\n\t"
+    "msr cntp_tval_el0, %0\n\t"    // set expired time
     : "=r"(expired_time)
   );
 }
 
 void add_timer(callback_typ callback, char *msg, int time) {
   timer_list *timer = (timer_list*)malloc(sizeof(timer_list));
-  timer->expired_time = (uint64_t)time + clock_time();
+  timer->expired_time = (unsigned long long)time + clock_time_s();
   timer->call_back = callback;
   for(int i=0; i<=strlen(msg); i++)
     timer->msg[i] = *(msg+i);
-  // timer->msg[strlen(msg)] = 0;
   timer->next = NULL;
-  if(!timer_queue){ // be the haed
+  if(!timer_queue){               // be the haed
     timer_queue = timer;
     set_core_timer_interrupt(time);
     core_timer_interrupt_enable();
@@ -112,7 +95,7 @@ void add_timer(callback_typ callback, char *msg, int time) {
     set_core_timer_interrupt(time);
     core_timer_interrupt_enable();
   }
-  else{ // insert
+  else{                           // insert
     timer_list *pre = timer_queue, *next = timer_queue->next;
     while (next && pre->expired_time < timer->expired_time) {
       pre = next;
@@ -127,37 +110,17 @@ void pop_timer(void){
   timer_list *timer = timer_queue;
   timer_queue = timer_queue->next;
   timer->call_back(timer->msg);
-  // add_task(timer->call_back, timer->msg, 1);
-  if (!timer_queue)
+  free(timer);
+  if (!timer_queue){
     core_timer_interrupt_disable();
-  else{
-    set_core_timer_interrupt(timer_queue->expired_time - clock_time());
+  }else{
+    set_core_timer_interrupt(timer_queue->expired_time - clock_time_s());
     core_timer_interrupt_enable();
   }
 }
 
-void add_task(callback_typ callback, char *msg, int piority){
-  task_list *task = (task_list*)malloc(sizeof(task_list));
-  task->task_call_back = callback;
-  task->arg = msg;
-  task->piority = piority;
-  task->next = NULL;
-  if(!task_queue)
-    task_queue = task;
-  else{
-    task_list *pre = task_queue, *next = task_queue->next;
-    while (next) {
-      pre = next;
-      next = next->next;
-    }
-    pre->next = task;
-  }
-}
-
-void pop_task(void){
-  task_list *task = task_queue;
-  if(task_queue){
-    task_queue = task_queue->next;
-    task->task_call_back(task->arg);
-  }
+void normal_timer(){
+  add_timer(normal_timer, "normal_timer", get_timer_freq()>>5);
+  interrupt_enable();
+  schedule();
 }

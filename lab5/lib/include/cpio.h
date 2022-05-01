@@ -1,6 +1,5 @@
 
-typedef struct cpio_newc_header cpio_header;
-struct cpio_newc_header {
+typedef struct cpio_header {
   char	   c_magic[6];
   char	   c_ino[8];
   char	   c_mode[8];
@@ -15,11 +14,12 @@ struct cpio_newc_header {
   char	   c_rdevminor[8];
   char	   c_namesize[8];
   char	   c_check[8];
-};
+} cpio_header;
 
 void cpio_ls();
 void cpio_cat(char *str);
 void cpio_exec(char *str);
+void *load_program(char *name);
 
 extern char * CPIO_DEFAULT_PLACE;
 extern char * CPIO_DEFAULT_PLACE_END;

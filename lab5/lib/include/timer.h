@@ -7,33 +7,30 @@
 
 typedef void (*callback_typ)(char *);
 
+void interrupt_enable(void);
+void interrupt_disable(void);
 void core_timer_enable(void);
 void core_timer_interrupt_enable(void);
 void core_timer_interrupt_disable(void);
-unsigned long clock_time(void);
-void clock_alert(char *str);
-void timeout_print(char *str);
-void print_time(void);
+uint64_t get_timer_tick();
+uint64_t get_timer_freq();
+uint64_t clock_time_s(void);
 void set_core_timer_interrupt(uint64_t expired_time);
 void add_timer(callback_typ callback, char *msg, int time);
 void pop_timer(void);
-void add_task(callback_typ callback, char *msg, int piority);
-void pop_task(void);
+void normal_timer();
 
-typedef struct timer_list timer_list;
-
-struct timer_list{
+typedef struct timer_list {
   uint64_t expired_time;
   callback_typ call_back;
   char msg[100];
   struct timer_list *next;
-};
+} timer_list;
 
-typedef struct task_list task_list;
-struct task_list{
+typedef struct task_list{
   callback_typ task_call_back;
   char *arg;
-  int piority;
+  uint32_t piority;
   struct task_list *next;
-};
+} task_list;
 

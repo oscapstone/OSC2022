@@ -52,7 +52,7 @@ void page_init(){
   memory_reserve(0x0000, 0x1000); //spin table
   memory_reserve((unsigned long)&_kernel_start, (unsigned long)&_kernel_end); // kernel
   memory_reserve((unsigned long)&_kernel_start - 0x2000, (unsigned long)&_kernel_start-0x1000); // stack
-  memory_reserve((unsigned long)CPIO_DEFAULT_PLACE, (unsigned long)CPIO_DEFAULT_PLACE_END); // cpio size
+  memory_reserve((unsigned long)CPIO_DEFAULT_PLACE, (unsigned long)CPIO_DEFAULT_PLACE_END+0x1000); // cpio size
   memory_reserve((unsigned long)dtb_place, (unsigned long)dtb_place+dtb_size);   // dtb
   non_init = PAGE_MAX_ENTRY;
   for(int head=0; head<PAGE_MAX_ENTRY;){
@@ -104,7 +104,7 @@ void memory_reserve(unsigned long start, unsigned long end){
   int start_index = start/0x1000;
   int end_index = end/0x1000;
   int head = start_index ;
-  printf("reserve from page %d to page %d\n\r", start_index, end_index);
+  // printf("reserve from page %d to page %d\n\r", start_index, end_index);
   while ((frame+head)->index == -1)
     head--;
 
@@ -192,7 +192,7 @@ void merge(int index){
       (frame+merge_index)->index += 1;
       add_page_item(merge_index);
       merge(merge_index);
-      printf("merge page: %d and page: %d\n\r", index, merge_index);
+      // printf("merge page: %d and page: %d\n\r", index, merge_index);
     }
   }else
     return;
@@ -220,11 +220,14 @@ void *malloc(size_t size){
   if(size < 8)
     size = 8;
   int sizeLevel = log2(size-1)+1;
-  if(sizeLevel > 11){
-    printf("error\n\r");
-    return 0;
-  }
+  // if(sizeLevel > 11){
+  //   printf("error\n\r");
+  //   return 0;
+  // }
   size = power2(sizeLevel);
+  if(size >= 0x1000)
+    size *= 2;
+  // printf("size: 0x%x\n\r", size);
   pool_header *cur = pool;
   while (cur){
     if(cur->size < size || cur->size >= 2*size || cur->used >= cur->total)

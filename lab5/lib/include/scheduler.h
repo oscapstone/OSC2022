@@ -1,6 +1,9 @@
 #include "stdint.h"
 
-enum state{RUNNING, EXIT, ZOMBIE};
+#define THREAD_SP_SIZE 2048
+
+enum state{WAITTING, RUNNING, EXIT};
+enum mode{KERNEL, USER};
 
 typedef struct task{
   uint64_t x19;
@@ -16,13 +19,16 @@ typedef struct task{
   uint64_t fp;  // x29
   uint64_t lr;  // x30
   uint64_t sp;
+  uint64_t target_func;
+  uint64_t user_sp;
   uint64_t sp_addr;
   uint32_t pid;
+  enum mode mode;
   enum state state;
   struct task *next;
 } task;
 
-typedef void (*tread_func)(void);
+typedef void (*thread_func)(void);
 
 extern void *get_current();
 extern void switch_to(task *pre, task *next);
@@ -30,6 +36,8 @@ extern void write_current(uint64_t x0);
 
 void thread_init(void);
 void idle_thread(void);
-void task_create(tread_func func);
+void *task_create(thread_func func, enum mode mode);
 void schedule();
 void kill_zombies();
+void kill_thread(int pid);
+void switch_to_user_space();
