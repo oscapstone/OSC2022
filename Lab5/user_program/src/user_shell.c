@@ -2,10 +2,18 @@
 #include "printf.h"
 #define BUF_SIZE 100
 
+volatile unsigned int  __attribute__((aligned(16))) mbox[36];
+
 void clear_buffer(char* buffer, int size){
     for(int i = 0; i< size; i++){
         buffer[i] ='\0';
     }
+}
+void print_help(){
+    printf("Test command:\n");
+    printf("\t1: fork child process test\n");
+    printf("\t2: kill forked child process\n");
+    printf("\t3: mbox test\n");
 }
 int main(){
 
@@ -20,9 +28,7 @@ int main(){
         int read_len = uart_read(buff, 100);
         buff[read_len] = '\0';
         if(buff[0] == '0'){
-            printf("Test command:\n");
-            printf("\t1: fork child process test\n");
-            printf("\t2: kill forked child process\n");
+            print_help();
         }else if(buff[0] == '1'){
             pid = fork();
             if(pid > 0){
@@ -55,11 +61,12 @@ int main(){
         }else if(buff[0] == '2'){
             printf("[parent] killing child with pid = %d\n", pid);
             kill(pid);
+        }else if(buff[0] == '3'){
+            printf("[parent] mbox test\n");
+            mbox_call(8, mbox);
         }else{
             printf("command no supported\n");
-            printf("Test command\n");
-            printf("\t1: fork child process test\n");
-            printf("\t2: kill forked child process\n");
+            print_help();
         }
     }
     return 0;
