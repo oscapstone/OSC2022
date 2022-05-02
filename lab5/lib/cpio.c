@@ -105,7 +105,9 @@ void *load_program(char *name){
     if(!strcmp(header+110, name) && filesize != 0){
       data = header+110+namesize;
       // allocate a space and copy the file which need to be executed
+      // printf("filesize: 0x%x\n\r", filesize);
       char *addr = malloc(filesize);
+      addr = (char *)0x900000;
       for(int i=0; i<filesize; i++){
         *(addr+i) = *(data+i);
       }

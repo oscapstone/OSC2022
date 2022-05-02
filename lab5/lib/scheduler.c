@@ -32,10 +32,40 @@ void thread_init(void){
   enqueue(&run_queue, new_task);
 }
 
+
+void fork_test(){
+  printf("\nFork Test, pid %d\n", sys_getpid());
+  int cnt = 1;
+  int ret = 0;
+  if ((ret = sys_fork()) == 0) { // child
+    long long cur_sp;
+    asm volatile("mov %0, sp" : "=r"(cur_sp));
+    printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", sys_getpid(), cnt, &cnt, cur_sp);
+    ++cnt;
+    if ((ret = sys_fork()) != 0){
+      asm volatile("mov %0, sp" : "=r"(cur_sp));
+      printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", sys_getpid(), cnt, &cnt, cur_sp);
+    }else{
+      while (cnt < 5) {
+        asm volatile("mov %0, sp" : "=r"(cur_sp));
+        printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", sys_getpid(), cnt, &cnt, cur_sp);
+        delay_tick(1000000);
+        ++cnt;
+      }
+    }
+    sys_exit();
+  }else {
+    printf("parent here, pid %d, child %d\n", sys_getpid(), ret);
+  }
+  sys_exit();
+}
+
+
 void foo(){
-  for(int i = 0; i < 3; ++i) {
-    printf("sys_getpid: %d, %d\n\r", sys_getpid(), i);
-    if(sys_getpid() == 5 && i == 1){
+  printf("this is foo %d\n\r", sys_getpid());
+  for(int i = 0; i < 5; ++i) {
+    printf("pid: %d, %d\n\r", sys_getpid(), i);
+    if(sys_getpid() == 3 && i == 2){
       sys_fork();
     }
     delay_tick(10000000);
@@ -44,9 +74,10 @@ void foo(){
 }
 
 void idle_thread(void){
-  for(int i = 0; i < 3; ++i) { 
-    task_create(foo, USER);
-  }
+  // for(int i = 0; i < 3; ++i) { 
+  //   task_create(foo, USER);
+  // }
+  task_create(fork_test, USER);
   write_current((uint64_t)dequeue(&run_queue));
   add_timer(normal_timer, "normal_timer", get_timer_freq()>>5);
   while (1){
@@ -144,6 +175,6 @@ void switch_to_user_space() {
   asm volatile("mov x0, 0   \n"::);
   asm volatile("msr spsr_el1, x0   \n"::);
   asm volatile("msr elr_el1,  %0   \n"::"r"(cur->target_func));
-  asm volatile("msr sp_el0,   %0   \n"::"r"(cur->user_sp - cur->user_sp%16));
+  asm volatile("msr sp_el0,   %0   \n"::"r"(cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16));
   asm volatile("eret  \n"::);
 }

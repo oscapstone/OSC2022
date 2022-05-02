@@ -282,3 +282,8 @@ get_current:
 write_current:
   msr tpidr_el1, x0               // Software Thread ID Register
   ret
+
+.globl child_return_from_fork
+child_return_from_fork:
+	load_all
+	eret

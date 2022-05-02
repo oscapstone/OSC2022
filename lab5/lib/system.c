@@ -53,7 +53,8 @@ int sys_fork(){
     "mov x8, 4\n\t"
     "svc 0\n\t"
   );
-  return 0;
+  register int value asm("x0");
+  return value;
 }
 
 void sys_exit(){

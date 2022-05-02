@@ -22,6 +22,10 @@ void interrupt_disable(void){
 }
 
 void core_timer_enable(void){
+  uint64_t tmp;
+  asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+  tmp |= 1;
+  asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
   __asm__ __volatile__(
     "mov x1, 1\n\t"
     "msr cntp_ctl_el0, x1\n\t" // enable Counter-timer Physical Timer Control

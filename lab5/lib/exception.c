@@ -69,24 +69,23 @@ void sync_router(uint64_t x0, uint64_t x1){
     // char *argv = (char *)frame->x1;
     frame->x0 = 0;
   }else if(frame->x8 == 4){        // fork
-    printf("this is fork\r\n");
     task *parent = get_current();
     task *child = task_create(NULL, USER);
-    
+    printf("this is fork %d->%d\r\n", parent->pid, child->pid);
     /* copy the task context & kernel stack (including trap frame) of parent to child */
-    child->x19 = parent->x19;
-    child->x20 = parent->x20;
-    child->x21 = parent->x21;
-    child->x22 = parent->x22;
-    child->x23 = parent->x23;
-    child->x24 = parent->x24;
-    child->x25 = parent->x25;
-    child->x26 = parent->x26;
-    child->x27 = parent->x27;
-    child->x28 = parent->x28;
-    child->fp = parent->fp;
-    child->lr = frame->x30;
-    child->sp = parent->sp;
+    child->x19 = frame->x19;
+    child->x20 = frame->x20;
+    child->x21 = frame->x21;
+    child->x22 = frame->x22;
+    child->x23 = frame->x23;
+    child->x24 = frame->x24;
+    child->x25 = frame->x25;
+    child->x26 = frame->x26;
+    child->x27 = frame->x27;
+    child->x28 = frame->x28;
+    child->fp = frame->x29;
+    child->lr = (uint64_t)child_return_from_fork; // frame->x30;
+    child->sp = (uint64_t)frame; // + sizeof(trap_frame);
     child->target_func = parent->target_func;
     // copy the stack
     char *src1 = (char *)parent->user_sp;
@@ -97,20 +96,26 @@ void sync_router(uint64_t x0, uint64_t x1){
       *(dst1+i) = *(src1+i);
       *(dst2+i) = *(src2+i); 
     }
-    // if((uint64_t)child->user_sp > (uint64_t)parent->user_sp){
-    //   child->sp = child->sp + ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
-    //   child->fp = child->fp + ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
-    // }else if((uint64_t)child->user_sp < (uint64_t)parent->user_sp){
-    //   child->sp = child->sp - ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
-    //   child->fp = child->fp - ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
-    // }
     if((uint64_t)child->sp_addr > (uint64_t)parent->sp_addr){
-      child->sp = child->sp + ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
-      child->fp = child->fp + ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
+      child->sp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
+      child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
     }else if((uint64_t)child->sp_addr < (uint64_t)parent->sp_addr){
-      child->sp = child->sp - ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
-      child->fp = child->fp - ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
+      child->sp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
+      child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
     }
+    trap_frame *child_frame = (trap_frame *)child->sp;
+    child_frame->x0 = 0;
+    child_frame->x29 = child->fp;
+    // printf("p->user_sp: 0x%x, f->sp_el0: 0x%x\n\r", parent->user_sp, frame->sp_el0);
+    // printf("p->sp_addr: 0x%x, f: 0x%x\n\r", parent->sp_addr, frame);
+    if((uint64_t)child->user_sp > (uint64_t)parent->user_sp){
+      child_frame->sp_el0 += ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
+    }else if((uint64_t)child->user_sp < (uint64_t)parent->user_sp){
+      child_frame->sp_el0 -= ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
+    }
+    // printf("c->sp_addr: 0x%x, c_tf: 0x%x\n\r", child->sp_addr, child_frame);
+    // printf("c->user_sp: 0x%x, c->sp_el0: 0x%x\n\r", child->user_sp, child_frame->sp_el0);
+    // printf("p->lr: 0x%x, c->lr: 0x%x\n\r", frame->x30, child->lr);
     frame->x0 = child->pid;
   }else if(frame->x8 == 5){        // exit
     task *cur = get_current();

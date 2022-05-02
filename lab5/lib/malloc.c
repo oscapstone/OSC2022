@@ -54,6 +54,7 @@ void page_init(){
   memory_reserve((unsigned long)&_kernel_start - 0x2000, (unsigned long)&_kernel_start-0x1000); // stack
   memory_reserve((unsigned long)CPIO_DEFAULT_PLACE, (unsigned long)CPIO_DEFAULT_PLACE_END+0x1000); // cpio size
   memory_reserve((unsigned long)dtb_place, (unsigned long)dtb_place+dtb_size);   // dtb
+  memory_reserve((unsigned long)0x900000, (unsigned long)0xf00000);   // dtb
   non_init = PAGE_MAX_ENTRY;
   for(int head=0; head<PAGE_MAX_ENTRY;){
     if((frame+head)->status == 0){
@@ -216,7 +217,7 @@ void page_divide(int level){
   }
 }
 
-void *malloc(size_t size){
+void *malloc(uint64_t size){
   if(size < 8)
     size = 8;
   int sizeLevel = log2(size-1)+1;
@@ -225,8 +226,10 @@ void *malloc(size_t size){
   //   return 0;
   // }
   size = power2(sizeLevel);
-  if(size >= 0x1000)
+  if(size >= 0x1000){
     size *= 2;
+    // printf("size: 0x%x\n\r", size);
+  }
   // printf("size: 0x%x\n\r", size);
   pool_header *cur = pool;
   while (cur){

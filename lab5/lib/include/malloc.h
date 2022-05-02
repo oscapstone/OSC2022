@@ -1,4 +1,6 @@
-#define PAGE_MAX_ORDER 15
+#include "stdint.h"
+
+#define PAGE_MAX_ORDER 16
 #define PAGE_FREE -1 
 #define PAGE_ALLOCATED -2 
 #define PAGE_RESERVED -3
@@ -33,5 +35,5 @@ void page_free(int index);
 void show_frame();
 void show_page_list();
 
-void *malloc(size_t size);
+void *malloc(uint64_t size);
 void free(void *addr);
