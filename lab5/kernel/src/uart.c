@@ -123,8 +123,10 @@ void uart_puts(char *s) {
 uint32_t uart_write(char *s, uint32_t size) {
     for(int i = 0 ; i<size ;i++){
       uart_send(s[i]);
-      if(s[i]=='\n' || s[i] =='\r')
+      if(s[i]=='\n'){
+        uart_send('\r');
         return i;
+      }
     }
     return size;
 }

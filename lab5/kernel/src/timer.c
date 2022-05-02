@@ -17,6 +17,11 @@ void core_timer_enable() {
   asm volatile("mov x0, 2");
   asm volatile("ldr x1, =0x40000040");
   asm volatile("str w0, [x1]");  // unmask timer interrupt
+
+  uint64_t tmp;
+  asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+  tmp |= 1;
+  asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
 }
 
 // void core_timer_handler() {

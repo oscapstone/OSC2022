@@ -5,6 +5,7 @@
 #include "exception.h"
 #include "printf.h"
 #include "utils.h"
+#include "shell.h"
 
 void foo() {
   for (int i = 0; i < 4; ++i) {
@@ -76,6 +77,9 @@ void schedule() {
   // printf("[schdule]\n");
   if (run_queue.head == 0) {
     // printf("no thread\n");
+    enable_uart_interrupt();
+    core_timer_disable();
+    enable_interrupt();
     return;
   }
   if (run_queue.head == run_queue.tail) {  // idle thread
@@ -209,25 +213,38 @@ void create_child(thread_info *parent, thread_info *child) {
     *dst = *src;
   }
   // copy user program
-  src = (char *)(parent->user_program_base);
-  dst = (char *)(child->user_program_base);
-  for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
-    *dst = *src;
-  }
+  // src = (char *)(parent->user_program_base);
+  // dst = (char *)(child->user_program_base);
+  // for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
+  //   *dst = *src;
+  // }
 
   // set correct address for child
   uint64_t kernel_stack_base_dist =
       child->kernel_stack_base - parent->kernel_stack_base;
   uint64_t user_stack_base_dist =
       child->user_stack_base - parent->user_stack_base;
-  uint64_t user_program_base_dist =
-      child->user_program_base - parent->user_program_base;
+  // uint64_t user_program_base_dist =
+  //     child->user_program_base - parent->user_program_base;
   child->context.fp += kernel_stack_base_dist;
   child->context.sp += kernel_stack_base_dist;
   child->trap_frame_addr = parent->trap_frame_addr + kernel_stack_base_dist;
   trap_frame_t *trap_frame = (trap_frame_t *)(child->trap_frame_addr);
   trap_frame->x[29] += user_stack_base_dist;    // fp (x29)
-  trap_frame->x[30] += user_program_base_dist;  // lr (x30)
-  trap_frame->x[32] += user_program_base_dist;  // elr_el1
+  // trap_frame->x[30] += user_program_base_dist;  // lr (x30)
+  // trap_frame->x[32] += user_program_base_dist;  // elr_el1
   trap_frame->x[33] += user_stack_base_dist;    // sp_el0
+}
+
+void kill (int kill_pid)
+{
+  if (run_queue.head == 0) return;
+  for (thread_info *ptr = run_queue.head; ptr->next != 0; ptr = ptr->next) {
+    if(ptr->pid == kill_pid){
+      printf("Kill pid = %d\n",kill_pid);
+      ptr->status = THREAD_DEAD;
+      schedule();
+      break;
+    }
+  }
 }

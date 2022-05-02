@@ -69,3 +69,4 @@ void exec(const char *program_name, const char **argv);
 void fork(uint64_t sp);
 void handle_fork();
 void create_child(thread_info *parent, thread_info *child);
+void kill (int kill_pid);

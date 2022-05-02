@@ -24,7 +24,7 @@
  */
 
 /* a properly aligned buffer */
-extern volatile unsigned int mbox[36];
+extern unsigned int mbox[36];
 
 #define MBOX_REQUEST    0
 
@@ -48,4 +48,4 @@ extern volatile unsigned int mbox[36];
 
 #define MBOX_TAG_LAST           0
 
-int mbox_call(unsigned char ch);
+int mbox_call(unsigned char ch, unsigned int* mbox);

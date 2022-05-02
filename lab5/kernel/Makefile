@@ -39,5 +39,9 @@ kernel8.img: kernel8.elf
 run:
 	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
 
+run1:
+	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -display vnc=127.0.0.4:0 -serial null -serial stdio -initrd initramfs.cpio
+
+
 debug:
 	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -serial null -serial stdio -display none -S -s -initrd initramfs.cpio

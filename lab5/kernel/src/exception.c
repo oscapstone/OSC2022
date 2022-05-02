@@ -5,6 +5,7 @@
 #include "string.h"
 #include "thread.h"
 #include "printf.h"
+#include "mbox.h"
 int count = 0;
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
@@ -12,7 +13,7 @@ void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
 void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void sync_handler_currentEL_ELx() {
-  printf("[sync_handler_currentEL_ELx]\n");
+  // printf("[sync_handler_currentEL_ELx]\n");
 
   uint64_t spsr_el1, elr_el1, esr_el1;
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
@@ -45,6 +46,8 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       uint32_t pid = get_current()->pid;
       trap_frame->x[0] = pid;
     } else if (iss == 1) {  // uartread
+      disable_uart_interrupt();
+      enable_interrupt();
       char *str = (char *)(trap_frame->x[0]);
       uint32_t size = (uint32_t)(trap_frame->x[1]);
       size = uart_gets(str, size);
@@ -61,9 +64,9 @@ void sync_handler_lowerEL_64(uint64_t sp) {
     } else if (iss == 5) {  // exit
       exit();
     } else if (iss == 6) {  // mbox_call
-      uart_puts("mbox_call still not work\n");
+      trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
     } else if (iss == 7) {  // kill
-      uart_puts("kill still not work\n");
+      kill((int)trap_frame->x[0]);
     } 
   }
 }

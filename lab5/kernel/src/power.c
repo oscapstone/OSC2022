@@ -50,7 +50,7 @@ void power_off()
         mbox[5]=(unsigned int)r;   // device id
         mbox[6]=0;                 // bit 0: off, bit 1: no wait
         mbox[7]=MBOX_TAG_LAST;
-        mbox_call(MBOX_CH_PROP);
+        mbox_call(MBOX_CH_PROP,mbox);
     }
 
     // power off gpio pins (but not VCC pins)
