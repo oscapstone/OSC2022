@@ -151,17 +151,22 @@ void fork(uint64_t sp) {
 
 void handle_fork() {
   for (thread_info *ptr = run_queue.head->next; ptr != 0; ptr = ptr->next) {
+    //printf("ptr: %d\n", ptr);
     if ((ptr->status) == THREAD_FORK) {
-      printf("create child thread\n");
+      //printf("creating child thread\n");
       thread_info *child = thread_create(0);
+      //printf("\n\ncreate done\n");
       create_child(ptr, child);
+      //printf("\n\ncreate child done\n");
       ptr->status = THREAD_READY;
       child->status = THREAD_READY;
     }
   }
+  //printf("handle fork done\n");
 }
 
 void create_child(thread_info *parent, thread_info *child) {
+  printf("creating child malloc\n");
   child->user_stack_base = (uint64_t)malloc(STACK_SIZE);
   child->user_program_size = parent->user_program_size;
   parent->child_pid = child->pid;
@@ -169,29 +174,34 @@ void create_child(thread_info *parent, thread_info *child) {
 
   char *src, *dst;
   // copy saved context in thread info
+  printf("copying context\n");
   src = (char *)&(parent->context);
   dst = (char *)&(child->context);
   for (uint32_t i = 0; i < sizeof(cpu_context); ++i, ++src, ++dst) {
     *dst = *src;
   }
   // copy kernel stack
+  printf("copying kernel stack\n");
   src = (char *)(parent->kernel_stack_base);
   dst = (char *)(child->kernel_stack_base);
   for (uint32_t i = 0; i < STACK_SIZE; ++i, ++src, ++dst) {
     *dst = *src;
   }
   // copy user stack
+  printf("copying user stack\n");
   src = (char *)(parent->user_stack_base);
   dst = (char *)(child->user_stack_base);
   for (uint32_t i = 0; i < STACK_SIZE; ++i, ++src, ++dst) {
     *dst = *src;
   }
   // copy user program
-  src = (char *)(parent->user_program_base);
-  dst = (char *)(child->user_program_base);
-  for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
-    *dst = *src;
-  }
+  //printf("copying user program\n");
+  //src = (char *)(parent->user_program_base);
+  //dst = (char *)(child->user_program_base);
+  //for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
+  //  printf("copying....\n");
+  //  *dst = *src;
+  //}
 
   // set correct address for child
   uint64_t kernel_stack_base_dist =
@@ -241,7 +251,7 @@ void foo2(){
     print_s(",foo2 Thread id: ");
     print_i(current_thread()->pid);
     print_s("\r\n");
-    delay(100000000);
+    delay(1000);
   }
   //print_s("\n\n\n\ndone!!!!!!\r\n");
   exit();
