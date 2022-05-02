@@ -3,12 +3,10 @@
 #include "reboot.h"
 #include "printf.h"
 #include "cpio.h"
-#include "timer.h"
 #include "shell.h"
 #include "malloc.h"
 #include "scheduler.h"
 #include "system.h"
-#include "delay.h"
 
 void shell(){
   char *input = malloc(sizeof(char) * BUF_MAX_SIZE);
@@ -19,7 +17,7 @@ void shell(){
   printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
   while(1){
-    read = uart_getc(); // async_uart_getc()
+    read = uart_getc();
     if(read != '\n' && read != 0x7f){
       append_str(input, read);
       printf("%c", read);
@@ -45,8 +43,7 @@ void shell(){
           if(args_num == 2)
             cpio_cat(args[1]);
         }else if(!strcmp(args[0], "e")){
-          char *addr = load_program(args[1]);
-          // char *addr = load_program("syscall.img");
+          char *addr = load_program("syscall.img");
           task_create((thread_func)addr, USER);
           idle_thread();
         }

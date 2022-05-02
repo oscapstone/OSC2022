@@ -64,10 +64,10 @@ void sync_router(uint64_t x0, uint64_t x1){
   }else if(frame->x8 == 3){         // exec
     char *name = (char *)frame->x0;
     task *cur = get_current();
-    frame->sp_el0 = cur->user_sp;
+    frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
     char *addr = load_program(name);
     frame->elr_el1 = (uint64_t)addr;
-    frame->x8 = 8;
+    // frame->x8 = 8;
     // char *argv = (char *)frame->x1;
     frame->x0 = 0;
   }else if(frame->x8 == 4){        // fork
