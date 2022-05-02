@@ -21,6 +21,6 @@ void main(char * arg){
   page_init();
 
   thread_init();
-  idle_thread();
+  // idle_thread();
   shell();
 }

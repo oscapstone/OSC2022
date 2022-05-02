@@ -16,16 +16,25 @@ static void enqueue(task **queue, task *new_task);
 static void *dequeue(task **queue);
 
 void thread_init(void){
+  // task *new_task = malloc(sizeof(task));
+  // new_task->pid = pid++;
+  // new_task->next = NULL;
+  // new_task->state = RUNNING;
+  // enqueue(&run_queue, new_task);
+  // new_task = malloc(sizeof(task));
+  // new_task->pid = pid++;
+  // new_task->next = NULL;
+  // new_task->state = RUNNING;
+  // new_task->lr = (uint64_t)shell;
+  // char *addr = malloc(THREAD_SP_SIZE);
+  // new_task->fp = (uint64_t)addr;
+  // new_task->sp = (uint64_t)addr;
+  // enqueue(&run_queue, new_task);
   task *new_task = malloc(sizeof(task));
   new_task->pid = pid++;
   new_task->next = NULL;
   new_task->state = RUNNING;
-  enqueue(&run_queue, new_task);
-  new_task = malloc(sizeof(task));
-  new_task->pid = pid++;
-  new_task->next = NULL;
-  new_task->state = RUNNING;
-  new_task->lr = (uint64_t)shell;
+  new_task->lr = (uint64_t)idle_thread;
   char *addr = malloc(THREAD_SP_SIZE);
   new_task->fp = (uint64_t)addr;
   new_task->sp = (uint64_t)addr;
@@ -77,7 +86,7 @@ void idle_thread(void){
   // for(int i = 0; i < 3; ++i) { 
   //   task_create(foo, USER);
   // }
-  task_create(fork_test, USER);
+  // task_create(fork_test, USER);
   write_current((uint64_t)dequeue(&run_queue));
   add_timer(normal_timer, "normal_timer", get_timer_freq()>>5);
   while (1){
@@ -112,12 +121,16 @@ void *task_create(thread_func func, enum mode mode){
 
 void schedule(){
   task *cur = get_current();
+  task *next = dequeue(&run_queue);
   cur->next = NULL;
+  if (cur->pid == 1 && !next){
+    core_timer_interrupt_disable();
+    shell();
+  }
   if(cur->state != EXIT)
     enqueue(&run_queue, cur);
   else
     enqueue(&zombies_queue, cur);
-  task *next = dequeue(&run_queue);
   switch_to(cur, next);
 }
 

@@ -174,7 +174,7 @@ sync_el1h:
   save_all
   mov x0, 4
   mov x1, sp
-  bl sync_router
+  bl invalid_exception_router
   load_all
   eret
 irq_el1h:
@@ -208,7 +208,7 @@ sync_el0_64:
 irq_el0_64:
   save_all
   mov x0,9
-  bl irq_router
+  bl irq_router // lower_iqr_handler
   load_all
   eret
 fiq_invalid_el0_64:

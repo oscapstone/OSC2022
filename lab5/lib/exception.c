@@ -37,13 +37,12 @@ void irq_router(uint64_t x0){
 }
 
 void sync_router(uint64_t x0, uint64_t x1){
-  // printf("sync_router %d\n\r", x0);
-  interrupt_disable();
   trap_frame *frame = (trap_frame *)x1;
   if(frame->x8 == 0){               // get pid
     task *cur = get_current();
     frame->x0 = cur->pid;
   }else if(frame->x8 == 1){         // uart read
+    interrupt_enable();
     int read = 0;
     char *buf = (char *)frame->x0;
     while (read < frame->x1){
@@ -51,7 +50,9 @@ void sync_router(uint64_t x0, uint64_t x1){
       read++;
     }
     frame->x0 = read;
+    interrupt_disable();
   }else if(frame->x8 == 2){         // uart write
+    interrupt_enable();
     int sent = 0;
     char *buf = (char *)frame->x0;
     while (sent < frame->x1){
@@ -59,6 +60,7 @@ void sync_router(uint64_t x0, uint64_t x1){
       sent++;
     }
     frame->x0 = sent;
+    interrupt_disable();
   }else if(frame->x8 == 3){         // exec
     char *name = (char *)frame->x0;
     task *cur = get_current();
@@ -71,7 +73,7 @@ void sync_router(uint64_t x0, uint64_t x1){
   }else if(frame->x8 == 4){        // fork
     task *parent = get_current();
     task *child = task_create(NULL, USER);
-    printf("this is fork %d->%d\r\n", parent->pid, child->pid);
+    // printf("this is fork %d->%d\r\n", parent->pid, child->pid);
     /* copy the task context & kernel stack (including trap frame) of parent to child */
     child->x19 = frame->x19;
     child->x20 = frame->x20;
@@ -106,16 +108,11 @@ void sync_router(uint64_t x0, uint64_t x1){
     trap_frame *child_frame = (trap_frame *)child->sp;
     child_frame->x0 = 0;
     child_frame->x29 = child->fp;
-    // printf("p->user_sp: 0x%x, f->sp_el0: 0x%x\n\r", parent->user_sp, frame->sp_el0);
-    // printf("p->sp_addr: 0x%x, f: 0x%x\n\r", parent->sp_addr, frame);
     if((uint64_t)child->user_sp > (uint64_t)parent->user_sp){
       child_frame->sp_el0 += ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
     }else if((uint64_t)child->user_sp < (uint64_t)parent->user_sp){
       child_frame->sp_el0 -= ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
     }
-    // printf("c->sp_addr: 0x%x, c_tf: 0x%x\n\r", child->sp_addr, child_frame);
-    // printf("c->user_sp: 0x%x, c->sp_el0: 0x%x\n\r", child->user_sp, child_frame->sp_el0);
-    // printf("p->lr: 0x%x, c->lr: 0x%x\n\r", frame->x30, child->lr);
     frame->x0 = child->pid;
   }else if(frame->x8 == 5){        // exit
     task *cur = get_current();
@@ -129,5 +126,4 @@ void sync_router(uint64_t x0, uint64_t x1){
   }else if(frame->x8 == 7){        // kill
     kill_thread(frame->x0);
   }
-  interrupt_enable();
 }

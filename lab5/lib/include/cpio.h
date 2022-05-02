@@ -1,4 +1,7 @@
 
+#define USER_PROGRAM_SPACE 0x900000
+#define USER_PROGRAM_MAX_SIZE 0x500000
+
 typedef struct cpio_header {
   char	   c_magic[6];
   char	   c_ino[8];

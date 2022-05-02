@@ -14,7 +14,8 @@ static void *open_page(size_t size);
 static void remove_page(void *addr);
 static int log2(int value);
 static int power2(int value);
-static int aling8(int value);
+static uint64_t aling8(uint64_t value);
+static uint64_t aling16(uint64_t value);
 
 static char* heap_top = (char*) &_heap_start + 0x1000;
 static unsigned int PAGE_MAX_ENTRY = 0x3c000000/0x1000;
@@ -54,7 +55,7 @@ void page_init(){
   memory_reserve((unsigned long)&_kernel_start - 0x2000, (unsigned long)&_kernel_start-0x1000); // stack
   memory_reserve((unsigned long)CPIO_DEFAULT_PLACE, (unsigned long)CPIO_DEFAULT_PLACE_END+0x1000); // cpio size
   memory_reserve((unsigned long)dtb_place, (unsigned long)dtb_place+dtb_size);   // dtb
-  memory_reserve((unsigned long)0x900000, (unsigned long)0xf00000);   // dtb
+  memory_reserve((unsigned long)USER_PROGRAM_SPACE, (unsigned long)USER_PROGRAM_SPACE+USER_PROGRAM_MAX_SIZE);   // dtb
   non_init = PAGE_MAX_ENTRY;
   for(int head=0; head<PAGE_MAX_ENTRY;){
     if((frame+head)->status == 0){
@@ -221,27 +222,21 @@ void *malloc(uint64_t size){
   if(size < 8)
     size = 8;
   int sizeLevel = log2(size-1)+1;
-  // if(sizeLevel > 11){
-  //   printf("error\n\r");
-  //   return 0;
-  // }
   size = power2(sizeLevel);
-  if(size >= 0x1000){
+  if(size > 0x800){
     size *= 2;
-    // printf("size: 0x%x\n\r", size);
   }
-  // printf("size: 0x%x\n\r", size);
   pool_header *cur = pool;
   while (cur){
     if(cur->size < size || cur->size >= 2*size || cur->used >= cur->total)
       cur = cur->next;
     else{
       cur->used += 1;
-      uint8_t *page_info = (uint8_t *)((uint64_t)cur + sizeof(pool_header));
+      uint8_t *page_info = (uint8_t *)((uint64_t)cur + aling16(sizeof(pool_header)));
       for(int i=0; i<cur->total; i++){
         if(page_info[i] == 0){
           page_info[i] = 1;
-          return (void *)((uint64_t)cur + sizeof(pool_header) + aling8(cur->total) + cur->size*i);
+          return (void *)((uint64_t)cur + aling16(sizeof(pool_header)) + aling8(cur->total) + cur->size*i);
         }
       }
     }
@@ -250,28 +245,29 @@ void *malloc(uint64_t size){
 }
 
 void *open_page(size_t size){
+  // printf("open %d\n\r", size);
   uint64_t page_index = page_allocate(size);
   pool_header *page = (pool_header *)(0x1000*page_index);
   page->size = size;
-  page->total = (0x1000 - sizeof(pool_header)-8)/(size+1); // sub 8 for aling 8 of use array
+  page->total = (0x1000 - aling16(sizeof(pool_header))-16)/(size+1); // sub 8 for aling 8 of use array
   page->used = 1;
   page->next = pool;
   pool = page;
-  uint8_t *page_info = (uint8_t *)(0x1000*page_index + sizeof(pool_header));
+  uint8_t *page_info = (uint8_t *)(0x1000*page_index + aling16(sizeof(pool_header)));
   *page_info = 1;
   for(int i=1; i<page->total; i++)
     *(page_info+i) = 0;
-  return (void *)(0x1000*page_index+sizeof(pool_header)+aling8(page->total));
+  return (void *)(0x1000*page_index+aling16(sizeof(pool_header))+aling8(page->total));
 }
 
 void free(void *addr){
   uint64_t index = (uint64_t)addr % 0x1000;
   addr -= ((uint64_t)addr % 0x1000);
   pool_header *page = (pool_header *)addr;
-  index = (index - page->total - sizeof(pool_header))/page->size;
+  index = (index - aling8(page->total) - aling16(sizeof(pool_header)))/page->size;
   if(page->used != 1){
     page->used -= 1;
-    uint8_t *page_info = (uint8_t *)(addr + sizeof(pool_header));
+    uint8_t *page_info = (uint8_t *)(addr + aling16(sizeof(pool_header)));
     page_info[index] = 0;
   }else{
     remove_page(page);
@@ -333,8 +329,14 @@ void show_page_list(){
   }
 }
 
-int aling8(int value){
+uint64_t aling8(uint64_t value){
   if(value%8 == 0)
     return value;
   return 8+value-value%8;
+}
+
+uint64_t aling16(uint64_t value){
+  if(value%16 == 0)
+    return value;
+  return 16+value-value%16;
 }

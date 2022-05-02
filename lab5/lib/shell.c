@@ -18,7 +18,6 @@ void shell(){
   char read = 0;
   printf("\n\r\n\rWelcome!!!\n\r");
   printf("raspberryPi: ");
-  printf("\n\r\n\r");
   while(1){
     read = uart_getc(); // async_uart_getc()
     if(read != '\n' && read != 0x7f){
@@ -45,17 +44,11 @@ void shell(){
         }else if(!strcmp(args[0], "cat")){
           if(args_num == 2)
             cpio_cat(args[1]);
-        }else if(!strcmp(args[0], "exec")){
-          if(args_num == 2)
-            cpio_exec(args[1]);
-        }else if(!strcmp(args[0], "d")){
-          show_page_list();
-        }else if(!strcmp(args[0], "m")){
-          if (args_num == 2)
-            printf("alloc the memory form: 0x%x\n\r", malloc(atoi(args[1])));
         }else if(!strcmp(args[0], "e")){
           char *addr = load_program(args[1]);
+          // char *addr = load_program("syscall.img");
           task_create((thread_func)addr, USER);
+          idle_thread();
         }
         printf("raspberryPi: ");
         input[0] = 0;

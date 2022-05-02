@@ -23,9 +23,9 @@ typedef struct page_item {
 } page_item;
 
 typedef struct pool_header {
-  unsigned int size;
-  unsigned int total;
-  unsigned int used;
+  uint64_t size;
+  uint64_t total;
+  uint64_t used;
   struct pool_header *next;
 } pool_header;
 
