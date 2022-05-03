@@ -17,7 +17,7 @@ int main(unsigned long dtb_base){
     print_string(UITOHEX, "[*] DTB_BASE: 0x", dtb_base, 1);
     fdt_traverse((fdt_header *)dtb_base, initramfs_callback);
     all_allocator_init();    
-    init_thread_pool();
+    init_thread_pool_and_head();
     init_task_head();
 
     enable_timer_irq();

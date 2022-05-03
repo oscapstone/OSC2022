@@ -14,7 +14,7 @@ void init_thread_pool_and_head(){
     for(unsigned int i = 0; i < MAX_THREAD; i++){
         INIT_LIST_HEAD(&thread_pool[i].list);
         thread_pool[i].state = NOUSE;
-        thread_pool[i].id = i;
+        thread_pool[i].id = i + 1;
         thread_pool[i].ustack_addr = NULL;
         thread_pool[i].kstack_addr = NULL;
     }
@@ -44,4 +44,14 @@ Thread *thread_create(void(*func)()){
     list_add_tail(&new_thread->list, &thread_head->list);
 
     return new_thread;
+}
+
+void idle_thread(){
+    while(1){
+        for(unsigned int i = 0; i < MAX_THREAD; i++){
+            if(thread_pool[i].state == EXIT && thread_pool[i].id != 0){
+                
+            }
+        }
+    }
 }
