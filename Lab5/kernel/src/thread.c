@@ -81,7 +81,11 @@ void schedule() {
 
 void idle() {
   while (1) {
+    //printf("idle\n");
+    disable_interrupt();
+    handle_fork();
     kill_zombies();
+    enable_interrupt();
     schedule();
   }
 }
@@ -141,8 +145,8 @@ thread_info *current_thread() {
 }
 
 void timer_schedular_handler(){
-  kill_zombies();
-  handle_fork();
+  //kill_zombies();
+  //handle_fork();
   schedule();
   //print_s("set next interrupt\r\n");
 }

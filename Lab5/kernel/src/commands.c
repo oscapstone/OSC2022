@@ -227,6 +227,7 @@ void shell_user_program(char* args){
     core_timer_enable(SCHEDULE_TVAL);
     plan_next_interrupt_tval(SCHEDULE_TVAL);
     enable_interrupt();
+    idle();
 }
 
 void shell_user_program_2(char* args){

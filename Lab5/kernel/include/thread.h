@@ -14,7 +14,7 @@
 #define THREAD_READY 4
 
 // scheduling constant
-#define SCHEDULE_TVAL 62500000 >> 5
+#define SCHEDULE_TVAL 50000000 >> 5
 #define SCHEDULE_TVAL_TEST 62500000 // 1 sec
 
 int from_kernel;
