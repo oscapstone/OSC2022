@@ -18,7 +18,7 @@ void clean_buffer(char * buffer, int buffer_len)
 
 void command_help()
 {
-    uart_puts("This is kerenel shell\n");
+    uart_puts("This is kernel shell\n");
     uart_puts("help\t\t: print this help menu\n");
     uart_puts("hello\t\t: print Hello World!\n");
     uart_puts("reboot\t\t: reboot the device\n");

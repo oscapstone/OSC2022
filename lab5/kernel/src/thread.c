@@ -110,7 +110,7 @@ void idle() {
     kill_zombies();
     handle_fork();
     schedule();
-    if (run_queue.head == 0) break;
+    if (run_queue.head == 0) break;    //blcok here if any thread exist=
   }
 }
 
@@ -153,7 +153,7 @@ void exec(const char *program_name, const char **argv) {
   }
   uint64_t user_sp = cur->user_stack_base + STACK_SIZE;
   cur->user_program_size = cpio_load_user_program(program_name, cur->user_program_base);
-
+  // printf("cur->pid = %d, cur->user_program_base = %x\n",cur->pid,cur->user_program_base);
 
   // return to user program
   uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled
@@ -188,6 +188,7 @@ void handle_fork() {
 
 void create_child(thread_info *parent, thread_info *child) {
   // printf("[create_child]\n");
+  disable_interrupt();
   child->user_stack_base = (uint64_t)malloc(STACK_SIZE);
   child->user_program_size = parent->user_program_size;
   parent->child_pid = child->pid;
@@ -213,29 +214,30 @@ void create_child(thread_info *parent, thread_info *child) {
     *dst = *src;
   }
   // copy user program
-  // src = (char *)(parent->user_program_base);
-  // dst = (char *)(child->user_program_base);
-  // for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
-  //   *dst = *src;
-  // }
+  src = (char *)(parent->user_program_base);
+  dst = (char *)(child->user_program_base);
+  for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
+    *dst = *src;
+  }
 
   // set correct address for child
   uint64_t kernel_stack_base_dist =
       child->kernel_stack_base - parent->kernel_stack_base;
   uint64_t user_stack_base_dist =
       child->user_stack_base - parent->user_stack_base;
-  // uint64_t user_program_base_dist =
-  //     child->user_program_base - parent->user_program_base;
+  uint64_t user_program_base_dist =
+      child->user_program_base - parent->user_program_base;
+
   child->context.fp += kernel_stack_base_dist;
   child->context.sp += kernel_stack_base_dist;
   child->trap_frame_addr = parent->trap_frame_addr + kernel_stack_base_dist;
   trap_frame_t *trap_frame = (trap_frame_t *)(child->trap_frame_addr);
   trap_frame->x[29] += user_stack_base_dist;    // fp (x29)
-  // trap_frame->x[30] += user_program_base_dist;  // lr (x30)
-  // trap_frame->x[32] += user_program_base_dist;  // elr_el1
+  trap_frame->x[30] += user_program_base_dist;  // lr (x30)
+  trap_frame->x[32] += user_program_base_dist;  // elr_el1
   trap_frame->x[33] += user_stack_base_dist;    // sp_el0
+  enable_interrupt();
 }
-
 void kill (int kill_pid)
 {
   if (run_queue.head == 0) return;
@@ -244,7 +246,9 @@ void kill (int kill_pid)
       printf("Kill pid = %d\n",kill_pid);
       ptr->status = THREAD_DEAD;
       schedule();
-      break;
+      return;
     }
   }
+  printf("pid = %d not exist\n",kill_pid);
+
 }

@@ -26,6 +26,11 @@
 
 // load general registers from stack
 .macro load_reg
+    ldp x30, x10, [sp, 16 * 15]
+    ldp x11, x12, [sp, 16 * 16]
+    msr spsr_el1, x10
+	msr elr_el1, x11
+	msr sp_el0, x12
     ldp x0, x1, [sp, 16 * 0]
     ldp x2, x3, [sp, 16 * 1]
     ldp x4, x5, [sp, 16 * 2]
@@ -42,11 +47,11 @@
     ldp x26, x27, [sp, 16 * 13]
     ldp x28, x29, [sp, 16 * 14]
     //ldr x30, [sp, 16 * 15]
-    ldp x30, x10, [sp, 16 * 15]
-    ldp x11, x12, [sp, 16 * 16]
-    msr spsr_el1, x10
-	msr elr_el1, x11
-	msr sp_el0, x12
+    //ldp x30, x10, [sp, 16 * 15]
+    //ldp x11, x12, [sp, 16 * 16]
+    //msr spsr_el1, x10
+	//msr elr_el1, x11
+	//msr sp_el0, x12
     add sp, sp, 32 * 9
 .endm
 
