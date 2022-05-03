@@ -22,9 +22,11 @@ thread_info *thread_create(void (*func)()) {
   thread->user_stack_base = (uint64_t)malloc(STACK_SIZE);
   thread->user_program_base =
       USER_PROGRAM_BASE + thread->pid * USER_PROGRAM_SIZE;
+  
   thread->context.fp = thread->kernel_stack_base + STACK_SIZE;
   thread->context.lr = (uint64_t)func;
   thread->context.sp = thread->kernel_stack_base + STACK_SIZE;
+  thread->user_program_size = USER_PROGRAM_SIZE;
   run_queue_push(thread);
   return thread;
 }
@@ -86,8 +88,12 @@ void idle() {
 
 void exit() {
   //disable_interrupt();
-  thread_info *cur = current_thread();
-  cur->status = THREAD_DEAD;
+  //thread_info *cur = current_thread();
+  //cur->status = THREAD_DEAD;
+  // kill all thread in this lab, formally, you have to maitain a child pid list and kill child too.
+  for (thread_info *ptr = run_queue.head; ptr->next != 0; ptr = ptr->next) {
+      ptr->status = THREAD_DEAD;
+  }
   schedule();
 }
 
@@ -195,13 +201,13 @@ void create_child(thread_info *parent, thread_info *child) {
     *dst = *src;
   }
   // copy user program
-  //printf("copying user program\n");
-  //src = (char *)(parent->user_program_base);
-  //dst = (char *)(child->user_program_base);
-  //for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
-  //  printf("copying....\n");
-  //  *dst = *src;
-  //}
+  printf("copying user program\n");
+  src = (char *)(parent->user_program_base);
+  dst = (char *)(child->user_program_base);
+  for (uint32_t i = 0; i < parent->user_program_size; ++i, ++src, ++dst) {
+    //printf("copying....\n");
+    *dst = *src;
+  }
 
   // set correct address for child
   uint64_t kernel_stack_base_dist =
@@ -220,8 +226,9 @@ void create_child(thread_info *parent, thread_info *child) {
   trap_frame->sp_el0 += user_stack_base_dist;    // sp_el0
   // you don't need to load link register since it's running the same program
   // uses the same program counter to run the same program stored in the memory
-  //trap_frame->x[30] += user_program_base_dist;    // lr (x30)
-  //trap_frame->elr_el1 += user_program_base_dist;  // elr_el1
+  // you don't need following two line to make this lab work, but it's a bit more formal.
+  trap_frame->x[30] += user_program_base_dist;    // lr (x30)
+  trap_frame->elr_el1 += user_program_base_dist;  // elr_el1
 }
 
 
@@ -251,7 +258,7 @@ void foo2(){
     print_s(",foo2 Thread id: ");
     print_i(current_thread()->pid);
     print_s("\r\n");
-    delay(1000);
+    delay(1000); // user small number on real RPi
   }
   //print_s("\n\n\n\ndone!!!!!!\r\n");
   exit();
@@ -300,12 +307,23 @@ void thread_timer_test(){
 
 void exec() {
     //print_s(args);
-    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
-    uint64_t target_addr = 0x30100000; // load your program here
-    uint64_t target_sp = 0x31000000;
+   
+    //uint64_t target_addr = 0x30100000; // load your program here
+    //uint64_t target_sp = 0x31000000;
 
+    thread_info *cur = get_current();
+    if (cur->user_stack_base == 0) {
+      cur->user_stack_base = (uint64_t)malloc(STACK_SIZE);
+    }
+    uint64_t user_sp = cur->user_stack_base + STACK_SIZE;
+    cur->user_program_size = USER_PROGRAM_SIZE;
+    cpio_load_user_program("syscall.img", cur->user_program_base);
+
+    uint64_t spsr_el1 = 0x0;  // EL0t with interrupt enabled, PSTATE.{DAIF} unmask (0), AArch64 execution state, EL0t
+    uint64_t target_addr = cur->user_program_base;
+    uint64_t target_sp = user_sp;
     //cpio_load_user_program("user_program.img", target_addr);
-    cpio_load_user_program("syscall.img", target_addr);
+    //cpio_load_user_program("syscall.img", target_addr);
     //cpio_load_user_program("test_loop", target_addr);
     //cpio_load_user_program("user_shell", target_addr);
 
