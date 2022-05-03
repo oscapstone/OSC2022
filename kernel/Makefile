@@ -7,11 +7,13 @@ SRC_DIR = src
 BUILD_DIR = build
 BOOT_DIR = boot
 
+SFILES_ASM = $(wildcard src/*.S)
+OFILES_ASM = $(patsubst src/%.S, build/%.o, $(SFILES_ASM)) # OFILES = $(SFILES:.c=.o)
 SFILES = $(wildcard src/*.c)
 OFILES = $(patsubst src/%.c, build/%.o, $(SFILES)) # OFILES = $(SFILES:.c=.o)
 BOOTFILES = $(wildcard boot/*.S)
 BOOTOFILES = $(patsubst boot/%.S, build/%.o, $(BOOTFILES)) # BOOTOFILES = $(BOOTFILES:.S=.o)
-ALLOFILES = $(OFILES) $(BOOTOFILES)
+ALLOFILES = $(OFILES) $(BOOTOFILES) $(OFILES_ASM)
 
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 
@@ -19,6 +21,9 @@ all: clean kernel8.img run
 
 $(BUILD_DIR)/%.o: $(BOOT_DIR)/%.S
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -g 
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.S
+	$(CC) $(CFLAGS)	$(INCLUDE) -c $< -o $@ -g 
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS)	$(INCLUDE) -c $< -o $@ -g 

@@ -4,9 +4,11 @@
 #include <string.h>
 #include <stddef.h>
 #include <allocator.h>
+#include <irq.h>
+#include <uart.h>
 
 Thread *thread_pool;
-Thread *thread_head;
+Thread *run_thread_head;
 
 void init_thread_pool_and_head(){
     thread_pool = (Thread*)kmalloc(sizeof(Thread) * MAX_THREAD);
@@ -14,14 +16,14 @@ void init_thread_pool_and_head(){
     for(unsigned int i = 0; i < MAX_THREAD; i++){
         INIT_LIST_HEAD(&thread_pool[i].list);
         thread_pool[i].state = NOUSE;
-        thread_pool[i].id = i + 1;
+        thread_pool[i].id = i;
         thread_pool[i].ustack_addr = NULL;
         thread_pool[i].kstack_addr = NULL;
     }
 
-    thread_head = (Thread *)kmalloc(sizeof(Thread));
-    memset((char *)thread_head, 0, sizeof(Thread));
-    INIT_LIST_HEAD(&thread_head->list);
+    run_thread_head = (Thread *)kmalloc(sizeof(Thread));
+    memset((char *)run_thread_head, 0, sizeof(Thread));
+    INIT_LIST_HEAD(&run_thread_head->list);
 }
 
 Thread *thread_create(void(*func)()){
@@ -41,17 +43,77 @@ Thread *thread_create(void(*func)()){
     new_thread->ctx.lr = (unsigned long)func;
 
 
-    list_add_tail(&new_thread->list, &thread_head->list);
+    list_add_tail(&new_thread->list, &run_thread_head->list);
 
     return new_thread;
 }
 
 void idle_thread(){
     while(1){
+        // kill zombie
         for(unsigned int i = 0; i < MAX_THREAD; i++){
-            if(thread_pool[i].state == EXIT && thread_pool[i].id != 0){
-                
+            if(thread_pool[i].state == EXIT){
+                kfree(thread_pool[i].ustack_addr);
+                kfree(thread_pool[i].kstack_addr);
+                thread_pool[i].state = NOUSE;
+                INIT_LIST_HEAD(&thread_pool[i].list);
             }
         }
+
+        // call schedule
+        schedule();
     }
+}
+
+void schedule(){
+    
+}
+
+
+
+void kernel_main() {
+    disable_irq();
+    /* the first thread that is fake thread */
+    Thread prev;
+
+    /* create the idle thread first */
+    thread_create(idle_thread);
+    for(int i = 0; i < 5; i++){
+        thread_create(foo);
+    }
+
+
+    Thread *next = (Thread *)run_thread_head->list.next;
+    // idle don't need in run thread
+    list_del(&next->list);
+
+    print_run_thread();
+    enable_irq();
+    cpu_switch_to(&prev, next);
+}
+
+void delay(){
+    
+}
+
+void foo(){
+  for(int i = 0; i < 10; i++) {
+    // printf("Thread id: %d %d\n", get_current()->task_id, i);
+    // delay(1);
+    //schedule();
+  }
+}
+
+void print_run_thread(){
+    struct list_head *pos;
+    unsigned int first = 1;
+    list_for_each(pos, &run_thread_head->list){
+        Thread *tmp = (Thread *)pos;
+        if(first){
+            print_string(UITOA, "run_thread: pid", tmp->id, 0);
+            first = 0;
+        } 
+        else print_string(UITOA, " -> pid", tmp->id, 0);
+    }
+    uart_puts("\n");
 }

@@ -39,7 +39,18 @@ typedef struct _Thread{
     void *kstack_addr;
 }Thread;
 
+extern struct Thread* get_current();
+extern void cpu_switch_to(Thread* prev, Thread* next);
+
 void init_thread_pool_and_head();
 Thread *thread_create();
+void idle_thread();
+void schedule();
+void kernel_main();
+void delay();
+void foo();
+
+void print_run_thread();
+ 
 
 #endif

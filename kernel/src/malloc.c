@@ -78,9 +78,9 @@ void *chunk_alloc(unsigned int size){
     FreeChunkList *chunk_list = &freechunk_list[level];
     Chunk *chunk = (Chunk *)chunk_list->list.next;
     list_del(&chunk->list);
-    print_string(UITOHEX, "[*] Alloc Chunk -> Allocate Size: ", size, 0);
-    print_string(UITOHEX, " | Chunk Size: ", chunk_size[level], 0);
-    print_string(UITOA, " | Level: ", level, 1);
+    // print_string(UITOHEX, "[*] Alloc Chunk -> Allocate Size: ", size, 0);
+    // print_string(UITOHEX, " | Chunk Size: ", chunk_size[level], 0);
+    // print_string(UITOA, " | Level: ", level, 1);
     // print_freechunk_list();
     return (void *)chunk;
 }
@@ -105,7 +105,7 @@ void chunk_free(void *addr){
     Chunk *chunk = (Chunk *)addr;
     list_add(&chunk->list, &freechunk_list[target_frame->chunk_level].list);
 
-    print_string(UITOHEX, "[*] Free Chunk -> the addr: 0x", (unsigned long long)addr, 1);
+    // print_string(UITOHEX, "[*] Free Chunk -> the addr: 0x", (unsigned long long)addr, 1);
     // print_freechunk_list();
     
 }

@@ -138,7 +138,7 @@ void *buddy_alloc(unsigned int size){
         if(!list_empty(&buddy_list[i].list)){
             Frame *alloca_frame = (Frame *)buddy_pop(&buddy_list[i], use_order);
             unsigned long long alloca_addr = alloca_frame->idx * FRAME_SIZE + BUDDY_ADDR_START;
-            print_use_frame(size, alloca_frame->idx, use_frames, use_order);
+            // print_use_frame(size, alloca_frame->idx, use_frames, use_order);
             // print_buddy_list();
             // memset((void *)alloca_addr, '\0', (1 << alloca_frame->order) * FRAME_SIZE);
             return (void *)alloca_addr;
@@ -174,9 +174,9 @@ void *release_redundant(Frame *left_frame, int use_order){
         right_frame->order = samll_order;
         left_frame->order = samll_order;
         list_add(&frames[right_frame->idx].list, &buddy_list[samll_order].list);
-        print_string(UITOHEX, "[-] Alloc Buddy -> Split: Left_Addr = 0x", left_frame->idx * FRAME_SIZE, 0);
-        print_string(UITOHEX, " | Right_Addr = 0x", right_frame->idx * FRAME_SIZE, 0);
-        print_string(UITOA, " | order = ", left_frame->order, 1);
+        // print_string(UITOHEX, "[-] Alloc Buddy -> Split: Left_Addr = 0x", left_frame->idx * FRAME_SIZE, 0);
+        // print_string(UITOHEX, " | Right_Addr = 0x", right_frame->idx * FRAME_SIZE, 0);
+        // print_string(UITOA, " | order = ", left_frame->order, 1);
     }
     left_frame->free = 0;
     return left_frame;
@@ -200,8 +200,8 @@ void buddy_free(void *addr){
      */
 
     if(buddy_frame == NULL || buddy_frame->free == 0 || buddy_frame->order != target_frame->order){
-        print_string(UITOHEX, "[*] Free Buddy -> Free Addr: 0x", (unsigned long long)addr, 0);
-        print_string(UITOA, " | order = ", target_frame->order, 1);
+        // print_string(UITOHEX, "[*] Free Buddy -> Free Addr: 0x", (unsigned long long)addr, 0);
+        // print_string(UITOA, " | order = ", target_frame->order, 1);
 
         target_frame->free = 1;
 
@@ -214,24 +214,24 @@ void buddy_free(void *addr){
 
     while(buddy_frame->free == 1 && buddy_frame->order == target_frame->order){
         if(first){
-            print_string(UITOHEX, "[*] Free Buddy -> Free Addr: 0x", (unsigned long long)addr, 1);
+            // print_string(UITOHEX, "[*] Free Buddy -> Free Addr: 0x", (unsigned long long)addr, 1);
             first = 0;
         }
         /* buddy cannot be allocated, it will be merged */
         list_del(&frames[buddy_frame->idx].list);
 
         if(target_frame->idx > buddy_frame->idx){
-            print_string(UITOHEX, "[+] Free Buddy -> Merge: Left_Addr = 0x", buddy_frame->idx * FRAME_SIZE, 0);
-            print_string(UITOHEX, " | Right_Addr = 0x", target_frame->idx * FRAME_SIZE, 0);
-            print_string(UITOA, " | order = ", buddy_frame->order+1, 1);
+            // print_string(UITOHEX, "[+] Free Buddy -> Merge: Left_Addr = 0x", buddy_frame->idx * FRAME_SIZE, 0);
+            // print_string(UITOHEX, " | Right_Addr = 0x", target_frame->idx * FRAME_SIZE, 0);
+            // print_string(UITOA, " | order = ", buddy_frame->order+1, 1);
             buddy_frame->order++;
             target_frame->order = -1;
             target_frame = buddy_frame;
         }
         else{
-            print_string(UITOHEX, "[+] Free Buddy -> Merge: Left_Addr = 0x", target_frame->idx * FRAME_SIZE, 0);
-            print_string(UITOHEX, " | Right_Addr = 0x", buddy_frame->idx * FRAME_SIZE, 0);
-            print_string(UITOA, " | order = ", target_frame->order+1, 1);
+            // print_string(UITOHEX, "[+] Free Buddy -> Merge: Left_Addr = 0x", target_frame->idx * FRAME_SIZE, 0);
+            // print_string(UITOHEX, " | Right_Addr = 0x", buddy_frame->idx * FRAME_SIZE, 0);
+            // print_string(UITOA, " | order = ", target_frame->order+1, 1);
             target_frame->order++;
             buddy_frame->order = -1;
         }
