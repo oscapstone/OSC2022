@@ -1,0 +1,18 @@
+
+user_program.elf:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+0000000000100000 <_start>:
+  100000:	94000004 	bl	100010 <main>
+  100004:	14000001 	b	100008 <hang>
+
+0000000000100008 <hang>:
+  100008:	d503205f 	wfe
+  10000c:	17ffffff 	b	100008 <hang>
+
+Disassembly of section .text.startup:
+
+0000000000100010 <main>:
+  100010:	d65f03c0 	ret

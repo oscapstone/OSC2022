@@ -26,6 +26,11 @@
         "string": "c",
         "system_error": "c",
         "typeinfo": "c",
-        "utility": "c"
+        "utility": "c",
+        "cpio.h": "c",
+        "uart.h": "c",
+        "schedule.h": "c",
+        "syscall.h": "c",
+        "system_call.h": "c"
     }
 }

@@ -37,7 +37,6 @@ void uart_init()
     *AUX_MU_BAUD = 270;    // 115200 baud
     *AUX_MU_CNTL = 3;      // enable Tx, Rx
 
-    asyn_uart_init();
 }
 
 /**
@@ -112,34 +111,26 @@ void uart_getline(char *input) {
     return;
 }
 
-// void uart_put (char c) {
+void uart_put (char c) {
 
-    // /* Wait for transmitter ready to receive data */
-//     while ((*AUX_MU_LSR & 0x20) == 0) asm volatile ("nop");
+    /* Wait for transmitter ready to receive data */
+    while ((*AUX_MU_LSR & 0x20) == 0) asm volatile ("nop");
     
-//     /* Put data */
-//     *AUX_MU_IO = c;
+    /* Put data */
+    *AUX_MU_IO = c;
 
-//     return;
-// }
-//////////////////////////////////////////////////////////////////////////////////////////////
+    return;
+}
 
 void asyn_uart_init () {
     disable_read_interrupt();
 
-    // enable_read_interrupt();
-    
     read_head  = 0;
     write_head = 0;
     read_tail  = 0;
     write_tail = 0;
 
     enable_uart_interrupt();
-    /* Clear buffer */
-    // for (int i = 0; i < READ_BUF_SIZE; i++) read_buffer[i] = 0;
-    // for (int i = 0; i < WRITE_BUF_SIZE; i++) write_buffer[i] = 0;
-
-    // return;
 }
 
 void enable_uart_interrupt() {
@@ -165,44 +156,6 @@ void enable_write_interrupt() {
 void disable_write_interrupt() { 
 	*AUX_MU_IER &= ~(0x2); 
 }
-
-// void set_uart_rx_int (bool enable) {
-
-//     unsigned int d;
-//     d = *AUX_MU_IER;
-
-//     if (enable)
-//     {
-//         d = d | 0x1;
-//     }
-//     else
-//     {
-//         d = d & ~(0x1);
-//     }
-
-//     *AUX_MU_IER = d;
-
-//     return;
-// }
-
-// void set_uart_tx_int (bool enable) {
-
-//     unsigned int d;
-//     d = *AUX_MU_IER;
-
-//     if (enable)
-//     {
-//         d = d | 0x2;
-//     }
-//     else
-//     {
-//         d = d & ~(0x2);
-//     }
-
-//     *AUX_MU_IER = d;
-
-//     return;
-// }
 
 char asyn_uart_get () {
 

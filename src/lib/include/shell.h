@@ -8,20 +8,18 @@
 #include "heap.h"
 #include "exception.h"
 #include "timer.h"
-#include "list.h"
 #include "buddy.h"
+#include "allocator.h"
+#include "schedule.h"
+#include "exec.h"
 
 #define MAX_BUFFER_SIZE 256u
 
 void print_sys_info();
 void welcome_msg();
 void helper();
-void do_cpiols();
-void do_cpiocat();
 void cmd_handler(char *cmd);
 void cmd_reader(char *cmd);
 void exe_shell();
-void clear_screen();
-void exec (cpio_new_header *header, char *file_name, int enable_timer);
 
 #endif

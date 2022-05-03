@@ -15,6 +15,10 @@ LIB_SRC = \
 	$(LIB_SRC_DIR)/timer.c \
 	$(LIB_SRC_DIR)/buddy.c \
 	$(LIB_SRC_DIR)/dtb.c \
+	$(LIB_SRC_DIR)/allocator.c \
+	$(LIB_SRC_DIR)/schedule.c \
+	$(LIB_SRC_DIR)/exec.c \
+	$(LIB_SRC_DIR)/system_call.c \
 
 LIB_INCLUDES = \
 	-I $(LIB_SRC_DIR)/include \

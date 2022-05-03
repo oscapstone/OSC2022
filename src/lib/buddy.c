@@ -1,436 +1,336 @@
 #include "buddy.h"
 
-struct page page_list[MAX_ORDER_SIZE];                         //total 4096*4KB
-struct list_head free_buddy_list[MAX_BUDDY_ORDER + 1];         // freelist 2^0*4KB ~ 2^9*4KB = 4KB ~ 2048KB
-struct dynamic_allocator allocator_pool[MAX_ALLOCATOR_NUMBER]; //object_pool 16B ~ 2048B
+buddy_head buddy_list[BUDDY_MAX_ORDER + 1];
+buddy_allocated buddy_allocated_list;
+
+void buddy_test()
+{
+	buddy_init();
+
+    int addr1, addr2;
+
+    uart_puts("================================== buddy system ==================================\n");
+	uart_puts("start allocate addr1...\n");
+    addr1 = buddy_alloc(32 * PAGE_SIZE);
+
+	uart_puts("start free addr1...\n");
+	buddy_free(addr1);
+
+	uart_puts("start allocate addr2...\n");
+    addr2 = buddy_alloc(7 * PAGE_SIZE);
+
+	uart_puts("start free addr2...\n");
+	buddy_free(addr2);
+
+	uart_puts("====================================\n");
+}
+
+void show_alloc_message(buddy_node node)
+{
+
+	uart_puts("[Buddy system] allocate memory page ( from ");
+	uart_hex(node.start);
+	uart_puts(" to ");
+	uart_hex(node.end);
+	uart_puts(" )\n");
+	uart_puts("[Buddy system] allocate memory address ( from ");
+	uart_hex(node.start * PAGE_SIZE + MEMORY_START);
+	uart_puts(" to ");
+	uart_hex((node.end + 1) * PAGE_SIZE + MEMORY_START);
+	uart_puts(" )\n\n");
+	
+}
+
+void show_free_message(buddy_node node)
+{
+
+	uart_puts("[Buddy system] free memory page ( from ");
+	uart_hex(node.start);
+	uart_puts(" to ");
+	uart_hex(node.end);
+	uart_puts(" )\n");
+}
+
+bool allocated_list_push(buddy_node node)
+{
+	if(buddy_allocated_list.count == BUDDY_ALLOCATED_NUM)
+	{
+		return false;
+	}
+
+	// put node to allocated_list and show message
+	node.status = USED;
+	for(int i = 0; i < BUDDY_ALLOCATED_NUM; i++)
+	{
+		if(buddy_allocated_list.node_list[i].status == FREE) 
+		{
+			buddy_allocated_list.node_list[i].start = node.start;
+			buddy_allocated_list.node_list[i].end = node.end;
+			buddy_allocated_list.node_list[i].status = node.status;
+
+			show_alloc_message(node);
+
+			break;
+		}
+	}
+
+	buddy_allocated_list.count++;
+	return true;
+}
+
+buddy_node allocated_list_pop(int node_start)
+{
+	// search and pop node
+	buddy_node ret_node;
+	for(int i = 0; i < BUDDY_ALLOCATED_NUM; i++)
+	{
+		buddy_node *node = &buddy_allocated_list.node_list[i];
+		if(node->status == USED && node->start == node_start) 
+		{
+			node->status = FREE;
+			ret_node.start = buddy_allocated_list.node_list[i].start;
+			ret_node.end = buddy_allocated_list.node_list[i].end;
+			ret_node.status = buddy_allocated_list.node_list[i].status;
+
+			break;
+		}
+	}
+
+	buddy_allocated_list.count--;
+	return ret_node;
+}
+
+// pop first buddy_node from buddy list
+buddy_node buddy_list_pop(buddy_head *list)
+{
+	// 1. get first node
+	buddy_node ret_node;
+	ret_node.start = list->node_list[0].start;
+	ret_node.end = list->node_list[0].end;
+	ret_node.status = list->node_list[0].status;
+	list->count -= 1;
+
+	// 2. move other list node forward iteration
+	int count = list->count;
+	int cur = 1;
+	while(count != 0)
+	{
+		list->node_list[cur - 1].start = list->node_list[cur].start;
+		list->node_list[cur - 1].end = list->node_list[cur].end;
+		list->node_list[cur - 1].status = list->node_list[cur].status;
+		
+		count--;
+		cur++;
+	}
+	
+	// 3. init last node
+	list->node_list[cur - 1].start = list->node_list[cur - 1].end = 0;
+	list->node_list[cur - 1].status = FREE;
+
+	return ret_node;
+}
+
+// split node to two part
+void buddy_list_push(buddy_head *list, buddy_node node)
+{
+	int size = (node.end - node.start + 1) / 2;
+	
+	// first half
+	list->node_list[list->count].start = node.start;
+	list->node_list[list->count].end = node.start + size - 1;
+	list->count += 1;
+
+	// second half
+	list->node_list[list->count].start = node.start + size;
+	list->node_list[list->count].end = node.end;
+	list->count += 1;
+
+	// print first half log
+	uart_puts("first half (from ");
+	uart_hex(node.start);
+	uart_puts(" to ");
+	uart_hex(node.start + size - 1);
+	uart_puts(" )\n");
+	// print second half log
+	uart_puts("second half (from ");
+	uart_hex(node.start + size);
+	uart_puts(" to ");
+	uart_hex(node.end);
+	uart_puts(" )\n");
+	
+}
+
+void buddy_merge(int order, buddy_node* node)
+{
+	buddy_node merge_node;
+	bool can_merge = false;
+	int merge_index;
+	int size = buddy_list[order].count;
+	
+	//char buf[16] = {0};
+
+	while(1)
+	{
+		can_merge = false;
+		size = buddy_list[order].count;
+
+		// calc free node and list node can merge (continue memory)
+		for(merge_index = 0; merge_index < size; merge_index++)
+		{
+			if(buddy_list[order].node_list[merge_index].end + 1 == node->start)
+			{
+				merge_node.start = buddy_list[order].node_list[merge_index].start;
+				merge_node.end = node->end;
+				can_merge = true;
+				break;
+			}
+
+			if(buddy_list[order].node_list[merge_index].start == node->end + 1)
+			{
+				merge_node.start = node->start;
+				merge_node.end = buddy_list[order].node_list[merge_index].end;
+				can_merge = true;
+				break;
+			}		
+		}
+
+		// if can merge, show message, and merge next level iteratively
+		if(can_merge)
+		{
+
+			// uart_puts("[Buddy system] merge ( from ");
+			// uart_hex(buddy_list[order].node_list[size - 1].start);
+			// uart_puts(" to ");
+			// uart_hex(buddy_list[order].node_list[size - 1].end);
+			// uart_puts(" ) and ( from ");
+			// uart_hex(node->start);
+			// uart_puts(" to ");
+			// uart_hex(node->end);
+			// uart_puts(" )\n");
+
+
+			if(size - 1 == 0)
+			{
+				buddy_list[order].count = 0;
+			}
+			else
+			{
+				buddy_list[order].node_list[merge_index].start = buddy_list[order].node_list[size].start;
+				buddy_list[order].node_list[merge_index].end = buddy_list[order].node_list[size].end;
+				buddy_list[order].node_list[merge_index].status = buddy_list[order].node_list[size].status;
+				buddy_list[order].count-- ;
+			}
+
+			if(order != BUDDY_MAX_ORDER)	
+			{			
+				//buddy_merge(order + 1, &merge_node);
+				node->start = merge_node.start;
+				node->end = merge_node.end;
+				order = order + 1;
+			}
+		}
+		else
+		{
+			// if can't merge, free node add to list
+			buddy_list[order].node_list[size].start = node->start;
+			buddy_list[order].node_list[size].end = node->end;
+			buddy_list[order].node_list[size].status = node->status;
+			buddy_list[order].count++;
+			break;
+		}
+	}
+}
 
 void buddy_init()
 {
-    // Initial memory page
-    for (int i = 0; i < MAX_ORDER_SIZE; i++)
-    {
-        page_list[i].order = -1; // order = -1 if this page is available but it belongs to larger contiguous memory block
-        page_list[i].page_number = i;
-        page_list[i].used = 0;
-        page_list[i].start_address = (void *)MEMORY_START + i * PAGE_SIZE;
-        page_list[i].allocator = NULL;
-    }
+	// init buddy_list
+	for(int i = 0; i < BUDDY_MAX_ORDER + 1; i++)
+		buddy_list[i].count = 0;
 
-    // Initial free_buddy_list
-    for (int i = 0; i < MAX_BUDDY_ORDER + 1; i++)
-    {
-        list_head_init(&(free_buddy_list[i]));
-    }
+	// only the last buddy has free page 0-65535
+	buddy_list[BUDDY_MAX_ORDER].count = 1;
+	buddy_list[BUDDY_MAX_ORDER].node_list[0].start = 0;
+	buddy_list[BUDDY_MAX_ORDER].node_list[0].end = PAGE_NUM - 1;
+	buddy_list[BUDDY_MAX_ORDER].node_list[0].status = FREE;	
 
-    // the address of page_list[i].list is equal to the address of page_list[i]
-    // thus we can get the address of the page from the list node
-    for (int i = 0; i < MAX_ORDER_SIZE; i += MAX_BLOCK_SIZE)
-    {
-        page_list[i].order = MAX_BUDDY_ORDER;
-        list_insert_prev(&page_list[i].list, &free_buddy_list[MAX_BUDDY_ORDER]);
-    }
+	// init buddy_allocated_list
+	buddy_allocated_list.count = 0;
+	for(int i = 0; i < BUDDY_ALLOCATED_NUM; i++)
+		(buddy_allocated_list.node_list[i]).status = FREE;
+
 }
 
-void dynamic_allocator_init()
+int buddy_alloc(int size)
+{	
+	// 1. calc buddy order for allocate size 
+	// ex. size = 8192, order = 1
+	int order = 0;
+	while(1)
+	{
+		if (size <= PAGE_SIZE * (1 << order))
+			break;
+		
+		order++;
+	}
+	if (order > BUDDY_MAX_ORDER)
+	{
+		return -1;
+	}
+
+	// 2. if has free buddy, allocate and return
+	if(buddy_list[order].count > 0)
+	{
+		buddy_node alloc_node = buddy_list_pop(&buddy_list[order]);
+		if(allocated_list_push(alloc_node))
+			return alloc_node.start;
+		else
+			return -1;
+	}
+
+	// 3. if not, search high level buddy and spilt buddy / 2
+	int new_order = order + 1;
+	while(order < BUDDY_MAX_ORDER + 1)
+	{
+		if(buddy_list[new_order].count > 0) 
+			break;
+		
+		new_order++;
+	}
+	if(new_order == BUDDY_MAX_ORDER + 1)
+	{
+		return -1;
+	}
+	
+	buddy_node temp_node = buddy_list_pop(&buddy_list[new_order]);
+	new_order--;
+
+	// 3.1 spilt up until allocate size
+	while(new_order >= order)
+	{
+		// split node to two part:
+		
+		buddy_list_push(&buddy_list[new_order], temp_node);
+		
+		// pop first part to next level
+		temp_node = buddy_list_pop(&buddy_list[new_order]);
+		
+		new_order--;
+	}
+
+	// 4. save to allocated_list and return address
+	if (allocated_list_push(temp_node))
+		return temp_node.start;
+	else
+		return -1;
+}
+
+void buddy_free(int node_start)
 {
-    struct dynamic_allocator *allocator;
-
-    for (int i = MIN_OBJECT_ORDER; i < MAX_OBJECT_ORDER + 1; i++) 
-    {
-        allocator = &allocator_pool[i - MIN_OBJECT_ORDER]; 
-
-        allocator->current_page = NULL;
-        allocator->object_size = (1 << i); // 2^4 ~ 2^11
-        allocator->max_object_count = PAGE_SIZE / (1 << i); // 2^8 ~ 2^1
-
-        list_head_init(&allocator->full);
-        list_head_init(&allocator->partial);
-    }
-}
-
-void memory_init()
-{
-    buddy_init();
-    dynamic_allocator_init();
-}
-
-struct page *page_alloc(int order)
-{
-    if ((order > MAX_BUDDY_ORDER) || (order < 0))
-    {
-        return 0;
-    }
-
-    for (int cur_order = order; cur_order < MAX_BUDDY_ORDER + 1; cur_order++)
-    {
-        // go to next order if free buddy list has no this order now
-        if (list_empty(&free_buddy_list[cur_order]))
-        {
-            continue;
-        }
-
-        // free block found
-        struct page *tmp_block = (struct page *)free_buddy_list[cur_order].next; // get first item in buddy
-        list_remove(&tmp_block->list, &tmp_block->list);// remove from free body list
-
-        tmp_block->used = 1;
-        tmp_block->order = order;
-
-        // find the minimum order to allocate
-        while (cur_order > order) 
-        {
-            cur_order--;
-
-            // transform the bigger order to little order till the cur_order = order
-            // thus, we can use the minimum order to allocate  
-            int bottom_page_number = find_buddy(tmp_block->page_number, cur_order); 
-            struct page *bottom = &page_list[bottom_page_number];
-            bottom->order = cur_order;
-
-            list_insert_prev(&bottom->list, &free_buddy_list[cur_order]); // release to free_body_list
-
-            uart_puts("bottom->page_number:");
-            uart_hex(bottom->page_number);
-            uart_puts("\t");
-            uart_puts("bottom->order:");
-            uart_hex(bottom->order);
-            uart_puts("\r\n");
-
-        }
-        uart_puts("page_number:");
-        uart_hex(tmp_block->page_number);
-        uart_puts("\t");
-        uart_puts("tmp_block->order:");
-        uart_hex(tmp_block->order);
-        uart_puts("\r\n");
-
-        uart_puts("[page_alloc] done\r\n");
-        return tmp_block;
-    }
-    uart_puts("[page_alloc] no free space!\r\n");
-
-    return 0;
-}
-
-void page_free(struct page *block)
-{
-    struct page *buddy, *left, *right;
-    int buddy_page_number;
-
-    if (block->used == 0)
-    {
-        uart_puts("[page_free] this block is already freed! \r\n");
-        return;
-    }
-    uart_puts("block->page_number:");
-    uart_hex(block->page_number);
-    uart_puts("\t");
-    uart_puts("block->order:");
-    uart_hex(block->order);
-    uart_puts("\r\n");
-
-    block->used = 0;
-    // clean the point to the allocator 
-    block->allocator = NULL;
-
-    buddy_page_number = find_buddy(block->page_number, block->order);
-    buddy = &page_list[buddy_page_number]; // find where the buddy of the given page
-
-    // iterate if buddy can be merged
-    while (buddy->order == block->order && buddy->order < MAX_BUDDY_ORDER && !buddy->used)
-    {
-        list_remove(&buddy->list, &buddy->list); // remove from free body list
-
-        if (buddy->page_number > block->page_number)
-        {
-            left = block;
-            right = buddy;
-        }
-        else
-        {
-            left = buddy;
-            right = block;
-        }
-        uart_puts("left->page_number:");
-        uart_hex(left->page_number);
-        uart_puts("\t");
-        uart_puts("left->order:");
-        uart_hex(left->order);
-        uart_puts("\t");
-        uart_puts("right->page_number:");
-        uart_hex(right->page_number);
-        uart_puts("\t");
-        uart_puts("right->order:");
-        uart_hex(right->order);
-        uart_puts("\r\n");
-
-        right->order = -1;
-        left->order++;
-
-        // next iteration
-        block = left;
-        buddy_page_number = find_buddy(block->page_number, block->order);
-        buddy = &page_list[buddy_page_number];
-    }
-
-    // stop merge
-    list_insert_prev(&block->list, &free_buddy_list[block->order]);
-    uart_puts("[page_free] done\n\n");
-}
-
-void *obj_malloc(int token)
-{
-    struct dynamic_allocator *allocator = &allocator_pool[token];
-
-    if (allocator->current_page == NULL) 
-    {
-        struct page *temp_page;
-
-        // fill up pages with free space first
-        // partial not empty, there are some page can be used
-        if (!list_empty(&allocator->partial))
-        {
-            temp_page = (struct page *)allocator->partial.next; // get first item in buddy
-            list_remove(&temp_page->list, &temp_page->list); 
-        }
-      
-        // page not enough, request a new page from buddy system
-        else
-        {
-            temp_page = page_alloc(0);
-
-            temp_page->allocator = allocator;
-            temp_page->object_count = 0;
-
-            // first_free points to the starting address of the page when allocated
-            temp_page->first_free = temp_page->start_address;
-            
-            // block i saves the offset number for block i+1
-            for (int i = 0; i < allocator->max_object_count; i++)
-            {
-                *(int *)(temp_page->start_address + i * allocator->object_size) = (i + 1) * allocator->object_size;
-            }
-        }
-
-        allocator->current_page = temp_page;
-    }
-
-    struct page *current_page = allocator->current_page;
-    void *object = current_page->first_free;
-
-    // if first_free points to 0x8000 now, and it stores 64
-    // which is the location to the next free block behind first_free
-    // then first_free will point to 0x8040 afterward 
-    current_page->first_free = current_page->start_address + *(int *)(current_page->first_free);
-    current_page->object_count++;
-
-    // the page is full now
-    if (current_page->object_count == allocator->max_object_count)
-    {
-        list_insert_prev(&current_page->list, &allocator->full);
-        allocator->current_page = NULL;//
-    }
-
-    int index = (object - current_page->start_address) / allocator->object_size;
-
-    uart_puts("current_page->page_number:");
-    uart_hex(current_page->page_number);
-    uart_puts("\t");
-    uart_puts("allocator->object_size:");
-    uart_hex(allocator->object_size);
-    uart_puts("\t");
-    uart_puts("index:");
-    uart_hex(index);
-    uart_puts("\r\n");
-    
-    uart_puts("[obj_malloc] done\r\n");
-
-    return object;
-}
-
-void obj_free(void *object)
-{
-    int page_number = (long)(object - MEMORY_START) >> PAGE_SHIFT;
-    struct page *page = &page_list[page_number];
-    struct dynamic_allocator *allocator = page->allocator;
-    // for example, if we have 4096 * 14 + 32 * 5 as our address, then we get 5 with the following operation
-    int index = (((long)(object - MEMORY_START) & ((1 << PAGE_SHIFT) - 1)) / allocator->object_size);
-
-    uart_puts("page->page_number:");
-    uart_hex(page->page_number);
-    uart_puts("\t");
-    uart_puts("allocator->object_size:");
-    uart_hex(allocator->object_size);
-    uart_puts("\t");
-    uart_puts("index:");
-    uart_hex(index);
-    uart_puts("\r\n");
-
-    // we are freeing the []
-    if (object > page->first_free) // object to free is behind the first free 
-    {
-        // XXOX[]O...
-        // the object is between the first hole and the second hole
-        if (object < (page->start_address + *(int *)page->first_free))
-        {
-            uart_puts("[obj_free] status 1\n\n");
-
-            *(int *)object = *(int *)page->first_free;
-            *(int *)page->first_free = object - page->start_address;
-        }
-        // XXOOO[]...
-        // the object is behind the second hole
-        // so we need to iterate over the list to find the last hole in front of the object
-        else
-        {
-            uart_puts("[obj_free] status 2\n\n");
-
-            void *traversal = page->first_free;
-            while ((page->start_address + (*(int *)traversal)) < object)
-            {
-                traversal = page->start_address + (*(int *)traversal);
-            }
-
-            *(int *)object = *(int *)traversal;
-            *(int *)traversal = object - page->start_address;
-        }
-    }
-    // XX[]XXO...
-    // the object is in front of the first hole
-    else
-    {
-        uart_puts("[obj_free] status 3\n\n");
-        
-        *(int *)object = page->first_free - page->start_address;
-        page->first_free = object;
-    }
-    
-    page->object_count--;
-
-    list_remove(&page->list, &page->list); //remove from full
-
-    // full/partial to partial
-    if (page->object_count > 0)
-    {
-        list_insert_prev(&page->list, &allocator->partial);
-    }
-    else // empty
-    {
-        if (page == allocator->current_page)
-        {
-            allocator->current_page = NULL;
-        }
-        page_free(page);
-    }
-
-    uart_puts("[obj_free] done\r\n");
-}
-
-void *memory_allocation(int size)
-{
-    void *address;
-
-    if (size <= (PAGE_SIZE / 2))
-    {
-        for (int i = MIN_OBJECT_ORDER; i < MAX_OBJECT_ORDER + 1; i++) 
-        {
-            if (size <= (1 << i))
-            {
-                uart_puts("======use dynamic alloc======\r\n");
-                address = obj_malloc(i - MIN_OBJECT_ORDER);
-                uart_puts("--------------------\r\n");
-                return address;
-            }
-        }
-    }
-    else
-    {
-        for (int i = 0; i < MAX_BUDDY_ORDER; i++)
-        {
-            if (size <= (1 << (i + PAGE_SHIFT)))
-            {
-                uart_puts("======use buddy system======\r\n");
-                address = page_alloc(i)->start_address;
-                uart_puts("--------------------\r\n");
-                return address;
-            }
-        }
-    }
-
-    uart_puts("[memory_allocation] the requested size is too large!\n");
-    return 0;
-}
-
-void memory_free(void *address)
-{
-    int page_number = (long)(address - MEMORY_START) >> PAGE_SHIFT;
-    struct page *page = &page_list[page_number];
-
-    if (page->allocator)
-        obj_free(address);
-    else
-        page_free(page);
-
-    uart_puts("--------------------\n\n");
-}
-
-int find_buddy(int page_number, int order)
-{
-    return page_number ^ (1 << order);
-}
-
-void mm()
-{
-
-    // memory_init();
-
-    uart_puts("===============before allocation====================================");
-
-    print_buddy_info();
-
-    uart_puts("===============first allocate start====================================");
-
-    void *address_1 = memory_allocation(16);
-
-    print_buddy_info();
-
-    uart_puts("===============first free start====================================");
-
-    memory_free(address_1);
-
-    print_buddy_info();
-
-    uart_puts("===============second allocate start====================================");
-    
-    void *address_2 = memory_allocation(16384);
-
-    print_buddy_info();
-
-    uart_puts("===============second free start====================================");
-
-    memory_free(address_2);
-
-    print_buddy_info();
-}
-
-void print_buddy_info(){
-    uart_puts("*********************************************\n");
-    uart_puts("buddy system\n");
-    uart_puts("order\tfree_page\n");
-    for (int i = 0; i <= MAX_BUDDY_ORDER; i++) 
-    {
-        list_head_t *l = &(free_buddy_list[i]);
-        list_head_t *head = l;
-        int count = 0;
-	    uart_put_int(i);
-	    uart_puts("\t");
-        while (l->next != head) 
-        {
-        l = l->next;
-        count++;
-        }
-        uart_put_int(count);
-	    uart_puts("\n");
-    }
-    uart_puts("*********************************************\n");
+	buddy_node tmpNode = allocated_list_pop(node_start);
+	show_free_message(tmpNode);
+	
+	int size = tmpNode.end - tmpNode.start + 1;
+	int order = log2(size);
+	
+	buddy_merge(order, &tmpNode);
 }

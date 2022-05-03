@@ -6,7 +6,6 @@ LIB_SRC = \
 	$(LIB_SRC_DIR)/uart.c \
 	$(LIB_SRC_DIR)/exception.c \
 	$(LIB_SRC_DIR)/timer.c \
-	# $(LIB_SRC_DIR)/heap.c \
 
 LIB_INCLUDES = \
 	-I $(LIB_SRC_DIR)/include \

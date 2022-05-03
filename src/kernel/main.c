@@ -10,11 +10,15 @@ void main()
     // set up serial console
     uart_init();
 
+    asyn_uart_init();
+
     fdt_parser((fdt_header *)(DTB_BASE), initramfs_callback);
 
     uart_puts("\n\r");
 
     memory_init();
+
+    thread_init();
     // execute shell
     exe_shell();
     

@@ -48,15 +48,13 @@ hang:
     wfe
     b       hang
 
+// jump to another exception level
 .global from_EL2_to_EL1
 from_EL2_to_EL1:    
-    // set EL1 as AArch64
     mov     x1, (1 << 31)
     msr     hcr_el2, x1
-    // set spsr as (EL1h, and all interrupt disabled) 
     mov     x2, 0x345
     msr     spsr_el2, x2
-    // set return address with link register
     msr     elr_el2, lr
     eret
 
@@ -68,7 +66,29 @@ from_EL1_to_EL0:
     msr     spsr_el1, x1
     eret
 
-// Execption
+// context switch
+.global switch_to
+switch_to:
+    stp x19, x20, [x0, 16 * 0]
+    stp x21, x22, [x0, 16 * 1]
+    stp x23, x24, [x0, 16 * 2]
+    stp x25, x26, [x0, 16 * 3]
+    stp x27, x28, [x0, 16 * 4]
+    stp fp, lr, [x0, 16 * 5]
+    mov x9, sp
+    str x9, [x0, 16 * 6]
+
+    ldp x19, x20, [x1, 16 * 0]
+    ldp x21, x22, [x1, 16 * 1]
+    ldp x23, x24, [x1, 16 * 2]
+    ldp x25, x26, [x1, 16 * 3]
+    ldp x27, x28, [x1, 16 * 4]
+    ldp fp, lr, [x1, 16 * 5]
+    ldr x9, [x1, 16 * 6]
+    mov sp,  x9
+    msr tpidr_el1, x1
+    ret
+
 // save general registers to stack
 .macro save_all
     sub     sp, sp, 32 * 8
@@ -111,6 +131,7 @@ from_EL1_to_EL0:
     add     sp, sp, 32 * 8
 .endm
 
+// exception handler
 syn:
     save_all
     bl syn_handler
@@ -130,7 +151,34 @@ not_supported:
     load_all
     eret
 
-// vector table should be aligned to 0x800
+lower_syn:
+    save_all
+    mrs x0, esr_el1
+    mrs x1, elr_el1
+    mov x2, sp
+    bl lower_syn_handler
+    load_all
+    eret
+
+
+// for thread
+.global get_current
+get_current:
+    mrs x0, tpidr_el1
+    ret
+	
+.global set_current
+set_current:
+    msr tpidr_el1, x0
+    ret
+
+.global load_reg
+load_reg:
+	load_all
+	eret
+
+
+//exception vector table
 .align 11 
 .global exception_vector_table
 exception_vector_table:
@@ -155,8 +203,8 @@ exception_vector_table:
     b not_supported 
     .align 7
 
-    //exception from the a lower EL
-    b syn 
+    //exception from the a lower EL, for system call
+    b lower_syn 
     .align 7
     b irq 
     .align 7

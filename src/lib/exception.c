@@ -1,4 +1,5 @@
 #include "exception.h"
+#include "system_call.h"
 
 void syn_handler () {
 
@@ -66,7 +67,7 @@ void timer_irq_handler () {
 void undefined_handler () {
     return;
 }
-//////////////////////////////////////////////////
+
 void enable_interrupt () {
 
     asm volatile ("msr DAIFClr, 0xf");   
@@ -89,4 +90,67 @@ void set_next_timeout (unsigned int seconds) {
     asm volatile ("msr cntp_tval_el0, x1");
 
     return;
+}
+/* lab5 b2 */
+// void lower_syn_handler(unsigned long spsr_el1, unsigned long elr_el1, unsigned long esr_el1, trapframe_t *tf)
+void lower_syn_handler(unsigned long esr_el1, unsigned long elr_el1, trapframe_t *tf)
+{
+    unsigned long esr = esr_el1;
+    if (((esr >> 26) & 0x3f) == 0x15) 
+    {
+        unsigned long svc = esr & 0x1ffffff;
+        unsigned long sys_call_num = tf->x[8];
+        uart_puts("sys call num : ");
+        uart_put_int(sys_call_num);
+        uart_puts("\r\n");
+        if(svc == 0)
+        {
+            switch(sys_call_num)
+            {
+                case 0:
+                    uart_puts("start sys_getpid\r\n");
+                    sys_get_pid(tf);
+                    // x[0] = sys_getpid();
+                    // schedule();
+                    uart_puts("end sys_getpid\r\n");
+                    break;
+                case 1:
+                    // uart_puts("start sys_uartread\r\n");
+                    sys_uart_read(tf); 
+                    // uart_puts("end sys_uartread\r\n");
+                    break;
+                case 2:
+                    // uart_puts("start sys_uartwrite\r\n");
+                    sys_uart_write(tf);
+                    // enable_interrupt();
+                    // disable_interrupt();
+                    // uart_puts("end sys_uartwrite\r\n");
+                    break;
+                case 3:
+                    sys_exec(tf);
+                    // thread_schedule();
+                    break;
+                case 4:
+                    sys_fork(tf);
+                    // thread_schedule();
+                    break;
+                // case 5:
+                //     sys_exit(tf);
+                //     // thread_schedule();
+                //     break;
+                // case 6:
+                //     sys_mbox_call(tf);
+                //     // thread_schedule();
+                //     break;
+                // case 7:
+                //     sys_kill(tf);
+                //     // thread_schedule();
+                //     break;
+                default:
+                    uart_puts("unknown svc!\n");
+                    break;
+            }
+        }
+    }
+    enable_interrupt();
 }

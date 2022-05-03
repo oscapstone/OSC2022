@@ -8,3 +8,17 @@ unsigned long align_by_4(unsigned long value) {
     }
     return value;
 }
+
+int log2(int input)
+{
+	int num = 1;
+	int power = 0;
+
+	while (num != input)
+	{
+		num = num << 1;
+		power++;
+	}
+
+	return power;
+}

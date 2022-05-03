@@ -21,7 +21,7 @@ unsigned long *heap_align (unsigned long *v) {
     return (unsigned long *)r;
 }
 
-void *malloc (size_t n) {
+void *malloc (unsigned long n) {
 
     void *return_ptr;
 

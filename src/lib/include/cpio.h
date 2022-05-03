@@ -41,5 +41,6 @@ int cpio_header_parser(cpio_new_header *header, char** file_name, unsigned long*
 void cpio_ls(cpio_new_header *header);
 void cpio_cat(cpio_new_header *header, char *input);
 void *cpio_load (cpio_new_header *header, char *name);
+// int cpio_load_user_program_and_get_size(char* name, unsigned long long load_addr);
 
 #endif

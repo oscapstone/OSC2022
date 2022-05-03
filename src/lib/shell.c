@@ -1,47 +1,5 @@
 #include "shell.h"
 
-extern void from_EL1_to_EL0(unsigned long prog, unsigned long sp);
-
-
-void exec (cpio_new_header *header, char *file_name, int enable_timer)
-{
-    void (*prog)();
-    unsigned int current_el;
-    char *stack_top;
-    
-    stack_top = malloc(0x2000);
-    stack_top = stack_top + 0x2000;
-
-    prog = cpio_load(header, file_name);
-
-    if (prog == 0)
-    {
-        uart_puts("User program not found!\n");
-        return;
-    }
-
-    // Get current EL
-    asm volatile ("mrs %0, CurrentEL" : "=r" (current_el));
-    current_el = current_el >> 2;
-
-    // get current exception level
-    uart_puts("Current EL: 0x");
-    uart_hex(current_el);
-  
-    uart_puts("\n");
-    uart_puts("-----------------Entering user program-----------------\n");
-
-    if (enable_timer) 
-    {
-        core_timer_enable();
-    }
-
-    from_EL1_to_EL0((unsigned long)prog, (unsigned long)stack_top);
-
-
-    return;
-}
-
 void print_sys_info() {
     unsigned int revision;
     unsigned int mem_base;
@@ -66,10 +24,11 @@ void welcome_msg() {
 
 void helper() {
     uart_puts("-----------------------------------------------------\r\n");
+    uart_puts("* pid       : test b1.\n");
     uart_puts("* mm        : test buddy system.\n");
     uart_puts("* aput      : test asynchronous puts.\n");
     uart_puts("* asend     : test asynchronous send.\n");
-    uart_puts("* exec      : load and execute user program.\n");
+    uart_puts("* exec_old  : load and execute user program(old).\n");
     uart_puts("* core_time : load and execute user program with core timer enable.\n");
     uart_puts("* help      : print this help menu\n");
     uart_puts("* hello     : print hello world!\n");
@@ -109,36 +68,37 @@ void cmd_handler(char *cmd) {
         uart_puts("\r\n");
         cpio_cat((cpio_new_header *)CPIO_BASE, input);
     }
-    else if (strcmp(cmd, "exec") == 0) {
+    else if (strcmp(cmd, "ex") == 0) {
         uart_puts("Name: ");
         char input[MAX_BUFFER_SIZE];
         cmd_reader(input);
         uart_puts("\r\n");
-        exec((cpio_new_header *)CPIO_BASE, input, 0);
+        exec_old((cpio_new_header *)CPIO_BASE, input, 0);
     }
     else if (strcmp(cmd, "core_time") == 0) {
         uart_puts("Name: ");
         char input[MAX_BUFFER_SIZE];
         cmd_reader(input);
         uart_puts("\r\n");
-        exec((cpio_new_header *)CPIO_BASE, input, 1);
+        exec_old((cpio_new_header *)CPIO_BASE, input, 1);
     }
     else if (strcmp(cmd, "aput") == 0) {
-
         uart_puts("test\r\n");
-
         asyn_uart_puts("test asyn put\r\n");
-
     }
     else if (strcmp(cmd, "asend") == 0) {
         char c = async_uart_getc();
         uart_send(c);
-
         uart_puts("\n");
-
     }
-    else if (strcmp(cmd, "mm") == 0) {
-        mm();
+    else if (strcmp(cmd, "buddy") == 0) {
+        buddy_test();
+    }
+    else if (strcmp(cmd, "dynamic") == 0) {
+        dynamic_test();
+    }
+    else if (strcmp(cmd, "pid") == 0) { //basic1
+        thread_test();
     }
     else 
     {

@@ -111,3 +111,36 @@ void *cpio_load (cpio_new_header *header, char *name) {
 
     return 0;
 }
+/////////////////////////////////////////////////////////////////////////////////////////
+// int cpio_load_user_program_and_get_size(char* name, unsigned long long load_addr)
+// {
+//     char *file_name;
+//     int header_info = 0;
+//     unsigned long file_size;
+//     char *data;
+//     cpio_new_header *header = CPIO_BASE;
+//     cpio_new_header *cur_header = header;
+//     cpio_new_header *nxt_header;
+    
+//     while (1) 
+//     {
+//         header_info = cpio_header_parser(cur_header, &file_name, &file_size, &data, &nxt_header);
+//         if (header_info) break;
+
+//         if (strcmp(name, file_name) == 0) 
+//         {
+//             char* target = (char*)load_addr;
+//             char* uaer_program = cur_header;
+//             for (int i = 0; i < file_size; i++)
+// 				{
+// 					*target = *uaer_program;
+// 					target++;
+// 					uaer_program++;
+// 				}
+				
+// 				return file_size;
+//         } 
+//         cur_header = nxt_header;
+//     }
+//     return 0;
+// }
