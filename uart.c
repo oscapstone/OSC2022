@@ -1,3 +1,4 @@
+#include "uart.h"
 #include "gpio.h"
 #include "utils.h"
 #include "command.h"
@@ -20,6 +21,7 @@
 #define DISABLE_IRQS1 	((volatile unsigned int*)(MMIO_BASE+0x0000b21c))
 #define AUX_IRQ (1 << 29)
 
+// #define ASYNC_UART
 #define ASYNC_BUFFER_SIZE 128
 char async_read_buffer[ASYNC_BUFFER_SIZE];
 char async_write_buffer[ASYNC_BUFFER_SIZE];
@@ -44,8 +46,11 @@ void uart_init()
     /* initialize UART */
     *AUX_ENABLE |=1;       // Set AUXENB register to enable mini UART. Then mini UART register can be accessed
     *AUX_MU_CNTL = 0;      // Set AUX_MU_CNTL_REG to 0. Disable transmitter and receiver during configuration
-    // *AUX_MU_IER = 0;       // Set AUX_MU_IER_REG to 0. Disable interrupt because currently you don’t need interrupt
+    #ifdef ASYNC_UART
     *AUX_MU_IER = 1;       // Set AUX_MU_IER_REG to 1. enable interrupt
+    #else
+    *AUX_MU_IER = 0;       // Set AUX_MU_IER_REG to 0. Disable interrupt because currently you don’t need interrupt
+    #endif
     *AUX_MU_LCR = 3;       // Set AUX_MU_LCR_REG to 3. Set the data size to 8 bit
     *AUX_MU_MCR = 0;       // Set AUX_MU_MCR_REG to 0. Don’t need auto flow control
     *AUX_MU_BAUD = 270;    // Set AUX_MU_BAUD to 270. Set baud rate to 115200
@@ -62,8 +67,9 @@ void uart_init()
     r=150; while(r--) { asm volatile("nop"); }
     *GPPUDCLK0 = 0;        // flush GPIO setup
     *AUX_MU_CNTL = 3;      // Set AUX_MU_CNTL_REG to 3. Enable the transmitter(Tx) and receiver(Rx)
-    
+    #ifdef ASYNC_UART
     enable_uart_interrupt();
+    #endif
 }
 
 /**
@@ -105,6 +111,23 @@ void uart_puts(char *s) {
             uart_send('\r');
         uart_send(*s++);
     }
+}
+
+int uart_gets(char* s,int size,int display){
+	for(int i=0;;++i){
+		if(i==size){
+			uart_puts("buffer overflow!\n");
+			return i;
+		}
+
+		s[i]=uart_getc();
+		if(display)uart_send(s[i]);
+
+		if(s[i]=='\n'){
+			s[i]=0;
+			return i;
+		}
+	}
 }
 
 /**
@@ -179,6 +202,14 @@ char async_uart_getc() {
     if (async_read_start == ASYNC_BUFFER_SIZE)
         async_read_start = 0;
     return r=='\r'?'\n':r;
+}
+
+void async_uart_send(const char *str, unsigned long size) {
+    for (int i = 0; i < size; i++) {
+        async_write_buffer[async_write_end++] = str[i];
+        if (async_write_end == ASYNC_BUFFER_SIZE) async_write_end = 0;
+    }
+    enable_transmit_interrupt();
 }
 
 void async_uart_puts(char *str) {

@@ -25,11 +25,18 @@ clean:
 cpio:
 	cd rootfs && find . | cpio -o -H newc > ../initramfs.cpio
 
+user:
+	rm initramfs.cpio
+	wget https://oscapstone.github.io/_downloads/58c515e3041658a045033c8e56ecff4c/initramfs.cpio
+
 run: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 rune: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -d int
+
+rund: all
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 gdb: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -S -s

@@ -2,7 +2,7 @@
 #include "devicetree.h"
 #include "uart.h"
 
-#define MEM_DEMO_LOG
+// #define MEM_DEMO_LOG
 #define BUDDY_MAX_ORDER 5
 #define BUDDY_MAX_LEN (1 << BUDDY_MAX_ORDER)
 #define FRAME_SIZE 4096
@@ -350,7 +350,7 @@ void startup_allocation() {
     memory_reserve((unsigned long)&_start, (unsigned long)&_end, "Kernel image");   // Kernel image in the physical memory
     memory_reserve((unsigned long)cpio_start, (unsigned long)cpio_end, "Initramfs");// Initramfs
     memory_reserve((unsigned long)fdt_start, (unsigned long)fdt_end, "Devicetree");  // Devicetree
-    memory_reserve((unsigned long)&_end, mem_position, "simple alloc");   // simple allocator (startup allocator)
+    memory_reserve((unsigned long)&_end, mem_position-1, "simple alloc");   // simple allocator (startup allocator)
     int last = BUDDY_MAX_LEN - 1;
     while (reserved_position[last] == 0 && last != -1) last--;
     void *init[BUDDY_MAX_LEN];
@@ -372,8 +372,8 @@ void startup_allocation() {
 void init_buddy() {
     frame_array = simple_malloc(BUDDY_MAX_LEN * sizeof(mem_frame));
     buddy_system = simple_malloc((BUDDY_MAX_ORDER+1) * sizeof(mem_frame));
-    BUDDY_BASE = (unsigned long)0x0;
     chunk_array = simple_malloc(sizeof(chunk) * BUDDY_MAX_LEN);
+    BUDDY_BASE = (unsigned long)simple_malloc(FRAME_SIZE*BUDDY_MAX_LEN);;
     
     for (int i=0; i<BUDDY_MAX_LEN; i++) {
         frame_array[i].position = i;
@@ -394,7 +394,10 @@ void init_buddy() {
     // init chunk slots
     chunk_system.next = 0;
     chunk_system.next->prev = &chunk_system;
+
+    mem_position -= FRAME_SIZE*BUDDY_MAX_LEN;
     startup_allocation();
+    mem_position += FRAME_SIZE*BUDDY_MAX_LEN;
 
 #ifdef MEM_DEMO_LOG
     show_frame();

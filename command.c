@@ -92,7 +92,7 @@ void exec_timeout(char *command_string) {
 }
 
 void exec_testmem() {
-    test_malloc();
+    load_cpio("app.img");
 }
 
 void exec_check(char *command_string) {
@@ -186,7 +186,7 @@ void parse_command(char* command_string) {
         exec_cat();
     else if (!strcmp(command_string, "load"))
         load_file();
-    else if (!strcmp(command_string, "testmem"))
+    else if (!strcmp(command_string, "test"))
         exec_testmem();
     else if (!strcmp(command_string, "check"))
         exec_check(command_string);
