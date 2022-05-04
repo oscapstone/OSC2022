@@ -20,7 +20,7 @@ void get_board_revision(unsigned int* revision){
     // tags end
     mailbox[6] = END_TAG;
 
-    mailbox_request(mailbox);
+    mailbox_request(8, mailbox);
     *revision = mailbox[5];
     return ;
 }
@@ -38,7 +38,7 @@ void get_ARM_memory_info(void **addr_base, unsigned int *size){
     // tags end
     mailbox[7] = END_TAG;
 
-    mailbox_request(mailbox);
+    mailbox_request(8, mailbox);
     *addr_base = (void *)(unsigned long long)mailbox[5];
     *size = mailbox[6];
     return ;

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <timer.h>
 #include <mmio.h>
+#include <stddef.h>
 
 uint32_t interrupt_depth;
 
@@ -58,17 +59,38 @@ void interrupt_fiq_handler()
 
 void interrupt_enable()
 {
-    if(interrupt_depth==0){
+    //if(interrupt_depth==0){
         //uart_puts("enable interrupt");
         //uart_print("interrupt_depth: 0x");
         //uart_putshex(interrupt_depth);
         asm("msr DAIFClr, 0xf");
-    }
-    interrupt_depth++;
+    //}
+    //interrupt_depth++;
 }
 
 void interrupt_disable()
 {
-    interrupt_depth--;
-    if(interrupt_depth==0)asm("msr DAIFSet, 0xf");
+    //interrupt_depth--;
+    //if(interrupt_depth==0)
+    asm("msr DAIFSet, 0xf");
+}
+
+void interrupt_enable_restore(size_t flag)
+{
+    asm(
+        "msr DAIF, %0"
+        ::"r"(flag)
+    );
+}
+
+size_t interrupt_disable_save()
+{
+    size_t flags;
+    asm(
+        "mrs %0, DAIF\t\n"
+        "msr DAIFSet, 0xf"
+        :"=r"(flags)
+    );
+
+    return flags;
 }

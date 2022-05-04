@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <uart.h>
 
 int strcmp(const char* a, const char* b)
 {
@@ -28,13 +29,15 @@ int strncmp(const char* a, const char* b, int n)
 
 void *memcpy(void *dst, const void *src, size_t n)
 {
-    size_t npage = n / sizeof(uint64_t);
-    size_t noff = n % sizeof(uint64_t);
-    for(int i=0;i<n;i++){
-        *((uint64_t*)dst + i) = *((uint64_t*)src + i);
+    size_t npage = n / sizeof(uint32_t);
+    size_t noff = n % sizeof(uint32_t);
+    for(int i=0;i<npage;i++){
+        //uart_putshex(i);
+        *((uint32_t*)dst + i) = *((uint32_t*)src + i);
     }
     for(int i=0;i<noff;i++){
-        *((char *)((uint64_t*)dst + npage) + i) = *((char *)((uint64_t*)src + npage) + i);
+        //uart_putshex(i);
+        *((char *)((uint32_t*)dst + npage) + i) = *((char *)((uint32_t*)src + npage) + i);
     }
     return dst;
 }

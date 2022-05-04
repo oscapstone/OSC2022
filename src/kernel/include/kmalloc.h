@@ -13,4 +13,6 @@ void kmalloc_init();
 void *buddy_alloc(uint64_t page_num);
 void buddy_free(void *ptr);
 
+#define PAGE_SIZE 12
+
 #endif

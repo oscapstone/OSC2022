@@ -3,9 +3,25 @@
 #include <stddef.h>
 #include <dtb.h>
 #include <uart.h>
+#include <interrupt.h>
 #define BUDDY_SYSTEM_SIZE 16
-#define PAGE_SIZE 12
 #define HEAP_SIZE 32 //pages
+
+//#define KMALLOC_DEBUG
+//#define KBUDDY_DEBUG
+
+#ifdef KMALLOC_DEBUG
+#define KMDEBUG(x) x
+#else
+#define KMDEBUG(x) ;
+#endif
+
+#ifdef KBUDDY_DEBUG
+#define KBDEBUG(x) x
+#else
+#define KBDEBUG(x) ;
+#endif
+
 
 extern uint32_t _heap_start;
 extern uint32_t _heap_end;
@@ -187,20 +203,20 @@ struc_buddy_system_element* buddy_new_frame_array(uint64_t length)
 
 struc_buddy_system* buddy_new(uint8_t type, uint64_t size)
 {
-    uart_print("buddy_new(): call type=0x");
-    uart_print_hex((uint64_t)type);
-    uart_print(", size=0x");
-    uart_putshex((uint64_t)size);
+    KBDEBUG(uart_print("buddy_new(): call type=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)type));
+    KBDEBUG(uart_print(", size=0x"));
+    KBDEBUG(uart_putshex((uint64_t)size));
 
     struc_buddy_system* newbuddy = (struc_buddy_system*)kmalloc_simple(sizeof(struc_buddy_system));
     newbuddy->next = 0;
     for(int i=0;i<BUDDY_SYSTEM_SIZE+1;i++)newbuddy->freelist[i]=0;
     if(type == buddy_type_normal){
         size = 1<<(BUDDY_SYSTEM_SIZE+PAGE_SIZE);
-        uart_puts("buddy_new(): finding usable memory.");
+        KBDEBUG(uart_puts("buddy_new(): finding usable memory."));
         uint64_t addr = buddy_find_memory(size);
-        uart_print("buddy_new(): usable memory found 0x");
-        uart_putshex((uint64_t)addr);
+        KBDEBUG(uart_print("buddy_new(): usable memory found 0x"));
+        KBDEBUG(uart_putshex((uint64_t)addr));
         if(!addr) return 0;
         if(kmalloc_memory_reserve(addr, size)==-1){
             return 0;
@@ -216,10 +232,10 @@ struc_buddy_system* buddy_new(uint8_t type, uint64_t size)
     }
     else if(type == buddy_type_directalloc){
         size = (uint64_t)(((((int64_t)size-1)>>PAGE_SIZE)+1)<<PAGE_SIZE);
-        uart_puts("buddy_new(): finding usable memory.");
+        KBDEBUG(uart_puts("buddy_new(): finding usable memory."));
         uint64_t addr = buddy_find_memory(size);
-        uart_print("buddy_new(): usable memory found 0x");
-        uart_putshex((uint64_t)addr);
+        KBDEBUG(uart_print("buddy_new(): usable memory found 0x"));
+        KBDEBUG(uart_putshex((uint64_t)addr));
         if(!addr) return 0;
         if(kmalloc_memory_reserve(addr, size)==-1){
             return 0;
@@ -239,14 +255,21 @@ struc_buddy_system* buddy_new(uint8_t type, uint64_t size)
 //#define buddy_popfree(f) (*(struct struc_buddy_system_element_**)f = (*f)->fd)
 //#define buddy_pushfree(f,n) (n->fd = *(struct struc_buddy_system_element_**)f = (*f)->fd)
 
-void buddy_popfree(struc_buddy_system_element** f)
+struc_buddy_system_element* buddy_popfree(struc_buddy_system_element** f)
 {
-    *f = (*f)->fd;
+    struc_buddy_system_element* top = *f;
+    *f = top->fd;
+    top->fd = 0;
+    return top;
     //(*f)->fd->bk = (struc_buddy_system_element *)f;
 }
 
 void buddy_pushfree(struc_buddy_system_element** f, struc_buddy_system_element* n)
 {
+    if(n==*f){
+        uart_puts("buddy_pushfree(): Buddy Double Free detected!!!");
+        return ;
+    }
     n->fd = *f;
     *f = n;
     //n->fd->bk = n;
@@ -255,37 +278,37 @@ void buddy_pushfree(struc_buddy_system_element** f, struc_buddy_system_element* 
 
 void debug_print_buddy_element(struc_buddy_system_element* e)
 {
-    uart_print("buddy_system_element - 0x");
-    uart_print_hex((uint64_t)e);
-    uart_print(", frame_id=0x");
-    uart_print_hex((uint64_t)e->frame_id);
-    uart_print(", frame_size=0x");
-    uart_print_hex((uint64_t)e->frame_size);
-    uart_print(", alloc=0x");
-    uart_print_hex((uint64_t)e->alloc);
-    uart_puts("");
+    KBDEBUG(uart_print("buddy_system_element - 0x"));
+    KBDEBUG(uart_print_hex((uint64_t)e));
+    KBDEBUG(uart_print(", frame_id=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)e->frame_id));
+    KBDEBUG(uart_print(", frame_size=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)e->frame_size));
+    KBDEBUG(uart_print(", alloc=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)e->alloc));
+    KBDEBUG(uart_puts(""));
 }
 
 void debug_print_buddy_system(struc_buddy_system* buddy)
 {
-    uart_print("buddy_system - 0x");
-    uart_print_hex((uint64_t)buddy);
-    uart_print(", base_address=0x");
-    uart_print_hex((uint64_t)buddy->base_address);
-    uart_print(", flags=0x");
-    uart_print_hex((uint64_t)buddy->flags);
-    uart_print(", flags=0x");
-    uart_print_hex((uint64_t)buddy->flags);
-    uart_puts("");
+    KBDEBUG(uart_print("buddy_system - 0x"));
+    KBDEBUG(uart_print_hex((uint64_t)buddy));
+    KBDEBUG(uart_print(", base_address=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)buddy->base_address));
+    KBDEBUG(uart_print(", flags=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)buddy->flags));
+    KBDEBUG(uart_print(", flags=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)buddy->flags));
+    KBDEBUG(uart_puts(""));
 }
 
 int64_t buddy_alloc_(struc_buddy_system *buddy, uint64_t page_num)
 {
-    uart_print("buddy_alloc_(): call buddy=0x");
-    uart_print_hex((uint64_t)buddy);
-    uart_print(", page_num=0x");
-    uart_putshex((uint64_t)page_num);
-    uart_print("buddy_alloc_(): ");
+    KBDEBUG(uart_print("buddy_alloc_(): call buddy=0x"));
+    KBDEBUG(uart_print_hex((uint64_t)buddy));
+    KBDEBUG(uart_print(", page_num=0x"));
+    KBDEBUG(uart_putshex((uint64_t)page_num));
+    KBDEBUG(uart_print("buddy_alloc_(): "));
     debug_print_buddy_system(buddy);
 
     uint32_t page_num_pow=0;
@@ -294,24 +317,25 @@ int64_t buddy_alloc_(struc_buddy_system *buddy, uint64_t page_num)
         page_num>>=1;
     }
 
-    uart_print("buddy_alloc_(): page_num to power of 2: 0x");
-    uart_putshex((uint64_t)page_num_pow);
+    KBDEBUG(uart_print("buddy_alloc_(): page_num to power of 2: 0x"));
+    KBDEBUG(uart_putshex((uint64_t)page_num_pow));
 
     struc_buddy_system_element* e = 0;
-    uart_puts("buddy_alloc_(): finding usable buddy element in freelist.");
+    KBDEBUG(uart_puts("buddy_alloc_(): finding usable buddy element in freelist."));
     for(int i=page_num_pow;i<BUDDY_SYSTEM_SIZE+1;i++){
         if(!buddy->freelist[i]) continue;
-        e = buddy->freelist[i];
-        buddy_popfree(&(buddy->freelist[i]));
+        //e = buddy->freelist[i];
+        e = buddy_popfree(&(buddy->freelist[i]));
+        //e->fd = 0;
         break;
     }
     if(e == 0)return 0;
 
-    uart_print("buddy_alloc_(): buddy element found: ");
+    KBDEBUG(uart_print("buddy_alloc_(): buddy element found: "));
     debug_print_buddy_element(e);
 
     for(int i=e->frame_size-1;i>=(int32_t)page_num_pow;i--){
-        uart_puts("buddy_alloc_(): split buddy element...");
+        KBDEBUG(uart_puts("buddy_alloc_(): split buddy element..."));
         struc_buddy_system_element* l = e;
         struc_buddy_system_element* r = &(buddy->frame_array[e->frame_id + (1<<(e->frame_size-1))]);
         if(r->alloc){
@@ -320,36 +344,37 @@ int64_t buddy_alloc_(struc_buddy_system *buddy, uint64_t page_num)
         }
         l->frame_size = i;
         r->frame_size = i;
-        uart_print("e: ");
+        KBDEBUG(uart_print("e: "));
         debug_print_buddy_element(e);
-        uart_print("l: ");
+        KBDEBUG(uart_print("l: "));
         debug_print_buddy_element(l);
-        uart_print("r: ");
+        KBDEBUG(uart_print("r: "));
         debug_print_buddy_element(r);
         buddy_pushfree(&(buddy->freelist[i]), r);
         e = l;
     }
     e->alloc = 1;
-    uart_print("buddy_alloc_(): buddy element found and splitted: ");
+    KBDEBUG(uart_print("buddy_alloc_(): buddy element found and splitted: "));
     debug_print_buddy_element(e);
     return e->frame_id;
 }
 
 void *buddy_alloc(uint64_t page_num)
 {
-    uart_print("buddy_alloc(): call page_num=0x");
-    uart_putshex((uint64_t)page_num);
+    interrupt_disable();
+    KBDEBUG(uart_print("buddy_alloc(): call page_num=0x"));
+    KBDEBUG(uart_putshex((uint64_t)page_num));
 
     uint64_t new_page_num = 1;
     while(new_page_num<page_num)new_page_num<<=1;
     
-    uart_print("buddy_alloc(): pad to pow of 2 new_page_num=0x");
-    uart_putshex((uint64_t)new_page_num);
+    KBDEBUG(uart_print("buddy_alloc(): pad to pow of 2 new_page_num=0x"));
+    KBDEBUG(uart_putshex((uint64_t)new_page_num));
     //page_num = new_page_num;
 
     if(new_page_num >= (1<<(BUDDY_SYSTEM_SIZE))){
         // TODO
-        uart_puts("buddy_alloc(): Too large size, direct alloc a memory without manage by buddy system.");
+        KBDEBUG(uart_puts("buddy_alloc(): Too large size, direct alloc a memory without manage by buddy system."));
         struc_buddy_system *new_buddy_dalloc = buddy_new(buddy_type_directalloc, new_page_num * (1<<(PAGE_SIZE)));
         buddy_setflag(new_buddy_dalloc, buddy_flag_alloc);
         return (void *)(new_buddy_dalloc->base_address);
@@ -357,29 +382,35 @@ void *buddy_alloc(uint64_t page_num)
     struc_buddy_system *cur_buddy = buddy_system;
     int64_t frame_id = -1;
     while(cur_buddy){
-        uart_print("buddy_alloc(): try to alloc page from buddy_system 0x");
-        uart_putshex((uint64_t)cur_buddy);
+        KBDEBUG(uart_print("buddy_alloc(): try to alloc page from buddy_system 0x"));
+        KBDEBUG(uart_putshex((uint64_t)cur_buddy));
         //debug_print_buddy_system(cur_buddy);
 
         frame_id = buddy_alloc_(cur_buddy, new_page_num);
         if(frame_id!=-1){
-            uart_print("buddy_alloc(): page allocated address=0x");
-            uart_putshex((uint64_t)(cur_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE))));
-
+            KBDEBUG(uart_print("buddy_alloc(): page allocated address=0x"));
+            KBDEBUG(uart_putshex((uint64_t)(cur_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE)))));
+            
+            interrupt_enable();
             return (void *)(cur_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE)));
         }
         cur_buddy = cur_buddy->next;
     }
-    uart_puts("buddy_alloc(): Couldn't alloc from existed buddy system, try to create new buddy system!!");
+    KBDEBUG(uart_puts("buddy_alloc(): Couldn't alloc from existed buddy system, try to create new buddy system!!"));
 
     struc_buddy_system *new_buddy = buddy_new(buddy_type_normal, 0);
     new_buddy->next = buddy_system;
     buddy_system = new_buddy;
     frame_id = buddy_alloc_(new_buddy, new_page_num);
-    if(frame_id==-1) return 0;
+    if(frame_id==-1)
+    {
+        interrupt_enable();
+        return 0;
+    }
 
-    uart_print("buddy_alloc(): page allocated address=0x");
-    uart_putshex((uint64_t)(new_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE))));
+    KBDEBUG(uart_print("buddy_alloc(): page allocated address=0x"));
+    KBDEBUG(uart_putshex((uint64_t)(new_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE)))));
+    interrupt_enable();
     return (void *)(new_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE)));
 }
 
@@ -404,8 +435,9 @@ void buddy_free_unlink(struc_buddy_system *buddy, uint64_t frame_id)
 
 void buddy_free(void *ptr)
 {
-    uart_print("buddy_free(): call ptr=0x");
-    uart_putshex((uint64_t)ptr);
+    interrupt_disable();
+    KBDEBUG(uart_print("buddy_free(): call ptr=0x"));
+    KBDEBUG(uart_putshex((uint64_t)ptr));
 
     uint64_t addr = (uint64_t)ptr;
     struc_buddy_system *cur_buddy = buddy_system;
@@ -414,28 +446,33 @@ void buddy_free(void *ptr)
             break;
         }
     }
-    if(cur_buddy == 0)return ;
-    uart_print("buddy_free(): buddy_system found: ");
+    if(cur_buddy == 0)goto ret ;
+    KBDEBUG(uart_print("buddy_free(): buddy_system found: "));
     debug_print_buddy_system(cur_buddy);
 
     if(buddy_readflag(cur_buddy, buddy_flag_directalloc)){
-        uart_print("buddy_free(): This buddy system is direct alloc. Just unset buddy alloc flag.");
+        KBDEBUG(uart_print("buddy_free(): This buddy system is direct alloc. Just unset buddy alloc flag."));
         buddy_unsetflag(cur_buddy, buddy_flag_alloc);
-        return ;
+        goto ret ;
     }
 
     uint64_t frame_id = ((addr - cur_buddy->base_address) / (1<<PAGE_SIZE));
-    uart_print("buddy_free(): frame_id found: 0x");
-    uart_putshex((uint64_t)frame_id);
+    KBDEBUG(uart_print("buddy_free(): frame_id found: 0x"));
+    KBDEBUG(uart_putshex((uint64_t)frame_id));
 
-    uart_puts("buddy_free(): Trying to merge.");
+    if(cur_buddy->frame_array[frame_id].alloc == 0){
+        uart_puts("buddy_free(): Buddy Double Free detected. !!!");
+        return ;
+    }
+
+    KBDEBUG(uart_puts("buddy_free(): Trying to merge."));
 
     cur_buddy->frame_array[frame_id].alloc = 0;
 
     uint64_t frame_size = cur_buddy->frame_array[frame_id].frame_size;
     for(int i=frame_size;i<=BUDDY_SYSTEM_SIZE;i++){
-        uart_print("buddy_free(): merging size=0x");
-        uart_putshex((uint64_t)i);
+        KBDEBUG(uart_print("buddy_free(): merging size=0x"));
+        KBDEBUG(uart_putshex((uint64_t)i));
         uint64_t l_id = 0, r_id = 0, to_merge_id = 0;
         if(frame_id&(1<<i)){
             r_id = frame_id;
@@ -447,21 +484,25 @@ void buddy_free(void *ptr)
             l_id = frame_id;
             to_merge_id = r_id;
         }
-        uart_print("buddy_free(): l_element: "); debug_print_buddy_element(&(cur_buddy->frame_array[l_id]));
-        uart_print("buddy_free(): r_element: "); debug_print_buddy_element(&(cur_buddy->frame_array[r_id]));
-        uart_print("buddy_free(): to_merge_element: "); debug_print_buddy_element(&(cur_buddy->frame_array[to_merge_id]));
+        KBDEBUG(uart_print("buddy_free(): l_element: ")); debug_print_buddy_element(&(cur_buddy->frame_array[l_id]));
+        KBDEBUG(uart_print("buddy_free(): r_element: ")); debug_print_buddy_element(&(cur_buddy->frame_array[r_id]));
+        KBDEBUG(uart_print("buddy_free(): to_merge_element: ")); debug_print_buddy_element(&(cur_buddy->frame_array[to_merge_id]));
         if(cur_buddy->frame_array[to_merge_id].frame_size != i || cur_buddy->frame_array[to_merge_id].alloc){
             break;
         }
-        uart_puts("buddy_free(): These frames could be merge.");
+        KBDEBUG(uart_puts("buddy_free(): These frames could be merge."));
         buddy_free_unlink(cur_buddy, to_merge_id);
         cur_buddy->frame_array[r_id].frame_size = i+1;
         cur_buddy->frame_array[l_id].frame_size = i+1;
         frame_id = l_id;
         frame_size = i+1;
     }
-    uart_print("buddy_free(): merged: "); debug_print_buddy_element(&(cur_buddy->frame_array[frame_id]));
-    buddy_pushfree((&cur_buddy->freelist[frame_size]), &(cur_buddy->frame_array[frame_id]));
+    KBDEBUG(uart_print("buddy_free(): merged: ")); debug_print_buddy_element(&(cur_buddy->frame_array[frame_id]));
+    buddy_pushfree(&(cur_buddy->freelist[frame_size]), &(cur_buddy->frame_array[frame_id]));
+
+    ret:
+    interrupt_enable();
+    return ;
 }
 
 void *kmalloc_(size_t size)
@@ -483,30 +524,30 @@ void *kmalloc_(size_t size)
 
 void debug_print_heap(Heap* heap)
 {
-    uart_print("===== Heap @ 0x");
-    uart_print_hex((uint64_t)heap);
-    uart_puts(" =====");
-    uart_print("->base_address = 0x");
-    uart_putshex((uint64_t)heap->base_address);
-    uart_print("->size = 0x");
-    uart_putshex((uint64_t)heap->size);
+    KMDEBUG(uart_print("===== Heap @ 0x"));
+    KMDEBUG(uart_print_hex((uint64_t)heap));
+    KMDEBUG(uart_puts(" ====="));
+    KMDEBUG(uart_print("->base_address = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->base_address));
+    KMDEBUG(uart_print("->size = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->size));
     for(int i=0;i<16;i++){
-        uart_print("->fastbin[0x");
-        uart_print_hex(i);
-        uart_print("] = 0x");
-        uart_putshex((uint64_t)heap->fastbin[i]);
+        KMDEBUG(uart_print("->fastbin[0x"));
+        KMDEBUG(uart_print_hex(i));
+        KMDEBUG(uart_print("] = 0x"));
+        KMDEBUG(uart_putshex((uint64_t)heap->fastbin[i]));
     }
-    uart_print("->unsorted_bin.fd = 0x");
-    uart_putshex((uint64_t)heap->unsorted_bin.fd);
-    uart_print("->unsorted_bin.bk = 0x");
-    uart_putshex((uint64_t)heap->unsorted_bin.bk);
-    uart_print("->top_chunk->size = 0x");
-    uart_putshex((uint64_t)heap->top_chunk->size);
-    uart_print("SIZE(->top_chunk) = 0x");
-    uart_putshex((uint64_t)SIZE(heap->top_chunk));
-    uart_print("->top_chunk->prev_size = 0x");
-    uart_putshex((uint64_t)heap->top_chunk->prev_size);
-    uart_puts("===============");
+    KMDEBUG(uart_print("->unsorted_bin.fd = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->unsorted_bin.fd));
+    KMDEBUG(uart_print("->unsorted_bin.bk = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->unsorted_bin.bk));
+    KMDEBUG(uart_print("->top_chunk->size = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->top_chunk->size));
+    KMDEBUG(uart_print("SIZE(->top_chunk) = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)SIZE(heap->top_chunk)));
+    KMDEBUG(uart_print("->top_chunk->prev_size = 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->top_chunk->prev_size));
+    KMDEBUG(uart_puts("==============="));
 }
 
 Heap *heap_new(uint64_t heap_size)
@@ -541,17 +582,17 @@ void unlink(Heap_Chunk* chunk)
 
 void heap_free(Heap* heap, void *ptr)
 {
-    uart_print("heap_free(): ptr=0x");
-    uart_putshex((uint64_t)ptr);
+    KMDEBUG(uart_print("heap_free(): ptr=0x"));
+    KMDEBUG(uart_putshex((uint64_t)ptr));
     debug_print_heap(heap);
 
     Heap_Chunk *victim = mem2chunk(ptr);
 
-    uart_print("heap_free(): chunk->size=0x");
-    uart_putshex((uint64_t)victim->size);
+    KMDEBUG(uart_print("heap_free(): chunk->size=0x"));
+    KMDEBUG(uart_putshex((uint64_t)victim->size));
 
     if(SIZE(victim)<0x120){
-        uart_puts("heap_free(): Put the chunk into fastbin.");
+        KMDEBUG(uart_puts("heap_free(): Put the chunk into fastbin."));
         victim->fd = heap->fastbin[BIN_ID(SIZE(victim))];
         heap->fastbin[BIN_ID(SIZE(victim))] = victim;
         debug_print_heap(heap);
@@ -560,34 +601,34 @@ void heap_free(Heap* heap, void *ptr)
 
     chunk_unsetflag(next_chunk(victim), chunk_flag_p);
 
-    uart_puts("heap_free(): Check if prev chunk could be merged.");
+    KMDEBUG(uart_puts("heap_free(): Check if prev chunk could be merged."));
     if(!chunk_readflag(victim, chunk_flag_p)){
         Heap_Chunk *prev = prev_chunk(victim);
-        uart_print("heap_free(): prev chunk could be merge: 0x");
-        uart_putshex((uint64_t)prev);
+        KMDEBUG(uart_print("heap_free(): prev chunk could be merge: 0x"));
+        KMDEBUG(uart_putshex((uint64_t)prev));
         unlink(prev);
         prev->size += victim->size;
         next_chunk(victim)->prev_size = prev->size;
         victim = prev;
     }
-    uart_puts("heap_free(): Check if next chunk is top_chunk.");
+    KMDEBUG(uart_puts("heap_free(): Check if next chunk is top_chunk."));
     if(next_chunk(victim)==heap->top_chunk){
-        uart_puts("heap_free(): Merge to top_chunk.");
+        KMDEBUG(uart_puts("heap_free(): Merge to top_chunk."));
         victim->size += heap->top_chunk->size;
         heap->top_chunk = victim;
         return ;
     }
 
-    uart_puts("heap_free(): Check if next chunk could be merged.");
+    KMDEBUG(uart_puts("heap_free(): Check if next chunk could be merged."));
     if(!chunk_readflag(next_chunk(next_chunk(victim)), chunk_flag_p)){
         Heap_Chunk *next = next_chunk(victim);
-        uart_print("heap_free(): next chunk could be merge: 0x");
-        uart_putshex((uint64_t)next);
+        KMDEBUG(uart_print("heap_free(): next chunk could be merge: 0x"));
+        KMDEBUG(uart_putshex((uint64_t)next));
         victim->size += next->size;
         next_chunk(next)->prev_size = victim->size;
     }
 
-    uart_puts("heap_free(): Chain to unsorted_bin.");
+    KMDEBUG(uart_puts("heap_free(): Chain to unsorted_bin."));
     victim->fd = heap->unsorted_bin.fd;
     victim->bk = &(heap->unsorted_bin);
     heap->unsorted_bin.fd->bk = victim;
@@ -597,37 +638,37 @@ void heap_free(Heap* heap, void *ptr)
 
 void *heap_malloc(Heap* heap, size_t size)
 {
-    uart_print("heap_malloc(): size=0x");
-    uart_putshex((uint64_t)size);
+    KMDEBUG(uart_print("heap_malloc(): size=0x"));
+    KMDEBUG(uart_putshex((uint64_t)size));
     debug_print_heap(heap);
     if(size<0x120){
-        uart_puts("heap_malloc(): Try to find chunk from fastbin.");
+        KMDEBUG(uart_puts("heap_malloc(): Try to find chunk from fastbin."));
         if(heap->fastbin[BIN_ID(size)]){
             Heap_Chunk* victim = heap->fastbin[BIN_ID(size)];
-            uart_print("heap_malloc(): Chunk is found from fastbin: 0x");
-            uart_putshex((uint64_t)victim);
+            KMDEBUG(uart_print("heap_malloc(): Chunk is found from fastbin: 0x"));
+            KMDEBUG(uart_putshex((uint64_t)victim));
             heap->fastbin[BIN_ID(size)] = victim->fd;
             return chunk2mem(victim);
         }
     }
     Heap_Chunk *cur_chunk = heap->unsorted_bin.fd;
-    uart_puts("heap_malloc(): Try to find chunk from unsorted_bin.");
+    KMDEBUG(uart_puts("heap_malloc(): Try to find chunk from unsorted_bin."));
     while(cur_chunk){
         if(SIZE(cur_chunk) < size){
             cur_chunk = cur_chunk->fd;
             continue;
         }
         Heap_Chunk *victim = cur_chunk;
-        uart_print("heap_malloc(): Chunk is found from unsorted_bin: 0x");
-        uart_putshex((uint64_t)victim);
+        KMDEBUG(uart_print("heap_malloc(): Chunk is found from unsorted_bin: 0x"));
+        KMDEBUG(uart_putshex((uint64_t)victim));
         unlink(victim);
         if(SIZE(victim)-size < 0x20){
             chunk_setflag(next_chunk(victim), chunk_flag_p);
             return chunk2mem(victim);
         }
         Heap_Chunk *remain = next_size_chunk(victim, size);
-        uart_print("heap_malloc(): Split remain chunk: 0x");
-        uart_putshex((uint64_t)remain);
+        KMDEBUG(uart_print("heap_malloc(): Split remain chunk: 0x"));
+        KMDEBUG(uart_putshex((uint64_t)remain));
         remain->size = victim->size - size;
         victim->size = size | (victim->size&0xf);
         remain->prev_size = victim->size;
@@ -637,7 +678,7 @@ void *heap_malloc(Heap* heap, size_t size)
         return chunk2mem(victim);
     }
 
-    uart_puts("heap_malloc(): Try to alloc chunk from top_chunk.");
+    KMDEBUG(uart_puts("heap_malloc(): Try to alloc chunk from top_chunk."));
 
     if(SIZE(heap->top_chunk)<size) return 0;
 
@@ -650,15 +691,15 @@ void *heap_malloc(Heap* heap, size_t size)
     heap->top_chunk->prev_size = victim->size;
     chunk_setflag(next_chunk(victim), chunk_flag_p);
 
-    uart_print("heap_malloc(): Chunk is allocated from top_chunk: 0x");
-    uart_print_hex((uint64_t)victim);
-    uart_print(", size=0x");
-    uart_print_hex((uint64_t)victim->size);
-    uart_print(", nextchunk=0x");
-    uart_putshex((uint64_t)next_chunk(victim));
+    KMDEBUG(uart_print("heap_malloc(): Chunk is allocated from top_chunk: 0x"));
+    KMDEBUG(uart_print_hex((uint64_t)victim));
+    KMDEBUG(uart_print(", size=0x"));
+    KMDEBUG(uart_print_hex((uint64_t)victim->size));
+    KMDEBUG(uart_print(", nextchunk=0x"));
+    KMDEBUG(uart_putshex((uint64_t)next_chunk(victim)));
 
-    uart_print("heap_malloc(): top_chunk changed: 0x");
-    uart_putshex((uint64_t)heap->top_chunk);
+    KMDEBUG(uart_print("heap_malloc(): top_chunk changed: 0x"));
+    KMDEBUG(uart_putshex((uint64_t)heap->top_chunk));
 
     debug_print_heap(heap);
 
@@ -667,8 +708,9 @@ void *heap_malloc(Heap* heap, size_t size)
 
 void *kmalloc(size_t size)
 {
-    uart_print("kmalloc(): size=0x");
-    uart_putshex((uint64_t)size);
+    interrupt_disable();
+    KMDEBUG(uart_print("kmalloc(): size=0x"));
+    KMDEBUG(uart_putshex((uint64_t)size));
 
     size = ((size>>4)+1)<<4;
 
@@ -676,38 +718,50 @@ void *kmalloc(size_t size)
     size += 0x10;
 
     if(size >= HEAP_SIZE * (1<<PAGE_SIZE)){
-        uart_puts("kmalloc(): size bigger than 128K. Alloc new heap.");
+        KMDEBUG(uart_puts("kmalloc(): size bigger than 128K. Alloc new heap."));
         size = (size_t)(((((int64_t)size-1)>>PAGE_SIZE)+1)<<PAGE_SIZE);
-        uart_print("kmalloc(): size align to page: 0x");
-        uart_putshex((uint64_t)size);
+        KMDEBUG(uart_print("kmalloc(): size align to page: 0x"));
+        KMDEBUG(uart_putshex((uint64_t)size));
         Heap *newheap = heap_new(size>>PAGE_SIZE);
         newheap->next = kernel_heap;
         kernel_heap = newheap;
-        return heap_malloc(newheap, size);
+        void *victim = heap_malloc(newheap, size);
+        interrupt_enable();
+        return victim;
     }
 
     Heap *cur_heap = kernel_heap;
     while(cur_heap){
         void *victim = heap_malloc(cur_heap, size);
-        if(victim) return victim;
+        if(victim){
+            interrupt_enable();
+            return victim;
+        }
         cur_heap = cur_heap->next;
     }
 
     Heap *new_heap = heap_new(HEAP_SIZE);
-    if(!cur_heap) kernel_heap = new_heap;
-    else cur_heap->next = new_heap;
+    //if(!cur_heap) kernel_heap = new_heap;
+    //else cur_heap->next = new_heap;
+    new_heap->next = kernel_heap;
+    kernel_heap = new_heap;
     void *victim = heap_malloc(new_heap, size);
+    interrupt_enable();
     return victim;
 }
 
 void kfree(void *ptr)
 {
+    interrupt_disable();
     Heap *cur_heap = kernel_heap;
     while(cur_heap){
         if((uint64_t)ptr >= (uint64_t)cur_heap->base_address && (uint64_t)ptr < ((uint64_t)cur_heap->base_address + cur_heap->size)){
             heap_free(cur_heap, ptr);
+            interrupt_enable();
             return ;
         }
+        cur_heap = cur_heap->next;
     }
+    interrupt_enable();
     return ;
 }

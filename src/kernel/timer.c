@@ -9,6 +9,11 @@ TIMER* timer_queue;
 
 void coretimer_el0_enable()
 {
+    uint64_t tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
+
     asm("msr cntp_ctl_el0, %0"::"r"((uint64_t)1));
     //mmio_set(CORE0_TIMER_IRQ_CTRL, 2); //nCNTPNSIRQ IRQ Enable CNT Physical Not Secure Timer IRQ(?
     //asm("mrs x0, cntfrq_el0");
@@ -57,14 +62,15 @@ ret:
     interrupt_enable();
 }
 
-TIMER* timer_queue_pop()
+void timer_queue_pop()
 {
     if(!timer_queue) return 0;
     interrupt_disable();
     TIMER* timer = timer_queue;
     timer_queue = timer_queue->next;
     interrupt_enable();
-    return timer;
+    kfree(timer);
+    //return timer;
 }
 
 TIMER* timer_queue_top()
@@ -95,14 +101,15 @@ void _add_timer(uint64_t time, void (*func)(void *), void *arg)
     timer_sched();
 }
 
-void add_timer(uint64_t time_wait, void (*func)(void *), void *arg)
+void add_timer(uint64_t time_wait, void (*func)(void *), void *arg) //ms
 {
     uint32_t cntfrq_el0;
     uint64_t cntpct_el0;
     asm("mrs %0, cntfrq_el0":"=r"(cntfrq_el0));
     asm("mrs %0, cntpct_el0":"=r"(cntpct_el0));
 
-    _add_timer(cntpct_el0+time_wait*cntfrq_el0, func, arg);
+    // _add_timer(cntpct_el0+time_wait*cntfrq_el0, func, arg);
+    _add_timer(cntpct_el0+((time_wait*cntfrq_el0)/1000), func, arg);
 }
 
 void coretimer_el0_handler()

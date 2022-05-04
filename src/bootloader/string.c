@@ -30,7 +30,7 @@ void *memcpy(void *dst, const void *src, size_t n)
 {
     size_t npage = n / sizeof(uint64_t);
     size_t noff = n % sizeof(uint64_t);
-    for(int i=0;i<n;i++){
+    for(int i=0;i<npage;i++){
         *((uint64_t*)dst + i) = *((uint64_t*)src + i);
     }
     for(int i=0;i<noff;i++){

@@ -5,6 +5,9 @@
 #include <string.h>
 #include <interrupt.h>
 #include <ringbuffer.h>
+#include <sched.h>
+#include <queue.h>
+#include <lock.h>
 #define RECEIVER_ENABLE_BIT (1<<0)
 #define TRANSMITTER_ENABLE_BIT (1<<1)
 #define NEWLINE '\n'
@@ -12,6 +15,8 @@
 #define UART_BUF_LEN 0x200
 
 RingBuffer *uart_buffer;
+Queue *uart_read_waitqueue;
+Lock *uart_read_lock;
 
 void uart_init()
 {
@@ -40,6 +45,8 @@ void uart_init()
     mmio_set(ARMINT_En_IRQs1_REG, mmio_load(ARMINT_En_IRQs1_REG) | (1<<29));
 
     uart_buffer = RingBuffer_new(UART_BUF_LEN);
+    uart_read_waitqueue = queue_new();
+    uart_read_lock = lock_new();
 }
 
 void uart_interrupt_handler()
@@ -48,6 +55,7 @@ void uart_interrupt_handler()
     while((mmio_load(AUX_MU_LSR_REG) & 1) && !RingBuffer_Full(uart_buffer)){
         RingBuffer_writeb(uart_buffer, mmio_load(AUX_MU_IO_REG)&0xff);
     }
+    wakeup(uart_read_waitqueue);
     // uart_putshex(uart_buffer->len);
     // uart_putshex(uart_buffer->lbound);
     // uart_putshex(uart_buffer->rbound);
@@ -74,12 +82,14 @@ size_t uart_read_sync(char* buf, size_t len)
 
 size_t uart_read_async(char* buf, size_t len)
 {
+    lock_get(uart_read_lock);
     size_t recvlen = 0;
     while(recvlen < len){
-        while(RingBuffer_Empty(uart_buffer));
+        while(RingBuffer_Empty(uart_buffer))wait(uart_read_waitqueue);
         if(RingBuffer_readb(uart_buffer, &buf[recvlen]) == 1) recvlen++;
         //uart_puts("recv");
     }
+    lock_release(uart_read_lock);
     return recvlen;
 }
 
