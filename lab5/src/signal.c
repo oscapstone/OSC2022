@@ -3,7 +3,11 @@
 void check_signal(trapframe_t *tpf)
 {
     lock();
-    if(curr_thread->signal_is_checking)return;
+    if(curr_thread->signal_is_checking)
+    {
+        unlock();
+        return;
+    }
     //prevent nested running signal handler
     curr_thread->signal_is_checking = 1;
     unlock();
