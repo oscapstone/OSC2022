@@ -56,9 +56,8 @@ int myHex2Int(char* str){
 char *strtok(char *str, char *delimiter){
   static char *temp_ptr = NULL;
   char *final_ptr = NULL;
-  /* Flag has been defined as static to avoid the parent function loop
-   * runs infinitely after reaching end of string.
-   */ 
+  /* Flag has been defined as static to avoid the parent function loop  *
+   * runs infinitely after reaching end of string.                      */ 
   static int flag = 0;
   int i, j;
 
@@ -75,20 +74,18 @@ char *strtok(char *str, char *delimiter){
     return NULL;
   }
 
-  /* The below condition is to avoid temp_ptr is getting assigned 
-   * with NULL string from the parent function main. Without
-   * the below condition, NULL will be assigned to temp_ptr 
-   * and final_ptr, so accessing these pointers will lead to
-   * segmentation fault.
-   */
+  /* The below condition is to avoid temp_ptr is getting assigned   *
+   * with NULL string from the parent function main. Without        *
+   * the below condition, NULL will be assigned to temp_ptr         *
+   * and final_ptr, so accessing these pointers will lead to        *
+   * segmentation fault.                                            */
   if (str != NULL) { 
     temp_ptr = str; 
   }
 
-  /* Before function call ends, temp_ptr should move to the next char,
-   * so we can't return the temp_ptr. Hence, we introduced a new pointer
-   * final_ptr which points to temp_ptr.
-   */
+  /* Before function call ends, temp_ptr should move to the next char,      *
+   * so we can't return the temp_ptr. Hence, we introduced a new pointer    *
+   * final_ptr which points to temp_ptr.                                    */
   final_ptr = temp_ptr;
 
   for (i = 0; i <= strlen(temp_ptr); i++)
@@ -96,10 +93,9 @@ char *strtok(char *str, char *delimiter){
     for (j = 0; j < strlen(delimiter); j++) {
 
       if (temp_ptr[i] == '\0') {
-        /* If the flag is not set, both the temp_ptr and flag_ptr 
-         * will be holding string "Jasmine" which will make parent 
-         * to call this function strtok infinitely. 
-         */
+        /* If the flag is not set, both the temp_ptr and flag_ptr   *
+         * will be holding string "Jasmine" which will make parent  *
+         * to call this function strtok infinitely.                 */
         flag = 1;
         if(final_ptr == NULL){
           flag = 0;
@@ -109,9 +105,8 @@ char *strtok(char *str, char *delimiter){
       }
 
       if ((temp_ptr[i] == delimiter[j])) {
-        /* NULL character is assigned, so that final_ptr will return 
-         * til NULL character. Here, final_ptr points to temp_ptr.
-         */
+        /* NULL character is assigned, so that final_ptr will return    *
+         * til NULL character. Here, final_ptr points to temp_ptr.      */
         temp_ptr[i] = '\0';
         temp_ptr += i+1;
         if(final_ptr == NULL){
@@ -122,10 +117,9 @@ char *strtok(char *str, char *delimiter){
       }
     }
   }
-  /* You will somehow end up here if for loop condition fails.
-   * If this function doesn't return any char pointer, it will 
-   * lead to segmentation fault in the parent function.
-   */
+  /* You will somehow end up here if for loop condition fails.    *
+   * If this function doesn't return any char pointer, it will    *
+   * lead to segmentation fault in the parent function.           */
   flag = 0;
   temp_ptr = NULL;
   return NULL;

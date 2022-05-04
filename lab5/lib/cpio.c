@@ -3,7 +3,7 @@
 #include "string.h"
 #include "malloc.h"
 
-int read_header(char *str, int size);
+static int read_header(char *str, int size);
 
 char * CPIO_DEFAULT_PLACE;
 char * CPIO_DEFAULT_PLACE_END;
@@ -64,15 +64,11 @@ void cpio_exec(char *str){
     if(!strcmp(header+110, str) && filesize != 0){
       data = header+110+namesize;
       char * sp = malloc(0x20);
-      asm("mov x1, 0x3c0\n\t"
-          "msr spsr_el1, x1\n\t"
-          "msr elr_el1, %[input0]\n\t"
-          "msr sp_el0, %[input1]\n\t"
-          "eret\n\t"
-          :
-          :[input0] "r" (data), [input1] "r" (sp)
-          :);
-      return;
+      asm volatile("mov x1        , 0x3c0     \n");
+      asm volatile("msr spsr_el1  , x1        \n");
+      asm volatile("msr elr_el1   , %[input0] \n"::[input0]"r"(data));
+      asm volatile("msr sp_el0    , %[input1] \n"::[input1]"r"(sp));
+      asm volatile("eret\n");
     }
     header = header + namesize + filesize + 110;
   }
@@ -105,7 +101,6 @@ void *load_program(char *name){
     if(!strcmp(header+110, name) && filesize != 0){
       data = header+110+namesize;
       // allocate a space and copy the file which need to be executed
-      // char *addr = malloc(filesize+aling);
       if(filesize > USER_PROGRAM_MAX_SIZE){
         printf("file too large\n\r");
         return 0;

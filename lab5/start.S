@@ -201,14 +201,14 @@ error_invalid_el1h:
 sync_el0_64:
   save_all
   mov x0, 8
-  mov x1, sp
+  mov x1, sp        // for get the trap frame
   bl sync_router
   load_all
   eret
 irq_el0_64:
   save_all
   mov x0,9
-  bl irq_router // lower_iqr_handler
+  bl irq_router
   load_all
   eret
 fiq_invalid_el0_64:

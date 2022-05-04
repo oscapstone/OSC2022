@@ -5,14 +5,14 @@
 #define PAGE_ALLOCATED -2 
 #define PAGE_RESERVED -3
 
-extern unsigned long _kernel_start;
-extern unsigned long _kernel_end;
+extern uint64_t _kernel_start;
+extern uint64_t _kernel_end;
 extern unsigned char _heap_start;
 
-typedef unsigned long size_t;
+typedef uint64_t size_t;
 
 typedef struct frame_info {
-  unsigned int status;
+  uint32_t status;
   int index;
 } frame_info;
 

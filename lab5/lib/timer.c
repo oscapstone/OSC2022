@@ -1,84 +1,63 @@
 #include "timer.h"
-#include "printf.h"
 #include "malloc.h"
 #include "string.h"
 #include "uart.h"
 #include "scheduler.h"
+#include "stddef.h"
 
 static timer_list *timer_queue = NULL;
 
-task_list *task_queue = NULL;
-
 void interrupt_enable(void){
-  __asm__ __volatile__(
-    "msr DAIFClr, 0xf" // enable interrupt el1 -> el1
-  ); 
+  asm volatile("msr DAIFClr, 0xf");
 }
 
 void interrupt_disable(void){
-  __asm__ __volatile__(
-    "msr DAIFSet, 0xf" // enable interrupt el1 -> el1
-  ); 
+  asm volatile("msr DAIFSet, 0xf");
 }
 
 void core_timer_enable(void){
+  /* code from TA lab 5 */
   uint64_t tmp;
-  asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+  asm volatile("mrs %[input], cntkctl_el1" :[input]"=r"(tmp));
   tmp |= 1;
-  asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
-  __asm__ __volatile__(
-    "mov x1, 1\n\t"
-    "msr cntp_ctl_el0, x1\n\t" // enable Counter-timer Physical Timer Control
-  );
+  asm volatile("msr cntkctl_el1, %[output]" ::[output]"r"(tmp));
+  /* enable Counter-timer Physical Timer Control */
+  asm volatile("mov x1          , 1\n");
+  asm volatile("msr cntp_ctl_el0, x1\n");
 }
 
 void core_timer_interrupt_enable(void){
-  __asm__ __volatile__(
-    "mov x2, 2\n\t"
-    "ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n\t"
-    "str w2, [x1]\n\t" // unmask timer interrupt
-  );
+  /* unmask timer interrupt */
+  asm volatile("mov x2, 2\n");
+  asm volatile("ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n");
+  asm volatile("str w2, [x1]\n\t");
 }
 
 void core_timer_interrupt_disable(void){
-  __asm__ __volatile__(
-    "mov x2, 0\n\t"
-    "ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n\t"
-    "str w2, [x1]\n\t" // unmask timer interrupt
-  );
+  /* mask timer interrupt */
+  asm volatile("mov x2, 0\n");
+  asm volatile("ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n");
+  asm volatile("str w2, [x1]\n\t");
 }
 
 uint64_t get_timer_tick(){
   uint64_t cntpct_el0;
-  __asm__ __volatile__(
-    "mrs %0, cntpct_el0\n\t"
-    : "=r"(cntpct_el0)
-  ); //tick now
+  asm volatile("mrs %[input], cntpct_el0\n":[input]"=r"(cntpct_el0));
   return cntpct_el0;
 }
 
 uint64_t get_timer_freq(){
   uint64_t cntfrq_el0;
-  __asm__ __volatile__(
-    "mrs %0, cntfrq_el0\n\t"
-    : "=r"(cntfrq_el0)
-  ); //tick frequency
+  asm volatile("mrs %[input], cntfrq_el0\n": [input]"=r"(cntfrq_el0));
   return cntfrq_el0;
 }
 
 uint64_t clock_time_s(void){
-  uint64_t cntpct_el0 = get_timer_tick();
-  uint64_t cntfrq_el0 = get_timer_freq();
-  return cntpct_el0 / cntfrq_el0;
+  return get_timer_tick() / get_timer_freq();
 }
 
 void set_core_timer_interrupt(uint64_t expired_time){
-  __asm__ __volatile__(
-    // "mrs x1, cntfrq_el0\n\t"       //cntfrq_el0 -> relative time
-    // "mul x1, x1, %0\n\t"
-    "msr cntp_tval_el0, %0\n\t"    // set expired time
-    : "=r"(expired_time)
-  );
+  asm volatile("msr cntp_tval_el0, %[output]\n"::[output]"r"(expired_time));
 }
 
 void add_timer(callback_typ callback, char *msg, int time) {

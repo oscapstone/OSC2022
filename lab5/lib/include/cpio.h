@@ -1,4 +1,3 @@
-
 #define USER_PROGRAM_SPACE 0x900000
 #define USER_PROGRAM_MAX_SIZE 0x500000
 
@@ -24,5 +23,5 @@ void cpio_cat(char *str);
 void cpio_exec(char *str);
 void *load_program(char *name);
 
-extern char * CPIO_DEFAULT_PLACE;
-extern char * CPIO_DEFAULT_PLACE_END;
+extern char *CPIO_DEFAULT_PLACE;
+extern char *CPIO_DEFAULT_PLACE_END;

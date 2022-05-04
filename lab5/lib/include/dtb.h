@@ -1,10 +1,10 @@
 #include "stdint.h"
 
-#define FDT_BEGIN_NODE 0x00000001
-#define FDT_END_NODE 0x00000002
-#define FDT_PROP 0x00000003
-#define FDT_NOP 0x00000004
-#define FDT_END 0x00000009
+#define FDT_BEGIN_NODE          (uint64_t)0x00000001
+#define FDT_END_NODE            (uint64_t)0x00000002
+#define FDT_PROP                (uint64_t)0x00000003
+#define FDT_NOP                 (uint64_t)0x00000004
+#define FDT_END                 (uint64_t)0x00000009
 
 // big-endian
 typedef struct fdt_header {
