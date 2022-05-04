@@ -11,26 +11,12 @@ static task *zombies_queue = NULL;
 static int pid = 1;
 static void enqueue(task **queue, task *new_task);
 static void *dequeue(task **queue);
-static void fork_test();
-static void foo();
 
 void thread_init(void){
-  task *new_task = malloc(sizeof(task));
-  new_task->pid = pid++;
-  new_task->next = NULL;
-  new_task->state = RUNNING;
-  new_task->lr = (uint64_t)idle_thread;
-  char *addr = malloc(THREAD_SP_SIZE);
-  new_task->fp = (uint64_t)addr;
-  new_task->sp = (uint64_t)addr;
-  enqueue(&run_queue, new_task);
+  task_create(idle_thread, KERNEL);
 }
 
 void idle_thread(void){
-  // for(int i = 0; i < 3; ++i) { 
-  //   task_create(foo, USER);
-  // }
-  // task_create(fork_test, USER);
   write_current((uint64_t)dequeue(&run_queue));
   add_timer(normal_timer, "normal_timer", get_timer_freq()>>5);
   while (1){
@@ -48,7 +34,8 @@ void *task_create(thread_func func, enum mode mode){
   if(mode == USER){
     char *addr = malloc(THREAD_SP_SIZE);
     new_task->user_sp = (uint64_t)addr;
-    addr = addr + THREAD_SP_SIZE - 16;
+    addr += THREAD_SP_SIZE - 1;
+    addr -= (uint64_t)addr%0x10;
     new_task->lr = (uint64_t)switch_to_user_space;
     new_task->target_func = (uint64_t)func;
   }else{
@@ -56,7 +43,8 @@ void *task_create(thread_func func, enum mode mode){
   }
   char *addr = malloc(THREAD_SP_SIZE);
   new_task->sp_addr = (uint64_t)addr;
-  addr = addr + THREAD_SP_SIZE - 16;
+  addr += THREAD_SP_SIZE - 1;
+  addr -= (uint64_t)addr%0x10;
   new_task->fp = (uint64_t)addr;
   new_task->sp = (uint64_t)addr;
   enqueue(&run_queue, new_task);  
@@ -107,8 +95,11 @@ void enqueue(task **queue, task *new_task){
 
 void *dequeue(task **queue){
   task *pop_task = *queue;
-  *queue = (*queue)->next;
-  return pop_task;
+  if(pop_task){
+    *queue = (*queue)->next;
+    return pop_task;
+  }
+  return NULL;
 }
 
 void kill_thread(int pid){
@@ -133,30 +124,31 @@ void switch_to_user_space() {
   task *cur = get_current();
   asm volatile("mov x0, 0   \n"::);
   asm volatile("msr spsr_el1, x0   \n"::);
-  asm volatile("msr elr_el1,  %0   \n"::"r"(cur->target_func));
-  asm volatile("msr sp_el0,   %0   \n"::"r"(cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16));
+  asm volatile("msr elr_el1,  %[output]   \n"::[output]"r"(cur->target_func));
+  uint64_t addr = cur->user_sp;
+  addr += THREAD_SP_SIZE - 1;
+  addr -= addr % 0x100;
+  asm volatile("msr sp_el0,   %[output]   \n"::[output]"r"(addr));
   asm volatile("eret  \n"::);
 }
 
 
-
-
 void fork_test(){
-  printf("\nFork Test, pid %d\n", sys_getpid());
+  printf("\n\rFork Test, pid %d\n\r", sys_getpid());
   int cnt = 1;
   int ret = 0;
   if ((ret = sys_fork()) == 0) { // child
     long long cur_sp;
     asm volatile("mov %0, sp" : "=r"(cur_sp));
-    printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", sys_getpid(), cnt, &cnt, cur_sp);
+    printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n\r", sys_getpid(), cnt, &cnt, cur_sp);
     ++cnt;
     if ((ret = sys_fork()) != 0){
       asm volatile("mov %0, sp" : "=r"(cur_sp));
-      printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", sys_getpid(), cnt, &cnt, cur_sp);
+      printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n\r", sys_getpid(), cnt, &cnt, cur_sp);
     }else{
       while (cnt < 5) {
         asm volatile("mov %0, sp" : "=r"(cur_sp));
-        printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", sys_getpid(), cnt, &cnt, cur_sp);
+        printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n\r", sys_getpid(), cnt, &cnt, cur_sp);
         delay_tick(1000000);
         ++cnt;
       }
@@ -169,12 +161,8 @@ void fork_test(){
 }
 
 void foo(){
-  printf("this is foo %d\n\r", sys_getpid());
   for(int i = 0; i < 5; ++i) {
     printf("pid: %d, %d\n\r", sys_getpid(), i);
-    if(sys_getpid() == 3 && i == 2){
-      sys_fork();
-    }
     delay_tick(10000000);
   }
   sys_exit();

@@ -208,7 +208,7 @@ sync_el0_64:
 irq_el0_64:
   save_all
   mov x0,9
-  bl irq_router
+  bl lower_irq_router
   load_all
   eret
 fiq_invalid_el0_64:

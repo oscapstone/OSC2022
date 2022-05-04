@@ -8,6 +8,11 @@
 #include "scheduler.h"
 #include "timer.h"
 
+
+void test(){
+  printf("test\n\r");
+}
+
 void shell(){
   char *input = malloc(sizeof(char) * BUF_MAX_SIZE);
   char **args = malloc(sizeof(char*) * BUF_ARG_SIZE);
@@ -45,6 +50,14 @@ void shell(){
             task_create((thread_func)addr, USER);
             idle_thread();
           }
+        }else if(!strcmp(args[0], "t")){
+          for(int i = 0; i < 3; ++i) { 
+            task_create(foo, USER);
+          }
+          idle_thread();
+        }else if(!strcmp(args[0], "f")){
+          task_create(fork_test, USER);
+          idle_thread();
         }
         printf("pi#  ");
         input[0] = 0;

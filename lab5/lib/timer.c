@@ -4,6 +4,8 @@
 #include "uart.h"
 #include "scheduler.h"
 #include "stddef.h"
+#include "printf.h"
+#include "system.h"
 
 static timer_list *timer_queue = NULL;
 
@@ -62,7 +64,7 @@ void set_core_timer_interrupt(uint64_t expired_time){
 
 void add_timer(callback_typ callback, char *msg, int time) {
   timer_list *timer = (timer_list*)malloc(sizeof(timer_list));
-  timer->expired_time = (unsigned long long)time + clock_time_s();
+  timer->expired_time = (unsigned long long)time + get_timer_tick();
   timer->call_back = callback;
   for(int i=0; i<=strlen(msg); i++)
     timer->msg[i] = *(msg+i);
@@ -71,14 +73,12 @@ void add_timer(callback_typ callback, char *msg, int time) {
     timer_queue = timer;
     set_core_timer_interrupt(time);
     core_timer_interrupt_enable();
-  }
-  else if (timer_queue->expired_time > timer->expired_time) { // add to head
+  }else if (timer_queue->expired_time > timer->expired_time) { // add to head
     timer->next = timer_queue;
     timer_queue = timer;
     set_core_timer_interrupt(time);
     core_timer_interrupt_enable();
-  }
-  else{                           // insert
+  }else{                           // insert
     timer_list *pre = timer_queue, *next = timer_queue->next;
     while (next && pre->expired_time < timer->expired_time) {
       pre = next;
@@ -93,17 +93,17 @@ void pop_timer(void){
   timer_list *timer = timer_queue;
   timer_queue = timer_queue->next;
   timer->call_back(timer->msg);
-  free(timer);
   if (!timer_queue){
     core_timer_interrupt_disable();
   }else{
-    set_core_timer_interrupt(timer_queue->expired_time - clock_time_s());
+    set_core_timer_interrupt(timer_queue->expired_time - get_timer_tick());
     core_timer_interrupt_enable();
   }
+  free(timer);
 }
 
 void normal_timer(){
-  add_timer(normal_timer, "normal_timer", get_timer_freq()>>5);
+  add_timer(normal_timer, "normal_timer", get_timer_freq()>>5); 
   interrupt_enable();
   schedule();
 }
