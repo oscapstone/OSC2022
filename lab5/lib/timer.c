@@ -104,6 +104,6 @@ void pop_timer(void){
 
 void normal_timer(){
   add_timer(normal_timer, "normal_timer", get_timer_freq()>>5); 
-  interrupt_enable();
+  // interrupt_enable();
   schedule();
 }

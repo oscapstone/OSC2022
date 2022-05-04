@@ -10,7 +10,7 @@ void invalid_exception_router(uint64_t x0);
 void irq_router(uint64_t x0);
 void sync_router(uint64_t x0, uint64_t x1);
 void child_return_from_fork();
-void lower_irq_router(uint64_t x0);
+// void lower_irq_router(uint64_t x0);
 
 typedef struct trap_frame{
   uint64_t x0;        uint64_t x1;

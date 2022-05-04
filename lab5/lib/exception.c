@@ -20,7 +20,7 @@ void invalid_exception_router(uint64_t x0){
 
 void irq_router(uint64_t x0){
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
-    interrupt_disable();
+    // interrupt_disable();
     core_timer_interrupt_disable();
     pop_timer();
   }else if(*IRQS1_PENDING & (0x01 << 29)){
@@ -34,9 +34,9 @@ void irq_router(uint64_t x0){
   }
 }
 
-void lower_irq_router(uint64_t x0){
-  pop_timer();
-}
+// void lower_irq_router(uint64_t x0){
+//   pop_timer();
+// }
 
 void sync_router(uint64_t x0, uint64_t x1){
   trap_frame *frame = (trap_frame *)x1;
