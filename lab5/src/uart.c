@@ -146,5 +146,7 @@ void get_uart_input(char *input) {
 }
 
 void putc(void *p, char c) {
+    if (c == '\n')
+        uart_send('\r');
     uart_send(c);
 }

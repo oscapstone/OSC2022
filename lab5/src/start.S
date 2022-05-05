@@ -63,6 +63,8 @@ from_el2_to_el1:
     mov x0, 0x5 // EL1h (SPSel = 1) with interrupt enabled
     msr spsr_el2, x0
     msr elr_el2, lr
+    mov x0, 0
+    msr sp_el0, x0
     eret // return to EL1
 
 .globl from_el1_to_el0
