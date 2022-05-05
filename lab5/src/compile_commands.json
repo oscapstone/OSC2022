@@ -1,0 +1,22 @@
+[
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I../lib",
+      "-I../include",
+      "-c",
+      "-o",
+      "mini_uart.o",
+      "mini_uart.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab5/src",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab5/src/mini_uart.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab5/src/mini_uart.o"
+  }
+]
