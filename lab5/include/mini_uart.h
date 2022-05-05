@@ -1,6 +1,8 @@
 #ifndef MINI_UART_H
 #define MINI_UART_H
 
+#include <stdint.h>
+
 #define AUX_ENABLE  ((volatile unsigned int *)(0x3F215004))
 #define AUX_MU_IO   ((volatile unsigned int *)(0x3F215040))
 #define AUX_MU_IER  ((volatile unsigned int *)(0x3F215044))
@@ -28,5 +30,8 @@ void print_num(int num);
 void print_hex(unsigned int num);
 void print_hexl(unsigned long num);
 int readline(char *buf, int len);
+
+uint32_t syscall_uart_read(char buf[], uint32_t size);
+uint32_t syscall_uart_write(const char buf[], uint32_t size);
 
 #endif

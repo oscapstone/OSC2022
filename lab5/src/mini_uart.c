@@ -120,3 +120,20 @@ int readline(char *buf, int len) {
   buf[i] = '\0';
   return i;
 }
+
+
+uint32_t syscall_uart_read(char buf[], uint32_t size) {
+  uint32_t len = 0;
+  for (int i = 0; i < size; i++) {
+    buf[i] = mini_uart_recv();
+    len++;
+  }
+  return len;
+}
+
+uint32_t syscall_uart_write(const char buf[], uint32_t size) {
+  for (uint32_t i = 0; i < size; i++) {
+    mini_uart_send(buf[i]);
+  }
+  return size;
+}

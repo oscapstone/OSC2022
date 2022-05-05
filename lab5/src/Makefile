@@ -34,7 +34,7 @@ clean:
 	rm -f *.img *.o *.bin *.elf
 
 run: kernel8.bin
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initramfs.cpio -serial null -serial stdio -display none -dtb bcm2710-rpi-3-b-plus.dtb
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initramfs.cpio -serial null -serial stdio  -dtb bcm2710-rpi-3-b-plus.dtb
 
 debug: kernel8.bin
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initramfs.cpio -serial null -serial stdio -display none -dtb bcm2710-rpi-3-b-plus.dtb -S -s
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initramfs.cpio -serial null -serial stdio  -dtb bcm2710-rpi-3-b-plus.dtb -S -s

@@ -1,5 +1,5 @@
 .macro save_all
-        sub sp, sp, 32 * 8
+        sub sp, sp, 34 * 8
         stp x0, x1, [sp ,16 * 0]
         stp x2, x3, [sp ,16 * 1]
         stp x4, x5, [sp ,16 * 2]
@@ -15,11 +15,17 @@
         stp x24, x25, [sp ,16 * 12]
         stp x26, x27, [sp ,16 * 13]
         stp x28, x29, [sp ,16 * 14]
-        str x30, [sp, 16 * 15]
+        mrs x21, elr_el1
+        mrs x22, spsr_el1
+        stp x30, x21, [sp, 16 * 15]
+        str x22, [sp, 16 * 16]
 .endm
 
 // load general registers from stack
 .macro load_all
+        ldp x21, x22, [sp, 31 * 8]
+        msr elr_el1, x21
+        msr spsr_el1, x22
         ldp x0, x1, [sp ,16 * 0]
         ldp x2, x3, [sp ,16 * 1]
         ldp x4, x5, [sp ,16 * 2]
@@ -36,11 +42,14 @@
         ldp x26, x27, [sp ,16 * 13]
         ldp x28, x29, [sp ,16 * 14]
         ldr x30, [sp, 16 * 15]
-        add sp, sp, 32 * 8
+        add sp, sp, 34 * 8
 .endm
 
-.extern c_invalid_exception
-.extern c_irq_handler
+        .extern c_invalid_exception     
+        .extern c_irq_handler
+        .extern disable_irq
+        .extern enable_irq
+        .extern syscall_vectors
 
 invalid_exception_handler:
         save_all
@@ -60,6 +69,34 @@ el0_irq_handler:
         load_all
         eret
 
+syscall_handler:
+        // use callee saved register
+        adr x19, syscall_vectors // syscall function address table
+        uxtw x20, w8 // extend syscall nr to 64bit and saved in x10
+        bl enable_irq
+        ldr x21, [x19, x20, lsl #3] // x11 = *(syscall_vectos + syscall nr * 8) 
+        blr x21
+        str x0, [sp] // save return value onto the stack, overwrite the el0 context
+        bl disable_irq
+        load_all
+        eret
+
+el0_sync_handler:
+        save_all
+        mrs x25, esr_el1
+        lsr x24, x25, #26
+        // bit 26~31 is the beginning of the ec column 
+        cmp x24, #21
+        // 21 == 0b010101 == SVC in AArch64
+        b.eq syscall_handler
+        bl c_invalid_exception
+        load_all
+        eret
+
+.global exit_kernel
+exit_kernel:
+        load_all
+        eret
 
 .align 11 // vector table should be aligned to 0x800
 .global exception_vector_table
@@ -82,7 +119,7 @@ exception_vector_table:
 	b invalid_exception_handler
 	.align 7
         
-	b invalid_exception_handler
+	b el0_sync_handler
 	.align 7
 	b el0_irq_handler
 	.align 7
