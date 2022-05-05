@@ -91,7 +91,7 @@ void page_alloc_init() {
 }
 
 void *alloc_pages(int num) {
-    uart_printf("------------ In function alloc_pages(%d) ------------\r\n", num);
+    // uart_printf_async("------------ In function alloc_pages(%d) ------------\r\n", num);
     int idx, exp, alloc_exp;
     frame_hdr *hdr;
 
@@ -113,7 +113,7 @@ void *alloc_pages(int num) {
         return 0;
 
     // start allocate
-    hdr = freelists[alloc_exp].next;
+    hdr = (frame_hdr *)freelists[alloc_exp].next;
     idx = addr_to_idx(hdr);
     list_del_entry(&hdr->list);
 
@@ -130,12 +130,12 @@ void *alloc_pages(int num) {
 
         buddy_hdr = idx_to_addr(buddy_idx);
         list_add(&buddy_hdr->list, &freelists[alloc_exp]);
-        uart_printf("[-] Release redundant memory (idx : %d -> %d), this block has exp : %d\r\n", idx, buddy_idx, alloc_exp);
+        // uart_printf_async("[-] Release redundant memory (idx : %d -> %d), this block has exp : %d\r\n", idx, buddy_idx, alloc_exp);
     }
 
     frame_ents[idx].exp = exp;
     frame_ents[idx].allocated = 1;
-    uart_printf("[+] Successfully allocate (idx : %d, exp : %d)\r\n", idx, exp);
+    // uart_printf_async("[+] Successfully allocate (idx : %d, exp : %d)\r\n", idx, exp);
     return (void *)hdr;
 }
 
@@ -149,7 +149,7 @@ static inline void _free_page(frame_hdr *page) {
     buddy_idx = idx ^ (1 << exp);
     // merge
     while (exp < MAX_ORDER - 1 && !frame_ents[buddy_idx].allocated && frame_ents[buddy_idx].exp == exp) {
-        uart_printf("[*] Coalesce blocks (idx : %d & %d), and their new exp is %d\r\n", idx, buddy_idx, exp + 1);
+        // uart_printf_async("[*] Coalesce blocks (idx : %d & %d), and their new exp is %d\r\n", idx, buddy_idx, exp + 1);
         frame_hdr *hdr;
         exp += 1;
         hdr = idx_to_addr(idx);
@@ -166,11 +166,12 @@ static inline void _free_page(frame_hdr *page) {
 }
 
 void free_page(void *page) {
-    uart_printf("++++++++++++ In function free_page(idx = %d) ++++++++++++\r\n", addr_to_idx(page));
+    // uart_printf_async("++++++++++++ In function free_page(idx = %d) ++++++++++++\r\n", addr_to_idx(page));
     _free_page((frame_hdr *)page);
 }
 
 void memory_reserve(void *start, void *end) {
+    uart_printf("Reserve => 0x%x ~ 0x%x\r\n", (unsigned long long int)start, (unsigned long long int)end);
     start = (void *)((unsigned long long int)start & ~(PAGE_SIZE - 1));
     end = (void *)ALIGN((unsigned long long int)end, PAGE_SIZE);
     // allocated all pages from start to end
@@ -178,7 +179,7 @@ void memory_reserve(void *start, void *end) {
         int idx = addr_to_idx(start);
         frame_ents[idx].allocated = 1;
         start = (void *)((unsigned long long int)start + PAGE_SIZE);
-        // uart_printf("Reserve page idx : %d, address : 0x%x\r\n", idx, idx_to_addr(idx));
+        // uart_printf_async("Reserve page idx : %d, address : 0x%x\r\n", idx, idx_to_addr(idx));
     }
 }
 
@@ -193,8 +194,12 @@ void mm_init() {
     memory_reserve(&_text_start, &_heap_start);
     // Initramfs
     memory_reserve(INITRD_ADDR, INITRD_END);
+    // Device tree (qemu = 83580, rpi3 = 32937)
+    memory_reserve(DTB_ADDRESS, DTB_ADDRESS + 83580);
     // for simple_alloc
-    memory_reserve((void *)0x3b000000, (void *)0x3c000000);
+    memory_reserve((void *)0x2c000000, (void *)0x2e000000);
+    // for kernel stack
+    memory_reserve((void *)0x2e000000, (void *)0x3c000000);
     // buddy system second stage init
     page_alloc_init();
     // small chunk second stage init
@@ -211,7 +216,7 @@ void page_allocator_test()
     char *ptr5 = alloc_pages(2);    // idx = 32786
     char *ptr6 = alloc_pages(1);    // idx = 32785
 
-    uart_printf("------------------------------------------------------------\r\n");
+    // uart_printf_async("------------------------------------------------------------\r\n");
 
     // test alloc_pages -> release redundant memory
     free_page(ptr3);                // idx = 4      (idx 5, 6, 7 are also freed)
@@ -219,14 +224,14 @@ void page_allocator_test()
     char *ptr8 = alloc_pages(2);    // idx = 6
     char *ptr9 = alloc_pages(1);    // idx = 5
 
-    uart_printf("------------------------------------------------------------\r\n");
+    // uart_printf_async("------------------------------------------------------------\r\n");
 
     // test free_page -> coalesce blocks
     free_page(ptr7);
     free_page(ptr8);
     free_page(ptr9);
 
-    uart_printf("------------------------------------------------------------\r\n");
+    // uart_printf_async("------------------------------------------------------------\r\n");
 
     // free all pointer
     free_page(ptr1);

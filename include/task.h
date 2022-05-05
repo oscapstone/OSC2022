@@ -1,6 +1,8 @@
 #ifndef TASK_H
 #define TASK_H
 #include "list.h"
+#include "malloc.h"
+#include "exception.h"
 #include "simple_alloc.h"
 
 typedef struct task {

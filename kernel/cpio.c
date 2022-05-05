@@ -2,6 +2,9 @@
 
 cpio_newc_header* header;
 
+char *syscall_file_start_addr;
+unsigned int syscall_file_size;
+
 void cpio_init() {
     header = 0;
 }
@@ -34,7 +37,7 @@ void cpio_newc_parser(cpio_callback_t callback, char* param) {
 }
 
 void cpio_newc_parse_header(char** cpio_ptr, cpio_newc_header** header) {
-    *header = *cpio_ptr;
+    *header = (cpio_newc_header *)*cpio_ptr;
     *cpio_ptr += sizeof(cpio_newc_header);
 }
 
@@ -46,22 +49,22 @@ void cpio_newc_parse_data(char** cpio_ptr, char** buf, unsigned int size, unsign
 }
 
 void cpio_ls_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size) {
-    uart_printf("%s\r\n", file_name);
+    uart_printf_async("%s\r\n", file_name);
 }
 
 void cpio_cat_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size) {
     if (strcmp(param, file_name))
         return;
-    uart_printf("Filename: %s\r\n", file_name);
+    uart_printf_async("Filename: %s\r\n", file_name);
     while (data_size--) {
         // if there is newline, use CRLF
         if (*file_data == '\n')
-            uart_write_string("\r\n");
+            uart_write_string_async("\r\n");
         else
-            uart_write_char(*file_data);
-        *file_data++;
+            uart_write_char_async(*file_data);
+        file_data++;
     }
-    uart_printf("\r\n");
+    uart_printf_async("\r\n");
 }
 
 void cpio_prog_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size) {
@@ -76,4 +79,32 @@ void cpio_prog_callback(char* param, cpio_newc_header* header, char* file_name, 
         "eret\n\t"
         :: "r" (file_data), "r" (prog_stack + 0x10000)
     );
+}
+
+void cpio_get_file_start_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size) {
+    if (strcmp(file_name, param))
+        return;
+    syscall_file_start_addr = file_data;
+}
+
+void cpio_get_file_size_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size) {
+    if (strcmp(file_name, param))
+        return;
+    syscall_file_size = data_size;
+}
+
+char* get_file_start(char* path) {
+    cpio_newc_parser(cpio_get_file_start_callback, path);
+    return syscall_file_start_addr;
+}
+
+unsigned int get_file_size(char* path) {
+    cpio_newc_parser(cpio_get_file_size_callback, path);
+    return syscall_file_size;
+}
+
+void cpio_exec_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size) {
+    if (strcmp(file_name, param))
+        return;
+    exec_thread(file_data, data_size);
 }

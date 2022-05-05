@@ -1,8 +1,9 @@
 #ifndef CPIO_H
 #define CPIO_H
+#include "sched.h"
 #include "simple_alloc.h"
 
-// #define INITRD_ADDR (0x8000000)  // QEMU: 0x8000000, Rpi3: 0x20000000
+// QEMU: 0x8000000, Rpi3: 0x20000000
 extern void* INITRD_ADDR;
 
 typedef struct cpio_newc_header {
@@ -34,5 +35,14 @@ void cpio_newc_parse_data(char** cpio_ptr, char** buf, unsigned int size, unsign
 void cpio_ls_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size);
 void cpio_cat_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size);
 void cpio_prog_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size);
+
+extern char *syscall_file_start_addr;
+extern unsigned int syscall_file_size;
+void cpio_get_file_start_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size);
+void cpio_get_file_size_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size);
+char* get_file_start(char* path);
+unsigned int get_file_size(char* path);
+
+void cpio_exec_callback(char* param, cpio_newc_header* header, char* file_name, unsigned int name_size, char* file_data, unsigned int data_size);
 
 #endif

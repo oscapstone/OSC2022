@@ -71,11 +71,11 @@ void dtb_parser(dtb_callback_t callback) {
 
 void dtb_get_initrd_callback(unsigned int token_type, char* name, char* data) {
     if (token_type == FDT_PROP && !strcmp(name, "linux,initrd-start")) {
-        INITRD_ADDR = BE_to_uint(data);
-        uart_printf("Initramfs address: 0x%x\r\n", INITRD_ADDR);
+        INITRD_ADDR = (void *)(unsigned long long int)BE_to_uint(data);
+        uart_printf_async("Initramfs address: 0x%x\r\n", INITRD_ADDR);
     }
     if (token_type == FDT_PROP && !strcmp(name, "linux,initrd-end")) {
-        INITRD_END = BE_to_uint(data);
+        INITRD_END = (void *)(unsigned long long int)BE_to_uint(data);
     }
 }
 
@@ -84,22 +84,22 @@ void dtb_show_callback(unsigned int token_type, char* name, char* data) {
     switch (token_type) {
         case FDT_BEGIN_NODE:
             for (unsigned int i = 0; i < dtb_tree_level; i++)
-                uart_printf("  ");
-            uart_printf("%s{\r\n", name);
+                uart_printf_async("  ");
+            uart_printf_async("%s{\r\n", name);
             dtb_tree_level++;
             break;
 
         case FDT_END_NODE:
             dtb_tree_level--;
             for (unsigned int i = 0; i < dtb_tree_level; i++)
-                uart_printf("  ");
-            uart_printf("}\r\n");
+                uart_printf_async("  ");
+            uart_printf_async("}\r\n");
             break;
 
         case FDT_PROP:
             for (unsigned int i = 0; i < dtb_tree_level; i++)
-                uart_printf("  ");
-            uart_printf("%s\r\n", name);
+                uart_printf_async("  ");
+            uart_printf_async("%s\r\n", name);
             break;
     }
 }

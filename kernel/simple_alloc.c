@@ -11,7 +11,7 @@ void* simple_alloc(unsigned int size) {
         size = 0x10;
     // check out of memory
     if ((unsigned long long int)ptr + size > (unsigned long long int)&_simple_alloc_end) {
-        uart_printf("simple_alloc : No space\r\n");
+        uart_printf_async("simple_alloc : No space\r\n");
         return 0;
     }
     // 0x10 alignment

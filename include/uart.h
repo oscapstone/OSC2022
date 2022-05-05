@@ -1,8 +1,10 @@
 #ifndef UART_H
 #define UART_H
 #include "gpio.h"
+#include "sprintf.h"
+#include "exception.h"
 
-#define MAX_BUF_SIZE 0x100
+#define MAX_BUF_SIZE 0x1000
 
 #define IRQS1               ((volatile unsigned int*)(0x3f00b210))
 
