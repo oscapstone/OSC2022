@@ -9,7 +9,7 @@ void timer_init() {
 
 void handle_timer_irq() {
     //printf("Timer interrupt.\n");
-    set_timer(read_freq()/100);
+    set_timer(read_freq()>>5);
     timer_tick();
 }
 

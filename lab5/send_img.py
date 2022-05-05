@@ -26,6 +26,6 @@ with open(args.img, 'rb') as f:
         for i in range(img_size):
             tty.write(f.read(1))
             tty.flush()
-            time.sleep(0.0001)
+            #time.sleep(0.0001)
 
         print('img sent')
