@@ -8,3 +8,7 @@
 
 out/
 test/
+
+.gdb_history
+
+user_prog
