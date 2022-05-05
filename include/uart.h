@@ -35,4 +35,5 @@ void enable_uart_w_interrupt();
 void disable_uart_interrupt();
 void disable_uart_r_interrupt();
 void disable_uart_w_interrupt();
+void raiseError(char *message);
 #endif

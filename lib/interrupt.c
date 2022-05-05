@@ -60,7 +60,7 @@ void insert_interrupt_event(interrupt_event_t* event_p)
     if(event_priority < interrupt_event_pointer->priority) // less than head 
     {
         // add preemption to preemption (another linking list for preemptions)
-        disable_interrupt();
+        lock_interrupt();
         if(is_empty(preemption_event_pointer))
         {
             // uart_puts("First preemption\n");
@@ -72,7 +72,7 @@ void insert_interrupt_event(interrupt_event_t* event_p)
             // uart_puts("Insert preemption\n");
             insert_preemption_event(event_p);
         }
-        enable_interrupt();
+        unlock_interrupt();
             
         return;
     }
@@ -94,10 +94,10 @@ void insert_interrupt_event(interrupt_event_t* event_p)
 
 void add_interrupt(void (*callback)(), unsigned long long priority)
 {
-    interrupt_event_t* new_interrupt_event = (interrupt_event_t*)simple_malloc(sizeof(interrupt_event_t));
+    interrupt_event_t* new_interrupt_event = (interrupt_event_t*)malloc(sizeof(interrupt_event_t));
     init_interrupt_event(new_interrupt_event, callback, priority);
 
-    disable_interrupt();
+    lock_interrupt();
     // uart_puts("TAR interrupt: "); uart_hex(interrupt_event_pointer); uart_newline();
     // uart_puts("New interrupt: "); uart_hex(new_interrupt_event); uart_newline();
    
@@ -112,16 +112,16 @@ void add_interrupt(void (*callback)(), unsigned long long priority)
         // uart_puts("Insert interrupt\n");
         insert_interrupt_event(new_interrupt_event);
     }
-    enable_interrupt();
+    unlock_interrupt();
 }
 
 void run_preemption()
 {
     while(is_not_empty(preemption_event_pointer))
     {
-        enable_interrupt();
+        unlock_interrupt();
         exec_handler(preemption_event_pointer);
-        disable_interrupt();
+        lock_interrupt();
         preemption_event_pointer = preemption_event_pointer->next_event;
     }
 }
@@ -130,30 +130,51 @@ void run_interrupt()
 {
     while(is_not_empty(interrupt_event_pointer))
     {
-        enable_interrupt();
+        // uart_puts("Start run interrupt\n");
+        interrupt_event_t* next_event_p = interrupt_event_pointer->next_event;
+        unlock_interrupt();
         exec_handler(interrupt_event_pointer);
-        disable_interrupt();
-        interrupt_event_pointer = interrupt_event_pointer->next_event;
+        lock_interrupt();
+        interrupt_event_pointer = next_event_p;
     }
 }
 
 void exec_handler(interrupt_event_t* event_p)
 {
-    // uart_puts("Exec Handler\n"); uart_num(event_p->priority); uart_newline();
+    // uart_puts("Exec Handler: "); uart_num(event_p->priority); uart_newline();
     ((void (*)())event_p->handler)();
-    /* TODO
-    free executed event_p
-    */
+    free(event_p);
 }
 
-void enable_interrupt()
+unsigned long long is_disable_interrupt()
 {
-    __asm__ __volatile__("msr daifclr, 0xf");
+    unsigned long long daif;
+    __asm__ __volatile__("mrs %0, daif\n\t"
+                         : "=r"(daif));
+
+    return daif != 0;  //enable -> daif == 0 (no mask)
 }
 
-void disable_interrupt()
-{
-    __asm__ __volatile__("msr daifset, 0xf");
+int64 lock_count = 0;
+void lock_interrupt() {
+    disable_interrupt();
+    lock_count++;
+    // uart_puts("add lock cou: "); uart_num(lock_count);
+    // uart_puts(", is disable? "); uart_num(is_disable_interrupt()); uart_newline();
+}
+
+void unlock_interrupt() {
+    lock_count--;
+    // uart_puts("reduce lock cou: "); uart_num(lock_count);
+    
+    if(lock_count == 0) {
+        enable_interrupt();
+    }
+    else if(lock_count < 0) {
+        raiseError("interrupt unlock before lock\n");
+    }
+
+    // uart_puts(", is disable? "); uart_num(is_disable_interrupt()); uart_newline();
 }
 
 void wait_loop()

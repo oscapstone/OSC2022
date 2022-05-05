@@ -1,4 +1,7 @@
 *.img
 *.elf
 *.o
+*.d
+*.cpio
+*.Identifier
 !firmware/start.elf

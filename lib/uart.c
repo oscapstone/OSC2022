@@ -264,13 +264,13 @@ unsigned int uart_async_putc(char c)
 
     
     // critical section
-    disable_interrupt();
+    lock_interrupt();
     tx_buffer[tx_buffer_widx++] = c;
     if (tx_buffer_widx >= MAX_BUF_SIZE)
         tx_buffer_widx = 0; // cycle pointer
 
     // start asynchronous transfer
-    enable_interrupt();
+    unlock_interrupt();
     
     // enable interrupt to transfer
     enable_uart_w_interrupt();
@@ -336,13 +336,13 @@ char uart_async_getc()
     }
 
     // critical section
-    disable_interrupt();
+    lock_interrupt();
     char r = rx_buffer[rx_buffer_ridx++];
 
     if (rx_buffer_ridx >= MAX_BUF_SIZE)
         rx_buffer_ridx = 0;
 
-    enable_interrupt();
+    unlock_interrupt();
 
     return r;
 }
@@ -381,4 +381,12 @@ void disable_uart_r_interrupt()
 void disable_uart_w_interrupt()
 {
     *AUX_MU_IER &= ~(2);
+}
+
+//
+
+void raiseError(char *message) {
+    uart_puts("[Error] ");
+    uart_puts(message);
+    while(1);
 }

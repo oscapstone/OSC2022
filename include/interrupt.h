@@ -21,8 +21,19 @@ void run_interrupt();
 void run_preemption();
 void exec_handler(interrupt_event_t* event_p);
 
-void enable_interrupt();
-void disable_interrupt();
+static inline void enable_interrupt()
+{
+    __asm__ __volatile__("msr daifclr, 0xf");
+}
+
+static inline void disable_interrupt()
+{
+    __asm__ __volatile__("msr daifset, 0xf");
+}
+
+unsigned long long is_disable_interrupt();
+void lock_interrupt();
+void unlock_interrupt();
 
 void wait_loop();
 

@@ -25,7 +25,7 @@ extern volatile unsigned int mbox[36];
 #define MBOX_TAG_GETARM_RAM             0x0010005
 
 
-int mbox_call(unsigned char ch);
+int _mbox_call(unsigned char ch);
 void mbox_request(unsigned int tag, unsigned int res_len);
 
 #endif
