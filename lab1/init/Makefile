@@ -4,13 +4,14 @@ CFLAGS =
 CXXFLAGS =
 
 OUTPUT ?= .
+HEADERS ?= ../include
 OBJECTS = \
-		boot.o
+		kernel_init.o
 
 all: $(OBJECTS) 
 
-%.o: %.S
-	$(CC) -c $^ -o $(OUTPUT)/$@
+%.o: %.c
+	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS)
 
 clean:
 	rm $(OUTPUT)/$(OBJECTS)

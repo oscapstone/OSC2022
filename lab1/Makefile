@@ -8,12 +8,15 @@ OBJDUMP = aarch64-linux-gnu-objdump
 QEMU = qemu-system-aarch64
 
 LINKER_FILE = ./linker.ld
-HEADERS = ./include/
+HEADERS = $(PWD)/include/
 OUTPUT = $(PWD)/build
 KNAME = $(OUTPUT)/kernel8
 
 OBJECTS = \
 		$(OUTPUT)/boot.o \
+		$(OUTPUT)/mini_uart.o \
+		$(OUTPUT)/main.o \
+		$(OUTPUT)/kernel_init.o
 
 .PHONY: all start objects link kernel end clean dump
 
@@ -24,7 +27,10 @@ start:
 	@echo "Start building kernel8.img"
 
 objects: 
-	$(MAKE) -C boot OUTPUT=$(OUTPUT)
+	$(MAKE) -C boot OUTPUT=$(OUTPUT) HEADERS=$(HEADERS)
+	$(MAKE) -C peripherals OUTPUT=$(OUTPUT) HEADERS=$(HEADERS)
+	$(MAKE) -C init OUTPUT=$(OUTPUT) HEADERS=$(HEADERS)
+	$(MAKE) -C kernel OUTPUT=$(OUTPUT) HEADERS=$(HEADERS)
 
 link: $(OBJECTS)
 	$(LD) -T $(LINKER_FILE) -o $(KNAME).elf $(OBJECTS) 
