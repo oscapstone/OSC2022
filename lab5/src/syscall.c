@@ -5,9 +5,12 @@
 #include "exec.h"
 #include "textio.h"
 #include "mailbox.h"
+#include "list.h"
 
 extern struct taskControlBlock *currentTask;
 extern struct taskControlBlock tasks[MAX_TASKS];
+extern struct list readylist;
+extern struct listItem taskListItem[MAX_TASKS];
 
 void syscall_kill(int pid) {
   if (pid == currentTask->pid) {
@@ -16,7 +19,9 @@ void syscall_kill(int pid) {
   } else {
     // kprintf("You have no permission to kill %d\n", pid);
     kprintf("kill process %d\n", pid);
+    disable_preempt();
     tasks[pid].state = eTerminated;
+    listRemoveItem(&readylist, &taskListItem[pid]);
   }
 }
 
