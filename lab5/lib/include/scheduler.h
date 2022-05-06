@@ -24,6 +24,7 @@ typedef struct task{
   uint64_t sp_addr;
   uint32_t pid;
   enum mode mode;
+  void (*handler)();
   enum state state;
   struct task *next;
 } task;

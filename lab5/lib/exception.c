@@ -91,6 +91,7 @@ void sync_router(uint64_t x0, uint64_t x1){
     child->lr = (uint64_t)child_return_from_fork; // frame->x30;
     child->sp = (uint64_t)frame; // + sizeof(trap_frame);
     child->target_func = parent->target_func;
+    child->handler = parent->handler;
     // copy the stack
     char *src1 = (char *)parent->user_sp;
     char *dst1 = (char *)child->user_sp;
@@ -127,5 +128,11 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = mbox_call(ch, mbox);
   }else if(frame->x8 == 7){        // kill
     kill_thread(frame->x0);
+  }else if(frame->x8 == 8){
+    printf("this is signal syscall\n\r");
+    task *cur = get_current();
+    cur->handler = (void (*)())frame->x1;
+  }else if(frame->x8 == 9){
+    printf("this is SIGKILL syscall\n\r");
   }
 }

@@ -62,3 +62,10 @@ void sys_kill(int pid){
   asm volatile("mov x8, 7\n");
   asm volatile("svc 0\n");
 }
+
+void sys_signal(int SIGNAL, void (*handler)()){
+  asm volatile("mov x0, %[output]\n"::[output]"r"(SIGNAL));
+  asm volatile("mov x1, %[output]\n"::[output]"r"(handler));
+  asm volatile("mov x8, 8\n");
+  asm volatile("svc 0\n");
+}

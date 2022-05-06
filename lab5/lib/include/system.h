@@ -9,4 +9,5 @@ int sys_fork();
 void sys_exit();
 int sys_mbox_call(unsigned char ch, unsigned int *m_box);
 void sys_kill(int pid);
+void sys_signal(int SIGNAL, void (*handler)());
 
