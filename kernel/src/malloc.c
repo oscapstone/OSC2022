@@ -6,7 +6,6 @@
 extern Frame *frames;
 extern Buddy *buddy_list;
 FreeChunkList *freechunk_list;
-// FreeChunkList freechunk_list[MAX_CHUNK_SIZE];
 
 /* define 11 level common chunk size */
 unsigned int chunk_size[] = {0x10, 0x20, 0x30, 0x40, 0x60, 0x80, 

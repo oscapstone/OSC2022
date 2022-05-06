@@ -125,7 +125,7 @@ void buddy_init(){
         list_add_tail(&frames[idx].list, &buddy_list[frames[idx].order].list);
     }
 
-    print_buddy_list();
+    // print_buddy_list();
 }
 
 

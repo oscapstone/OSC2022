@@ -77,7 +77,6 @@ void kill_zombie(){
 }
 
 void schedule(){
-    // [TODO]
     disable_irq();
     Thread *curr_thread = get_current();
     Thread *next_thread = (Thread *)run_thread_head->list.next;
