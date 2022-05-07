@@ -43,7 +43,8 @@ unsigned int padding(unsigned int);
 void ls();
 void cat(char [MAX_SIZE]);
 void run(unsigned long);
-unsigned long findDataAddr(char [MAX_SIZE]);
+unsigned long findDataAddr(const char *);
+file_info cpio_find_file_info(const char *thefilename);
 void parse_cpio_header(cpio_newc_header *, file_info *);
 
 

@@ -1,5 +1,6 @@
 #ifndef	SYSCALL_H_
 #define	SYSCALL_H_
+#include <cpio.h>
 
 typedef struct _TrapFrame{
     unsigned long long x[31];
@@ -19,6 +20,8 @@ void sys_mbox_call(TrapFrame *);
 void sys_kill(TrapFrame *);
 
 int do_getpid();
+int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);
+void *load_program(file_info *fileInfo);
 void do_fork();
 void do_exit();
 void do_kill();

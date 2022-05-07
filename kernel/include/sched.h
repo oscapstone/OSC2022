@@ -37,6 +37,8 @@ typedef struct _Thread{
     int id;
     void *ustack_addr;
     void *kstack_addr;
+    void *code_addr; // use in exec
+    unsigned int code_size; // use in exec
 }Thread;
 
 extern Thread* get_current();
