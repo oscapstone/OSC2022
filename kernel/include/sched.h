@@ -4,7 +4,7 @@
 #include <list.h>
 
 #define MAX_THREAD 0x10
-#define STACT_SIZE 0x1000
+#define STACK_SIZE 0x1000
 
 enum thread_state{
     NOUSE,

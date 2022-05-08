@@ -61,17 +61,50 @@ int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
     Thread *curr_thread = get_current();
     curr_thread->code_addr = thread_code_addr;
     curr_thread->code_size = fileInfo.filename_size;
-    
+
     trapFrame->elr_el1 = (unsigned long long)curr_thread->code_addr;
-    trapFrame->sp_el0 = (unsigned long long)curr_thread->ustack_addr + STACT_SIZE;
+    trapFrame->sp_el0 = (unsigned long long)curr_thread->ustack_addr + STACK_SIZE;
 
     return 0;
 }
+
+int kernel_exec(char *name){
+    /* check if the file info exist */
+    file_info fileInfo = cpio_find_file_info(name);
+    if(fileInfo.filename == NULL) return -1;
+
+    /* check if the file can create in new memory */
+    void *thread_code_addr = load_program(&fileInfo); 
+    if(thread_code_addr == NULL) return -1;
+
+    Thread *new_thread = thread_create(thread_code_addr);
+    new_thread->code_addr = thread_code_addr;
+    new_thread->code_size = fileInfo.filename_size;
+    print_string(UITOHEX, "new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
+
+    set_period_timer_irq();
+    asm volatile(
+        "mov x0, 0x0\n\t"
+        "msr spsr_el1, x0\n\t"
+        "msr tpidr_el1, %0\n\t"
+        "msr elr_el1, %1\n\t"
+        "msr sp_el0, %2\n\t"
+        "mov sp, %3\n\t"
+        "eret\n\t"
+        ::"r"(new_thread),
+        "r"(new_thread->code_addr),
+        "r"(new_thread->ustack_addr + STACK_SIZE),
+        "r"(new_thread->kstack_addr + STACK_SIZE)
+        : "x0"
+    );
+    return 0; 
+}
+
 void *load_program(file_info *fileInfo){
     void *thread_code_addr = kmalloc(fileInfo->datasize);
     if(thread_code_addr == NULL) return NULL;
 
-    memcpy(thread_code_addr, fileInfo->data, fileInfo->filename_size);
+    memcpy(thread_code_addr, fileInfo->data, fileInfo->datasize);
  
     return thread_code_addr;
 }

@@ -40,10 +40,10 @@ Thread *thread_create(void(*func)()){
 
     Thread *new_thread = &thread_pool[idx];
     new_thread->state = WAIT;
-    new_thread->ustack_addr = kmalloc(STACT_SIZE);
-    new_thread->kstack_addr = kmalloc(STACT_SIZE);
-    new_thread->ctx.fp = (unsigned long)new_thread->kstack_addr + STACT_SIZE;
-    new_thread->ctx.sp = (unsigned long)new_thread->kstack_addr + STACT_SIZE;
+    new_thread->ustack_addr = kmalloc(STACK_SIZE);
+    new_thread->kstack_addr = kmalloc(STACK_SIZE);
+    new_thread->ctx.fp = (unsigned long)new_thread->kstack_addr + STACK_SIZE;
+    new_thread->ctx.sp = (unsigned long)new_thread->kstack_addr + STACK_SIZE;
     new_thread->ctx.lr = (unsigned long)func;
 
 

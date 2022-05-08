@@ -30,7 +30,7 @@ int main(unsigned long dtb_base){
     // print_string(UITOHEX, "new_thread->kstack: ", (unsigned long long )new_thread->kstack_addr, 1);
     // print_string(UITOHEX, "thead_head->next: ", (unsigned long long )run_thread_head->list.next, 1);
 
-    kernel_main();
+    // kernel_main();
 
     PrintWelcome();
     ShellLoop();

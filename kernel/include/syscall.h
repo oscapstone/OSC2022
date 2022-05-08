@@ -26,4 +26,6 @@ void do_fork();
 void do_exit();
 void do_kill();
 
+int kernel_exec(char *name);
+
 #endif 
