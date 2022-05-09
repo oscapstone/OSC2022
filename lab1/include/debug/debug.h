@@ -6,7 +6,7 @@
 #define DEBUG_KERNEL_START() log_kernel_start()
 #define LOG(fmt, ...) \
     if(debug) \
-        printf("[%s/%s:%d] " fmt , __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+        printf("[%s/%s:%d] " fmt "\r\n" , __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
     
 
 

@@ -12,7 +12,7 @@
 - Basic Exercise 3
     - [x] Simple Shell 
 - Basic Exercise 4
-    - [ ] Mailbox
+    - [x] Mailbox
 - Advanced Exercise 1
-    - [ ] Reboot
+    - [x] Reboot
 

@@ -13,6 +13,7 @@ OUTPUT ?= .
 HEADERS ?= ../include
 OBJECTS = \
 		shell.o \
+		reboot.o \
 	    main.o
 
 .PHONY: all 

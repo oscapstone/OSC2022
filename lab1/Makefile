@@ -31,8 +31,10 @@ LIBS = \
 OBJECTS = \
 		$(OUTPUT)/boot.o \
 		$(OUTPUT)/mini_uart.o \
+		$(OUTPUT)/mailbox.o \
 		$(OUTPUT)/main.o \
 		$(OUTPUT)/kernel_init.o \
+		$(OUTPUT)/reboot.o \
 		$(OUTPUT)/shell.o \
 		$(OUTPUT)/debug.o \
 		$(LIBS)

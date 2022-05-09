@@ -13,7 +13,8 @@ CXXFLAGS =
 OUTPUT ?= .
 HEADERS ?= ../include
 OBJECTS = \
-		mini_uart.o
+		mini_uart.o \
+		mailbox.o
 		  
 .PHONY: all 
 all: $(OBJECTS)

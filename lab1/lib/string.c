@@ -151,3 +151,14 @@ int32_t strcmp(char* str1, char* str2){
     }
     return 0;
 }
+void* memcpy(void* dst, const void* src, size_t n){
+    const uint8_t* ps = src;
+    uint8_t*pd = dst;
+    for(size_t i = 0 ; i < n ; i++) pd[i] = ps[i];
+    return dst;
+}
+void* memset(void* s, int c, size_t n){
+    uint8_t* ps = s;
+    for(size_t i = 0 ; i < n ; i++) ps[i] = c;
+    return s;
+}

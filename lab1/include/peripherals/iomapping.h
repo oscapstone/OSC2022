@@ -63,8 +63,17 @@
 #define AUX_SPI1_IO_REG (IO_BASE + 0x2150D0)
 #define AUX_SPI1_PEEK_REG (IO_BASE + 0x2150D4)
 
+// mailbox register base address
+#define MBOX_REG (IO_BASE + 0xB880)
+
+// watch dog
+#define PM_PASSWORD (IO_BASE + 0x1b000000)
+#define PM_RSTC (IO_BASE + 0x10001c)
+#define PM_WDOG (IO_BASE + 0x100024)
+
 #define IO_MMIO_write32(addr, val) *(uint32_t*)addr = val
 #define IO_MMIO_read32(addr) *(uint32_t*)addr 
+
 
 #endif
     
