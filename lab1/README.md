@@ -10,7 +10,7 @@
 - Basic Exercise 2
     - [x] Mini UART
 - Basic Exercise 3
-    - [ ] Simple Shell 
+    - [x] Simple Shell 
 - Basic Exercise 4
     - [ ] Mailbox
 - Advanced Exercise 1

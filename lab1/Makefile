@@ -33,6 +33,7 @@ OBJECTS = \
 		$(OUTPUT)/mini_uart.o \
 		$(OUTPUT)/main.o \
 		$(OUTPUT)/kernel_init.o \
+		$(OUTPUT)/shell.o \
 		$(OUTPUT)/debug.o \
 		$(LIBS)
 

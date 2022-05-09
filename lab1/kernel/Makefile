@@ -12,6 +12,7 @@ CXXFLAGS =
 OUTPUT ?= .
 HEADERS ?= ../include
 OBJECTS = \
+		shell.o \
 	    main.o
 
 .PHONY: all 

@@ -143,4 +143,11 @@ char * ultoa(uint64_t value, char* str, uint32_t base){
     return str;
 
 }
-
+int32_t strcmp(char* str1, char* str2){
+    while(*str1 != '\0'){
+        if(*str1 > *str2) return 1;
+        else if(*str1 < *str2) return -1;
+        str1++;str2++;
+    }
+    return 0;
+}

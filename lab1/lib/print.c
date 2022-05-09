@@ -96,3 +96,10 @@ int32_t printf(char *fmt, ...){
     va_end(ap);
     return count;
 }
+int32_t putchar(uint8_t ch){
+    mini_uart_write(ch);
+    return ch;
+}
+int32_t getchar(){
+    return mini_uart_read();
+}
