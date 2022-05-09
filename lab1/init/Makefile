@@ -1,6 +1,13 @@
 CC = aarch64-linux-gnu-gcc
 CPP = aarch64-linux-gnu-cpp
-CFLAGS =
+CFLAGS ?= \
+        -nostdlib \
+        -nodefaultlibs \
+        -ffreestanding \
+        -nostartfiles \
+        -mgeneral-regs-only \
+        -fno-builtin
+
 CXXFLAGS =
 
 OUTPUT ?= .
@@ -11,7 +18,7 @@ OBJECTS = \
 all: $(OBJECTS) 
 
 %.o: %.c
-	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS)
+	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS) $(CFLAGS)
 
 clean:
 	rm $(OUTPUT)/$(OBJECTS)

@@ -1,6 +1,13 @@
 CC = aarch64-linux-gnu-gcc
 CPP = aarch64-linux-gnu-cpp
-CFLAGS =
+CFLAGS ?= \
+        -nostdlib \
+        -nodefaultlibs \
+        -ffreestanding \
+        -nostartfiles \
+        -mgeneral-regs-only \
+        -fno-builtin
+
 CXXFLAGS =
 
 OUTPUT ?= .

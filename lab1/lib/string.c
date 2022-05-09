@@ -1,0 +1,146 @@
+#include "lib/string.h"
+#include "types.h"
+char *int_table = "0123456789";
+char *hex_table = "0123456789abcdef";
+char * itoa(int32_t value, char* str, uint32_t base){
+    char buf[32];
+    volatile int i = 0, j = 0;
+    
+    switch(base){
+        case 16:
+            uint32_t val = (uint32_t)value;
+            do{
+                buf[i] = hex_table[val & 15]; 
+                i++;
+            }while(val >>= 4);
+            buf[i] = '\0';
+            break;
+        default:
+        case 10:
+            if(value < 0){
+                uint32_t val = -value;
+                do{
+                    buf[i] = int_table[val % 10]; 
+                    i++;
+                }while(val /= 10);
+                buf[i] = '-';
+                buf[++i] = '\0';
+            }else{
+                uint32_t val = value;
+                do{
+                    buf[i] = int_table[val % 10]; 
+                    i++;
+                }while(val /= 10);
+                buf[i] = '\0';
+            }
+    }
+    i--;
+    do{
+        str[j] = buf[i];
+        j++;i--;
+    }while(i >= 0);
+    str[j] = '\0';
+    return str;
+}
+
+char * utoa(uint32_t value, char* str, uint32_t base){
+    char buf[32];
+    volatile int i = 0, j = 0;
+    uint32_t val = value;
+    
+    switch(base){
+        case 16:
+            do{
+                buf[i] = hex_table[val & 15]; 
+                i++;
+            }while(val >>= 4);
+            buf[i] = '\0';
+            break;
+        default:
+        case 10:
+            do{
+                buf[i] = int_table[val % 10]; 
+                i++;
+            }while(val /= 10);
+            buf[i] = '\0';
+    }
+    i--;
+    do{
+        str[j] = buf[i];
+        j++;i--;
+    }while(i >= 0);
+    str[j] = '\0';
+    return str;
+}
+char * ltoa(int64_t value, char* str, uint32_t base){
+    char buf[32];
+    volatile int i = 0, j = 0;
+    
+    switch(base){
+        case 16:
+            uint64_t val = (uint64_t)value;
+            do{
+                buf[i] = hex_table[val & 15]; 
+                i++;
+            }while(val >>= 4);
+            buf[i] = '\0';
+            break;
+        default:
+        case 10:
+            if(value < 0){
+                uint64_t val = -value;
+                do{
+                    buf[i] = int_table[val % 10]; 
+                    i++;
+                }while(val /= 10);
+                buf[i] = '-';
+                buf[++i] = '\0';
+            }else{
+                uint64_t val = value;
+                do{
+                    buf[i] = int_table[val % 10]; 
+                    i++;
+                }while(val /= 10);
+                buf[i] = '\0';
+            }
+    }
+    i--;
+    do{
+        str[j] = buf[i];
+        j++;i--;
+    }while(i >= 0);
+    str[j] = '\0';
+    return str;
+
+}
+char * ultoa(uint64_t value, char* str, uint32_t base){
+    char buf[32];
+    volatile int i = 0, j = 0;
+    uint64_t val = value;
+    
+    switch(base){
+        case 16:
+            do{
+                buf[i] = hex_table[val & 15]; 
+                i++;
+            }while(val >>= 4);
+            buf[i] = '\0';
+            break;
+        default:
+        case 10:
+            do{
+                buf[i] = int_table[val % 10]; 
+                i++;
+            }while(val /= 10);
+            buf[i] = '\0';
+    }
+    i--;
+    do{
+        str[j] = buf[i];
+        j++;i--;
+    }while(i >= 0);
+    str[j] = '\0';
+    return str;
+
+}
+

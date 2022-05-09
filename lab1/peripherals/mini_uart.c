@@ -1,7 +1,6 @@
 #include "types.h"
 #include "peripherals/iomapping.h"
 #include "peripherals/mini_uart.h"
-
 void delay_cycles(uint64_t n){
     for(register uint64_t i = 0 ; i < n ; i++) asm volatile("nop");
 }
@@ -41,8 +40,7 @@ void mini_uart_init(void){
 
     // Initialize Auxiliary peripherals Register
     // Mini UART enable
-    tmp = IO_MMIO_read32(AUX_ENABLES);
-    IO_MMIO_write32(AUX_ENABLES, 1|tmp);
+    IO_MMIO_write32(AUX_ENABLES, 1);
 
     // To disable auto flow control and disable receiver and transmitter, set control register to 0
     IO_MMIO_write32(AUX_MU_CNTL_REG, 0);
@@ -65,12 +63,12 @@ void mini_uart_init(void){
 }
 
 uint8_t mini_uart_read(void){
-    while(!(IO_MMIO_read32(AUX_MU_LSR_REG) & 1));
+    while(!(IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1));
     return IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
 }
 
 void mini_uart_write(uint8_t val){
-    while(!(IO_MMIO_read32(AUX_MU_LSR_REG) & (1 << 5)));
+    while(!(IO_MMIO_read32(AUX_MU_LSR_REG) & (0x1 << 5)));
     IO_MMIO_write32(AUX_MU_IO_REG, val);
 }
 
@@ -80,7 +78,8 @@ ssize_t write_bytes(uint8_t* buf, size_t n){
 }
 
 void write_str(char* buf){
-    uint64_t i = 0;
-    while(buf[i]) mini_uart_write((uint8_t)buf[i++]);
+    while(*buf) mini_uart_write((uint8_t)*buf++);
     return;
 }
+
+

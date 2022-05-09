@@ -12,14 +12,17 @@ CXXFLAGS =
 
 OUTPUT ?= .
 HEADERS ?= ../include
-OBJECTS = \
-		mini_uart.o
-		  
-.PHONY: all 
-all: $(OBJECTS)
+LIBS = \
+	 print.o \
+	 string.o
 
-%.o : %.c 
-	$(CC) -c $^ -o $(OUTPUT)/$@ -I $(HEADERS) $(CFLAGS)
+all: $(LIBS) 
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) -o $(OUTPUT)/$@ $^ -I$(HEADERS)
+
+
+
 
 clean:
-	rm $(OUTPUT)/$(OBJECTS)
+	rm $(OUTPUT)/$(LIBS)
