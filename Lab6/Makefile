@@ -6,7 +6,7 @@ FLAGS = -O0 -Wall -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only -g 
 INC = include
 LIB = lib
 CPIO = archive/initramfs.cpio
-USER_PROG = mbox_test
+USER_PROG = fork_test
 
 all: kernel8.img bootloader.img $(CPIO) $(USER_PROG).img
 
@@ -29,7 +29,7 @@ rd.o:$(CPIO)
 	aarch64-linux-gnu-ld -r -b binary -o rd.o $(CPIO)
 
 qemu-kernel:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img  -serial null -serial stdio -initrd archive/ta_initramfs.cpio
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd archive/initramfs.cpio
 
 qemu-debug:
 	aarch64-linux-gnu-objdump -d kernel8.elf > kernel8.S

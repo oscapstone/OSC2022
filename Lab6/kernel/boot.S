@@ -1,4 +1,5 @@
 #include "mm.h"
+#include "vm.h"
 
 .section ".text.boot"
 
@@ -17,7 +18,10 @@ master:
     ldr x0, =exception_table	// setup interrupt vector base
     msr vbar_el1, x0
 
-	mov sp, #0x800000
+	bl	mmu_init
+
+	ldr x1, =__stk_start
+	mov sp, x1
 
 	ldr     x1, =__bss_start
     ldr     w2, =__bss_size
@@ -38,7 +42,6 @@ from_el2_to_el1:
     msr spsr_el2, x0
     msr elr_el2, lr
     eret // return to EL1
-
 
 
 // save registers to stack
