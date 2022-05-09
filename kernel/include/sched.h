@@ -25,7 +25,7 @@ typedef struct _cpu_context{
     unsigned long x27;
     unsigned long x28;
     unsigned long fp; // frame pointer, stack base address
-    unsigned long lr; // retrun address
+    unsigned long lr; // retrun address after context switch
     unsigned long sp; // stact pointer
 }CpuContext;
 

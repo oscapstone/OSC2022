@@ -28,6 +28,8 @@ void init_thread_pool_and_head(){
     memset((char *)run_thread_head, 0, sizeof(Thread));
     INIT_LIST_HEAD(&run_thread_head->list);
     run_thread_head->id = -1;
+
+    thread_create(idle_thread);
 }
 
 Thread *thread_create(void(*func)()){

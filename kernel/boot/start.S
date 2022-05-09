@@ -90,6 +90,11 @@ _start:
     add sp, sp, 16 * 17
 .endm
 
+.global after_fork
+after_fork:
+    load_all
+    eret
+
 sync_exception_entry:
     save_all
     mrs     x0, esr_el1

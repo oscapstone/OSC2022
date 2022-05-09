@@ -105,18 +105,50 @@ void *load_program(file_info *fileInfo){
     if(thread_code_addr == NULL) return NULL;
 
     memcpy(thread_code_addr, fileInfo->data, fileInfo->datasize);
- 
+
     return thread_code_addr;
 }
 
 
-void sys_fork(TrapFrame *trapFrame){
-    do_fork();
+int sys_fork(TrapFrame *trapFrame){
+    return do_fork(trapFrame);
 }
-void do_fork(){
-    // Thread *new_thread;
-    // TrapFrame *curr_tf, *new_tf;
-    // void *start;
+
+int do_fork(TrapFrame *trapFrame){
+    Thread *curr_thread = get_current();
+
+    void *thread_code_addr = kmalloc(curr_thread->code_size);
+    if(thread_code_addr == NULL) return -1;
+
+    Thread *new_thread = thread_create(curr_thread->code_addr);
+    new_thread->code_addr = thread_code_addr;
+    new_thread->code_size = curr_thread->code_size;
+
+
+    /* copy the code */
+    memcpy((char *)new_thread->code_addr, (char *)curr_thread->code_addr, new_thread->code_size);
+    /* copy user stack */
+    memcpy((char *)new_thread->ustack_addr, (char *)curr_thread->ustack_addr, STACK_SIZE);
+    /* copy trap frame (kernel stack) */
+    TrapFrame *new_trapFrame = (TrapFrame *)((char *)new_thread->kstack_addr - sizeof(TrapFrame));
+    memcpy((char*)new_trapFrame, (char *)trapFrame, sizeof(TrapFrame));
+    /* copy context */
+    memcpy((char *)&new_thread->ctx, (char *)&curr_thread->ctx, sizeof(CpuContext));
+    
+    /* return pid = 0 (child) */
+    new_trapFrame->x[0] = 0;
+    /* set new code return to after eret */
+    new_trapFrame->elr_el1 = (unsigned long)new_thread->code_addr + 
+                            (trapFrame->elr_el1 - (unsigned long)curr_thread->code_addr);
+    /* set new code return to after eret */
+    new_trapFrame->sp_el0 = ((unsigned long)new_thread->ustack_addr + STACK_SIZE) -
+                            (((unsigned long)curr_thread->ustack_addr + STACK_SIZE) - trapFrame->sp_el0);
+   
+    /* after context switch, child proc will load all reg from kernel stack, and return to el0 */
+    new_thread->ctx.lr = (unsigned long)after_fork;
+    new_thread->ctx.sp = (unsigned long)new_trapFrame;
+
+    return 1;
 }
 
 void sys_exit(TrapFrame *trapFrame){
@@ -130,7 +162,6 @@ void do_exit(){
     
     enable_irq();
     schedule();
-    // cpu_switch_to(exit_thread, next_thread);
 }
 
 void sys_mbox_call(TrapFrame *trapFrame){

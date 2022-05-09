@@ -26,3 +26,4 @@ cpu_switch_to:
 get_current:
     mrs x0, tpidr_el1
     ret
+
