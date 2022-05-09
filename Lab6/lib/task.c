@@ -47,9 +47,9 @@ void create_root_thread() {
 
 task_struct* thread_create(void *func) {
     task_struct* new_task = (task_struct*)page_malloc(0);
-    new_task->context.fp = (unsigned long)new_task + PAGE_SIZE_4K - 1;
+    new_task->context.fp = (unsigned long)new_task + PAGE_SIZE_4K - 16;
     new_task->context.lr = (unsigned long)func;
-    new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 1;  // kernel stack pointer for the thread
+    new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 16;  // kernel stack pointer for the thread
     new_task->user_fp = page_malloc(0) + PAGE_SIZE_4K - 16;  // user stack frame pointer
 
     new_task->state = RUNNING;
