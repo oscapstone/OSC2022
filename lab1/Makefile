@@ -1,12 +1,15 @@
 CC = aarch64-linux-gnu-gcc
 CPP = aarch64-linux-gnu-cpp
-CFLAGS ?= \
+override CFLAGS += \
         -nostdlib \
         -nodefaultlibs \
         -ffreestanding \
         -nostartfiles \
         -mgeneral-regs-only \
-        -fno-builtin
+        -fno-builtin \
+
+LDFLAGS ?= \
+        -nostdlib \
 
 CXXFLAGS =
 LD = aarch64-linux-gnu-ld
@@ -30,6 +33,7 @@ OBJECTS = \
 		$(OUTPUT)/mini_uart.o \
 		$(OUTPUT)/main.o \
 		$(OUTPUT)/kernel_init.o \
+		$(OUTPUT)/debug.o \
 		$(LIBS)
 
 
@@ -42,14 +46,15 @@ start:
 	@echo "Start building kernel8.img"
 
 objects: 
-	$(MAKE) -C boot OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
-	$(MAKE) -C peripherals OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
+	$(MAKE) -C boot OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
+	$(MAKE) -C peripherals OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C init OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
-	$(MAKE) -C kernel OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
-	$(MAKE) -C lib OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
+	$(MAKE) -C kernel OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
+	$(MAKE) -C lib OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
+	$(MAKE) -C debug OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 
 link: $(OBJECTS)
-	$(LD) -T $(LINKER_FILE) -o $(KNAME).elf $(OBJECTS) 
+	$(LD) -T $(LINKER_FILE) -o $(KNAME).elf $(OBJECTS) $(LDFLAGS)
 
 kernel: $(KNAME).elf
 	$(OBJCOPY) -O binary $(KNAME).elf $(KNAME).img

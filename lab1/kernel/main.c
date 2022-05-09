@@ -2,16 +2,15 @@
 #include "peripherals/mini_uart.h"
 #include "init/kernel_init.h"
 #include "utils.h"
-char * hello = "hello world";
+#include "debug/debug.h"
+char * hello = "hello world\n";
 
+int tt[212];
 void kernel_main(void){
+    int count = 0;
     kernel_init();
-    printf("%s %p %x\n", hello, hello, hello);
-    printf("%p\n", mini_uart_read);
+    DEBUG_KERNEL_START();
     while(1){ 
-        //register uint8_t tmp = mini_uart_read();
-       // write_hex(mini_uart_read());
-       // mini_uart_write(' ');
-        
+        LOG("%d: %c\r\n",count, mini_uart_read());
     };
 }
