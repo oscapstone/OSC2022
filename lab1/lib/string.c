@@ -4,11 +4,12 @@ char *int_table = "0123456789";
 char *hex_table = "0123456789abcdef";
 char * itoa(int32_t value, char* str, uint32_t base){
     char buf[32];
+    uint32_t val;
     volatile int i = 0, j = 0;
     
     switch(base){
         case 16:
-            uint32_t val = (uint32_t)value;
+            val = (uint32_t)value;
             do{
                 buf[i] = hex_table[val & 15]; 
                 i++;
@@ -18,7 +19,7 @@ char * itoa(int32_t value, char* str, uint32_t base){
         default:
         case 10:
             if(value < 0){
-                uint32_t val = -value;
+                val = -value;
                 do{
                     buf[i] = int_table[val % 10]; 
                     i++;
@@ -26,7 +27,7 @@ char * itoa(int32_t value, char* str, uint32_t base){
                 buf[i] = '-';
                 buf[++i] = '\0';
             }else{
-                uint32_t val = value;
+                val = value;
                 do{
                     buf[i] = int_table[val % 10]; 
                     i++;
@@ -75,10 +76,11 @@ char * utoa(uint32_t value, char* str, uint32_t base){
 char * ltoa(int64_t value, char* str, uint32_t base){
     char buf[32];
     volatile int i = 0, j = 0;
+    uint64_t val;
     
     switch(base){
         case 16:
-            uint64_t val = (uint64_t)value;
+            val = (uint64_t)value;
             do{
                 buf[i] = hex_table[val & 15]; 
                 i++;
@@ -88,7 +90,7 @@ char * ltoa(int64_t value, char* str, uint32_t base){
         default:
         case 10:
             if(value < 0){
-                uint64_t val = -value;
+                val = -value;
                 do{
                     buf[i] = int_table[val % 10]; 
                     i++;
@@ -96,7 +98,7 @@ char * ltoa(int64_t value, char* str, uint32_t base){
                 buf[i] = '-';
                 buf[++i] = '\0';
             }else{
-                uint64_t val = value;
+                val = value;
                 do{
                     buf[i] = int_table[val % 10]; 
                     i++;
