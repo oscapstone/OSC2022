@@ -23,7 +23,7 @@ int do_getpid();
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);
 void *load_program(file_info *fileInfo);
 int do_fork(TrapFrame *trapFrame);
-void do_exit();
+void do_exit(int status);
 void do_kill();
 
 int kernel_exec(char *name);

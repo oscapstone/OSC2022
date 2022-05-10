@@ -25,7 +25,7 @@ int main(unsigned long dtb_base){
     // enable_AUX_MU_IER_r();
     enable_irq(); // DAIF set to 0b0000
 
-    kernel_exec("kernel8.img");
+    kernel_exec("user2.img");
 
     // kernel_main();
 

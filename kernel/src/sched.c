@@ -152,7 +152,7 @@ void foo(){
         delay(1);
         schedule();
     }
-    do_exit();
+    do_exit(0);
 }
 
 void print_run_thread(){

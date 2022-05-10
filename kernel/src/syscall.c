@@ -57,11 +57,12 @@ void sys_exec(TrapFrame *trapFrame){
     const char *name = (const char *)trapFrame->x[0];
     char **const argv = (char **const)trapFrame->x[1];
     int success = do_exec(trapFrame, name, argv);
+    disable_irq();
     trapFrame->x[0] = success;
     enable_irq();
 }
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
-    
+    disable_irq();
     /* check if the file info exist */
     file_info fileInfo = cpio_find_file_info(name);
     if(fileInfo.filename == NULL) return -1;
@@ -73,16 +74,17 @@ int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
     /* current thread will change the pc to new code addr */
     Thread *curr_thread = get_current();
     curr_thread->code_addr = thread_code_addr;
-    curr_thread->code_size = fileInfo.filename_size;
+    curr_thread->code_size = fileInfo.datasize;
 
     /* set current trapFrame elr_el1(begin of code) and sp_el0(begin of user stack)*/
     trapFrame->elr_el1 = (unsigned long)curr_thread->code_addr;
     trapFrame->sp_el0 = (unsigned long)curr_thread->ustack_addr + STACK_SIZE;
-
+    enable_irq();
     return 0;
 }
 
 int kernel_exec(char *name){
+    disable_irq();
     /* check if the file info exist */
     file_info fileInfo = cpio_find_file_info(name);
     if(fileInfo.filename == NULL) return -1;
@@ -93,11 +95,11 @@ int kernel_exec(char *name){
 
     Thread *new_thread = thread_create(thread_code_addr);
     new_thread->code_addr = thread_code_addr;
-    new_thread->code_size = fileInfo.filename_size;
-    print_string(UITOHEX, "new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
+    new_thread->code_size = fileInfo.datasize;
+    print_string(UITOHEX, "[*] kernel_exec: new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
     // set_period_timer_irq();
-    add_timer(timeout_print, 1, "[*] Time irq\n");
+    // add_timer(timeout_print, 1, "[*] Time irq\n");
     enable_irq();
     asm volatile(
         "mov x0, 0x0\n\t"
@@ -119,61 +121,73 @@ int kernel_exec(char *name){
 void *load_program(file_info *fileInfo){
     void *thread_code_addr = kmalloc(fileInfo->datasize);
     if(thread_code_addr == NULL) return NULL;
-
     memcpy(thread_code_addr, fileInfo->data, fileInfo->datasize);
-
     return thread_code_addr;
 }
 
 
 void sys_fork(TrapFrame *trapFrame){
+    disable_irq();
     int child_pid = do_fork(trapFrame);
+    disable_irq();
     trapFrame->x[0] = child_pid;
+    enable_irq();
 }
 
 int do_fork(TrapFrame *trapFrame){
+    disable_irq();
     Thread *curr_thread = get_current();
 
-    void *thread_code_addr = kmalloc(curr_thread->code_size);
-    if(thread_code_addr == NULL) return -1;
+    // void *thread_code_addr = kmalloc(curr_thread->code_size);
+    // if(thread_code_addr == NULL) return -1;
 
     Thread *new_thread = thread_create(curr_thread->code_addr);
-    new_thread->code_addr = thread_code_addr;
+    new_thread->code_addr = curr_thread->code_addr;
     new_thread->code_size = curr_thread->code_size;
 
 
     /* copy the code */
-    memcpy((char *)new_thread->code_addr, (char *)curr_thread->code_addr, new_thread->code_size);
+    // memcpy((char *)new_thread->code_addr, (char *)curr_thread->code_addr, new_thread->code_size);
+
     /* copy user stack */
     memcpy((char *)new_thread->ustack_addr, (char *)curr_thread->ustack_addr, STACK_SIZE);
     /* copy trap frame (kernel stack) */
     TrapFrame *new_trapFrame = (TrapFrame *)((char *)new_thread->kstack_addr + STACK_SIZE - sizeof(TrapFrame));
-    memcpy((char*)new_trapFrame, (char *)trapFrame, sizeof(TrapFrame));
+    memcpy((char *)new_trapFrame, (char *)trapFrame, sizeof(TrapFrame));
     /* copy context */
     memcpy((char *)&new_thread->ctx, (char *)&curr_thread->ctx, sizeof(CpuContext));
+
+    // print_string(UITOHEX, "(child)new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
+
     
     /* return pid = 0 (child) */
     new_trapFrame->x[0] = 0;
     /* set new code return to after eret */
-    new_trapFrame->elr_el1 = (unsigned long)new_thread->code_addr + 
-                            (trapFrame->elr_el1 - (unsigned long)curr_thread->code_addr);
+    // new_trapFrame->elr_el1 = (unsigned long)new_thread->code_addr + 
+    //                         (trapFrame->elr_el1 - (unsigned long)curr_thread->code_addr);
+    new_trapFrame->elr_el1 = trapFrame->elr_el1;
+    // print_string(UITOHEX, "(child)new_trapFrame->elr_el1: 0x", (unsigned long long)trapFrame->elr_el1, 1);
     /* set new code return to after eret */
     new_trapFrame->sp_el0 = ((unsigned long)new_thread->ustack_addr + STACK_SIZE) -
                             (((unsigned long)curr_thread->ustack_addr + STACK_SIZE) - trapFrame->sp_el0);
    
+
     /* after context switch, child proc will load all reg from kernel stack, and return to el0 */
     new_thread->ctx.lr = (unsigned long)after_fork;
     new_thread->ctx.sp = (unsigned long)new_trapFrame;
-
+    enable_irq();
     return new_thread->id;
 }
 
 void sys_exit(TrapFrame *trapFrame){
-    do_exit();
+    disable_irq();
+    int status = trapFrame->x[0];
+    do_exit(status);
 }
 /* Terminate the current process. */
-void do_exit(){
+void do_exit(int status){
     disable_irq();
+
     Thread *exit_thread = get_current();
     exit_thread->state = EXIT;
     

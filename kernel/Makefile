@@ -44,7 +44,7 @@ pty:
 user:
 	cd ../user;\
 	make;\
-	cp kernel8.img ./initramfs/kernel8.img;\
+	cp user2.img ./initramfs/user2.img;\
 	cd initramfs;\find . | cpio -o -H newc > ../initramfs.cpio;\
 	cd ..;\
 	cp ./initramfs.cpio ../kernel/initramfs.cpio

@@ -18,16 +18,16 @@ void Time_interrupt(unsigned long long spsr){
     // print_string(UITOHEX, "spsr = ", (unsigned long long)spsr, 1);
     spsr &= 0b1111;
     if(spsr == 0x0){
-        disable_timer_irq();
-        add_task(timer_interrupt_handler_el0, 1);
-        do_task();
-        // timer_interrupt_handler_el0();
+        // disable_timer_irq();
+        // add_task(timer_interrupt_handler_el0, 1);
+        // do_task();
+        timer_interrupt_handler_el0();
     }
     else{
-        disable_timer_irq();
-        add_task(timer_interrupt_handler, 1);
-        do_task();
-        // timer_interrupt_handler();
+        // disable_timer_irq();
+        // add_task(timer_interrupt_handler, 1);
+        // do_task();
+        timer_interrupt_handler();
     }
 }
 
@@ -50,17 +50,17 @@ void Time_interrupt(unsigned long long spsr){
 void GPU_interrupt(){
     // uart_sputs("GPU interrupt\n");
     if(*AUX_MU_IIR & TRANSMIT_HOLDING){ // Transmit interrupt
-        disable_AUX_MU_IER_w();
-        add_task(tran_interrupt_handler, 3);
-        do_task();
-        // tran_interrupt_handler();
+        // disable_AUX_MU_IER_w();
+        // add_task(tran_interrupt_handler, 3);
+        // do_task();
+        tran_interrupt_handler();
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
-        disable_AUX_MU_IER_r();
-        disable_AUX_MU_IER_w();
-        add_task(recv_interrupt_handler, 2);
-        do_task();
-        // recv_interrupt_handler();
+        // disable_AUX_MU_IER_r();
+        // disable_AUX_MU_IER_w();
+        // add_task(recv_interrupt_handler, 2);
+        // do_task();
+        recv_interrupt_handler();
     }
     else{
         uart_puts("[*] AUX_MU_IIR: No interrupts\n");
