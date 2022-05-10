@@ -49,9 +49,9 @@ Thread *thread_create(void(*func)()){
     new_thread->ctx.lr = (unsigned long)func;
 
 
-    print_string(UITOHEX, "new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
+    print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
     uart_puts(" | ");
-    print_string(UITOHEX, "new_thread->kstack: ", (unsigned long long )new_thread->kstack_addr, 1);
+    print_string(UITOHEX, "[*] new_thread->kstack: ", (unsigned long long )new_thread->kstack_addr, 1);
 
 
     list_add_tail(&new_thread->list, &run_thread_head->list);
@@ -125,6 +125,7 @@ void kernel_main() {
     enable_irq();
     cpu_switch_to(&curr_thread, next_thread);
 }
+
 
 void delay(unsigned int time){
     unsigned long long system_timer = 0;

@@ -7,6 +7,7 @@
 #include <cpio.h>
 #include <malloc.h>
 #include <string.h>
+#include <timer.h>
 
 extern Thread *run_thread_head;
 
@@ -18,8 +19,10 @@ extern Thread *run_thread_head;
 
 /* Get current process’s id. */
 void sys_getpid(TrapFrame *trapFrame){
+    disable_irq();
     int pid = do_getpid();
     trapFrame->x[0] = pid;
+    enable_irq();
 }
 int do_getpid(){
     return get_current()->id;
@@ -29,26 +32,36 @@ int do_getpid(){
 void sys_uart_read(TrapFrame *trapFrame){
     char *buf = (char *)trapFrame->x[0];
     unsigned int size = trapFrame->x[1];
-    int idx = readnbyte(buf, size);
+    enable_irq();
+    int idx = async_readnbyte(buf, size);
+    disable_irq();
     trapFrame->x[0] = idx;
+    enable_irq();
 }
 
 /* Return the number of bytes written after writing size byte from the user-supplied buffer buf. */
 void sys_uart_write(TrapFrame *trapFrame){
     const char *buf = (char *)trapFrame->x[0];
     unsigned int size = trapFrame->x[1];
-    for(unsigned int i = 0; i < size; i++){
-        uart_putc(buf[i]);
+    unsigned int i;
+    enable_irq();
+    for(i = 0; i < size; i++){
+        async_uart_putc(buf[i]);
     }
-    trapFrame->x[0] = size;
+    disable_irq();
+    trapFrame->x[0] = i;
+    enable_irq();
 }
 void sys_exec(TrapFrame *trapFrame){
+    disable_irq();
     const char *name = (const char *)trapFrame->x[0];
     char **const argv = (char **const)trapFrame->x[1];
     int success = do_exec(trapFrame, name, argv);
     trapFrame->x[0] = success;
+    enable_irq();
 }
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
+    
     /* check if the file info exist */
     file_info fileInfo = cpio_find_file_info(name);
     if(fileInfo.filename == NULL) return -1;
@@ -62,8 +75,9 @@ int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
     curr_thread->code_addr = thread_code_addr;
     curr_thread->code_size = fileInfo.filename_size;
 
-    trapFrame->elr_el1 = (unsigned long long)curr_thread->code_addr;
-    trapFrame->sp_el0 = (unsigned long long)curr_thread->ustack_addr + STACK_SIZE;
+    /* set current trapFrame elr_el1(begin of code) and sp_el0(begin of user stack)*/
+    trapFrame->elr_el1 = (unsigned long)curr_thread->code_addr;
+    trapFrame->sp_el0 = (unsigned long)curr_thread->ustack_addr + STACK_SIZE;
 
     return 0;
 }
@@ -82,7 +96,9 @@ int kernel_exec(char *name){
     new_thread->code_size = fileInfo.filename_size;
     print_string(UITOHEX, "new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
-    set_period_timer_irq();
+    // set_period_timer_irq();
+    add_timer(timeout_print, 1, "[*] Time irq\n");
+    enable_irq();
     asm volatile(
         "mov x0, 0x0\n\t"
         "msr spsr_el1, x0\n\t"
@@ -110,8 +126,9 @@ void *load_program(file_info *fileInfo){
 }
 
 
-int sys_fork(TrapFrame *trapFrame){
-    return do_fork(trapFrame);
+void sys_fork(TrapFrame *trapFrame){
+    int child_pid = do_fork(trapFrame);
+    trapFrame->x[0] = child_pid;
 }
 
 int do_fork(TrapFrame *trapFrame){
@@ -130,7 +147,7 @@ int do_fork(TrapFrame *trapFrame){
     /* copy user stack */
     memcpy((char *)new_thread->ustack_addr, (char *)curr_thread->ustack_addr, STACK_SIZE);
     /* copy trap frame (kernel stack) */
-    TrapFrame *new_trapFrame = (TrapFrame *)((char *)new_thread->kstack_addr - sizeof(TrapFrame));
+    TrapFrame *new_trapFrame = (TrapFrame *)((char *)new_thread->kstack_addr + STACK_SIZE - sizeof(TrapFrame));
     memcpy((char*)new_trapFrame, (char *)trapFrame, sizeof(TrapFrame));
     /* copy context */
     memcpy((char *)&new_thread->ctx, (char *)&curr_thread->ctx, sizeof(CpuContext));
@@ -148,7 +165,7 @@ int do_fork(TrapFrame *trapFrame){
     new_thread->ctx.lr = (unsigned long)after_fork;
     new_thread->ctx.sp = (unsigned long)new_trapFrame;
 
-    return 1;
+    return new_thread->id;
 }
 
 void sys_exit(TrapFrame *trapFrame){

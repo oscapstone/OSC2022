@@ -2,6 +2,7 @@
 #include <timer.h>
 #include <task.h>
 #include <uart.h>
+#include <string.h>
 
 
 void irq_handler(unsigned long long what, unsigned long long spsr){     
@@ -14,11 +15,13 @@ void irq_handler(unsigned long long what, unsigned long long spsr){
 void Time_interrupt(unsigned long long spsr){
     unsigned long long frq = 0;
     asm volatile("mrs %0, cntfrq_el0\n\t" :"=r"(frq));
+    // print_string(UITOHEX, "spsr = ", (unsigned long long)spsr, 1);
     spsr &= 0b1111;
     if(spsr == 0x0){
         disable_timer_irq();
         add_task(timer_interrupt_handler_el0, 1);
         do_task();
+        // timer_interrupt_handler_el0();
     }
     else{
         disable_timer_irq();

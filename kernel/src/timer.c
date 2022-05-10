@@ -83,7 +83,7 @@ void timer_interrupt_handler(){
     }
     if(head == NULL) set_long_timer_irq();
     if(printAfter2Second == 0) {
-        add_timer(timeout_print, 2, "[*] After Two Second, Hello User\n# ");
+        add_timer(timeout_print, 2, "[*] After Two Second, Hello User\n");
         printAfter2Second = 1;
     }
     enable_timer_irq();
@@ -92,8 +92,10 @@ void timer_interrupt_handler(){
 void timer_interrupt_handler_el0(){
     head = NULL;
     uart_puts("Time interrupt\n");
-    set_period_timer_irq();
+    // set_period_timer_irq();
+    add_timer(timeout_print, 1, "[*] Time irq\n");
     enable_timer_irq();
+    enable_irq();
 }
 
 void timeout_print(void *args){

@@ -14,7 +14,7 @@ void sys_getpid(TrapFrame *);
 void sys_uart_read(TrapFrame *);
 void sys_uart_write(TrapFrame *);
 void sys_exec(TrapFrame *);
-int sys_fork(TrapFrame *);
+void sys_fork(TrapFrame *);
 void sys_exit(TrapFrame *);
 void sys_mbox_call(TrapFrame *);
 void sys_kill(TrapFrame *);
