@@ -13,6 +13,10 @@
 extern Thread *run_thread_head;
 
 int main(unsigned long dtb_base){
+    unsigned long long tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
     uart_init();
     // uart_getc();
     print_string(UITOHEX, "[*] DTB_BASE: 0x", dtb_base, 1);
@@ -25,7 +29,7 @@ int main(unsigned long dtb_base){
     // enable_AUX_MU_IER_r();
     enable_irq(); // DAIF set to 0b0000
 
-    kernel_exec("user2.img");
+    // kernel_exec("user2.img");
 
     // kernel_main();
 

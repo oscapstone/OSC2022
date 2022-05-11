@@ -3,7 +3,9 @@
 #include <task.h>
 #include <uart.h>
 #include <string.h>
+#include <sched.h>
 
+extern Thread *run_thread_head;
 
 void irq_handler(unsigned long long what, unsigned long long spsr){     
     // char buf[10];
@@ -16,19 +18,25 @@ void Time_interrupt(unsigned long long spsr){
     unsigned long long frq = 0;
     asm volatile("mrs %0, cntfrq_el0\n\t" :"=r"(frq));
     // print_string(UITOHEX, "spsr = ", (unsigned long long)spsr, 1);
-    spsr &= 0b1111;
-    if(spsr == 0x0){
-        // disable_timer_irq();
-        // add_task(timer_interrupt_handler_el0, 1);
-        // do_task();
-        timer_interrupt_handler_el0();
-    }
-    else{
+    // spsr &= 0b1111;
+    // if(spsr == 0x0){
+    //     // disable_timer_irq();
+    //     // add_task(timer_interrupt_handler_el0, 1);
+    //     // do_task();
+    //     timer_interrupt_handler_el0();
+    // }
+    // else{
         // disable_timer_irq();
         // add_task(timer_interrupt_handler, 1);
         // do_task();
         timer_interrupt_handler();
-    }
+        Thread *next = (Thread *)run_thread_head->list.next;
+        if((Thread *)next->list.next != run_thread_head){
+            //uart_puts("go to schedule\n");
+            schedule();
+        }
+        
+    // }
 }
 
 
@@ -54,6 +62,7 @@ void GPU_interrupt(){
         // add_task(tran_interrupt_handler, 3);
         // do_task();
         tran_interrupt_handler();
+        enable_irq();
     }
     else if(*AUX_MU_IIR & RECEIVE_VALID){ // Receive interrupt
         // disable_AUX_MU_IER_r();
@@ -61,6 +70,7 @@ void GPU_interrupt(){
         // add_task(recv_interrupt_handler, 2);
         // do_task();
         recv_interrupt_handler();
+        enable_irq();
     }
     else{
         uart_puts("[*] AUX_MU_IIR: No interrupts\n");
@@ -92,18 +102,20 @@ void reset_timer_irq(unsigned long long expired_time){
 }
 
 void set_long_timer_irq(){
-     asm volatile(
+    asm volatile(
         "mov x1, 0xfffffffffffffff\n\t" // set a large second
         "msr cntp_cval_el0, x1\n\t" 
         :::"x1"
     );
 }
 
-void set_period_timer_irq(){
-      asm volatile(
-        "mrs x1, cntfrq_el0\n\t"
-        "msr cntp_tval_el0, x1\n\t" 
-        :::"x1"
+void set_period_timer_irq(unsigned long long peried){
+    unsigned long long system_timer = 0;
+    asm volatile("mrs %0, cntpct_el0\n\t" :"=r"(system_timer));
+    system_timer += peried;
+    asm volatile(
+        "msr cntp_tval_el0, %0\n\t" 
+        ::"r"(system_timer)
     );
 }
 

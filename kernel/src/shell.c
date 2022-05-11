@@ -8,6 +8,7 @@
 #include <timer.h>
 #include <malloc.h>
 #include <syscall.h>
+#include <irq.h>
 
 /* print welcome message*/
 void PrintWelcome(){
@@ -113,6 +114,7 @@ void Exec(char buf[MAX_SIZE]){
     return;
   }
   int state = kernel_exec(buf);
+  enable_irq();
 
   if(state == -1){
     uart_puts("[x] Failed to exec the file\n");
@@ -128,20 +130,20 @@ void SetTimeOut(char buf[MAX_SIZE]){
   strcpy(message, message_tmp);
   unsigned int timeout = atoui(end_message + 1);
 
-  add_timer(timeout_print, timeout, message);
+  add_timer(timeout_print, timeout, message, 0);
 }
 
 void TestTimeOut(char buf[MAX_SIZE]){
-  add_timer(timeout_print, 2, "[*] timeout: 2\n");
-  add_timer(timeout_print, 1, "[*] timeout: 1\n");
-  add_timer(timeout_print, 5, "[*] timeout: 5\n");
-  add_timer(timeout_print, 4, "[*] timeout: 4\n");
-  add_timer(timeout_print, 3, "[*] timeout: 3\n");
-  add_timer(timeout_print, 2, "[*] timeout: 2.1\n"); // test short expired time
-  add_timer(timeout_print, 9, "[*] timeout: 9\n");
-  add_timer(timeout_print, 7, "[*] timeout: 7\n");
-  add_timer(timeout_print, 6, "[*] timeout: 6\n");
-  add_timer(timeout_print, 8, "[*] timeout: 8\n");
+  add_timer(timeout_print, 2, "[*] timeout: 2\n", 0);
+  add_timer(timeout_print, 1, "[*] timeout: 1\n", 0);
+  add_timer(timeout_print, 5, "[*] timeout: 5\n", 0);
+  add_timer(timeout_print, 4, "[*] timeout: 4\n", 0);
+  add_timer(timeout_print, 3, "[*] timeout: 3\n", 0);
+  add_timer(timeout_print, 2, "[*] timeout: 2.1\n", 0); // test short expired time
+  add_timer(timeout_print, 9, "[*] timeout: 9\n", 0);
+  add_timer(timeout_print, 7, "[*] timeout: 7\n", 0);
+  add_timer(timeout_print, 6, "[*] timeout: 6\n", 0);
+  add_timer(timeout_print, 8, "[*] timeout: 8\n", 0);
 
 }
 

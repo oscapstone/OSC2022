@@ -50,7 +50,7 @@ void kill_zombie();
 void idle_thread();
 void schedule();
 void kernel_main();
-void delay(unsigned int);
+void delay(unsigned long long);
 void foo();
 
 void print_run_thread();

@@ -79,9 +79,10 @@ void kill_zombie(){
             tmp->state = NOUSE;
             tmp->ustack_addr = NULL;
             tmp->kstack_addr = NULL;
-            if(tmp->code_addr != NULL){
-                kfree(tmp->code_addr);
-            }
+            /* cannot remove code_addr beacuse fork process share the code?? */
+            // if(tmp->code_addr != NULL){
+            //     kfree(tmp->code_addr);
+            // }
             tmp->code_addr = NULL;
             tmp->code_size = 0;
             list_del_entry(&tmp->list);
@@ -101,7 +102,7 @@ void schedule(){
     // print_string(UITOHEX, "curr: ", curr_thread->id, 0);
     // uart_puts(" | ");
     // print_string(UITOHEX, "next: ", next_thread->id, 1);
-
+    // print_run_thread();
     enable_irq();
     cpu_switch_to(curr_thread, next_thread);
 }
@@ -127,7 +128,7 @@ void kernel_main() {
 }
 
 
-void delay(unsigned int time){
+void delay(unsigned long long time){
     unsigned long long system_timer = 0;
     unsigned long long frq = 0;
     asm volatile(
@@ -135,7 +136,7 @@ void delay(unsigned int time){
         "mrs %1, cntfrq_el0\n\t"
         :"=r"(system_timer), "=r"(frq)
     );
-    unsigned long long expired_time = system_timer + 1000;
+    unsigned long long expired_time = system_timer + time;
     while(system_timer <= expired_time){
         asm volatile(
             "mrs %0, cntpct_el0\n\t"
@@ -149,7 +150,7 @@ void foo(){
         print_string(UITOA, "Thread id: ", get_current()->id, 0);
         print_string(UITOA, " ", i, 1);
         // printf("Thread id: %d %d\n", get_current()->task_id, i);
-        delay(1);
+        delay(1000000);
         schedule();
     }
     do_exit(0);

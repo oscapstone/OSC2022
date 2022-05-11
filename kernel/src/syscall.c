@@ -99,7 +99,7 @@ int kernel_exec(char *name){
     print_string(UITOHEX, "[*] kernel_exec: new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
     // set_period_timer_irq();
-    // add_timer(timeout_print, 1, "[*] Time irq\n");
+    sched_timeout("omg");
     enable_irq();
     asm volatile(
         "mov x0, 0x0\n\t"
@@ -166,7 +166,7 @@ int do_fork(TrapFrame *trapFrame){
     // new_trapFrame->elr_el1 = (unsigned long)new_thread->code_addr + 
     //                         (trapFrame->elr_el1 - (unsigned long)curr_thread->code_addr);
     new_trapFrame->elr_el1 = trapFrame->elr_el1;
-    // print_string(UITOHEX, "(child)new_trapFrame->elr_el1: 0x", (unsigned long long)trapFrame->elr_el1, 1);
+
     /* set new code return to after eret */
     new_trapFrame->sp_el0 = ((unsigned long)new_thread->ustack_addr + STACK_SIZE) -
                             (((unsigned long)curr_thread->ustack_addr + STACK_SIZE) - trapFrame->sp_el0);
