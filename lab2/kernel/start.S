@@ -28,5 +28,5 @@ bss_zero:
 
 end:
 // jump to kernel_main
-    bl      uart_boot_main
+    bl      kernel_main
     b       proc_hang

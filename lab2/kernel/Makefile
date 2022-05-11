@@ -14,13 +14,18 @@ HEADERS ?= ../include
 OBJECTS = \
 		shell.o \
 		reboot.o \
-	    main.o
+	    main.o \
+		start.o
 
 .PHONY: all 
 all: $(OBJECTS) 
 
 %.o : %.c 
 	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS) $(CFLAGS)
+
+%.o : %.S
+	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS) $(CFLAGS)
+
 
 clean:
 	rm $(OUTPUT)/$(OBJECTS)

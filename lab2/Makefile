@@ -22,25 +22,33 @@ RASPI_VER = raspi3b
 LINKER_FILE = ./linker.ld
 HEADERS = $(PWD)/include/
 OUTPUT = $(PWD)/build
-KNAME = $(OUTPUT)/kernel8
+KNAME = kernel8
+BNAME = bootloader
 
 LIBS = \
 	 $(OUTPUT)/print.o \
 	 $(OUTPUT)/string.o \
 
+KOBJECTS = \
+		 $(OUTPUT)/start.o \
+		 $(OUTPUT)/mini_uart.o \
+		 $(OUTPUT)/mailbox.o \
+		 $(OUTPUT)/main.o \
+		 $(OUTPUT)/kernel_init.o \
+		 $(OUTPUT)/reboot.o \
+		 $(OUTPUT)/shell.o \
+		 $(OUTPUT)/debug.o \
+		 $(LIBS)
+
+BOBJECTS = \
+		 $(OUTPUT)/boot.o \
+		 $(OUTPUT)/uart_boot.o
+
 OBJECTS = \
-		$(OUTPUT)/boot.o \
-		$(OUTPUT)/mini_uart.o \
-		$(OUTPUT)/mailbox.o \
-		$(OUTPUT)/main.o \
-		$(OUTPUT)/kernel_init.o \
-		$(OUTPUT)/reboot.o \
-		$(OUTPUT)/shell.o \
-		$(OUTPUT)/debug.o \
-		$(LIBS)
+		$(KOBJECTS) \
+		$(BOBJECTS)
 
-
-.PHONY: all start objects link kernel end clean dump
+.PHONY: all start objects link bootloader kernel end clean dump
 
 
 all: start objects link kernel end
@@ -57,22 +65,26 @@ objects:
 	$(MAKE) -C debug OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 
 link: $(OBJECTS)
-	$(LD) -T $(LINKER_FILE) -o $(KNAME).elf $(OBJECTS) $(LDFLAGS)
+	$(LD) -T kernel/$(LINKER_FILE) -o $(OUTPUT)/$(KNAME).elf $(KOBJECTS) $(LDFLAGS)
+	$(LD) -T boot/$(LINKER_FILE) -o $(OUTPUT)/$(BNAME).elf $(BOBJECTS) $(LDFLAGS)
 
-kernel: $(KNAME).elf
-	$(OBJCOPY) -O binary $(KNAME).elf $(KNAME).img
+bootloader:
+	$(OBJCOPY) -O binary $(BNAME).elf $(BNAME).img
+
+kernel: $(OUTPUT)/$(KNAME).elf
+	$(OBJCOPY) -O binary $(OUTPUT)/$(KNAME).elf $(OUTPUT)/$(KNAME).img
 
 end: 
 	@echo "Finish building kernel8.img"
 
 dump: 
-	$(OBJDUMP) -m aarch64 -b binary -D $(KNAME).img
+	$(OBJDUMP) -m aarch64 -b binary -D $(OUTPUT)/$(KNAME).img
 
 qemu-run: 
-	sudo $(QEMU) -M $(RASPI_VER) -kernel $(KNAME).img -display none -serial null -serial stdio
+	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -serial null -serial stdio
 
 qemu-run-instr: 
-	sudo $(QEMU) -M $(RASPI_VER) -kernel $(KNAME).img -display none -d in_asm 
+	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -d in_asm 
 
 clean: 
 	rm $(OUTPUT)/*

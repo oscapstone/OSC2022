@@ -12,11 +12,15 @@ CXXFLAGS =
 
 OUTPUT ?= .
 OBJECTS = \
-		boot.o
+		boot.o \
+		uart_boot.o
 
 all: $(OBJECTS) 
 
 %.o: %.S
+	$(CC) -c $^ -o $(OUTPUT)/$@
+
+%.o: %.c
 	$(CC) -c $^ -o $(OUTPUT)/$@
 
 clean:
