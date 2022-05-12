@@ -23,42 +23,26 @@
  *
  */
 
-#include "uart.h"
+/* a properly aligned buffer */
+//extern volatile unsigned int mbox[36];
 
-void main() {
-    // set up serial console
-    uart_init();
-    char c;
-    while((c = uart_getc()) != '\n')
-        ;
-    volatile unsigned char *bootloader = (unsigned char *)0x60000;
-    volatile unsigned char *code = (unsigned char *)0x80000;
-    for(int i = 0; i < 0x2000; i++) {
-        *(bootloader + i) = *(code + i);
-    }
+#define MBOX_REQUEST    0
 
-    asm volatile("b #-0x1FFFC");
-    
-    uart_puts("Loading...\n");
+/* channels */
+#define MBOX_CH_POWER   0
+#define MBOX_CH_FB      1
+#define MBOX_CH_VUART   2
+#define MBOX_CH_VCHIQ   3
+#define MBOX_CH_LEDS    4
+#define MBOX_CH_BTNS    5
+#define MBOX_CH_TOUCH   6
+#define MBOX_CH_COUNT   7
+#define MBOX_CH_PROP    8
 
-    int image_size = 0;
-    while((c = uart_getc()) != 's') {
-        uart_send(c);
-        image_size *= 10;
-        image_size += (c - '0');
-    }
+/* tags */
+#define MBOX_TAG_GETSERIAL      0x10004
+#define MBOX_TAG_LAST           0
 
-    uart_puts("\nImage size: ");
-    uart_uint((unsigned int)image_size);
-    uart_puts(" bytes\n");
-
-    for (int i = 0; i < image_size; i++) {
-        *(code + i) = (unsigned char)uart_getc_pure();
-    }
-    uart_puts("Finish loading image\n");
-
-    asm volatile("mov x19, #0x80000");
-    asm volatile("add x19, x19, #0x14");
-    asm volatile("br x19");
-
-}
+int mboxc_mbox_call(unsigned char ch, unsigned int *mbox);
+int get_board_revision();
+int get_arm_memory();

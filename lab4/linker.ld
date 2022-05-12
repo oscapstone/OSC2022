@@ -23,42 +23,23 @@
  *
  */
 
-#include "uart.h"
-
-void main() {
-    // set up serial console
-    uart_init();
-    char c;
-    while((c = uart_getc()) != '\n')
-        ;
-    volatile unsigned char *bootloader = (unsigned char *)0x60000;
-    volatile unsigned char *code = (unsigned char *)0x80000;
-    for(int i = 0; i < 0x2000; i++) {
-        *(bootloader + i) = *(code + i);
+SECTIONS
+{
+    . = 0x80000;
+    .text : { KEEP(*(.text.boot)) *(.text .text.* .gnu.linkonce.t*) }
+    .rodata : { *(.rodata .rodata.* .gnu.linkonce.r*) }
+    PROVIDE(_data = .);
+    .data : { *(.data .data.* .gnu.linkonce.d*) }
+    .bss (NOLOAD) : {
+        . = ALIGN(16);
+        __bss_start = .;
+        *(.bss .bss.*)
+        *(COMMON)
+        __bss_end = .;
     }
+    . = ALIGN(8);
+    _end = .;
 
-    asm volatile("b #-0x1FFFC");
-    
-    uart_puts("Loading...\n");
-
-    int image_size = 0;
-    while((c = uart_getc()) != 's') {
-        uart_send(c);
-        image_size *= 10;
-        image_size += (c - '0');
-    }
-
-    uart_puts("\nImage size: ");
-    uart_uint((unsigned int)image_size);
-    uart_puts(" bytes\n");
-
-    for (int i = 0; i < image_size; i++) {
-        *(code + i) = (unsigned char)uart_getc_pure();
-    }
-    uart_puts("Finish loading image\n");
-
-    asm volatile("mov x19, #0x80000");
-    asm volatile("add x19, x19, #0x14");
-    asm volatile("br x19");
-
+   /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }
 }
+__bss_size = (__bss_end - __bss_start)>>3;
