@@ -3,7 +3,8 @@
 
 #include <string.h>
 // #define CPIO_BASE   ((volatile unsigned long*)(0x8000000))
-unsigned long CPIO_BASE;
+unsigned long long CPIO_BASE_START;
+unsigned long long CPIO_BASE_END;
 
 /* Magic identifiers for the "cpio" file format. */
 #define CPIO_HEADER_MAGIC "070701"
@@ -41,8 +42,9 @@ void testprint();
 unsigned int padding(unsigned int);
 void ls();
 void cat(char [MAX_SIZE]);
+void run(unsigned long);
+unsigned long findDataAddr(char [MAX_SIZE]);
 void parse_cpio_header(cpio_newc_header *, file_info *);
-
 
 
 #endif
