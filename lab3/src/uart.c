@@ -177,7 +177,7 @@ char *uart_async_gets(char *buf)
     int count;
     char c;
     char *s;
-    for (s = buf, count = 0; (c = uart_async_getc()) != '\n' && count != MAX_BUF_SIZE - 1; count++)
+    for (s = buf, count = 0; (c = uart_async_getc()) != '\n' && count != MAX_BUF_SIZE - 100; count++)
     {
         *s = c;
         if (*s == '\x7f') //delete -> backspace
@@ -206,7 +206,7 @@ char *uart_gets(char *buf)
     int count;
     char c;
     char *s;
-    for (s = buf, count = 0; (c = uart_getc()) != '\n' && count != MAX_BUF_SIZE - 1; count++)
+    for (s = buf, count = 0; (c = uart_getc()) != '\n' && count != MAX_BUF_SIZE - 100; count++)
     {
         *s = c;
         if (*s == '\x7f')
@@ -274,6 +274,7 @@ void uart_interrupt_r_handler()
     //read buffer full
     if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx)
     {
+        *AUX_MU_IIR = 0xC2; /* clear the fifos */ // I dont know why need this but it can prevent big input to cause infinite run here (disable_r_interrupt never work)
         disable_mini_uart_r_interrupt(); //disable read interrupt when read buffer full
         return;
     }
@@ -281,7 +282,7 @@ void uart_interrupt_r_handler()
     if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
         uart_rx_buffer_widx = 0;
 
-    enable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> unmask device line
+    //enable_mini_uart_r_interrupt(); // lab 3 : advanced 2 -> unmask device line
 }
 
 void uart_interrupt_w_handler() //can write
@@ -296,7 +297,7 @@ void uart_interrupt_w_handler() //can write
     if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
         uart_tx_buffer_ridx = 0; // cycle pointer
 
-    enable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> unmask device line
+    //enable_mini_uart_w_interrupt(); // lab 3 : advanced 2 -> unmask device line
 }
 
 void uart_async_putc(char c)

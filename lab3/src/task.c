@@ -20,7 +20,7 @@ void task_list_init()
 
 //like add_timer
 void add_task(void *task_function,unsigned long long priority){
-    task_t *the_task = kmalloc(sizeof(task_t)); //need to free by task runner
+    task_t *the_task = kmalloc(sizeof(task_t)); //need to kfree by task runner
 
     the_task->priority = priority; // store interrupt time into timer_event
     the_task->task_function = task_function;
@@ -69,7 +69,7 @@ void run_preemptive_tasks(){
         disable_interrupt(); // critical section
         curr_task_priority = prev_task_priority;
         enable_interrupt();
-        free(the_task);
+        kfree(the_task);
     }
 }
 

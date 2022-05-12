@@ -25,7 +25,7 @@ void core_timer_enable()
         "mov x2, 2\n\t"
         "ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n\t"
         "str w2, [x1]\n\t" // unmask timer interrupt
-    );
+    :::"x1","x2");
 }
 
 void core_timer_disable()
@@ -34,15 +34,15 @@ void core_timer_disable()
         "mov x2, 0\n\t"
         "ldr x1, =" XSTR(CORE0_TIMER_IRQ_CTRL) "\n\t"
         "str w2, [x1]\n\t" // unmask timer interrupt
-    );
+    :::"x1","x2");
 }
 
 void timer_event_callback(timer_event_t *timer_event)
 {
 
     list_del_entry((struct list_head *)timer_event); // delete the event
-    free(timer_event->args);                         // free the arg space
-    free(timer_event);
+    kfree(timer_event->args);                         // kfree the arg space
+    kfree(timer_event);
     ((void (*)(char *))timer_event->callback)(timer_event->args); // call the callback store in event
 
     //set interrupt to next time_event if existing
@@ -85,7 +85,7 @@ void core_timer_handler()
 void add_timer(void *callback, unsigned long long timeout, char *args)
 {
 
-    timer_event_t *the_timer_event = kmalloc(sizeof(timer_event_t)); //need to free by event handler
+    timer_event_t *the_timer_event = kmalloc(sizeof(timer_event_t)); //need to kfree by event handler
 
     // store argument string into timer_event
     the_timer_event->args = kmalloc(strlen(args) + 1);
@@ -138,7 +138,7 @@ void set_core_timer_interrupt(unsigned long long expired_time)
         "mrs x1, cntfrq_el0\n\t" //cntfrq_el0 -> relative time
         "mul x1, x1, %0\n\t"
         "msr cntp_tval_el0, x1\n\t" // set expired time
-        : "=r"(expired_time));
+        :: "r"(expired_time):"x1");
 }
 
 // directly set timer interrupt time to a cpu tick  (directly)
@@ -146,7 +146,7 @@ void set_core_timer_interrupt_by_tick(unsigned long long tick)
 {
     __asm__ __volatile__(
         "msr cntp_cval_el0, %0\n\t" //cntp_cval_el0 -> absolute time
-        : "=r"(tick));
+        :: "r"(tick));
 }
 
 int timer_list_get_size()
