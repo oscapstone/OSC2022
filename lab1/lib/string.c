@@ -146,12 +146,13 @@ char * ultoa(uint64_t value, char* str, uint32_t base){
 
 }
 int32_t strcmp(char* str1, char* str2){
-    while(*str1 != '\0'){
+    do{
         if(*str1 > *str2) return 1;
         else if(*str1 < *str2) return -1;
         str1++;str2++;
-    }
+    }while(*str1 != '\0');
     return 0;
+
 }
 void* memcpy(void* dst, const void* src, size_t n){
     const uint8_t* ps = src;
