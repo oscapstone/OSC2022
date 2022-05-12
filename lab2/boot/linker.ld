@@ -2,7 +2,8 @@ ENTRY(_start) /* set _start in boot.S as entry point */
 
 SECTIONS
 {
-    . = 0x80000; /* bootloader (start.elf) will loader kernel8.img to 0x80000*/
+    . = 0x60000; /* bootloader (start.elf) will loader kernel8.img to 0x80000*/
+    __bootloader_start = .;
     __text_start = .;
     .text : 
     {
@@ -36,4 +37,6 @@ SECTIONS
 
     . = ALIGN(0x1000);
     __bss_end = .;
+    __bootloader_end = .;
+    __bootloader_size = (__bootloader_end - __bootloader_start);
 }

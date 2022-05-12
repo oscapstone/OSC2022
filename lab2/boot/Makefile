@@ -11,6 +11,7 @@ CFLAGS ?= \
 CXXFLAGS =
 
 OUTPUT ?= .
+HEADERS ?= ../include
 OBJECTS = \
 		boot.o \
 		uart_boot.o
@@ -18,10 +19,10 @@ OBJECTS = \
 all: $(OBJECTS) 
 
 %.o: %.S
-	$(CC) -c $^ -o $(OUTPUT)/$@
+	$(CC) -c $(CFLAGS) $^ -o $(OUTPUT)/$@ -I$(HEADERS) 
 
 %.o: %.c
-	$(CC) -c $^ -o $(OUTPUT)/$@
+	$(CC) -c $(CFLAGS) $^ -o $(OUTPUT)/$@ -I$(HEADERS) 
 
 clean:
 	rm $(OUTPUT)/$(OBJECTS)

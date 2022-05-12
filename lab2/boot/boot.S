@@ -1,7 +1,24 @@
 .section ".text.boot"
 .global _start
 _start:
+// x1 = current PC + offset to _dtb
+    adr     x1, _dtb
+    str     x0, [x1]
+
+// stack 
+    adr     x1, _start
+    mov     sp, x1
+
+// rebase boot loader to specific address 
+// indicated by linker script
+    bl rebase_bootloader
+
+// slave cpu should not sleep before bootloader finishes rebase
+// Since if they wake up, there next instruction will be invalid instruction
+rebase_entry:
     // read cpu id, stop slave cores
+    // cpu id == 0
+    // store pointer to dtb to _dtb
     mrs     x1, mpidr_el1
     and     x1, x1, #0xff
 
@@ -12,21 +29,43 @@ proc_hang:
 	wfe
     b       proc_hang
 
-// cpu id == 0
-master_core:
-// stack 
-    adr     x1, _start
-    mov     sp, x1
-// initialize .bss section
-    ldr     x1, =__bss_start
-    ldr     x2, =__bss_end
-bss_zero:
-    sub     x3, x2, x1
-    cbz     x3, end 
-    str     xzr, [x1], #8 // store zero to [x1] and add 8 to x1
-    b bss_zero
 
-end:
+master_core:
 // jump to kernel_main
-    bl      uart_boot_main
+    bl      uart_recv_kernel
+    
     b       proc_hang
+
+// rebase our boot loader
+rebase_bootloader:
+    // manipulate our return address ( x30 a.k.a LR ) to the rebased bootloader
+    // x19  =  current PC + offset to _start
+    // x20  =  absolute address ( _start ) that specify by linker script  
+    adr     x19, _start
+    ldr     x20, =_start
+    sub     x19, x19, x20
+    sub     lr , lr, x19
+    
+    // x21   =  absolute address ( __bootloader_start ) that specify by linker script
+    // x22   =  current PC + offset to __bootloader_start ( In linker script )
+    ldr     x21, =__bootloader_start 
+    adr     x22, __bootloader_start 
+    ldr     x23, =__bootloader_size
+
+    // start rebasing bootloader
+copy_bootloader:
+    cbz     x23, end_rebase_bootloader
+    ldr     x24, [x22], #1
+    str     x24, [x21], #1
+    sub     x23, x23, #1
+    b       copy_bootloader
+
+    // recover dtb to x0
+    adr     x1, _dtb
+    ldr     x0, [x1]
+    // return to rebased bootloader
+end_rebase_bootloader:
+    ret
+
+.section ".data"
+_dtb: .dword 0

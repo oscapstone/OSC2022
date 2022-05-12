@@ -146,17 +146,20 @@ char * ultoa(uint64_t value, char* str, uint32_t base){
 
 }
 int32_t strcmp(char* str1, char* str2){
-    while(*str1 != '\0'){
+    do{
         if(*str1 > *str2) return 1;
         else if(*str1 < *str2) return -1;
         str1++;str2++;
-    }
+    }while(*str1 != '\0');
     return 0;
 }
 void* memcpy(void* dst, const void* src, size_t n){
-    const uint8_t* ps = src;
-    uint8_t*pd = dst;
-    for(size_t i = 0 ; i < n ; i++) pd[i] = ps[i];
+    const uint64_t* ps = src;
+    uint64_t*pd = dst;
+    size_t i, q = n / 8, r = n % 8;
+    for(i = 0 ; i < q ; i++) pd[i] = ps[i];
+    for(i = 0 ; i < r ; i++) ((uint8_t*)pd)[i] = ((uint8_t*)ps)[i];
+
     return dst;
 }
 void* memset(void* s, int c, size_t n){
