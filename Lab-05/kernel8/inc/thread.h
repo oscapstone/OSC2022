@@ -1,0 +1,12 @@
+void threadSchedule();
+int tidGet();
+void exec(char* path,char** argv);
+void exit();
+int fork();
+void threadTest1();
+void threadTest2();
+void threadTest3();
+void kill(int pid);
+void foo1();
+void foo2();
+void foo3();
