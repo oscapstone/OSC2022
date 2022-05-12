@@ -7,6 +7,8 @@
 #include "devicetree.h"
 #include "utils.h"
 #include "exception.h"
+#include "mem.h"
+#include "timer.h"
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c
@@ -67,38 +69,48 @@ void exec_lsfdt() {
 }
 
 void exec_timeout(char *command_string) {
-    char message[100]; 
+    timer_list* message = kmalloc(sizeof(timer_list)); 
     unsigned int duration = 0;
     int i = 8;
+    int j = 0;
+    while (command_string[i]) {
+        message->argv[j] = command_string[i];
+        i++;
+        j++;
+    }
+    message->argv[j] = 0;
+    i++;
     while (command_string[i]) {
         duration = duration*10 + (int)command_string[i] - (int)'0';
         i++;
     }
-    i++;
-    int j = 0;
-    while (command_string[i]) {
-        message[j] = command_string[i];
-        i++;
-        j++;
-    }
-    message[j++] = '\n';
-    message[j] = 0;
-	// unsigned long timer;
-	// timer = get_time10();
 	// printf("executed time: %d.%ds\n", timer/10, timer%10);
     // printf("duration: 5\n");
-    async_uart_puts(message);
-    set_time(duration);
-    enable_timer_interrupt();
-
+    message->priority = duration;
+    message->callback = cb_message;
+    add_timer(message);
 }
 
 void exec_testmem() {
-    test_malloc();
+    load_cpio("app.img");
 }
 
-void exec_checkmem() {
-    printf(mem);
+void exec_check(char *command_string) {
+    // printf(mem);
+    timer_list* message = kmalloc(sizeof(timer_list)); 
+    int i = 6;
+    int j = 0;
+    while (command_string[i]) {
+        message->argv[j] = command_string[i];
+        i++;
+        j++;
+    }
+    message->argv[j] = 0;
+	// printf("executed time: %d.%ds\n", timer/10, timer%10);
+    // printf("duration: 5\n");
+    message->priority = 1;
+    message->callback = cb_message_delay;
+    add_timer(message);
 }
 
 void exec_testasync() {
@@ -174,10 +186,10 @@ void parse_command(char* command_string) {
         exec_cat();
     else if (!strcmp(command_string, "load"))
         load_file();
-    else if (!strcmp(command_string, "testmem"))
+    else if (!strcmp(command_string, "test"))
         exec_testmem();
-    else if (!strcmp(command_string, "checkmem"))
-        exec_checkmem();
+    else if (!strcmp(command_string, "check"))
+        exec_check(command_string);
     else if (!strcmp(command_string, "lsfdt"))
         exec_lsfdt();
     else if (!strcmp(command_string, "timeout"))

@@ -78,7 +78,10 @@ void initramfs_callback(int type, char *name, void *data, unsigned int size) {
 
 void cpio_callback(int type, char *name, void *data, unsigned int size) {
     if (type == FDT_PROP && !strcmp(name, "linux,initrd-start")) {
-        cpio_addr = (void *)(unsigned long)endiantoi(data);
+        cpio_start = (void *)(unsigned long)endiantoi(data);
+    }
+    if (type == FDT_PROP && !strcmp(name, "linux,initrd-end")) {
+        cpio_end = (void *)(unsigned long)endiantoi(data);
     }
 }
 
@@ -134,11 +137,11 @@ int fdt_traverse(void (*callback)(int type, char *name, void *data, unsigned int
 
     if (endiantoi(&ftd->magic) != 0xd00dfeed)
         return 1;
-    
     unsigned int totalsize = (endiantoi(&ftd->totalsize));
     unsigned long off_dt_struct = addr + (endiantoi(&ftd->off_dt_struct));
     unsigned long off_dt_strings = addr + (endiantoi(&ftd->off_dt_strings));
 
-
+    fdt_start = (void *)(unsigned long)addr;
+    fdt_end = (void *)(unsigned long)(addr + totalsize);
     return fdt_parser(off_dt_struct, off_dt_strings, totalsize, callback);
 }

@@ -1,8 +1,8 @@
 #include "uart.h"
 #include "devicetree.h"
 #include "shell.h"
-#include "exception.h"
-
+#include "mem.h"
+#include "timer.h"
 void main() {
     // set up serial console
     uart_init();
@@ -12,8 +12,12 @@ void main() {
             printf("error no cpio\n");
     // say hello
     // uart_puts("Hello World!\n");
+    
+    // init timer
+    timer_init();
 
-    enable_current_interrupt();
+    // init memory
+    init_buddy();
     
     // start shell
     shell();

@@ -2,7 +2,8 @@
 
 #include "command.h"
 #include "uart.h"
-
+#include "exception.h"
+#include "thread.h"
 int parse(char input_char, int buffer_counter) {
     if ((input_char > 31 && input_char < 127) || input_char == 9) {
         buffer_counter++;
@@ -15,7 +16,7 @@ int parse(char input_char, int buffer_counter) {
         uart_send(' ');
         uart_send(8);
     }
-    else if (input_char == 10 || input_char == 13) {
+    else if (input_char == '\n' || input_char == '\r') {
         // Enter
         uart_send(10);
     }
@@ -39,9 +40,17 @@ void shell() {
     // new line head
     uart_puts("# ");
 
+    enable_current_interrupt(); // ------v
+
+    init_schedule();
+
     // read input
     while (1) {
+        #ifdef ASYNC_UART
         char input_char = async_uart_getc();
+        #else
+        char input_char = uart_getc();
+        #endif
         buffer[buffer_counter] = input_char;
         buffer_counter = parse(input_char, buffer_counter);
 
