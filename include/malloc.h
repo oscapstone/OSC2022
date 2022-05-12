@@ -1,21 +1,20 @@
-#ifndef __MEM__H__
-#define __MEM_H__
+#ifndef MALLOC_H
+#define MALLOC_H
+#include "uart.h"
+#include "list.h"
+#include "buddy.h"
+#include "simple_alloc.h"
 
-#include "stdint.h"
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+#define ALIGN(num, base) ((num + base - 1) & ~(base - 1))
 
-/*
-    | -------------------------------- |
-    | prev_size/prev_data | chunk_size |
-    |       8 bytes       |   8 bytes  |
-    | -------------------------------- |
-    |               data               |
-    | -------------------------------- |
-*/
-typedef struct malloc_chunk {
-    uint32_t prev_size;
-    uint32_t chunk_size;
-} malloc_chunk;
+unsigned int find_size_idx(int size);
+void sc_alloc_init();
+void sc_init();
 
-void* malloc(uint32_t);
+void *sc_alloc(int size);
+int sc_free(void *sc);
+
+void sc_test();
 
 #endif

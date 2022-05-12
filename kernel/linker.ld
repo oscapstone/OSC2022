@@ -1,6 +1,9 @@
 /* entry point */
 ENTRY(_start)
 
+_simple_alloc_start = 0x3b000000;
+_simple_alloc_end = 0x3bffffff;
+
 SECTIONS
 {
     . = 0x80000;

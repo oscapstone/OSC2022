@@ -1,15 +1,18 @@
-#ifndef __SHELL_H__
-#define __SHELL_H__
+#ifndef SHELL_H
+#define SHELL_H
 #include "cpio.h"
+#include "uart.h"
 #include "dtb.h"
 #include "mbox.h"
 #include "reset.h"
-#include "stdint.h"
 #include "string.h"
+#include "timer.h"
+#include "buddy.h"
+#include "malloc.h"
 
-struct func {
+struct cmd {
     char* name;
-    void (*ptr)();
+    void (*func)();
     char* desc;
 };
 
@@ -21,24 +24,38 @@ void exec_cmd();
 void cmd_help(char* param);
 void cmd_hello(char* param);
 void cmd_reboot(char* param);
-void cmd_sysinfo(char* param);
+void cmd_revision();
+void cmd_memory();
 void cmd_ls(char* param);
 void cmd_cat(char* param);
 void cmd_dtb(char* param);
 void cmd_initramfs();
-void cmd_alloc();
+void cmd_async();
+void cmd_prog();
+void cmd_sec2();
+void cmd_setTimeout(char* param);
+void cmd_preempt();
+void cmd_pageTest();
+void cmd_chunkTest();
 void cmd_unknown();
 
-struct func func_list[] = {
-    {.name = "help", .ptr = cmd_help, .desc = "print this help menu"},
-    {.name = "hello", .ptr = cmd_hello, .desc = "print Hello World!"},
-    {.name = "reboot", .ptr = cmd_reboot, .desc = "reboot the device"},
-    {.name = "sysinfo", .ptr = cmd_sysinfo, .desc = "lab1 bonus (mbox)"},
-    {.name = "ls", .ptr = cmd_ls, .desc = "list directory contents"},
-    {.name = "cat", .ptr = cmd_cat, .desc = "print file content"},
-    {.name = "dtb", .ptr = cmd_dtb, .desc = "show device tree"},
-    {.name = "initramfs", .ptr = cmd_initramfs, .desc = "show initramfs address"},
-    {.name = "alloc", .ptr = cmd_alloc, .desc = "test malloc"}
+struct cmd cmd_list[] = {
+    {"help",      cmd_help,      "print this help menu"},
+    {"hello",     cmd_hello,     "print Hello World!"},
+    // {"reboot",    cmd_reboot,    "reboot the device"},
+    {"revision",  cmd_revision,  "print board revision"},
+    {"memory",    cmd_memory,    "print ARM memory base address and size"},
+    {"ls",        cmd_ls,        "list directory contents"},
+    {"cat",       cmd_cat,       "print file content"},
+    {"dtb",       cmd_dtb,       "show device tree"},
+    {"initramfs", cmd_initramfs, "show initramfs address"},
+    // {"async",     cmd_async,     "test async print"},
+    {"prog",      cmd_prog,      "load a user program in the initramfs, and jump to it"},
+    {"sec2",      cmd_sec2,      "print the seconds after booting and set the next timeout to 2 seconds later."},
+    {"setTimeout",cmd_setTimeout,"prints message after seconds"},
+    // {"preempt",   cmd_preempt,   "test preemption"},
+    {"pageTest",  cmd_pageTest,  "test page frame allocator"},
+    {"chunkTest", cmd_chunkTest, "test small chunk allocator"},
 };
 
 #endif

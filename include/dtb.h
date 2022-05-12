@@ -1,7 +1,8 @@
-#ifndef __DTB_H__
-#define __DTB_H__
+#ifndef DTB_H
+#define DTB_H
 
-#include "stdint.h"
+extern void* INITRD_ADDR;
+extern void* INITRD_END;
 
 // five token types
 #define FDT_BEGIN_NODE 0x00000001
@@ -11,22 +12,23 @@
 #define FDT_END 0x00000009
 
 typedef struct fdt_header {
-    uint32_t magic;
-    uint32_t totalsize;
-    uint32_t off_dt_struct;
-    uint32_t off_dt_strings;
-    uint32_t off_mem_rsvmap;
-    uint32_t version;
-    uint32_t last_comp_version;
-    uint32_t boot_cpuid_phys;
-    uint32_t size_dt_strings;
-    uint32_t size_dt_struct;
+    unsigned int magic;
+    unsigned int totalsize;
+    unsigned int off_dt_struct;
+    unsigned int off_dt_strings;
+    unsigned int off_mem_rsvmap;
+    unsigned int version;
+    unsigned int last_comp_version;
+    unsigned int boot_cpuid_phys;
+    unsigned int size_dt_strings;
+    unsigned int size_dt_struct;
 } fdt_header;
-typedef void (*dtb_callback_t)(uint32_t token_type, char *name, char *data);
+
+typedef void (*dtb_callback_t)(unsigned int token_type, char *name, char *data);
 
 void dtb_init();
 void dtb_parser(dtb_callback_t callback);
-void dtb_get_initrd_callback(uint32_t token_type, char *name, char *data);
-void dtb_show_callback(uint32_t token_type, char *name, char *data);
+void dtb_get_initrd_callback(unsigned int token_type, char *name, char *data);
+void dtb_show_callback(unsigned int token_type, char *name, char *data);
 
 #endif

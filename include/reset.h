@@ -1,19 +1,23 @@
-#ifndef __RESET_H__
-#define __RESET_H__
+#ifndef RESET_H
+#define RESET_H
 
-#include "mmio.h"
 #define PM_PASSWORD 0x5a000000
-#define PM_RSTC 0x3F10001c
-#define PM_WDOG 0x3F100024
+#define PM_RSTC 0x3f10001c
+#define PM_WDOG 0x3f100024
+
+void set(long addr, unsigned int value) {
+    volatile unsigned int* point = (unsigned int*)addr;
+    *point = value;
+}
 
 void reset(int tick) {                        // reboot after watchdog timer expire
-    mmio_write(PM_RSTC, PM_PASSWORD | 0x20);  // full reset
-    mmio_write(PM_WDOG, PM_PASSWORD | tick);  // number of watchdog tick
+    set(PM_RSTC, PM_PASSWORD | 0x20);  // full reset
+    set(PM_WDOG, PM_PASSWORD | tick);  // number of watchdog tick
 }
 
 void cancel_reset() {
-    mmio_write(PM_RSTC, PM_PASSWORD | 0);  // full reset
-    mmio_write(PM_WDOG, PM_PASSWORD | 0);  // number of watchdog tick
+    set(PM_RSTC, PM_PASSWORD | 0);  // full reset
+    set(PM_WDOG, PM_PASSWORD | 0);  // number of watchdog tick
 }
 
 #endif

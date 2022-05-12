@@ -1,6 +1,6 @@
 CROSS = aarch64-unknown-linux-gnu
 CC = $(CROSS)-gcc
-CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
+CFLAGS = -Wall -ffreestanding -nostdinc -nostdlib -nostartfiles -g
 LD = $(CROSS)-ld
 OBJCPY = $(CROSS)-objcopy
 

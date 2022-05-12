@@ -3,40 +3,65 @@
 char buf[0x100];
 
 void welcome_msg() {
-    uart_write_string("************************************************" ENDL);
+    uart_printf("************************************************\r\n");
 }
 
 void read_cmd() {
-    char tmp;
-    uart_write_string("# ");
-    for (uint32_t i = 0; uart_read(&tmp, 1);) {
-        uart_write(tmp);
-        switch (tmp) {
+    char c = 0;
+    unsigned int idx = 0;
+    while (1) {
+        // read char
+        c = uart_read_char_async();
+        // handle buffer
+        switch (c) {
             case '\r':
             case '\n':
-                buf[i++] = '\0';
+                // echo char
+                uart_write_char(c);
+                buf[idx++] = '\0';
                 return;
-            case 127:  // Backspace
-                if (i > 0) {
-                    i--;
-                    buf[i] = '\0';
-                    uart_write_string("\b \b");
+            // Backspaces
+            case '\x7f':
+                if (idx > 0) {
+                    buf[--idx] = '\0';
+                    uart_printf("\b \b");
                 }
                 break;
+            // normal case
             default:
-                buf[i++] = tmp;
+                // echo char
+                uart_write_char(c);
+                buf[idx++] = c;
                 break;
         }
     }
 }
 
 void exec_cmd() {
-    if (!strlen(buf)) return;
-    for (uint32_t i = 0; i < sizeof(func_list) / sizeof(struct func); i++) {
-        if (!strncmp(buf, func_list[i].name, strlen(func_list[i].name) - 1)) {
-            char* param = buf + strlen(func_list[i].name);
-            while (*param != '\n' && *param == ' ') param++;
-            func_list[i].ptr(param);
+    // null command
+    if (!strlen(buf))
+        return;
+    // find index of delimiter
+    unsigned int delimiter = 0;
+    for (unsigned int i = 0; i < strlen(buf); i++) {
+        if (buf[i] != ' ')
+            delimiter++;
+        else
+            break;
+    }
+    // use delimiter to saperate cmd & param
+    for (unsigned int i = 0; i < sizeof(cmd_list) / sizeof(struct cmd); i++) {
+        // len of delimiter must larger than command
+        unsigned int l = delimiter;
+        if (l < strlen(cmd_list[i].name))
+            l = strlen(cmd_list[i].name);
+        // check command list
+        if (!strncmp(buf, cmd_list[i].name, l)) {
+            // buf + delimiter -> point to param
+            char* param = buf + l;
+            while (*param == ' ')
+                param++;
+            cmd_list[i].func(param);
             return;
         }
     }
@@ -44,44 +69,47 @@ void exec_cmd() {
 }
 
 void cmd_help(char* param) {
-    for (uint32_t i = 0; i < sizeof(func_list) / sizeof(struct func); i++) {
-        uart_write_string(func_list[i].name);
-        for (uint32_t j = 0; j < (10 - strlen(func_list[i].name)); j++) uart_write(' ');
-        uart_write_string(": ");
-        uart_write_string(func_list[i].desc);
-        uart_write_string(ENDL);
+    unsigned int indent_size = 0;
+    for (unsigned int i = 0; i < sizeof(cmd_list) / sizeof(struct cmd); i++) {
+        uart_printf("%s", cmd_list[i].name);
+        indent_size = 12 - strlen(cmd_list[i].name);
+        while (indent_size--)
+            uart_printf(" ");
+        uart_printf(": %s\r\n", cmd_list[i].desc);
     }
 }
 
 void cmd_hello(char* param) {
-    uart_write_string("Hello World!" ENDL);
+    uart_printf("Hello World!\r\n");
 }
 
 void cmd_reboot(char* param) {
     reset(10);
 }
 
-void cmd_sysinfo(char* param) {
-    uint32_t* board_revision;
-    uint32_t *board_serial_msb, *board_serial_lsb;
-    uint32_t *mem_base, *mem_size;
-    const int padding = 20;
+void cmd_revision() {
+    volatile unsigned int mbox[36];
+    if (get_board_revision(mbox)) {
+        uart_printf("Board Revision : 0x");
+        uart_write_hex(mbox[5]);
+        uart_printf("\r\n");
+    }
+    else
+        uart_printf("Failed to get board revision\r\n");
+}
 
-    // Board Revision
-    get_board_revision(board_revision);
-    uart_write_string("Board Revision      : 0x");
-    uart_puth(*board_revision);
-    uart_write_string(ENDL);
-
-    // Memory Info
-    get_memory_info(mem_base, mem_size);
-    uart_write_string("Memroy Base Address : 0x");
-    uart_puth(*mem_base);
-    uart_write_string(ENDL);
-
-    uart_write_string("Memory Size         : 0x");
-    uart_puth(*mem_size);
-    uart_write_string(ENDL);
+void cmd_memory() {
+    volatile unsigned int mbox[36];
+    if (get_arm_memory(mbox)) {
+        uart_printf("ARM Memory Base Address : 0x");
+        uart_write_hex(mbox[5]);
+        uart_printf("\r\n");
+        uart_printf("ARM Memory Size         : 0x");
+        uart_write_hex(mbox[6]);
+        uart_printf("\r\n");
+    }
+    else
+        uart_printf("Failed to get ARM memory base address and size\r\n");
 }
 
 void cmd_ls(char* param) {
@@ -97,37 +125,67 @@ void cmd_dtb(char* param) {
 }
 
 void cmd_initramfs() {
-    uart_write_string("Initramfs address: 0x");
-    uart_puth(INITRD_ADDR);
-    uart_write_string(ENDL);
+    uart_printf("Initramfs address: 0x%x\r\n", INITRD_ADDR);
 }
 
-void cmd_alloc() {
-    char *p1 = malloc(0x18);
-    char *p2 = malloc(0x18);
-    memcpy(p1, "nlnlOuO\0", 8);
-    memcpy(p2, "nlnlSoFun\0", 10);
-    uart_write_string(p1);
-    uart_write_string(ENDL);
-    uart_write_string(p2);
-    uart_write_string(ENDL);
+void cmd_async() {
+    uart_printf_async("%s, %s\r\n", "nlnlOuO", "nlnlSoFun");
+}
+
+void cmd_prog(char* param) {
+    cpio_newc_parser(cpio_prog_callback, param);
+}
+
+void cmd_sec2() {
+    add_timer(two_second_alert, 2, "");
+}
+
+void cmd_setTimeout(char* param) {
+    unsigned int idx = 0;
+    char msg[1000];
+    memset(msg, 0, 1000);
+    while (*param != ' ')
+        msg[idx++] = *param++;
+    msg[idx++] = '\r';
+    msg[idx++] = '\n';
+    msg[idx++] = '\0';
+    char *seconds = param + 1;
+    add_timer(uart_write_string, atoi(seconds), msg);
+}
+
+void cmd_preempt() {
+    char tmp[0x100];
+    for (int i = 0; i < 0x100; i++)
+        tmp[i] = ('A' + (i % 26));
+    add_timer(uart_write_string, 1, "Timer\r\n");
+    uart_write_string_async(tmp);
+}
+
+void cmd_pageTest() {
+    page_allocator_test();
+}
+
+void cmd_chunkTest() {
+    sc_test();
 }
 
 void cmd_unknown() {
-    uart_write_string("Unknown command: ");
-    uart_write_string(buf);
-    uart_write_string(ENDL);
+    uart_printf("Err: command %s not found, try <help>\r\n", buf);
 }
 
 void shell() {
     cpio_init();
     welcome_msg();
-    do {
-        read_cmd();
-        uart_write_string("# ");
-        uart_write_string(buf);
-        uart_write_string(ENDL);
 
+    mm_init();
+
+    timer_list_init();
+    core_timer_enable(); 
+    
+    while (1) {
+        uart_printf("# ");
+        read_cmd();
+        uart_printf(ENDL);
         exec_cmd();
-    } while (1);
+    }
 }

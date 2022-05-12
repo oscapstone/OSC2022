@@ -4,7 +4,7 @@ CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 LD = $(CROSS)-ld
 OBJCPY = $(CROSS)-objcopy
 
-INCLUDE = -I ../include
+INCLUDE = -I ./include
 SRCS = $(wildcard ./*.c)
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 

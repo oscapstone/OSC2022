@@ -39,3 +39,31 @@ python3 send_kernel.py
 screen /dev/cu.usbserial-0001 115200
 ```
 
+## Debug with QEMU and GDB
+
+### Run docker and copy directory to container
+
+```bash
+docker run --rm --privileged -it -v ~/Downloads/shared-docker:/root/share osc:2022
+docker cp <directory> <container ID>:/root
+```
+
+### Modify makefile (mac -> ubuntu) & compile
+
+```bash
+sh ./cross.sh
+make
+```
+
+### Run QEMU in docker
+
+```bash
+make debug
+```
+
+### Debug in docker
+
+```bash
+gdb-multiarch ./kernel/kernel8.elf
+target remote :1234
+```

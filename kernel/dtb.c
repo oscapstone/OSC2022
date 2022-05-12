@@ -2,8 +2,9 @@
 
 char* DTB_ADDRESS;
 void* INITRD_ADDR;
+void* INITRD_END;
 
-void dtb_init(uint64_t x0) {
+void dtb_init(unsigned long int x0) {
     DTB_ADDRESS = (char*)x0;
     dtb_parser(dtb_get_initrd_callback);
 }
@@ -11,48 +12,56 @@ void dtb_init(uint64_t x0) {
 void dtb_parser(dtb_callback_t callback) {
     fdt_header* header = (fdt_header*)DTB_ADDRESS;
     // Check magic
-    if (get_be_uint32(&header->magic) != 0xd00dfeed)
+    if (BE_to_uint(&header->magic) != 0xd00dfeed)
         return;
 
-    char *dt_sturct = (char*)header + get_be_uint32(&header->off_dt_struct),
-         *dt_strings = (char*)header + get_be_uint32(&header->off_dt_strings);
+    char *dt_sturct = (char*)header + BE_to_uint(&header->off_dt_struct),
+         *dt_strings = (char*)header + BE_to_uint(&header->off_dt_strings);
     char* ptr = dt_sturct;
-    uint32_t token_type;
+    unsigned int token_type, len;
 
     while (1) {
-        token_type = get_be_uint32(ptr);
+        token_type = BE_to_uint(ptr);
         ptr += 4;
 
         switch (token_type) {
             case FDT_BEGIN_NODE:
+                // FDT_BEGIN_NODE followed by node's name
                 callback(token_type, ptr, 0);
+                // ptr += strlen(node's name) + 1 (null-terminated)
                 ptr += strlen(ptr) + 1;
-                if ((uint64_t)ptr % 4) ptr += 4 - (uint64_t)ptr % 4;  // 4 bytes alignment
+                // 4 bytes alignment, zero padding
+                if ((unsigned long int)ptr % 4)
+                    ptr += 4 - (unsigned long int)ptr % 4;
                 break;
             case FDT_END_NODE:
+                // FDT_END_NODE followed immediately by the next token
                 callback(token_type, 0, 0);
                 break;
             case FDT_PROP:
-                // struct { uint32_t len; uint32_t nameoff;}
+                // FDT_PROP followed by struct { unsigned int len; unsigned int nameoff;}
                 // get len
-                uint32_t len = get_be_uint32(ptr);
+                len = BE_to_uint(ptr);
                 ptr += 4;
-                // get name_offset
-                char* name = (char*)dt_strings + get_be_uint32(ptr);  // dt_strings + nameoff
+                // get name_offset, name = dt_strings + nameoff
+                char* name = (char*)dt_strings + BE_to_uint(ptr);
                 ptr += 4;
+                // struct followed by property's value
                 callback(token_type, name, ptr);
+                // followed by zeroed padding bytes (if necessary)
                 ptr += len;
-                if ((uint64_t)ptr % 4) ptr += 4 - (uint64_t)ptr % 4;  // 4 bytes alignment
+                if ((unsigned long int)ptr % 4)
+                    ptr += 4 - (unsigned long int)ptr % 4;
                 break;
             case FDT_NOP:
+                // FDT_NOP followed immediately by the next token
                 callback(token_type, 0, 0);
                 break;
             case FDT_END:
+                // end of structure block
                 callback(token_type, 0, 0);
                 break;
             default:
-                uart_puth(*ptr);
-                return;
                 break;
         }
         if (token_type == FDT_END)
@@ -60,38 +69,37 @@ void dtb_parser(dtb_callback_t callback) {
     }
 }
 
-void dtb_get_initrd_callback(uint32_t token_type, char* name, char* data) {
+void dtb_get_initrd_callback(unsigned int token_type, char* name, char* data) {
     if (token_type == FDT_PROP && !strcmp(name, "linux,initrd-start")) {
-        INITRD_ADDR = get_be_uint32(data);
-        uart_write_string("Initramfs address: 0x");
-        uart_puth(data);
-        uart_write_string("\r\n");
+        INITRD_ADDR = BE_to_uint(data);
+        uart_printf("Initramfs address: 0x%x\r\n", INITRD_ADDR);
+    }
+    if (token_type == FDT_PROP && !strcmp(name, "linux,initrd-end")) {
+        INITRD_END = BE_to_uint(data);
     }
 }
 
-void dtb_show_callback(uint32_t token_type, char* name, char* data) {
-    static unsigned int level = 0;
+void dtb_show_callback(unsigned int token_type, char* name, char* data) {
+    static unsigned int dtb_tree_level = 0;
     switch (token_type) {
         case FDT_BEGIN_NODE:
-            for (uint32_t i = 0; i < level; i++)
-                uart_write_string("  ");
-            uart_write_string(name);
-            uart_write_string("{\r\n");
-            level++;
+            for (unsigned int i = 0; i < dtb_tree_level; i++)
+                uart_printf("  ");
+            uart_printf("%s{\r\n", name);
+            dtb_tree_level++;
             break;
 
         case FDT_END_NODE:
-            level--;
-            for (uint32_t i = 0; i < level; i++)
-                uart_write_string("  ");
-            uart_write_string("}\r\n");
+            dtb_tree_level--;
+            for (unsigned int i = 0; i < dtb_tree_level; i++)
+                uart_printf("  ");
+            uart_printf("}\r\n");
             break;
 
         case FDT_PROP:
-            for (uint32_t i = 0; i < level; i++)
-                uart_write_string("  ");
-            uart_write_string(name);
-            uart_write_string("\r\n");
+            for (unsigned int i = 0; i < dtb_tree_level; i++)
+                uart_printf("  ");
+            uart_printf("%s\r\n", name);
             break;
     }
 }

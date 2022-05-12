@@ -1,18 +1,14 @@
-#include "stdint.h"
-
 extern char _kernel_start[];  // 0x80000
 char* _dtb;
 
 void load_kernel() {
-    uint32_t size;
-    uart_read(&size, 4);            // read 4 byte magic code
-    uart_write_string("[+] Loading kernel8.img from UART\r\n");
+    unsigned int size = 0;
     uart_read(&size, 4);            // read kernel8.img size
-    uart_write_string("[+] Get kernel8.img size: 0x");
-    uart_puth(size);
+    uart_write_string("[+] Get kernel8.img size : 0x");
+    uart_write_hex(size);
     uart_write_string("\r\n");
     uart_read(_kernel_start, size); // read kernel8.img to 0x80000
-    uart_write_string("[+] Loading kernel8.img successfully!\r\n");
+    uart_write_string("[+] Successfully load the kernel8.img\r\n");
 }
 
 void bootloader_main(char* x0) {
