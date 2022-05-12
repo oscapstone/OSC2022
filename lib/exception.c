@@ -29,6 +29,10 @@
 #include "utils.h"
 #include "timer.h"
 #include "interrupt.h"
+#include "type.h"
+#include "syscall.h"
+#include "thread.h"
+#include "signal.h"
 
 
 void raise_exc()
@@ -48,6 +52,30 @@ void el1_to_el0(char* program_address, char* user_stack_address)
         :: "r" (program_address),
         "r" (user_stack_address)
     );
+}
+
+void svc_handle(trapFrame_t *frame) {
+    uint64 mode = frame->x8;
+    uint64 *returnValue = &frame->x0;
+
+    // uart_puts("SVC Handle Mode = "); uart_num(mode); uart_newline();
+    enable_interrupt();
+    switch(mode) {
+        case 0: *returnValue = getpid(); break;
+        case 1: *returnValue = uart_read((char *)frame->x0, (size_t)frame->x1); break;
+        case 2: *returnValue = uart_write((char *)frame->x0, (size_t)frame->x1); break;
+        case 3: *returnValue = exec(frame, (char *)frame->x0, (char **)frame->x1); break;
+        case 4: *returnValue = fork(frame); /*uart_puts("fork return = "); uart_num(*returnValue); uart_newline();*/ break;
+        case 5: exit((int)frame->x0); break;
+        case 6: *returnValue = mbox_call((unsigned char)frame->x0, (unsigned int *)frame->x1); break;
+        case 7: kill((int)frame->x0); break;
+        case 8: signal_register(frame->x0, (void (*)())frame->x1); break;
+        case 9: signal_kill(frame->spsr_el1, frame->x0, frame->x1); break;
+        case 115: signal_return(frame); break;
+        default: break;
+    }
+    lock_interrupt();
+    unlock_interrupt();
 }
 
 void exc_dump(unsigned long num, unsigned long esr, unsigned long elr, unsigned long spsr, unsigned long type) {
@@ -103,6 +131,8 @@ void exc_dump(unsigned long num, unsigned long esr, unsigned long elr, unsigned 
     uart_async_hex(spsr>>32);
     uart_async_hex(spsr);
     uart_async_puts("\n");
+
+    delay_ms(10000);
 }
 
 void uart_dump() {
@@ -139,7 +169,7 @@ void uart_dump() {
     }
 }
 
-void irq_dump(){
+void irq_dump(trapFrame_t *frame){
    
     if(*IRQ_PENDING_1 & IRQ_PENDING_1_AUX_INT && *CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_GPU) // from aux && from GPU0 -> uart exception  
     {
@@ -150,10 +180,17 @@ void irq_dump(){
         // uart_puts("Interrupt-Timer\n");
         disable_core_timer();
         add_interrupt(core_timer_handler, TIMER_INTERRUPT_PRIORITY);
+        if (run_queue->next->next != run_queue) schedule();
+        // uart_puts("Done\n");
         // core_timer_handler();
         // enable_core_timer();
     }
     else {
         uart_puts("No support this irq\n");
+    }
+
+    
+    if ((frame->spsr_el1 & 0b1111) == 0) {;
+        signal_execute();
     }
 }

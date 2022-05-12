@@ -85,7 +85,7 @@ void uart_prefix() {
 }
 
 // Show hex value
-void uart_hex(unsigned int d) {
+void uart_hex(uint64 d) {
     unsigned int n;
     int c;
     uart_puts("0x");
@@ -99,10 +99,16 @@ void uart_hex(unsigned int d) {
 }
 
 // Show dec value
-void uart_num(unsigned int d) {
+void uart_num(int64 d) {
     unsigned int n;
-    unsigned int s[16];
+    char s[16];
     int i;
+
+    if(d < 0) {
+        d *= -1;
+        uart_putc('-');
+    }
+
     for(i = 0; d > 0; i++) {
         n = d % 10 + 0x30;
         s[i] = n;
@@ -258,13 +264,13 @@ unsigned int uart_async_putc(char c)
 
     
     // critical section
-    disable_interrupt();
+    lock_interrupt();
     tx_buffer[tx_buffer_widx++] = c;
     if (tx_buffer_widx >= MAX_BUF_SIZE)
         tx_buffer_widx = 0; // cycle pointer
 
     // start asynchronous transfer
-    enable_interrupt();
+    unlock_interrupt();
     
     // enable interrupt to transfer
     enable_uart_w_interrupt();
@@ -287,7 +293,7 @@ void uart_async_prefix() {
 }
 
 // Show hex value
-void uart_async_hex(unsigned int d) {
+void uart_async_hex(uint64 d) {
     unsigned int n;
     int c;
     uart_async_puts("0x");
@@ -300,8 +306,7 @@ void uart_async_hex(unsigned int d) {
     }
 }
 
-
-void uart_async_num(unsigned int d) {
+void uart_async_num(int64 d) {
     unsigned int n;
     unsigned int s[16];
     int i;
@@ -331,13 +336,13 @@ char uart_async_getc()
     }
 
     // critical section
-    disable_interrupt();
+    lock_interrupt();
     char r = rx_buffer[rx_buffer_ridx++];
 
     if (rx_buffer_ridx >= MAX_BUF_SIZE)
         rx_buffer_ridx = 0;
 
-    enable_interrupt();
+    unlock_interrupt();
 
     return r;
 }
@@ -376,4 +381,12 @@ void disable_uart_r_interrupt()
 void disable_uart_w_interrupt()
 {
     *AUX_MU_IER &= ~(2);
+}
+
+//
+
+void raiseError(char *message) {
+    uart_puts("[Error] ");
+    uart_puts(message);
+    while(1);
 }

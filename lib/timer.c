@@ -3,17 +3,18 @@
 #include "uart.h"
 #include "string.h"
 #include "memory.h"
+#include "interrupt.h"
 
 volatile timer_event_t* timer_event_pointer = NULL;
 
-unsigned long long get_end_tick(timer_event_t* event_p)
+uint64 get_end_tick(timer_event_t* event_p)
 {
     return event_p->timeout_tick + event_p->begin_tick;
 }
 
-unsigned long long get_current_tick()
+uint64 get_current_tick()
 {
-    unsigned long long current_tick;
+    uint64 current_tick;
     asm volatile(
         "mrs %0, cntpct_el0\n\t"
         : "=r"(current_tick)
@@ -23,20 +24,27 @@ unsigned long long get_current_tick()
 
 void set_first_timer()
 {
-    unsigned long long tick = get_end_tick(timer_event_pointer) - get_current_tick();
-    set_core_timer_by_tick(tick);
+    uint64 tick = get_end_tick(timer_event_pointer) - get_current_tick();
+
+    if(get_end_tick(timer_event_pointer) < get_current_tick()) {
+        // int64 diff = get_end_tick(timer_event_pointer) - get_current_tick();
+        // uart_puts("Timer is too slow, tick: "); uart_num(get_end_tick(timer_event_pointer)); uart_puts(" vs "); uart_num(get_current_tick()); uart_newline();
+        // raiseError("NOOOOOO~~~\n");
+        set_core_timer_by_tick(10000);
+    }
+    else {
+        set_core_timer_by_tick(tick);
+    }
 }
 
-int set_next_timer()
-{
-    /* TODO
-    free executed timer event
-    */
-
-    timer_event_pointer = timer_event_pointer->next_event;
+int set_next_timer() {
+    timer_event_t* next_event_p = timer_event_pointer->next_event;
+    free(timer_event_pointer->message);
+    free(timer_event_pointer);
+    timer_event_pointer = next_event_p;
     if(is_not_empty(timer_event_pointer))
     {
-        unsigned long long tick = get_end_tick(timer_event_pointer) - get_current_tick();
+        uint64 tick = get_end_tick(timer_event_pointer) - get_current_tick();
         set_core_timer_by_tick(tick);
         return 1;
     }
@@ -46,20 +54,15 @@ int set_next_timer()
     }
 }
 
-void init_timer_event(timer_event_t* event_p, void (*callback)(char* message), unsigned long long timeout_tick, char *message)
+void init_timer_event(timer_event_t* event_p, void (*callback)(char* message), uint64 timeout_tick, char *message)
 {
     event_p->timeout_tick = timeout_tick;
     event_p->begin_tick = get_current_tick();
-    if(is_not_empty(message))
-    {
-        // uart_puts("Create Message\n");
-        event_p->message = (char*)simple_malloc((strlen(message) + 1) * sizeof(char));
-        // uart_puts("Copy Message\n");
+    if(is_not_empty(message)) {
+        event_p->message = (char*)malloc((strlen(message) + 1) * sizeof(char));
         strcpy(event_p->message, message);
     }
-    else
-    {
-        // uart_puts("NULL message\n");
+    else {
         event_p->message = NULL;
     }
         
@@ -82,7 +85,7 @@ void stack_head(timer_event_t* event_p)
 
 void insert_timer_event(timer_event_t* event_p)
 {
-    unsigned long long end_tick = get_end_tick(event_p);
+    uint64 end_tick = get_end_tick(event_p);
     if(end_tick < get_end_tick(timer_event_pointer)) // less than head 
     {
         stack_head(event_p);
@@ -104,11 +107,10 @@ void insert_timer_event(timer_event_t* event_p)
     current_event_p->next_event = event_p; // greater than tail
 }
 
-void add_timer(void (*callback)(char* message), unsigned long long timeout_tick, char *message)
+void add_timer(void (*callback)(char* message), uint64 timeout_tick, char *message)
 {
-    // uart_puts("Create new event\n");
-    timer_event_t* new_timer_event = (timer_event_t*)simple_malloc(sizeof(timer_event_t));
-    // uart_puts("Init events\n");
+    lock_interrupt();
+    timer_event_t* new_timer_event = (timer_event_t*)malloc(sizeof(timer_event_t));
     init_timer_event(new_timer_event, callback, timeout_tick, message);
 
     if(is_empty(timer_event_pointer))
@@ -121,37 +123,26 @@ void add_timer(void (*callback)(char* message), unsigned long long timeout_tick,
         // uart_puts("Insert events\n");
         insert_timer_event(new_timer_event);
     }
+    unlock_interrupt();
 }
 
-void exec_timer_callback(timer_event_t* event_p)
-{
-    char second_string[24];
-    unsigned long long current_tick = get_current_tick();
-    
-    uart_dem();
-
-    unsigned long long second = tick2second(current_tick);
-    uart_puts("Current time(s): "); uart_num(second); uart_newline();
-
-    // second = tick2second(current_tick - event_p->begin_tick);
-    second = tick2second(event_p->timeout_tick);
-    uart_puts("Executed time(s): "); uart_num(second); uart_newline();
+void exec_timer_callback(timer_event_t* event_p) {
     ((void (*)(char *))event_p->callback)(event_p->message);
-
-    uart_dem();
-    uart_prefix();
 }
 
 void core_timer_handler()
 {
     static int wait = 1;
 
+    lock_interrupt();
     if(is_not_empty(timer_event_pointer))
     {
         if(wait == 0)
         {
             exec_timer_callback(timer_event_pointer);
+            // uart_puts("I am back\n");
             int have_next = set_next_timer();
+            
 
             if(have_next == 0)
             {
@@ -173,7 +164,8 @@ void core_timer_handler()
         wait = 1;    
         set_core_timer_by_second(1); // wait 1s for next interrupt
     }
-
+    unlock_interrupt();
+    // uart_puts("Unlock, is disable? "); uart_num(is_disable_interrupt()); uart_newline();
     enable_core_timer();
 }
 
@@ -197,7 +189,7 @@ void disable_core_timer()
     );
 }
 
-void set_core_timer_by_tick(unsigned long long tick)
+void set_core_timer_by_tick(uint64 tick)
 {
     asm volatile(
         "msr cntp_tval_el0, %0\n\t"
@@ -205,7 +197,7 @@ void set_core_timer_by_tick(unsigned long long tick)
     );
 }
 
-void set_core_timer_by_second(unsigned long long second)
+void set_core_timer_by_second(uint64 second)
 {
     asm volatile(
         "mrs x1, cntfrq_el0\n\t"
@@ -215,9 +207,9 @@ void set_core_timer_by_second(unsigned long long second)
     );
 }
 
-unsigned long long get_timer_frequency() 
+uint64 get_timer_frequency() 
 {
-    unsigned long long freq;
+    uint64 freq;
     asm volatile(
         "mrs %0, cntfrq_el0\n\t"
         :"=r" (freq)
@@ -226,17 +218,17 @@ unsigned long long get_timer_frequency()
     return freq;
 }
 
-unsigned long long tick2second(unsigned long long tick) 
+uint64 tick2second(uint64 tick) 
 {
-    unsigned long long freq = get_timer_frequency();
-    unsigned long long second = tick / freq;
+    uint64 freq = get_timer_frequency();
+    uint64 second = tick / freq;
     return second;
 }
 
-unsigned long long second2tick(unsigned long long second) 
+uint64 second2tick(uint64 second) 
 {
-    unsigned long long freq = get_timer_frequency();
-    unsigned long long tick = second * freq;
+    uint64 freq = get_timer_frequency();
+    uint64 tick = second * freq;
     return tick;
 }
 

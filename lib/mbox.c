@@ -3,7 +3,7 @@
 
 volatile unsigned int  __attribute__((aligned(16))) mbox[36];
 
-int mbox_call(unsigned char ch) {
+int _mbox_call(unsigned char ch) {
     unsigned int r = (((unsigned int)((unsigned long)&mbox) & ~0xF) | (ch & 0xF));
     // wait for ready 
     do {
