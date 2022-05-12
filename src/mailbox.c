@@ -85,8 +85,7 @@ void get_board_revision(){
     if(mailbox_call(mailbox,MBOX_CH_PROP)) // message passing procedure call, you should implement it following the 6 steps provided above.
     {
         writes_uart("Get Board revision: ");
-        writehex_uart(mailbox[5]); // it should be 0xa020d3 for rpi3 b+
-        writes_uart("\r\n");
+        writehex_uart(mailbox[5],1); // it should be 0xa020d3 for rpi3 b+
     }
     else{
         writes_uart("Get Board revision failed!\r\n");
@@ -120,9 +119,7 @@ void get_ARM_memory(){
 
     mailbox_call(mailbox,MBOX_CH_PROP); // message passing procedure call, you should implement it following the 6 steps provided above.
     writes_uart("Get ARM Memory address: ");
-    writehex_uart(mailbox[5]); 
-    writes_uart("\r\n");
+    writehex_uart(mailbox[5],1); 
     writes_uart("Get ARM Memory size: ");
-    writehex_uart(mailbox[6]); 
-    writes_uart("\r\n");
+    writehex_uart(mailbox[6],1); 
 }

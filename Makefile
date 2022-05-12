@@ -5,13 +5,13 @@ ASMS = a
 LINK = linker
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 
-all: clean kernel8.img #run
+all: clean kernel8.img run
 
 %.o: %.S
-	aarch64-linux-gnu-gcc $(CFLAGS) $(INCLUDE) -c $(ASMS).S -o $(ASMS).o
+	aarch64-linux-gnu-gcc $(CFLAGS) $(INCLUDE) -c $(ASMS).S -o $(ASMS).o -g
 
 %.o: %.c
-	aarch64-linux-gnu-gcc $(CFLAGS) $(INCLUDE) -c $< -o $@
+	aarch64-linux-gnu-gcc $(CFLAGS) $(INCLUDE) -c $< -o $@ -g
 
 kernel8.img: $(ASMS).o $(OBJS)
 	aarch64-linux-gnu-ld -nostdlib -nostartfiles $(ASMS).o $(OBJS) -T $(LINK).ld -o kernel8.elf
@@ -22,6 +22,7 @@ clean:
 
 run:
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img --display none -serial null -serial stdio -s -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
+
 
 flash:
 	sudo dd if=kernel8.img of=/dev/sdb

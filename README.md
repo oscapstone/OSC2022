@@ -1,4 +1,4 @@
-# Operating Systems Capstone 2022 Lab2
+# Operating Systems Capstone 2022 Lab
 
 ## Run kernel Steps
 1. Run makefile: `make`

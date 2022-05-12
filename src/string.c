@@ -1,4 +1,5 @@
 #include "string.h"
+#include "mini_uart.h"
 int
 strcmp (const char *p1, const char *p2)
 {
@@ -42,4 +43,19 @@ int strlen(char *s){
         tmps++;
     }
     return count;
+}
+
+unsigned int str2int(char *s){
+  unsigned int n=0;
+  //busy_wait_writes("Enter str2int",TRUE);
+  for (int i = 0; i < strlen(s); i++)
+  {
+    if(s[i]<'0' || s[i]>'9')
+      return n;
+    //busy_wait_writes("Lopping str2int",TRUE);
+    n*=10;
+    n+=s[i]-'0';
+  }
+  //busy_wait_writes("Return str2int",TRUE);
+  return n;
 }

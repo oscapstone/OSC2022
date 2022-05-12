@@ -4,16 +4,15 @@
 #include "string.h"
 #include "cpio.h"
 
-void fdt_traverse(void (*f)()){
+void* fdt_traverse(void* (*f)()){
     register unsigned long dtb_reg asm ("x15");
-    writes_uart("Loaded dtb address: ");
-    writehex_uart(dtb_reg);
-    writes_uart("\r\n");
+    // writes_uart("Loaded dtb address: ");
+    // writehex_uart(dtb_reg,1);
     fdt_header* header = (fdt_header*)dtb_reg;
     
     if(big2little(header->magic) != FDT_HEADER_MAGIC){
         writes_uart("Header magic failed\r\n");
-        return;
+        return nullptr;
     }
         
     uint32_t* struct_start = (uint32_t*)((char*)header+ big2little(header->off_dt_struct));
@@ -37,10 +36,6 @@ void fdt_traverse(void (*f)()){
             name = (char*)(struct_start+1);
             // followed node name
 
-            // writes_n_uart(name,strlen(name));
-            // writes_uart("\r\n");
-            // writehex_uart(strlen(name));
-            // writes_uart("\r\n");
             uint32_t name_size = strlen(name);
 
             struct_start+=align_up(name_size+1,4)/sizeof(uint32_t);
@@ -57,21 +52,16 @@ void fdt_traverse(void (*f)()){
 
             name = ((char*)header+big2little(header->off_dt_strings)+ big2little(prop->nameoff));
             
-            // writes_n_uart(name,big2little(prop->len));
-            // writes_uart("\r\n");
-            // writes_uart(name);
-            // writes_uart("\r\n");
-            // writehex_uart(big2little(prop->len));
-            // writes_uart("\r\n");
-            f(prop,name,big2little(prop->len));
-
+            void* result = f(prop,name,big2little(prop->len));
+            if(result != nullptr)
+                return result;
             struct_start+=(sizeof(fdt_prop)+align_up(big2little(prop->len),4))/sizeof(uint32_t); 
             // add size of property name length and name.
             // property name have zero padding, up to multiple of 4.
             break;
         case FDT_END:
             //writes_uart("End\r\n");
-            return;
+            return nullptr;
             break;
         case FDT_NOP:
             //writes_uart("NOP\r\n");
@@ -84,5 +74,5 @@ void fdt_traverse(void (*f)()){
         }
         struct_start+=1;
     }
-
+    return nullptr;
 }
