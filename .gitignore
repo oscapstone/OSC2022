@@ -1,3 +1,6 @@
+.vscode
 *.o
 *.elf
-.vscode
+*.img
+.DS_Store
+build
