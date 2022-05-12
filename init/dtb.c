@@ -4,6 +4,8 @@
 #include <util.h>
 #include <types.h>
 
+extern addr_t dtb_base, dtb_end;
+
 void show_hdr(Fdt_header *fdt_hdr)
 {
     printf("sizeof(Fdt_header): 0x%lxd\r\n", sizeof(Fdt_header));
@@ -19,9 +21,19 @@ void show_hdr(Fdt_header *fdt_hdr)
     printf("size_dt_struct: 0x%x\r\n\n", fdt_hdr->size_dt_struct);
 }
 
-void parse_dtb(char *dtb, void(*callback)(int,char*,char*,int))
+static inline void show_space(int sz)
 {
-    Fdt_header *fdt_hdr = (Fdt_header *) dtb;
+    sz *= 2;
+    while (sz--)
+        printf(" ");
+}
+
+void parse_dtb(void(*callback)(char*,char*,char*,int))
+{
+    if (dtb_base == NULL)
+        return;
+
+    Fdt_header *fdt_hdr = (Fdt_header *) dtb_base;
     
     fdt_hdr->magic = endian_xchg_32(fdt_hdr->magic);
     if (fdt_hdr->magic != DTB_MAGIC)
@@ -36,66 +48,82 @@ void parse_dtb(char *dtb, void(*callback)(int,char*,char*,int))
     fdt_hdr->boot_cpuid_phys = endian_xchg_32(fdt_hdr->boot_cpuid_phys);
     fdt_hdr->size_dt_strings = endian_xchg_32(fdt_hdr->size_dt_strings);
     fdt_hdr->size_dt_struct = endian_xchg_32(fdt_hdr->size_dt_struct);
-    show_hdr(fdt_hdr);
+    #ifdef DEBUG_DTB
+        show_hdr(fdt_hdr);
+    #endif /* DEBUG_DTB */
 
-    Fdt_rsv_entry *fdt_rsv = (Fdt_rsv_entry *) (dtb + fdt_hdr->off_mem_rsvmap);
+    dtb_end = dtb_base + fdt_hdr->totalsize;
+
+    Fdt_rsv_entry *fdt_rsv = (Fdt_rsv_entry *) (dtb_base + fdt_hdr->off_mem_rsvmap);
     int rsv_num = (fdt_hdr->off_dt_struct - fdt_hdr->off_mem_rsvmap) / sizeof(Fdt_rsv_entry);
     for (int i = 0; i < rsv_num; i++)
     {
         fdt_rsv->address = endian_xchg_64(fdt_rsv->address);
         fdt_rsv->size = endian_xchg_64(fdt_rsv->size);
-        printf("%p: addr: 0x%lx, size: 0x%lx\r\n", fdt_rsv, fdt_rsv->address, fdt_rsv->size);
+        #ifdef DEBUG_DTB
+            printf("%p: addr: 0x%lx, size: 0x%lx\r\n", fdt_rsv, fdt_rsv->address, fdt_rsv->size);
+        #endif /* DEBUG_DTB */
         fdt_rsv++;
     }
 
-    char *node_name;
+    char *node_name = NULL;
     char *prop_name;
-    char *prop_value;
+    char *chr_prop_value;
+    uint32_t uint_prop_value;
+    uint32_t prop_len, nameoff;
+    uint32_t node_type;
 
-    int node_type, prop_len;
-    Fdt_node *fdt_node;
-
-    char *prop_name_base = dtb + fdt_hdr->off_dt_strings;
-    char *fdt_struct = (char *) fdt_rsv;
+    char *str_block = dtb_base + fdt_hdr->off_dt_strings;
+    char *stru_block = dtb_base + fdt_hdr->off_dt_struct;
 
     int level = 0;
-    char spaces[0x100];
-    
-    memset(spaces, ' ', 0xff);
-    spaces[0xff] = '\0';
-
     while (1)
     {
-        node_type = *(uint32_t *) fdt_struct;
-        node_type = endian_xchg_32(node_type);
-        fdt_struct += 4;
+        node_type = endian_xchg_32( *(uint32_t *) stru_block );
+        // printf("%d\r\n", node_type);
+        stru_block += 4;
 
-        prop_value = NULL;
-        prop_name = NULL;
-        prop_len = 0;
+        chr_prop_value = prop_name = NULL;
+        prop_len = nameoff = uint_prop_value = 0;
         
-        switch (node_type)
-        {
+        switch (node_type) {
         case FDT_BEGIN_NODE:
-            level++;
+            node_name = stru_block;
 
-            node_name = fdt_struct;
-            fdt_struct += strlen(node_name) + 1;
-            fdt_struct = (char *) ALIGN_32(fdt_struct);
+            #ifdef DEBUG_DTB
+                show_space(level);
+                printf("[ %s ]: \r\n", node_name);
+            #endif /* DEBUG_DTB */
+
+            stru_block = PALIGN(stru_block + strlen(stru_block) + 1, 4);
+            level++;
             break;
 
         case FDT_PROP:
-            fdt_node = (Fdt_node *) fdt_struct;
-            fdt_node->len = endian_xchg_32(fdt_node->len);
-            fdt_node->nameoff = endian_xchg_32(fdt_node->nameoff);
-            fdt_struct += sizeof(Fdt_node);
+            prop_len = endian_xchg_32( *(uint32_t *) stru_block );
+            stru_block += 4;
+
+            nameoff = endian_xchg_32( *(uint32_t *) stru_block );
+            prop_name = str_block + nameoff;
+            stru_block += 4;
             
-            prop_value = fdt_struct;
-            prop_name = prop_name_base + fdt_node->nameoff;
-            prop_len = fdt_node->len;
+            chr_prop_value = stru_block;
+            #ifdef DEBUG_DTB
+                show_space(level);
+                printf("Property [ %s ]: \r\n", prop_name, chr_prop_value);
+                show_space(level);
+                printf("    (str) %s\r\n", chr_prop_value);
+                show_space(level);
+
+                printf("    (hex) ");
+                for (int i = 0; i < prop_len; i += 4) {
+                    uint_prop_value = endian_xchg_32( *(uint32_t *) (stru_block + i) );
+                    printf("0x%x ", uint_prop_value);
+                }
+                printf("\r\n");
+            #endif /* DEBUG_DTB */
             
-            fdt_struct += fdt_node->len;
-            fdt_struct = (char *) ALIGN_32(fdt_struct);
+            stru_block = PALIGN(stru_block + prop_len, 4);
             break;
 
         case FDT_END_NODE:
@@ -105,13 +133,12 @@ void parse_dtb(char *dtb, void(*callback)(int,char*,char*,int))
             break;
         case FDT_END:
             goto parse_dtb_ret;
-            break;
         default:
-            break;
+            while (1);
         }
 
-        if (prop_name && prop_value)
-            callback(node_type, prop_name, prop_value, prop_len);
+        if (prop_name && chr_prop_value)
+        callback(node_name, prop_name, chr_prop_value, prop_len);
     }
 parse_dtb_ret:
     return;

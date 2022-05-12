@@ -4,9 +4,12 @@
 #include <types.h>
 
 /* MEMORY SIZE DEFINITIONS */
-#define KB (1 << 10)
-#define MB (KB << 10)
-#define GB (MB << 10)
+#define KB_BIT 10
+#define KB (1 << KB_BIT)
+#define MB_BIT 20
+#define MB (1 << MB_BIT)
+#define GB_BIT 30
+#define GB (1 << GB_BIT)
 
 /* BIT OPERATION */
 
@@ -50,14 +53,16 @@ int strcpy(char *s1, const char *s2);
 int strlen(const char *s1);
 
 /* MEMORY OPERATION */
-#define ALIGN_32(ptr) ( (((uint64_t) ptr) + 3) & ~3 )
+#define ALIGN(x, a)	 (((x) + ((a) - 1)) & ~((a) - 1))
+#define PALIGN(p, a) ((void *)(ALIGN((unsigned long)(p), (a))))
 int memcmp(const char *dst, const char *src, uint32_t sz);
 void memcpy(char *dst, const char *src, uint32_t sz);
 void memset(char *s1, char c, uint32_t sz);
 
 /* MATH OPERATION */
 uint64_t ceiling_2(uint64_t value);
-uint8_t log_2(uint64_t value);
+uint64_t floor_2(uint64_t value);
+int8_t log_2(uint64_t value);
 #define endian_xchg_32(val) ( ((val>>24)&0xff)     | \
                               ((val>>8)&0xff00)    | \
                               ((val<<8)&0xff0000)  | \
@@ -71,6 +76,9 @@ uint8_t log_2(uint64_t value);
                               ((val<<24)&0xff0000000000)     | \
                               ((val<<40)&0xff000000000000)   | \
                               ((val<<56)&0xff00000000000000) )
+
+#define _floor(val, bit) ( (val) & ~((1 << bit) - 1) )
+#define _ceil(val, bit)  ( _floor(val + ((1 << bit) - 1), bit) )
 
 /* REGISTER OPERATION */
 #define read_sysreg(reg) ({          \
