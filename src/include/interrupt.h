@@ -3,11 +3,14 @@
 
 #include <stdint.h>
 #include <mmio.h>
+#include <stddef.h>
 
 void interrupt_irq_handler();
 void interrupt_fiq_handler();
 void interrupt_enable();
 void interrupt_disable();
+void interrupt_enable_restore(size_t flag);
+size_t interrupt_disable_save();
 
 #define ARMINTERRUPT_BASE MMIO_BASE + 0xB000
 #define ARMINT_IRQ_PEND_BASE_REG ARMINTERRUPT_BASE + 0x200

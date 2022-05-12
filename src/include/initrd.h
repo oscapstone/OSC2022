@@ -47,5 +47,6 @@ typedef struct INITRD_FILE_{
 INITRD_FILE* initrd_parse();
 INITRD_FILE* initrd_list();
 INITRD_FILE* initrd_get(const char *filename);
+int initrd_init();
 
 #endif

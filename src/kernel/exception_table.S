@@ -3,7 +3,7 @@
 
 // save general registers to stack
 .macro save_all
-    sub sp, sp, 32 * 8
+    sub sp, sp, 32 * 9
     stp x0, x1, [sp ,16 * 0]
     stp x2, x3, [sp ,16 * 1]
     stp x4, x5, [sp ,16 * 2]
@@ -19,11 +19,20 @@
     stp x24, x25, [sp ,16 * 12]
     stp x26, x27, [sp ,16 * 13]
     stp x28, x29, [sp ,16 * 14]
-    str x30, [sp, 16 * 15]
+    mrs x0, sp_el0
+    mrs x1, elr_el1
+    mrs x2, spsr_el1
+    stp x30, x0, [sp, 16 * 15]
+    stp x1, x2,  [sp, 16 * 16]
 .endm
 
 // load general registers from stack
 .macro load_all
+    ldp x30, x0, [sp, 16 * 15]
+    ldp x1, x2, [sp, 16 * 16]
+    msr sp_el0, x0
+    msr elr_el1, x1
+    msr spsr_el1, x2
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
     ldp x4, x5, [sp ,16 * 2]
@@ -40,10 +49,11 @@
     ldp x26, x27, [sp ,16 * 13]
     ldp x28, x29, [sp ,16 * 14]
     ldr x30, [sp, 16 * 15]
-    add sp, sp, 32 * 8
+    add sp, sp, 32 * 9
 .endm
 _exception_handler:
     save_all
+    mov x0, sp
     bl exception_handler
     load_all
     eret
