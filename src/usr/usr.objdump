@@ -1,0 +1,55 @@
+
+usr.elf:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+0000000000900000 <_start>:
+  900000:	94000014 	bl	900050 <main>
+  900004:	14000001 	b	900008 <hang>
+
+0000000000900008 <hang>:
+  900008:	d503205f 	wfe
+  90000c:	17ffffff 	b	900008 <hang>
+
+0000000000900010 <getpid>:
+  900010:	d2800008 	mov	x8, #0x0                   	// #0
+  900014:	d4000001 	svc	#0x0
+  900018:	d65f03c0 	ret
+
+000000000090001c <uartread>:
+  90001c:	d2800028 	mov	x8, #0x1                   	// #1
+  900020:	d4000001 	svc	#0x0
+  900024:	d65f03c0 	ret
+
+0000000000900028 <uartwrite>:
+  900028:	d2800048 	mov	x8, #0x2                   	// #2
+  90002c:	d4000001 	svc	#0x0
+  900030:	d65f03c0 	ret
+
+0000000000900034 <exec>:
+  900034:	d2800068 	mov	x8, #0x3                   	// #3
+  900038:	d4000001 	svc	#0x0
+  90003c:	d65f03c0 	ret
+
+0000000000900040 <fork>:
+  900040:	d2800088 	mov	x8, #0x4                   	// #4
+  900044:	d4000001 	svc	#0x0
+  900048:	d65f03c0 	ret
+
+Disassembly of section .text.startup:
+
+0000000000900050 <main>:
+  900050:	a9bf7bfd 	stp	x29, x30, [sp, #-16]!
+  900054:	d28000c1 	mov	x1, #0x6                   	// #6
+  900058:	d2800000 	mov	x0, #0x0                   	// #0
+  90005c:	910003fd 	mov	x29, sp
+  900060:	97ffffef 	bl	90001c <uartread>
+  900064:	d2800081 	mov	x1, #0x4                   	// #4
+  900068:	d2800000 	mov	x0, #0x0                   	// #0
+  90006c:	97ffffef 	bl	900028 <uartwrite>
+  900070:	a8c17bfd 	ldp	x29, x30, [sp], #16
+  900074:	90000000 	adrp	x0, 900000 <_start>
+  900078:	d2800001 	mov	x1, #0x0                   	// #0
+  90007c:	91022000 	add	x0, x0, #0x88
+  900080:	17ffffed 	b	900034 <exec>
