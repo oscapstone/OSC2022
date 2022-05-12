@@ -4,34 +4,91 @@
 #include <rpi3.h>
 #include <cpio.h>
 #include <fdt.h>
-#include <mem.h>
+#include <exec.h>
+#include <utils.h>
+#include <timer.h>
+#include <irq.h>
+#include <mm/mm.h>
 
 #define BUFSIZE 0x100
 
-uint64 _initramfs;
 static char shell_buf[BUFSIZE];
-char *fdt_base;
+
+#define TEST_PTR_CNT 0x10
+
+static uint8 test_ptrs_inused[TEST_PTR_CNT];
+static char *test_ptrs[TEST_PTR_CNT];
+
+static void timeout_print(char *str)
+{
+    uart_printf("%s\r\n", str);
+
+    kfree(str);
+}
 
 static void cmd_alloc(char *ssize)
 {
-    int size = atoi(ssize);
-    
-    char *p = simple_malloc(size);
+    int size, idx;
 
-    uart_printf("[*] p: %x\r\n", p);
+    size = atoi(ssize);
+
+    if (size == 0) {
+        return;
+    }
+
+    for (idx = 0; idx < TEST_PTR_CNT; ++idx) {
+        if (!test_ptrs_inused[idx]) {
+            break;
+        }
+    }
+
+    if (idx == TEST_PTR_CNT) {
+        return;
+    }
+
+    test_ptrs_inused[idx] = 1;
+    
+    test_ptrs[idx] = kmalloc(size);
+
+    uart_printf("[*] ptrs[%d]: %llx\r\n", idx + 1, test_ptrs[idx]);
+}
+
+static void cmd_free(char *sidx)
+{
+    int idx = atoi(sidx);
+
+    if (idx == 0) {
+        return;
+    }
+
+    idx -= 1;
+
+    if (!test_ptrs_inused[idx]) {
+        return;
+    }
+
+    test_ptrs_inused[idx] = 0;
+
+    kfree(test_ptrs[idx]);
 }
 
 static void cmd_help(void)
 {
     uart_printf(
-                "alloc <size>\t: "   "test simple allocator" "\r\n"
+                "alloc <size>\t: "   "test allocator" "\r\n"
                 "cat <filename>\t: " "get file content"  "\r\n"
+                "exec <filename>\t: " "execute file"  "\r\n"
+                "free <idx>\t: " "test allocator"  "\r\n"
                 "help\t: "   "print this help menu" "\r\n"
                 "hello\t: "  "print Hello World!"   "\r\n"
                 "hwinfo\t: " "print hardware info"  "\r\n"
                 "ls\t: " "list files in initramfs"  "\r\n"
                 "parsedtb\t: " "parse devicetree blob (dtb)"  "\r\n"
                 "reboot\t: " "reboot the device"    "\r\n"
+                "setTimeout <msg> <sec>\t: " 
+                    "print @msg after @sec seconds" "\r\n"
+                "sw_timer\t: " "turn on/off timer debug info" "\r\n"
+                "sw_uart_mode\t: " "use sync/async UART" "\r\n"
             );
 }
 
@@ -60,14 +117,71 @@ static void cmd_reboot(void)
     BCM2837_reset(10);
 }
 
+static void cmd_setTimeout(char *msg, char *ssec)
+{
+    int len;
+    char *m;
+
+    len = strlen(msg) + 1;
+    m = kmalloc(len);
+
+    if (!m) {
+        return;
+    }
+
+    memncpy(m, msg, len);
+
+    uart_printf("[*] time: %d\r\n", atoi(ssec));
+    timer_add_proc((void (*)(void *))timeout_print, m, atoi(ssec));
+}
+
+static void cmd_sw_timer(void)
+{
+    timer_switch_info();
+}
+
+static void cmd_sw_uart_mode(void)
+{
+    int mode = uart_switch_mode();
+
+    if (mode == 0) {
+        uart_printf("[*] Use synchronous UART\r\n");
+    } else {
+        uart_printf("[*] Use asynchronous UART\r\n");
+    }
+}
+
 static void cmd_ls(void)
 {
-    cpio_ls(_initramfs);
+    cpio_ls(initramfs_base);
 }
 
 static void cmd_cat(char *filename)
 {
-    cpio_cat(_initramfs, filename);
+    cpio_cat(initramfs_base, filename);
+}
+
+static void cmd_exec(char *filename)
+{
+    char *mem;
+    char *user_sp;
+
+    mem = cpio_load_prog(initramfs_base, filename);
+
+    if (mem == NULL) {
+        return;
+    }
+
+    user_sp = kmalloc(PAGE_SIZE);
+
+    if (user_sp == NULL) {
+        kfree(mem);
+        return;
+    }
+
+    exec_user_prog(mem, user_sp);
+
+    // TODO: Free user_sp and mem
 }
 
 static void cmd_parsedtb(void)
@@ -91,6 +205,10 @@ static void shell(void)
             if (cmd_len >= 7) {
                 cmd_alloc(&shell_buf[6]);
             }
+        } else if (!strncmp("free", shell_buf, 4)) {
+            if (cmd_len >= 6) {
+                cmd_free(&shell_buf[5]);
+            }
         } else if (!strcmp("help", shell_buf)) {
             cmd_help();
         } else if (!strcmp("hello", shell_buf)) {
@@ -99,6 +217,46 @@ static void shell(void)
             cmd_hwinfo();
         } else if (!strcmp("reboot", shell_buf)) {
             cmd_reboot();
+        } else if (!strncmp("setTimeout", shell_buf, 10)) {
+            char *msg, *ssec;
+            
+            msg = shell_buf + 10;
+
+            if (*msg != ' ') {
+                continue;
+            }
+
+            msg++;
+
+            if (!*msg) {
+                continue;
+            }
+
+            ssec = msg;
+
+            while (*(++ssec)) {
+                if (*ssec == ' ') {
+                    break;
+                }
+            }
+
+            if (*ssec != ' ') {
+                continue;
+            }
+
+            *ssec = 0;
+
+            ssec++;
+
+            if (!*ssec) {
+                continue;
+            }
+
+            cmd_setTimeout(msg, ssec);
+        } else if (!strcmp("sw_timer", shell_buf)) {
+            cmd_sw_timer();
+        } else if (!strcmp("sw_uart_mode", shell_buf)) {
+            cmd_sw_uart_mode();
         } else if (!strcmp("ls", shell_buf)) {
             cmd_ls();
         } else if (!strcmp("parsedtb", shell_buf)) {
@@ -107,6 +265,10 @@ static void shell(void)
             if (cmd_len >= 5) {
                 cmd_cat(&shell_buf[4]);
             }
+        } else if (!strncmp("exec", shell_buf, 4)) {
+            if (cmd_len >= 6) {
+                cmd_exec(&shell_buf[5]);
+            }
         } else {
             // Just echo back
             uart_printf("%s\r\n", shell_buf);
@@ -114,51 +276,26 @@ static void shell(void)
     }
 }
 
-static int initramfs_fdt_parser(int level, char *cur, char *dt_strings)
-{
-    struct fdt_node_header *nodehdr = cur;
-    struct fdt_property *prop;
-
-    uint32 tag = fdtn_tag(nodehdr);
-
-    switch (tag) {
-    case FDT_PROP:
-        prop = nodehdr;
-        if (!strcmp("linux,initrd-start", dt_strings + fdtp_nameoff(prop))) {
-            _initramfs = fdt32_ld(&prop->data);
-            uart_printf("[*] initrd addr: %x\r\n", _initramfs);
-            return 1;
-        }
-        break;
-    case FDT_BEGIN_NODE:
-    case FDT_END_NODE:
-    case FDT_NOP:
-    case FDT_END:
-        break;
-    }
-
-    return 0;
-}
-
-static void initramfs_init()
-{
-    // Get initramfs address from devicetree
-    _initramfs = 0;
-    parse_dtb(fdt_base, initramfs_fdt_parser);
-    if (!_initramfs) {
-        uart_printf("[x] Cannot find initrd address!!!\r\n");
-    }
-}
-
 void start_kernel(char *fdt)
 {
     fdt_base = fdt;
 
+    irq_init();
+
     uart_init();
     uart_printf("[*] fdt base: %x\r\n", fdt_base);
     uart_printf("[*] Kernel\r\n");
-
+    
     initramfs_init();
+
+    mm_init();
+
+    timer_init();
+
+    // Enable interrupt from Auxiliary peripherals
+    irq1_enable(29);
+
+    enable_interrupt();
 
     shell();
 }
