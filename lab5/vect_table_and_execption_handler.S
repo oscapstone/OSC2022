@@ -1,4 +1,4 @@
-// save general registers to stack
+// save general registers to stack, refer to struct trap_frame
 .macro save_all
   sub sp, sp, 16 * 19
   stp x0, x1, [sp ,16 * 0]
@@ -20,11 +20,13 @@
 
   // For nested interrupt, i.e. exeception triggered during handling exeception
   mrs x0,  spsr_el1
-  str x0,  [sp, 16 * 16]
+  str x0,  [sp, 16 * 15 + 8]
   mrs x0,  elr_el1
-  str x0,  [sp, 16 * 17]
+  str x0,  [sp, 16 * 16]
   mrs x0,  esr_el1
-  str x0,  [sp, 16 * 18]
+  str x0,  [sp, 16 * 16 + 8]
+  mrs x0,  sp_el0             // sp_el0 also needs to be saved cuz eret makes "mov sp, sp_el0"
+  str x0,  [sp, 16 * 17]
 .endm
 
 // load general registers from stack
@@ -47,12 +49,14 @@
   ldr x30, [sp, 16 * 15]
 
   // For nested interrupt, i.e. exeception triggered during handling exeception
-  ldr x0,         [sp, 16 * 16]
+  ldr x0,         [sp, 16 * 15 + 8]
   msr spsr_el1,   x0
-  ldr x0,         [sp, 16 * 17]
+  ldr x0,         [sp, 16 * 16]
   msr elr_el1,    x0
-  ldr x0,         [sp, 16 * 18]
+  ldr x0,         [sp, 16 * 16 + 8]
   msr esr_el1,    x0
+  ldr x0,         [sp, 16 * 17]
+  msr sp_el0,     x0
 
   // Restore x0
   ldp x0, x1, [sp ,16 * 0]
@@ -68,6 +72,7 @@
 
 .global exception_vector_table_el1
 .global set_exception_vector_table_el1
+.global kid_thread_return_fork
 
 
 .align 11 // vector table should be aligned to 0x800
@@ -110,150 +115,121 @@ set_exception_vector_table_el1:
   msr vbar_el1, x1
   ret
 
-irq_el1h_ex_handler:
+sync_invalid_el1t_ex_handler:      // cause: 1
   save_all
-  bl  c_irq_el1h_ex_handler
-  load_all
-  eret
-
-irq_el0_64_ex_handler:
-  save_all
-  // TODO: Scan pending bits to determine which interrupt is fired
-  mrs x0,            cntpct_el0      // The timer’s current count
-  mrs x1,            cntfrq_el0      // Frequency the timer is running on
-  bl  c_irq_handler_timer            // call timer handler in c domain. defined in main.c: void c_irq_handler_timer(uint64_t ticks, uint64_t freq);
-  mrs x0,            cntfrq_el0      // Set count down timer to cpu_frequency << 1, i.e. 2 seconds
-  lsl x0,            x0, #1          // left shift 1
-  msr cntp_tval_el0, x0
-  load_all
-  eret
-
-sync_invalid_el1t_ex_handler:
-  save_all
-  // void unhandled_exception(uint64_t spsr_el1, uint64_t elr_el1, uint64_t esr_el1, uint64_t cause);
+  // void general_exception_handler(uint64_t cause, trap_frame *tf);
   // defined in main.c
   // mrs a, b: Write system coprocessor register to arm register a
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 1
-  bl  unhandled_exception
+  mov x0, 1
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-irq_invalid_el1t_ex_handler:
+irq_invalid_el1t_ex_handler:       // cause: 2
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 2
-  bl  unhandled_exception
+  mov x0, 2
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-fiq_invalid_el1t_ex_handler:
+fiq_invalid_el1t_ex_handler:       // cause: 3
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 3
-  bl  unhandled_exception
+  mov x0, 3
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-error_invalid_el1t_ex_handler:
+error_invalid_el1t_ex_handler:     // cause: 4
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 4
-  bl  unhandled_exception
+  mov x0, 4
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-sync_el1h_ex_handler:
+sync_el1h_ex_handler:              // cause: 5
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 5
-  bl  unhandled_exception
+  mov x0, 5
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-fiq_invalid_el1h_ex_handler:
+irq_el1h_ex_handler:               // cause: 6
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 7
-  bl  unhandled_exception
+  mov x0, 6
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-error_invalid_el1h_ex_handler:
+fiq_invalid_el1h_ex_handler:       // cause: 7
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 8
-  bl  unhandled_exception
+  mov x0, 7
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-sync_el0_64_ex_handler:
+error_invalid_el1h_ex_handler:     // cause: 8
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 9
-  bl  unhandled_exception
+  mov x0, 8
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-fiq_invalid_el0_64_ex_handler:
+sync_el0_64_ex_handler:            // cause: 9
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 11
-  bl  unhandled_exception
+  mov x0, 9
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-error_invalid_el0_64_ex_handler:
+irq_el0_64_ex_handler:             // cause: 10
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 12
-  bl  unhandled_exception
+  mov x0, 10
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-sync_invalid_el0_32_ex_handler:
+fiq_invalid_el0_64_ex_handler:     // cause: 11
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 13
-  bl  unhandled_exception
+  mov x0, 11
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-irq_invalid_el0_32_ex_handler:
+error_invalid_el0_64_ex_handler:   // cause: 12
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 14
-  bl  unhandled_exception
+  mov x0, 12
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-fiq_invalid_el0_32_ex_handler:
+sync_invalid_el0_32_ex_handler:    // cause: 13
   save_all
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 15
-  bl  unhandled_exception
+  mov x0, 13
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
-error_invalid_el0_32_ex_handler:
-  mrs x0, spsr_el1
-  mrs x1, elr_el1
-  mrs x2, esr_el1
-  mov x3, 16
-  bl  unhandled_exception
+irq_invalid_el0_32_ex_handler:     // cause: 14
+  save_all
+  mov x0, 14
+  mov x1, sp
+  bl  general_exception_handler
+  load_all
+  eret
+fiq_invalid_el0_32_ex_handler:     // cause: 15
+  save_all
+  mov x0, 15
+  mov x1, sp
+  bl  general_exception_handler
+  load_all
+  eret
+error_invalid_el0_32_ex_handler:   // cause: 16
+  mov x0, 16
+  mov x1, sp
+  bl  general_exception_handler
   load_all
   eret
 
+kid_thread_return_fork:
+  load_all
+  eret
