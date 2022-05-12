@@ -8,7 +8,9 @@
 #include <malloc.h>
 #include <string.h>
 #include <timer.h>
+#include <mailbox.h>
 
+extern Thread *thread_pool;
 extern Thread *run_thread_head;
 
 /* 
@@ -196,8 +198,35 @@ void do_exit(int status){
 }
 
 void sys_mbox_call(TrapFrame *trapFrame){
-
+    disable_irq();
+    unsigned char ch = trapFrame->x[0];
+    unsigned int *mbox = (unsigned int *)trapFrame->x[1];
+    int status = mailbox_call(mbox, ch);
+    trapFrame->x[0] = status;
+    enable_irq();
 }
-void sys_kill(TrapFrame *trapFrame){
 
+
+void sys_kill(TrapFrame *trapFrame){
+    disable_irq();
+    int pid = trapFrame->x[0];
+    int status = do_kill(pid);
+    if(status == -1) 
+        print_string(UITOA, "[x] kill fail, pid: ", pid, 1);
+    else
+        print_string(UITOA, "[*] kill success, pid: ", pid, 1);
+
+    enable_irq();
+}
+
+int do_kill(int pid){
+    if(!(pid >= 0 && pid < MAX_THREAD))
+        return -1;
+    if(thread_pool[pid].state != RUNNING)
+        return -1;
+
+    thread_pool[pid].state = EXIT;
+    enable_irq();
+    schedule();
+    return 0;
 }

@@ -3,11 +3,12 @@
 #include <stddef.h>
 #include <list.h>
 
-#define MAX_THREAD 0x100
+#define MAX_THREAD 0x10
 #define STACK_SIZE 0x1000
 
 enum thread_state{
     NOUSE,
+    WAIT,
     RUNNING,
     EXIT
 };
@@ -24,7 +25,7 @@ typedef struct _cpu_context{
     unsigned long x27;
     unsigned long x28;
     unsigned long fp; // frame pointer, stack base address
-    unsigned long lr; // retrun address after context switch
+    unsigned long lr; // retrun address
     unsigned long sp; // stact pointer
 }CpuContext;
 
@@ -49,7 +50,7 @@ void kill_zombie();
 void idle_thread();
 void schedule();
 void kernel_main();
-void delay(unsigned long long);
+void delay(unsigned int);
 void foo();
 
 void print_run_thread();

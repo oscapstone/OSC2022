@@ -28,8 +28,6 @@ void init_thread_pool_and_head(){
     memset((char *)run_thread_head, 0, sizeof(Thread));
     INIT_LIST_HEAD(&run_thread_head->list);
     run_thread_head->id = -1;
-
-    thread_create(idle_thread);
 }
 
 Thread *thread_create(void(*func)()){
@@ -41,7 +39,7 @@ Thread *thread_create(void(*func)()){
     if(idx == MAX_THREAD) return NULL;
 
     Thread *new_thread = &thread_pool[idx];
-    new_thread->state = RUNNING;
+    new_thread->state = WAIT;
     new_thread->ustack_addr = kmalloc(STACK_SIZE);
     new_thread->kstack_addr = kmalloc(STACK_SIZE);
     new_thread->ctx.fp = (unsigned long)new_thread->kstack_addr + STACK_SIZE;
@@ -49,9 +47,9 @@ Thread *thread_create(void(*func)()){
     new_thread->ctx.lr = (unsigned long)func;
 
 
-    print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
+    print_string(UITOHEX, "new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
     uart_puts(" | ");
-    print_string(UITOHEX, "[*] new_thread->kstack: ", (unsigned long long )new_thread->kstack_addr, 1);
+    print_string(UITOHEX, "new_thread->kstack: ", (unsigned long long )new_thread->kstack_addr, 1);
 
 
     list_add_tail(&new_thread->list, &run_thread_head->list);
@@ -79,10 +77,9 @@ void kill_zombie(){
             tmp->state = NOUSE;
             tmp->ustack_addr = NULL;
             tmp->kstack_addr = NULL;
-            /* cannot remove code_addr beacuse fork process share the code?? */
-            // if(tmp->code_addr != NULL){
-            //     kfree(tmp->code_addr);
-            // }
+            if(tmp->code_addr != NULL){
+                kfree(tmp->code_addr);
+            }
             tmp->code_addr = NULL;
             tmp->code_size = 0;
             list_del_entry(&tmp->list);
@@ -102,7 +99,7 @@ void schedule(){
     // print_string(UITOHEX, "curr: ", curr_thread->id, 0);
     // uart_puts(" | ");
     // print_string(UITOHEX, "next: ", next_thread->id, 1);
-    // print_run_thread();
+
     enable_irq();
     cpu_switch_to(curr_thread, next_thread);
 }
@@ -127,8 +124,7 @@ void kernel_main() {
     cpu_switch_to(&curr_thread, next_thread);
 }
 
-
-void delay(unsigned long long time){
+void delay(unsigned int time){
     unsigned long long system_timer = 0;
     unsigned long long frq = 0;
     asm volatile(
@@ -136,7 +132,7 @@ void delay(unsigned long long time){
         "mrs %1, cntfrq_el0\n\t"
         :"=r"(system_timer), "=r"(frq)
     );
-    unsigned long long expired_time = system_timer + time;
+    unsigned long long expired_time = system_timer + 1000;
     while(system_timer <= expired_time){
         asm volatile(
             "mrs %0, cntpct_el0\n\t"
@@ -150,10 +146,10 @@ void foo(){
         print_string(UITOA, "Thread id: ", get_current()->id, 0);
         print_string(UITOA, " ", i, 1);
         // printf("Thread id: %d %d\n", get_current()->task_id, i);
-        delay(1000000);
+        delay(1);
         schedule();
     }
-    do_exit(0);
+    do_exit();
 }
 
 void print_run_thread(){

@@ -17,7 +17,9 @@ bootloader/src/*.o
 bootloader/boot/*.o
 
 
-user/*
+user/*.elf
+user/*.img
+user/build/*
 
 peda*
 .gdb*
