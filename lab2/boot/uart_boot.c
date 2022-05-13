@@ -41,5 +41,7 @@ uint64_t uart_recv_kernel(uint64_t dtb){
 
     recv_kernel(base, size);  
     printf("Jump to kernel iamge...\r\n");
+
+    delay_cycles(10000);
     ((void (*)(uint64_t))base)(dtb);
 }

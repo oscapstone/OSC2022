@@ -13,6 +13,7 @@ extern void mini_uart_write(uint8_t);
 extern ssize_t write_bytes(uint8_t *, size_t);
 extern void write_str(char *);
 extern void write_hex(uint8_t);
+extern void delay_cycles(uint64_t);
 
 
 

@@ -1,7 +1,7 @@
 #include "types.h"
 #include "peripherals/iomapping.h"
 #include "peripherals/mini_uart.h"
-void delay_cycles(uint64_t n){
+inline void delay_cycles(uint64_t n){
     for(register uint64_t i = 0 ; i < n ; i++) asm volatile("nop");
 }
 

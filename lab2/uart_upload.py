@@ -34,33 +34,33 @@ def readline():
 
 
 
-
+while(1):   
+    with open(kernel_name, "rb",) as kernel:
+            kernel_buf = kernel.read()
+            kernel_size = len(kernel_buf) 
             
-with open(kernel_name, "rb",) as kernel:
-        kernel_buf = kernel.read()
-        kernel_size = len(kernel_buf) 
-        
-        # start upload kernel to rasberry pi 3b+ by uart interface
-        # start header
-        ser.write(b"A")
-        ser.flush()
-        readline()
-
-        # transfer kernel base address and kernel size ( both are 8 bytes ) in little endian
-        ser.write(struct.pack("<Q", base_addr))
-        ser.flush()
-        readline()
-
-        ser.write(struct.pack("<Q", kernel_size))
-        ser.flush()
-        readline()
-
-        # start transfer the whole kernel image
-        for i in kernel_buf:
-            ser.write(i.to_bytes(1, byteorder='little'))
+            # start upload kernel to rasberry pi 3b+ by uart interface
+            # start header
+            ser.write(b"A")
             ser.flush()
-        readline()
+            readline()
 
+            # transfer kernel base address and kernel size ( both are 8 bytes ) in little endian
+            ser.write(struct.pack("<Q", base_addr))
+            ser.flush()
+            readline()
+
+            ser.write(struct.pack("<Q", kernel_size))
+            ser.flush()
+            readline()
+
+            # start transfer the whole kernel image
+            for i in kernel_buf:
+                ser.write(i.to_bytes(1, byteorder='little'))
+                ser.flush()
+            readline()
+    
+    os.system("screen %s 115200" %(tty_name))
 
 ser.close()
 
