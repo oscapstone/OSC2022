@@ -28,7 +28,7 @@ def readline():
         if c == '\n':
             os.write(1, b'\n')
             return
-        elif c != '\n':
+        elif c != '\r':
             os.write(1, c)
 
 
