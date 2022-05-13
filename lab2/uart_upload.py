@@ -35,8 +35,8 @@ def readline():
 
 
 with open(kernel_name, "rb",) as kernel:
-        kernel_buf = kernel.read()
-        kernel_size = len(kernel_buf) 
+    kernel_buf = kernel.read()
+    kernel_size = len(kernel_buf) 
         
     while(1):   
         # start upload kernel to rasberry pi 3b+ by uart interface
