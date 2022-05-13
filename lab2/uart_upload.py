@@ -61,7 +61,7 @@ while(1):
             readline()
     
     os.system("screen %s 115200" %(tty_name))
-    time.sleep(.1)
+    time.sleep(1)
 
 ser.close()
 
