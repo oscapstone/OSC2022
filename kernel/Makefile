@@ -17,7 +17,7 @@ ALLOFILES = $(OFILES) $(BOOTOFILES) $(OFILES_ASM)
 
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 
-all: clean kernel8.img run
+all: clean kernel8.img run-display
 
 $(BUILD_DIR)/%.o: $(BOOT_DIR)/%.S
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -g 
@@ -37,6 +37,9 @@ clean:
 
 run: 
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
+
+run-display: 
+	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -s -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 pty: 
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -s -serial null -serial pty -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
