@@ -1,5 +1,6 @@
 #include "types.h"
 #include "peripherals/mini_uart.h"
+#include "utils.h"
 
 void recv_boot_header(){
     while('A' != mini_uart_read());  
@@ -32,11 +33,12 @@ uint64_t uart_recv_kernel(uint64_t dtb){
 
     recv_boot_header();
     base = recv_kernel_base();
+    printf("Receive kernel base 0x%x...\r\n", base);
 
     size = recv_kernel_size();
-
+    printf("Receive kernel size 0x%x...\r\n", size);
 
     recv_kernel(base, size);  
-    write_str("Start booting kernel...\r\n");
+    printf("Jump to kernel iamge...\r\n");
     ((void (*)(uint64_t))base)(dtb);
 }

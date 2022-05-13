@@ -150,7 +150,7 @@ int32_t strcmp(char* str1, char* str2){
         if(*str1 > *str2) return 1;
         else if(*str1 < *str2) return -1;
         str1++;str2++;
-    }while(*str1 != '\0');
+    }while(*str1 != '\0' && *str2 != '\0');
     return 0;
 }
 void* memcpy(void* dst, const void* src, size_t n){

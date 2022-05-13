@@ -43,7 +43,8 @@ KOBJECTS = \
 BOBJECTS = \
 		 $(OUTPUT)/boot.o \
 		 $(OUTPUT)/uart_boot.o \
-		 $(OUTPUT)/mini_uart.o
+		 $(OUTPUT)/mini_uart.o \
+		 $(LIBS)
 
 
 .PHONY: all start objects link bootloader kernel end clean dump
