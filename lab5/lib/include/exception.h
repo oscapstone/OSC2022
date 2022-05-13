@@ -32,3 +32,8 @@ typedef struct trap_frame{
   uint64_t sp_el0;    uint64_t elr_el1;   
   uint64_t spsr_el1;  uint64_t padd2;
 } trap_frame;
+
+typedef void (*handler_func)();
+
+// extern handler_func _handler;
+// extern uint64_t _pid;

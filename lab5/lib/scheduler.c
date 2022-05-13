@@ -30,6 +30,7 @@ void *task_create(thread_func func, enum mode mode){
   new_task->mode = mode;
   new_task->next = NULL;
   new_task->pid = pid++;
+  new_task->handler = NULL;
   new_task->state = RUNNING;
   if(mode == USER){
     char *addr = malloc(THREAD_SP_SIZE);
@@ -166,4 +167,15 @@ void foo(){
     delay_tick(10000000);
   }
   sys_exit();
+}
+
+void *find_task(uint64_t pid){
+  task *cur = run_queue;
+  while(cur){
+    if(pid == cur->pid){
+      return cur;
+    }
+    cur = cur->next;
+  }
+  return 0;
 }

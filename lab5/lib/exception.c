@@ -5,6 +5,11 @@
 #include "scheduler.h"
 #include "cpio.h"
 #include "mailbox.h"
+#include "system.h"
+
+static void signal_handler_wrapper();
+static handler_func _handler = NULL;
+static uint64_t _pid = 0;
 
 void invalid_exception_router(uint64_t x0){
   uint64_t elr_el1, esr_el1, spsr_el1;
@@ -20,7 +25,6 @@ void invalid_exception_router(uint64_t x0){
 
 void irq_router(uint64_t x0){
   if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ){
-    // interrupt_disable();
     core_timer_interrupt_disable();
     pop_timer();
   }else if(*IRQS1_PENDING & (0x01 << 29)){
@@ -33,10 +37,6 @@ void irq_router(uint64_t x0){
     }
   }
 }
-
-// void lower_irq_router(uint64_t x0){
-//   pop_timer();
-// }
 
 void sync_router(uint64_t x0, uint64_t x1){
   trap_frame *frame = (trap_frame *)x1;
@@ -69,13 +69,11 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
     char *addr = load_program(name);
     frame->elr_el1 = (uint64_t)addr;
-    // frame->x8 = 8;
     // char *argv = (char *)frame->x1;
     frame->x0 = 0;
   }else if(frame->x8 == 4){        // fork
     task *parent = get_current();
     task *child = task_create(NULL, USER);
-    // printf("this is fork %d->%d\r\n", parent->pid, child->pid);
     /* copy the task context & kernel stack (including trap frame) of parent to child */
     child->x19 = frame->x19;
     child->x20 = frame->x20;
@@ -88,8 +86,8 @@ void sync_router(uint64_t x0, uint64_t x1){
     child->x27 = frame->x27;
     child->x28 = frame->x28;
     child->fp = frame->x29;
-    child->lr = (uint64_t)child_return_from_fork; // frame->x30;
-    child->sp = (uint64_t)frame; // + sizeof(trap_frame);
+    child->lr = (uint64_t)child_return_from_fork;
+    child->sp = (uint64_t)frame;
     child->target_func = parent->target_func;
     child->handler = parent->handler;
     // copy the stack
@@ -103,10 +101,10 @@ void sync_router(uint64_t x0, uint64_t x1){
     }
     if((uint64_t)child->sp_addr > (uint64_t)parent->sp_addr){
       child->sp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
-      child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
+      // child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);      // fp is the chain this only move the fist element
     }else if((uint64_t)child->sp_addr < (uint64_t)parent->sp_addr){
       child->sp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
-      child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
+      // child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
     }
     trap_frame *child_frame = (trap_frame *)child->sp;
     child_frame->x0 = 0;
@@ -120,7 +118,6 @@ void sync_router(uint64_t x0, uint64_t x1){
   }else if(frame->x8 == 5){        // exit
     task *cur = get_current();
     cur->state = EXIT;
-    printf("exit %d\n\r", cur->pid);
     schedule();
   }else if(frame->x8 == 6){        // mbox call
     unsigned char ch = (unsigned char)frame->x0;
@@ -128,11 +125,22 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = mbox_call(ch, mbox);
   }else if(frame->x8 == 7){        // kill
     kill_thread(frame->x0);
-  }else if(frame->x8 == 8){
-    printf("this is signal syscall\n\r");
+  }else if(frame->x8 == 8){        // register
     task *cur = get_current();
     cur->handler = (void (*)())frame->x1;
-  }else if(frame->x8 == 9){
-    printf("this is SIGKILL syscall\n\r");
+  }else if(frame->x8 == 9){       // signal kill
+    task *cur = get_current();
+    _handler = (handler_func)cur->handler;
+    _pid = frame->x0;
+    task *handler_task = task_create(NULL, USER);
+    handler_task->target_func = (uint64_t)signal_handler_wrapper;
   }
+}
+
+void signal_handler_wrapper(){
+  if (_handler){
+    _handler();
+  }
+  sys_kill(_pid);
+  sys_exit();
 }
