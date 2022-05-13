@@ -13,14 +13,7 @@ tty_name = sys.argv[1]
 kernel_name = sys.argv[2]
 base_addr = int(sys.argv[3], 16)
 
-ser = serial.Serial(
-    # Serial Port to read the data from
-    port = tty_name,
-    #Rate at which the information is shared to the communication channel
-    baudrate = 115200,
-    timeout = .1
-)
-
+ser = None
 
 def readline():
     os.write(1,b'[From bootloader]: ')
@@ -38,7 +31,16 @@ with open(kernel_name, "rb",) as kernel:
     kernel_buf = kernel.read()
     kernel_size = len(kernel_buf) 
         
+    
     while(1):   
+        ser = serial.Serial(
+            # Serial Port to read the data from
+            port = tty_name,
+            #Rate at which the information is shared to the communication channel
+            baudrate = 115200,
+            timeout = .1
+        )
+
         # start upload kernel to rasberry pi 3b+ by uart interface
         # start header
         ser.write(b"A")
@@ -63,5 +65,5 @@ with open(kernel_name, "rb",) as kernel:
         os.system("screen %s 115200" %(tty_name))
         time.sleep(1)
 
-ser.close()
+        ser.close()
 
