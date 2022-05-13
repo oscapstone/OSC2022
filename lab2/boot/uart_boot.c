@@ -32,7 +32,7 @@ uint64_t uart_recv_kernel(uint64_t dtb){
     mini_uart_init();
 
     recv_boot_header();
-    printf("Receive A...\r\n", base);
+    printf("Receive A...\r\n");
 
     base = recv_kernel_base();
     printf("Receive kernel base 0x%x...\r\n", base);

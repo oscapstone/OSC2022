@@ -23,12 +23,13 @@ ser = serial.Serial(
 
 
 def readline():
+    os.write(1,b'[From bootloader]: ')
     while 1:
         c = ser.read(1)
-        if c == '\n':
+        if c == b'\n':
             os.write(1, b'\n')
             return
-        elif c != '\r':
+        elif c != b'\r':
             os.write(1, c)
 
 
@@ -45,26 +46,21 @@ with open(kernel_name, "rb",) as kernel:
         ser.flush()
         readline()
 
-        print("Start sending kernle")
         # transfer kernel base address and kernel size ( both are 8 bytes ) in little endian
         ser.write(struct.pack("<Q", base_addr))
         ser.flush()
         readline()
 
-        print("kernel base address is:", hex(base_addr))
         ser.write(struct.pack("<Q", kernel_size))
         ser.flush()
         readline()
 
-        print("kernel size is:", hex(kernel_size))
         # start transfer the whole kernel image
         for i in kernel_buf:
             ser.write(i.to_bytes(1, byteorder='little'))
             ser.flush()
         readline()
 
-        print("Finish upload kernel")
-        debug()
 
 ser.close()
 
