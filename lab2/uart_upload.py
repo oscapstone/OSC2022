@@ -51,8 +51,9 @@ with open(kernel_name, "rb",) as kernel:
 
         print("kernel size is:", hex(kernel_size))
         # start transfer the whole kernel image
-        ser.write(kernel_buf)
-        ser.flush()
+        for i in kernel_buf:
+            ser.write(i.to_bytes(1, byteorder='little'))
+            ser.flush()
         print("Finish upload kernel")
         debug()
 
