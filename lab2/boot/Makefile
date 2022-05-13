@@ -18,11 +18,11 @@ OBJECTS = \
 
 all: $(OBJECTS) 
 
-%.o: %.S
-	$(CC) -c $(CFLAGS) $^ -o $(OUTPUT)/$@ -I$(HEADERS) 
-
-%.o: %.c
-	$(CC) -c $(CFLAGS) $^ -o $(OUTPUT)/$@ -I$(HEADERS) 
+%.o : %.c  
+	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS) $(CFLAGS) 
+ 
+%.o : %.S 
+	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS) $(CFLAGS)
 
 clean:
 	rm $(OUTPUT)/$(OBJECTS)

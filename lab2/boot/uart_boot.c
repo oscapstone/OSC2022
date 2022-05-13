@@ -28,9 +28,8 @@ void recv_kernel(uint64_t base, size_t size){
 uint64_t uart_recv_kernel(uint64_t dtb){
     size_t size;
     uint64_t base;
-
     mini_uart_init();
-
+    
     recv_boot_header();
     printf("Receive A...\r\n");
 

@@ -47,15 +47,14 @@ BOBJECTS = \
 		 $(LIBS)
 
 
-.PHONY: all start objects link bootloader kernel end clean dump
+.PHONY: all start bootloader kernel end clean dump
 
 
-all: start objects link bootloader kernel end
+all: start link bootloader kernel end
 
 start: 
 	@echo "Start building kernel8.img"
 
-objects: 
 	$(MAKE) -C boot OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C peripherals OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C init OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"

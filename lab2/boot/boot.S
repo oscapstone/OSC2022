@@ -31,6 +31,15 @@ proc_hang:
 
 
 master_core:
+// stack 
+    ldr     x1, =_start
+    mov     sp, x1
+
+// recover dtb to x0
+    adr     x1, _dtb
+    ldr     x0, [x1]
+
+
 // jump to kernel_main
     bl      uart_recv_kernel
     
@@ -51,21 +60,25 @@ rebase_bootloader:
     ldr     x21, =__bootloader_start 
     adr     x22, __bootloader_start 
     ldr     x23, =__bootloader_size
-
     // start rebasing bootloader
 copy_bootloader:
     cbz     x23, end_rebase_bootloader
-    ldr     x24, [x22], #1
-    str     x24, [x21], #1
-    sub     x23, x23, #1
+    ldr     x24, [x22], #8
+    str     x24, [x21], #8
+    sub     x23, x23, #8
     b       copy_bootloader
 
-    // recover dtb to x0
-    adr     x1, _dtb
-    ldr     x0, [x1]
+// Since ldr and str memory operation should obey 8 bytes alignment rule, the code here would failed on real device 
+//    cbz     x23, end_rebase_bootloader
+//    ldr     x24, [x22], #1
+//    str     x24, [x21], #1
+//    sub     x23, x23, #1
+//    b       copy_bootloader
+
+    
     // return to rebased bootloader
 end_rebase_bootloader:
     ret
 
 .section ".data"
-_dtb: .dword 0
+_dtb: .long 0
