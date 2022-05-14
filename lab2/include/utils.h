@@ -3,5 +3,6 @@
 
 #include "lib/print.h"
 #include "lib/string.h"
+#include "lib/list.h"
 
 #endif

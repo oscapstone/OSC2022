@@ -13,4 +13,11 @@ typedef signed char             int8_t;
 
 typedef uint64_t                size_t;
 typedef int64_t                 ssize_t;
+
+#define offset_of(type, member) \
+    ((uint64_t) &((type*)0)->member)
+
+#define container_of(ptr, type, member) \
+    ((type* )((char*)ptr - offset_of(type, member)))
+
 #endif

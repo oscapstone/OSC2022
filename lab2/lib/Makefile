@@ -14,7 +14,8 @@ OUTPUT ?= .
 HEADERS ?= ../include
 LIBS = \
 	 print.o \
-	 string.o
+	 string.o \
+	 list.o
 
 all: $(LIBS) 
 
