@@ -38,5 +38,6 @@ SECTIONS
     __bss_end = .;
     __heap_start = .;
 
-    __initrdfs_start = 0x8000000;
+/*    __initrdfs_start = 0x8000000;*/
+    __initrdfs_start = 0x2000000;
 }
