@@ -160,12 +160,10 @@ size_t strlen(const char* s){
     return i;
 }
 void* memcpy(void* dst, const void* src, size_t n){
-    const uint64_t* ps = src;
-    uint64_t*pd = dst;
-    size_t i, j, q = n / 8, r = n % 8;
-    for(i = 0 ; i < q ; i++) pd[i] = ps[i];
-    for(j = 0 ; j < r ; j++) ((uint8_t*)pd)[8 * i + j] = ((uint8_t*)ps)[8 * i + j];
-
+    const uint8_t* ps = src;
+    uint8_t *pd = dst;
+    size_t i;
+    for(i = 0 ; i < n ; i++) pd[i] = ps[i];
     return dst;
 }
 char *strcpy(char *dest, const char *src){
