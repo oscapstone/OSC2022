@@ -37,6 +37,7 @@ SECTIONS
 
     . = ALIGN(0x1000);
     __bss_end = .;
+    __heap_start = .;
     __bootloader_end = .;
     __bootloader_size = (__bootloader_end - __bootloader_start);
 }

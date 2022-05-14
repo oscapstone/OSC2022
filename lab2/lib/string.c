@@ -150,20 +150,51 @@ int32_t strcmp(char* str1, char* str2){
         if(*str1 > *str2) return 1;
         else if(*str1 < *str2) return -1;
         str1++;str2++;
-    }while(*str1 != '\0' && *str2 != '\0');
+    }while(*str1 != '\0' || *str2 != '\0');
     return 0;
+}
+size_t strlen(const char* s){
+    size_t i = 0;
+    while(s[i++]);
+    i--;    
+    return i;
 }
 void* memcpy(void* dst, const void* src, size_t n){
     const uint64_t* ps = src;
     uint64_t*pd = dst;
-    size_t i, q = n / 8, r = n % 8;
+    size_t i, j, q = n / 8, r = n % 8;
     for(i = 0 ; i < q ; i++) pd[i] = ps[i];
-    for(i = 0 ; i < r ; i++) ((uint8_t*)pd)[i] = ((uint8_t*)ps)[i];
+    for(j = 0 ; j < r ; j++) ((uint8_t*)pd)[8 * i + j] = ((uint8_t*)ps)[8 * i + j];
 
     return dst;
+}
+char *strcpy(char *dest, const char *src){
+    memcpy(dest, src, strlen(src) + 1);
 }
 void* memset(void* s, int c, size_t n){
     uint8_t* ps = s;
     for(size_t i = 0 ; i < n ; i++) ps[i] = c;
     return s;
+}
+
+int32_t memcmp(void* m1, const void* m2, size_t n){
+    size_t i = 0;
+    char *s1 = m1;
+    const char* s2 = m2;
+    while(i < n){
+        if(s1[i] > s2[i]) return 1;
+        else if(s1[i] < s2[i]) return -1;
+        i++;
+    }
+    return 0;
+}
+
+uint8_t hex2dec(char hex){
+    if('0' <= hex && hex <= '9'){
+        return (uint8_t)hex - (uint8_t)'0';
+    }else if('a' <= hex && hex <= 'f'){
+        return (uint8_t)hex - (uint8_t)'a' + 10;
+    }else{
+        return (uint8_t)hex - (uint8_t)'A' + 10;
+    }
 }

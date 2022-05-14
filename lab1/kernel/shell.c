@@ -26,6 +26,7 @@ void simple_shell(){
                 i++;
             }
         }
+
         // match comman
         if(strcmp(buf, "help") == 0){
             printf("help    : print this help menu\r\n");

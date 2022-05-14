@@ -48,6 +48,7 @@ BOBJECTS = \
 		 $(OUTPUT)/boot.o \
 		 $(OUTPUT)/uart_boot.o \
 		 $(OUTPUT)/mini_uart.o \
+		 $(OUTPUT)/debug.o \
 		 $(LIBS)
 
 
@@ -65,6 +66,7 @@ start:
 	$(MAKE) -C kernel OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C lib OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C debug OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
+	$(MAKE) -C fs OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 
 link: $(OBJECTS)
 	$(LD) -T kernel/$(LINKER_FILE) -o $(OUTPUT)/$(KNAME).elf $(KOBJECTS) $(LDFLAGS)
@@ -83,7 +85,7 @@ dump:
 	$(OBJDUMP) -m aarch64 -b binary -D $(OUTPUT)/$(KNAME).img
 
 qemu-run: 
-	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -serial null -serial stdio
+	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -serial null -serial stdio  -initrd tools/cpio/initramfs.cpio 
 
 qemu-run-instr: 
 	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -d in_asm 

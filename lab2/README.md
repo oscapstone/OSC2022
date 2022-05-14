@@ -5,7 +5,7 @@
 - Basic Exercise 1
     - [x] UART Bootloader 
 - Basic Exercise 2
-    - [ ] Initial Ramdisk 
+    - [x] Initial Ramdisk 
 - Basic Exercise 3      
     - [x] Simple Allocator 
 - Advanced Exercise 1

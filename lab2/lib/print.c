@@ -87,10 +87,13 @@ int32_t printf(char *fmt, ...){
                         count++;
                     }
                     break;
-                default:
                 case '%':
                     mini_uart_write('%');
                     count++;
+                default:
+                    mini_uart_write('%');
+                    mini_uart_write(c);
+                    count += 2;
             }
         }else{
             mini_uart_write(c);
