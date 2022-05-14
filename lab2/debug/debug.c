@@ -5,6 +5,7 @@ extern int __bss_start, __bss_end;
 extern int __text_start, __text_end;
 extern int __rodata_start, __rodata_end;
 extern int __data_start, __data_end;
+extern int __heap_start;
 
 #ifdef DEBUG
 int debug = 1;
@@ -38,5 +39,6 @@ void log_kernel_start(){
            &__bss_end, \
            (uint64_t)&__bss_end - (uint64_t)&__bss_start
     );
+    printf("heap_start=%p\n", &__heap_start);
 
 }

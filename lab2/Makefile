@@ -28,6 +28,9 @@ BNAME = bootloader
 LIBS = \
 	 $(OUTPUT)/print.o \
 	 $(OUTPUT)/string.o \
+	 $(OUTPUT)/list.o \
+	 $(OUTPUT)/cpio.o \
+	 $(OUTPUT)/simple_malloc.o \
 
 KOBJECTS = \
 		 $(OUTPUT)/start.o \
@@ -38,6 +41,7 @@ KOBJECTS = \
 		 $(OUTPUT)/reboot.o \
 		 $(OUTPUT)/shell.o \
 		 $(OUTPUT)/debug.o \
+		 $(OUTPUT)/initrdfs.o \
 		 $(LIBS)
 
 BOBJECTS = \

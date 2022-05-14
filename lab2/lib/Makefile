@@ -15,7 +15,9 @@ HEADERS ?= ../include
 LIBS = \
 	 print.o \
 	 string.o \
-	 list.o
+	 list.o \
+	 cpio.o \
+	 simple_malloc.o
 
 all: $(LIBS) 
 
