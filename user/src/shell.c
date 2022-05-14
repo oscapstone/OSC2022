@@ -6,7 +6,6 @@
 #include "stdlib.h"
 #include "timer.h"
 #include "allocator.h"
-#include "sched.h"
 int match_command(char *buffer){
     
     if(strcmp(buffer,"help")==0){
@@ -245,7 +244,6 @@ void handle_command(enum Action action, char *buffer){
             break;
         case prog:
         {
-            // origin
             char *filedata = nullptr;
             unsigned long filesize;
             cpio_get_addr(filedata,&filesize);
@@ -273,9 +271,6 @@ void handle_command(enum Action action, char *buffer){
                 : "x0"
             );
             writes_nl_uart("Run userprogram done");
-
-            // thread_create(&thread_exec);
-            // idle();
             break;
         }
         case timeout:

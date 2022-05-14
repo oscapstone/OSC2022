@@ -1,6 +1,11 @@
 {
     "files.associations": {
         "utils.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "thread.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
     }
 }
