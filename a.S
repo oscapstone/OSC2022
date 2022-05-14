@@ -50,7 +50,7 @@ main_loop:
 	b busy_loop
 
 .macro save_all
-    sub sp, sp, 32 * 9
+    sub sp, sp, 16 * 18
     stp x0, x1, [sp ,16 * 0]
     stp x2, x3, [sp ,16 * 1]
     stp x4, x5, [sp ,16 * 2]
@@ -107,7 +107,7 @@ main_loop:
     ldp x28, x29, [sp ,16 * 14]
     ldr x30, [sp, 16 * 15]
 
-    add sp, sp, 32 * 9
+    add sp, sp, 16 * 18
 .endm
 
 exception_handler:
