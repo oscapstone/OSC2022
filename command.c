@@ -60,7 +60,7 @@ void exec_cat() {
 }
 
 void exec_load() {
-    load_file();
+    load_cpio("syscall.img");
 }
 
 void exec_lsfdt() {
@@ -185,7 +185,7 @@ void parse_command(char* command_string) {
     else if (!strcmp(command_string, "cat"))
         exec_cat();
     else if (!strcmp(command_string, "load"))
-        load_file();
+        exec_load();
     else if (!strcmp(command_string, "test"))
         exec_testmem();
     else if (!strcmp(command_string, "check"))

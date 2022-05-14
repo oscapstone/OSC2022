@@ -11,6 +11,7 @@ extern void switch_to(void *curr_context, void *next_context);
 extern void store_context(void *curr_context);
 extern void load_context(void *curr_context);
 extern void *get_current();
+extern int get_el();
 
 typedef struct thread_context
 {
@@ -59,4 +60,5 @@ int syscall_mbox_call(Trap_Frame *tpf, unsigned char ch, unsigned int *mbox);
 void kill(Trap_Frame *tpf, int pid);
 void fork_test();
 void run();
+void foo();
 #endif

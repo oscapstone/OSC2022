@@ -11,9 +11,17 @@
 #define CORE0_INTERRUPT_SOURCE	((volatile unsigned int *)(0x40000060))
 
 
-void enable_current_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
+void enable_current_interrupt() {
+	asm volatile("msr DAIFClr, 0xf");
+	set_time_shift(5);
+	enable_timer_interrupt();
+}
 
-void disable_current_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
+void disable_current_interrupt() {
+	asm volatile("msr DAIFSet, 0xf");
+	// set_time_shift(1000000);
+	disable_timer_interrupt();
+}
 
 void enable_timer_interrupt() {
 	asm volatile("mov x0, 1				\n");
@@ -21,7 +29,7 @@ void enable_timer_interrupt() {
 	asm volatile("mov x0, 2				\n");
 	asm volatile("ldr x1, =0x40000040	\n"); // CORE0_TIMER_IRQ_CTRL
 	asm volatile("str x0, [x1]			\n"); // unmask timer interrupt
-	}
+}
 
 void disable_timer_interrupt() {
 	asm volatile("mov x0, 0				\n");
@@ -29,14 +37,14 @@ void disable_timer_interrupt() {
 	asm volatile("mov x0, 0				\n");
 	asm volatile("ldr x1, =0x40000040	\n"); // CORE0_TIMER_IRQ_CTRL
 	asm volatile("str x0, [x1]			\n"); // mask timer interrupt
-	}
+}
 
 void timer_register() {
 	unsigned long tmp;
 	asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
 	tmp |= 1;
 	asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
-	}
+}
 
 void dump() {
 	unsigned long spsr_el1, elr_el1, esr_el1;
@@ -83,75 +91,43 @@ void handle_timer1_irq() {
 void lower_sync_entry(Trap_Frame *tpf)
 {
 
-    unsigned long long syscall_no = tpf->x8;
+    unsigned long long syscall_svc = tpf->x8;
 
 	#ifdef ASYNC_UART
 	enable_current_interrupt();
 	#endif
 
-	// printf("--%x--\n", syscall_no);
+	// printf("--%x--\n", syscall_svc);
 	// unsigned long esr;
 	// asm volatile("mrs %0, esr_el1	\n":"=r"(esr):);
 	// printf("--%x--\n", esr);
 	// if(((esr>>26)&0x3f)!=0x15){
 
 	// }
-    if (syscall_no == 0)
-    {
+    if (syscall_svc == 0) {
         getpid(tpf);
     }
-    else if(syscall_no == 1)
-    {
+    else if(syscall_svc == 1) {
         uartread(tpf,(char *) tpf->x0, tpf->x1);
     }
-    else if (syscall_no == 2)
-    {
+    else if (syscall_svc == 2) {
         uartwrite(tpf,(char *) tpf->x0, tpf->x1);
     }
-    else if (syscall_no == 3)
-    {
+    else if (syscall_svc == 3) {
         exec(tpf,(char *) tpf->x0, (char **)tpf->x1);
     }
-    else if (syscall_no == 4)
-    {
+    else if (syscall_svc == 4) {
         fork(tpf);
     }
-    else if (syscall_no == 5)
-    {
+    else if (syscall_svc == 5) {
         exit(tpf,tpf->x0);
     }
-    else if (syscall_no == 6)
-    {
+    else if (syscall_svc == 6) {
         syscall_mbox_call(tpf,(unsigned char)tpf->x0, (unsigned int *)tpf->x1);
     }
-    else if (syscall_no == 7)
-    {
+    else if (syscall_svc == 7) {
         kill(tpf, (int)tpf->x0);
     }
-    // else if (syscall_no == 8)
-    // {
-    //     signal_register(tpf->x0, (void (*)())tpf->x1);
-    // }
-    // else if (syscall_no == 9)
-    // {
-    //     signal_kill(tpf->x0, tpf->x1);
-    // }
-    // else if (syscall_no == 50)
-    // {
-    //     sigreturn();
-    // }
-
-    /*
-    unsigned long long spsr_el1;
-	__asm__ __volatile__("mrs %0, SPSR_EL1\n\t" : "=r" (spsr_el1));
-
-    unsigned long long elr_el1;
-	__asm__ __volatile__("mrs %0, ELR_EL1\n\t" : "=r" (elr_el1));
-
-    unsigned long long esr_el1;
-	__asm__ __volatile__("mrs %0, ESR_EL1\n\t" : "=r" (esr_el1));*/
-
-    //uart_printf("exception sync_el0_64_router -> spsr_el1 : 0x%x, elr_el1 : 0x%x, esr_el1 : 0x%x\r\n",spsr_el1,elr_el1,esr_el1);
 }
 
 void lower_irq_entry() {

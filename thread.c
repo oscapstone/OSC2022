@@ -32,21 +32,20 @@ void schedule(){
 void kill_zombies(){
     disable_current_interrupt();
 
-    Thread *zombie = thread_list.beg; // idle thread
-	while (1) {
-		while (zombie->next && (zombie->next->iszombie == 1)) {
-			Thread* tmp = zombie->next->next;
-			kfree(zombie->next);
-			zombie->next = tmp;
-		}
-		if(!zombie->next) {
-			thread_list.end = zombie;
-			break;
-		}
-		else {
-			zombie = zombie->next;
-		}
-	}
+    do {
+        if (thread_list.beg->iszombie) {
+            Thread *zombie = thread_list.beg;
+            thread_list.beg = thread_list.beg->next;
+            zombie->iszombie = 0;
+            kfree(zombie);
+        }
+        else {
+            thread_list.end->next = thread_list.beg;
+            thread_list.end = thread_list.beg;
+            thread_list.beg = thread_list.beg->next;
+            thread_list.end->next = 0;
+        }
+    } while(thread_list.beg->pid);// idle thread
 
     enable_current_interrupt();
 }
@@ -60,7 +59,7 @@ void idle() {
 }
 
 Thread *thread_create(void *program_start) {
-	disable_current_interrupt();
+	// disable_current_interrupt();
 
     Thread *new = kmalloc(THREAD_SIZE + USER_STACK_SIZE + KERNEL_STACK_SIZE);
 
@@ -78,7 +77,7 @@ Thread *thread_create(void *program_start) {
 	thread_list.end->next = new;
 	thread_list.end = new;
 
-	enable_current_interrupt();
+	// enable_current_interrupt();
     
 	return new;
 }
@@ -90,14 +89,21 @@ void init_schedule() {
 
 	thread_list.beg = thread_list.end = init;
 
-    set_time_shift(5);
-    enable_timer_interrupt();
+    // set_time_shift(5);
+    // enable_timer_interrupt();
+    
     // run();
-	load_cpio("syscall.img");
+	
+    // load_cpio("syscall.img");
+
+    // for(int i = 0; i < 3; ++i) { // N should > 2
+    //     thread_create(foo);
+    // }
+
 }
 
 void exec_thread(char *data, unsigned int filesize) {
-	// disable_current_interrupt();
+	disable_current_interrupt();
 
     Thread *user_thread = thread_create(data);
 	user_thread->next = thread_list.beg;
@@ -110,9 +116,10 @@ void exec_thread(char *data, unsigned int filesize) {
 	user_thread->context.lr = (unsigned long)user_thread->program;
 
     for (int i = 0; i < filesize; i++) {
+        // printf("i");
         user_thread->program[i] = data[i];
     }
-
+    enable_current_interrupt();
     asm volatile("msr tpidr_el1, %0	\n": :"r"(&user_thread->context));
     asm volatile("msr elr_el1, %0	\n": :"r"(user_thread->context.lr));
     asm volatile("msr spsr_el1, xzr	\n");
@@ -130,7 +137,6 @@ void jump_thread(char *data, unsigned int filesize) {
     user_thread->program = (char *)0x7000000;
     user_thread->program_size = filesize;
 
-	user_thread->context.lr = (unsigned long)user_thread->program;
 	user_thread->context.lr = (unsigned long)user_thread->program;
 	user_thread->context.fp = (unsigned long)user_thread->user_stack + USER_STACK_SIZE;
     user_thread->context.sp = (unsigned long)user_thread->user_stack + USER_STACK_SIZE;
@@ -234,16 +240,13 @@ int syscall_mbox_call(Trap_Frame *tpf, unsigned char ch, unsigned int *mbox) {
     /* write the address of our message to the mailbox with channel identifier */
     *MBOX_WRITE = r;
     /* now wait for the response */
-    while (1)
-    {
+    while (1) {
         /* is there a response? */
-        do
-        {
+        do {
             asm volatile("nop");
         } while (*MBOX_STATUS & MBOX_EMPTY);
         /* is it a response to our message? */
-        if (r == *MBOX_READ)
-        {
+        if (r == *MBOX_READ) {
             /* is it a valid successful response? */
             tpf->x0 = (mbox[1] == MBOX_RESPONSE);
             enable_current_interrupt();
@@ -282,13 +285,12 @@ void run() {
 
 	enable_current_interrupt();
 
-    asm("msr tpidr_el1, %0\n\t"
-        "msr elr_el1, %1\n\t"
-        "msr spsr_el1, xzr\n\t" // enable interrupt in EL0. You can do it by setting spsr_el1 to 0 before returning to EL0.
-        "msr sp_el0, %2\n\t"
-        "mov sp, %3\n\t"
-        "eret\n\t" ::"r"(&user_thread->context),"r"(user_thread->context.lr), "r"(user_thread->context.sp), "r"(user_thread->kernel_stack + KERNEL_STACK_SIZE));
-	
+    asm volatile("msr tpidr_el1, %0	\n": :"r"(&user_thread->context));
+    asm volatile("msr elr_el1, %0	\n": :"r"(user_thread->context.lr));
+    asm volatile("msr spsr_el1, xzr	\n");
+    asm volatile("msr sp_el0, %0	\n": :"r"(user_thread->context.sp));
+    asm volatile("mov sp, %0	    \n": :"r"(user_thread->kernel_stack + KERNEL_STACK_SIZE));
+    asm volatile("eret	\n");
 }
 
 int usergetpid(){
@@ -314,6 +316,7 @@ int userfork(){
 void userexit(int status){
     asm volatile("mov x8, (5)\n"::);
 	asm volatile("svc 5\n"::);
+    while(1);
 }
 
 int userduartwrite(char* buf,int size){
@@ -375,5 +378,16 @@ void fork_test(){
     }
     else {
         userprintf("parent here, pid %d, child %d\n", usergetpid(), ret);
+        userexit(0);
     }
+}
+
+
+void foo(){
+    for(int i = 0; i < 10; ++i) {
+        printf("Thread id: %d %d\n", thread_list.beg->pid, i);
+        delay(1000000);
+        schedule();
+    }
+    thread_list.beg->iszombie = 1;
 }
