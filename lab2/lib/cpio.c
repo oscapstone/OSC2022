@@ -24,15 +24,18 @@ void cpio_iter_parse(struct cpio_iter* iter, struct fentry* f){
     f->ino = cpio_hex2dec(header->c_ino);
     f->mode = cpio_hex2dec(header->c_mode);
     f->uid = cpio_hex2dec(header->c_uid);
+    LOG("f->uid: %u", f->uid);
     f->gid = cpio_hex2dec(header->c_gid);
     f->nlink = cpio_hex2dec(header->c_nlink);
     f->mtime = cpio_hex2dec(header->c_mtime);
     f->filesize = cpio_hex2dec(header->c_filesize);
+    LOG("f->filesize: %u", f->filesize);
     f->devmajor = cpio_hex2dec(header->c_devmajor);
     f->devminor = cpio_hex2dec(header->c_devminor);
     f->rdevmajor = cpio_hex2dec(header->c_rdevmajor);
     f->rdevminor = cpio_hex2dec(header->c_rdevminor);
     f->namesize = cpio_hex2dec(header->c_namesize);
+    LOG("f->namesize: %u", f->namesize);
     f->check = cpio_hex2dec(header->c_check);
     count = count + sizeof(struct cpio_newc_header); 
 
