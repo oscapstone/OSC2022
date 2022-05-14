@@ -20,7 +20,7 @@ void cpio_iter_parse(struct cpio_iter* iter, struct fentry* f){
         LOG("CPIO PARSE ERROR!!!!");
         return;
     }
-
+    
     f->ino = cpio_hex2dec(header->c_ino);
     f->mode = cpio_hex2dec(header->c_mode);
     f->uid = cpio_hex2dec(header->c_uid);
@@ -41,13 +41,15 @@ void cpio_iter_parse(struct cpio_iter* iter, struct fentry* f){
 
     f->filename = (char*)simple_malloc(f->namesize);
     memcpy(f->filename, (uint8_t* )header + count, f->namesize);
+    LOG("get f->filename");
     count = ALIGN_UP(count + f->namesize, 4);
 
     f->data = (uint8_t*)simple_malloc(f->filesize);
+    LOG("get f->data");
     memcpy(f->data, (uint8_t* )header + count, f->filesize);
     count = ALIGN_UP(count + f->filesize, 4);
-    
     iter->cur = iter->cur + count;
+    LOG("count: %u, iter->cur: %p", count, iter->cur); 
     LOG("Leave cpio_iter_parse");
 }
 
