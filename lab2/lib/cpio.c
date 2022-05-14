@@ -43,7 +43,7 @@ void cpio_iter_parse(struct cpio_iter* iter, struct fentry* f){
     memcpy(f->filename, (uint8_t* )header + count, f->namesize);
     LOG("get f->filename");
     count = ALIGN_UP(count + f->namesize, 4);
-    if((f->filesize > 0){
+    if(f->filesize > 0){
         f->data = (uint8_t*)simple_malloc(f->filesize);
         memcpy(f->data, (uint8_t* )header + count, f->filesize);
     }
