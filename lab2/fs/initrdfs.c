@@ -38,7 +38,7 @@ void initrdfs_ls(){
 
     list_for_each(node, head){
         struct fentry* f = list_entry(node, struct fentry, list);
-        printf("%s\n", f->filename); 
+        printf("%s\r\n", f->filename); 
     }
 }
 void initrdfs_cat(){
@@ -48,10 +48,10 @@ void initrdfs_cat(){
     list_for_each(node, head){
         struct fentry* f = list_entry(node, struct fentry, list);
         if((f->mode & FILE_TYPE_MASK) == FILE_TYPE_REGULAR){ 
-            printf("Filename : %s\n", f->filename); 
-            printf("File size: %u\n", f->filesize); 
+            printf("Filename : %s\r\n", f->filename); 
+            printf("File size: %u\r\n", f->filesize); 
             write_bytes(f->data, f->filesize);
-            printf("\n");
+            printf("\r\n");
         }
     }
 }

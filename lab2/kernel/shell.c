@@ -33,6 +33,9 @@ void simple_shell(){
             printf("hello   : print Hello World!\r\n");
             printf("info    : print hardware infomation\r\n");
             printf("reboot  : reboot the device\r\n");
+            printf("ls      : list files\r\n");
+            printf("cat     : cat files\r\n");
+
         }else if(strcmp(buf, "hello") == 0){
             printf("Hello World!\r\n");
         }else if(strcmp(buf, "info") == 0){

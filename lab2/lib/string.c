@@ -159,6 +159,8 @@ size_t strlen(const char* s){
     i--;    
     return i;
 }
+// Do not maninpulate data by using (uint64*) or it may sometimes trigger alignment issue
+// Manipulating data by using (uint8*) is best choice in this homework
 void* memcpy(void* dst, const void* src, size_t n){
     const uint8_t* ps = src;
     uint8_t *pd = dst;
