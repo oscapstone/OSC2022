@@ -5,6 +5,7 @@
 static struct fentry * root;
 
 void initrdfs_init(void* addr){
+    INFO("Initrd filesystem start address: %p", addr);
     LOG("Enter initrdfs_int");
     LOG("initrd start at %p\n", addr);
     LOG("initrd first 4 bytes: %x\n", *(uint32_t*)addr);

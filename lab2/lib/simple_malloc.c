@@ -9,7 +9,7 @@ struct malloc_state{
 }mstate;
 
 void init_malloc_state(void* heap_start){
-    LOG("Simple heap start address: %p\n", heap_start);
+    INFO("Simple heap start address: %p", heap_start);
     mstate.last_remainder = (uint8_t*)heap_start;
 }
 
