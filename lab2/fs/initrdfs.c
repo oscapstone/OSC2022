@@ -3,6 +3,7 @@
 #include "debug/debug.h"
 #include "peripherals/mini_uart.h"
 static struct fentry * root;
+
 void initrdfs_init(void* addr){
     LOG("Enter initrdfs_int");
     LOG("initrd start at %p\n", addr);
@@ -31,6 +32,15 @@ void initrdfs_init(void* addr){
     }while(1);
     LOG("Leave initrdfs_int");
 }
+void* fdt_initrdfs_callback(uint32_t token, fdt_node* node, fdt_property* prop, int32_t layer){
+    if(prop != NULL){
+        if(strcmp(prop->name, "linux,initrd-start") == 0){
+            uint64_t initrd_start = bswap32(*(uint32_t*)prop->value);
+            LOG("linux,initrd-start: %x", (uint32_t)initrd_start);
+            initrdfs_init((void*)initrd_start);
+        }   
+    }
+} 
 
 void initrdfs_ls(){
     struct list_head* head = &root->list;

@@ -3,7 +3,8 @@
 #include "utils.h"
 #include "types.h"
 
-void initrdfs_init(void*);
-void initrdfs_ls();
-void initrdfs_cat();
+extern void initrdfs_init(void*);
+extern void initrdfs_ls();
+extern void initrdfs_cat();
+extern void* fdt_initrdfs_callback(uint32_t, fdt_node*, fdt_property*, int32_t);
 #endif

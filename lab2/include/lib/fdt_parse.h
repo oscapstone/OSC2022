@@ -1,18 +1,6 @@
 #ifndef _FDT_PARSE_H_
 #define _FDT_PARSE_H_
 #include "types.h"
-#define bswap32(n) (((n & 0xff000000) >> 24) | \
-                    ((n & 0x00ff0000) >>  8) | \
-                    ((n & 0x0000ff00) <<  8) | \
-                    ((n & 0x000000ff) << 24) )
-#define bswap64(n) (((n & 0xff00000000000000) >> 56) | \
-                    ((n & 0x00ff000000000000) >> 40) | \
-                    ((n & 0x0000ff0000000000) >> 24) | \
-                    ((n & 0x000000ff00000000) >>  8) | \
-                    ((n & 0x00000000ff000000) <<  8) | \
-                    ((n & 0x0000000000ff0000) <<  24)| \
-                    ((n & 0x000000000000ff00) <<  40)| \
-                    ((n & 0x00000000000000ff) <<  56)) 
 
 #define FDT_BEGIN_NODE  bswap32(0x00000001)
 #define FDT_END_NODE    bswap32(0x00000002)
