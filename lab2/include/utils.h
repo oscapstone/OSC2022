@@ -6,5 +6,6 @@
 #include "lib/list.h"
 #include "lib/cpio.h"
 #include "lib/simple_malloc.h"
+#include "lib/fdt_parse.h"
 
 #endif

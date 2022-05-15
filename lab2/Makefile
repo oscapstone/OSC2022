@@ -31,6 +31,7 @@ LIBS = \
 	 $(OUTPUT)/list.o \
 	 $(OUTPUT)/cpio.o \
 	 $(OUTPUT)/simple_malloc.o \
+	 $(OUTPUT)/fdt_parse.o \
 
 KOBJECTS = \
 		 $(OUTPUT)/start.o \
@@ -85,7 +86,7 @@ dump:
 	$(OBJDUMP) -m aarch64 -b binary -D $(OUTPUT)/$(KNAME).img
 
 qemu-run: 
-	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -serial null -serial stdio  -initrd tools/cpio/initramfs.cpio 
+	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -serial null -serial stdio  -initrd tools/cpio/initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 qemu-run-instr: 
 	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -d in_asm 

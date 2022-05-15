@@ -5,8 +5,8 @@
 #include "debug/debug.h"
 #include "kernel/shell.h"
 
-void kernel_main(void){
-    kernel_init();
+void kernel_main(void *dtb){
+    kernel_init(dtb);
     DEBUG_KERNEL_START();
 
     simple_shell();

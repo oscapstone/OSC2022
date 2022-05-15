@@ -14,9 +14,7 @@ typedef signed char             int8_t;
 typedef uint64_t                size_t;
 typedef int64_t                 ssize_t;
 
-#ifndef NULL
 #define NULL ((void*)0)
-#endif
 
 #define offset_of(type, member) \
     ((uint64_t) &((type*)0)->member)
