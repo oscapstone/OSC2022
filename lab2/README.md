@@ -11,5 +11,5 @@
 - Advanced Exercise 1
     - [x] Bootloader Self Relocation
 - Advanced Exercise 2
-    - [ ] Devicetree
+    - [x] Devicetree
 
