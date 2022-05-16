@@ -52,7 +52,6 @@ uint64_t request_page(int size) {
         uart_printf("[ERROR][request_page] request_page(%d): illegal argument!\n", size);
         return 0;
     }
-
     frame_free_node *free_node = frame_free_lists[size];
     uint64_t index;
     if (free_node) {
@@ -225,6 +224,10 @@ uint64_t get_allocated_num() {
             ++cnt;
     }
     return cnt;
+}
+
+uint64_t get_free_num() {
+    return (MEMORY_END_ADDR - MEMORY_BASE_ADDR) / 4096 - get_allocated_num();
 }
 
 /* clear first 64 bytes */

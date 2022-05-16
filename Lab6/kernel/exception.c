@@ -68,11 +68,26 @@ void lower_sync_handler(trap_frame *tf) {
                     break;
                 default:
                     uart_printf("[ERROR][lower_sync_handler] unknown svc!\n");
-                    break;
             }
         }
-        else
+        else {
             uart_printf("[ERROR][lower_sync_handler] unknown exception!\n");
+            while(1) {}
+        }
+    }
+    else {
+        unsigned ec = (esr & 0xFC000000) >> 26;
+        switch(ec) {
+            case ESR_ELx_EC_DABT_LOW:
+                uart_printf("[Segfault] Userland data abort exception! pc: %x\n", read_sysreg(elr_el1));
+                while(1) {}
+            case ESR_ELx_EC_IABT_LOW:
+                uart_printf("[Segfault] Userland instruction abort exception! pc: %x\n", read_sysreg(elr_el1));
+                while(1) {}
+            default:
+                uart_printf("[ERROR][lower_sync_handler] unknown exception!\n");
+                while(1) {}
+        }
     }
 }
 
@@ -81,7 +96,8 @@ void lower_iqr_handler() {
 }
 
 void curr_sync_handler() {
-    uart_printf("[ERROR][curr_sync_handler]\n");
+    unsigned long elr = read_sysreg(elr_el1);
+    uart_printf("[ERROR][curr_sync_handler] PC: %x\n", elr);
 	error_handler();
 }
 
@@ -132,10 +148,10 @@ size_t sys_uartwrite(const char buf[], size_t size) {
 }
 
 int sys_exec(trap_frame *tf, const char *name, char *const argv[]) {
-    load_program((char*)name);
-    _argv = (char**)argv;
     task_struct *cur_task = get_current();
-    tf->elr_el1 = (unsigned long)USER_PROGRAM_ADDR;
+    load_program((char*)name, cur_task->page_table);
+    _argv = (char**)argv;
+    tf->elr_el1 = (unsigned long)USER_PROGRAM_VA;
     tf->sp_el0 = cur_task->user_fp;
     return 0;
 }

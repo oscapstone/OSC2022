@@ -6,6 +6,8 @@
 #include "timer.h"
 #include "sysreg.h"
 #include <stddef.h>
+#include "vm.h"
+#include "memory.h"
 
 
 void cpio_list() {
@@ -70,8 +72,8 @@ void cpio_cat(char *filename) {
     }
 }
 
-void load_program(char *name) {
-    char *target = findFile(name);
+void load_program(char *name, void *page_table) {
+    unsigned char *target = (unsigned char*)findFile(name);
     if (target) {
         cpio_header *header = (cpio_header *)target;
         unsigned long pathname_size = hexToDec(header->namesize);
@@ -80,13 +82,16 @@ void load_program(char *name) {
 
         align_4(&headerPathname_size); 
         align_4(&file_size);           
-        
-        unsigned char *addr = (unsigned char *)USER_PROGRAM_ADDR;
-        char *file_content = target + headerPathname_size;
-        for (unsigned int i = 0; i < file_size; i++) {
-            *addr = file_content[i];
-            addr++;
+
+        unsigned char *file_content = target + headerPathname_size;
+        int sz = file_size / 4096 + (file_size % 4096 != 0);
+        for (int i = 0; i < sz; ++i) {
+            unsigned char *addr = (unsigned char*)page_malloc(0);
+            map_pages(page_table, USER_PROGRAM_VA + 4096 * i, 1, (uint64_t)VA2PA(addr));
+            for (int j = 0; j < 4096; ++j)
+                *(addr + j) = file_content[i * 4096 + j];
         }
+
         debug_printf("[DEBUG][load_program] load program: %s\n", name);
     }
     else {

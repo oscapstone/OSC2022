@@ -7,6 +7,7 @@
 #include "sysreg.h"
 #include "cpio.h"
 #include "timer.h"
+#include "vm.h"
 
 
 task_queue run_queue = {"run", NULL, NULL};
@@ -18,17 +19,22 @@ static int task_cnt = 0;
 
 unsigned long user_addr;
 unsigned long user_sp;
+unsigned long user_page_table;
 
 
 void run_user_program(const char* name, char *const argv[]) {
-    load_program((char*)name);
-    _argv = (char**)argv;
-    
     task_struct *task = thread_create(switch_to_user_space);
-    user_addr = USER_PROGRAM_ADDR;
+    load_program((char*)name, task->page_table);
+    _argv = (char**)argv;
+    user_addr = USER_PROGRAM_VA;
+    for (int i = 0; i < 4; ++i)
+        map_pages(task->page_table, 0xffffffffb000 + i * 0x1000, 1, VA2PA(page_malloc(0)));
+    task->user_fp = 0xfffffffff000 - 16;  // update user stack frame pointer
     user_sp = task->user_fp;
+    user_page_table = (unsigned long)(task->page_table);
     add_timer(read_sysreg(cntfrq_el0) >> 5, normal_timer, NULL); // < 0.1s
     core_timer_enable();
+    debug_mode = 0;
     idle();
 }
 
@@ -37,6 +43,7 @@ void switch_to_user_space() {
     asm volatile("msr spsr_el1, x0   \n"::);
     asm volatile("msr elr_el1,  %0   \n"::"r"(user_addr));
     asm volatile("msr sp_el0,   %0   \n"::"r"(user_sp));
+    debug_printf("[DEBUG][switch_to_user_space]\n");
     asm volatile("eret  \n"::);
 }
 
@@ -47,11 +54,10 @@ void create_root_thread() {
 
 task_struct* thread_create(void *func) {
     task_struct* new_task = (task_struct*)page_malloc(0);
+    initPT(&(new_task->page_table));
     new_task->context.fp = (unsigned long)new_task + PAGE_SIZE_4K - 16;
     new_task->context.lr = (unsigned long)func;
     new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 16;  // kernel stack pointer for the thread
-    new_task->user_fp = page_malloc(0) + PAGE_SIZE_4K - 16;  // user stack frame pointer
-
     new_task->state = RUNNING;
     new_task->id = task_cnt++;
     new_task->handler = NULL;
@@ -70,9 +76,21 @@ void thread_schedule() {
     pop_task_from_queue(&run_queue, next_task);
     push_task_to_queue(&run_queue, next_task);
 
+    asm volatile("mov x0, %0 			\n"::"r"(next_task->page_table));
+    asm volatile("dsb ish 	\n");  //ensure write has completed
+	asm volatile("msr ttbr0_el1, x0 	\n"); //switch translation based address.
+    asm volatile("tlbi vmalle1is 	\n");  //invalidates cached copies of translation table entries from L1 TLBs
+    asm volatile("dsb ish 	\n");  //ensure completion of TLB invalidatation
+    asm volatile("isb 	\n");  //clear pipeline
+
     task_struct *cur = get_current();
     debug_printf("[DEBUG][thread_schedule] switch from thread %d to %d\n", cur->id, next_task->id);
-    switch_to(cur, next_task);
+
+    asm volatile("\
+			mov x0, %0\n\
+			mov x1, %1\n\
+			bl switch_to\n\
+	"::"r"(cur), "r"(next_task));  //avoid stack usage
 }
 
 void idle() {

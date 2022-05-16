@@ -2,8 +2,9 @@
 #define __TIMER_H
 
 #include <stdint.h>
+#include "peripherals/base.h"
 
-#define CORE0_TIMER_IRQ_CTRL ((volatile unsigned int *)(0x40000040))
+#define CORE0_TIMER_IRQ_CTRL ((volatile unsigned int *)(KVA + 0x40000040))
 #define MAX_TIMER_QUEUE_SIZE 10
 
 typedef void (*timer_call_back)(void *);

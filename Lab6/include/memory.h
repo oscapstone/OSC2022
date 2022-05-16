@@ -3,9 +3,10 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "peripherals/base.h"
 
-#define MEMORY_BASE_ADDR 0x00
-#define MEMORY_END_ADDR 0x8000000
+#define MEMORY_BASE_ADDR (KVA + 0x0)
+#define MEMORY_END_ADDR (KVA + 0x8000000 - 4096)
 #define PAGE_SIZE_4K ((uint64_t)1 << 12)
 #define FRAME_ARRAY_SIZE ((MEMORY_END_ADDR - MEMORY_BASE_ADDR) / PAGE_SIZE_4K)
 #define MAX_32K_NUM (FRAME_ARRAY_SIZE / 8)
@@ -33,6 +34,7 @@ uint64_t getIndex(uint64_t addr, int size);
 frame_free_node *get_free_node();
 void return_free_node(frame_free_node *node);
 uint64_t get_allocated_num();
+uint64_t get_free_num();
 void clear_4K_page(uint64_t index);
 
 void print_frame_array();

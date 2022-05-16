@@ -133,6 +133,9 @@ void parse_command() {
     else if (compare_string(buffer, "test_mbox") == 0) {
         run_user_program("mbox_test.img", NULL);
     }
+    else if (compare_string(buffer, "test_dummy") == 0) {
+        run_user_program("dummy_test.img", NULL);
+    }
     else if (compare_string(buffer, "test_sys") == 0) {
         run_user_program("syscall.img", NULL);
     }

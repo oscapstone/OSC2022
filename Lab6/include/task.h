@@ -37,6 +37,7 @@ typedef struct task_struct {
     int state;
     unsigned long user_fp;
     void (*handler)();
+    void *page_table;
     struct task_struct *prev;
     struct task_struct *next;
 } task_struct;

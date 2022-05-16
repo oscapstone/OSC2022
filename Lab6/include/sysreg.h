@@ -19,5 +19,4 @@
 #define ESR_ELx_EC_IABT_LOW 0b100000
 #define ESR_ELx_EC_BRK_LOW 0b110000
 
-
 #endif

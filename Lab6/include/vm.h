@@ -1,5 +1,7 @@
-#ifndef __VM_H
-#define __VM_H
+#ifndef _VM_H
+#define _VM_H
+
+#include <stdint.h>
 
 //number of the most significant bits that must be either all 0s or all 1s
 #define TCR_CONFIG_REGION_48bit (((64 - 48) << 0) | ((64 - 48) << 16))
@@ -21,5 +23,11 @@
 #define BOOT_L2D_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)  //for L2 (peripherals)
 #define BOOT_L2N_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK) //for L2 (normal)
 
+#define VA2PA(x) ((unsigned long)(x) & 0xffffffffffff)
+#define PA2VA(x) ((unsigned long)(x) | 0xffff000000000000)
+
+void mmu_init();
+void initPT(void** page_table);
+void map_pages(void* page_table, uint64_t va, int page_num, uint64_t pa);
 
 #endif
