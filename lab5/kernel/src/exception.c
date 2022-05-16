@@ -26,6 +26,7 @@ void sync_handler_currentEL_ELx() {
 }
 
 void sync_handler_lowerEL_64(uint64_t sp) {
+  // printf("sync_handler_lowerEL_64 sp : %x\n",sp);
   uint64_t spsr_el1, elr_el1, esr_el1;
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
   asm volatile("mrs %0, elr_el1" : "=r"(elr_el1));

@@ -36,6 +36,10 @@ _start:
 
 master:  // cpu id == 0
 
+    // save dtb loading address
+    ldr x1, =0x9000000
+    str x0, [x1]
+    
     bl from_el2_to_el1
     bl set_exception_vector_table
 

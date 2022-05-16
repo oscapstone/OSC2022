@@ -1,5 +1,6 @@
-typedef unsigned long long int uint64_t;
-typedef unsigned char uint8_t;
+// typedef unsigned long long int uint64_t;
+// typedef unsigned char uint8_t;
+#include "utils.h"
 
 uint8_t hex_to_int8(char hex){
     if(hex >= '0' && hex <= '9')
@@ -62,4 +63,9 @@ uint64_t hex2int(char *hex, int len) {
     val = (val << 4) | (byte & 0xF);
   }
   return val;
+}
+
+uint32_t be2le(uint32_t x) {
+  return (((x >> 24) & 0xFF) << 0) | (((x >> 16) & 0xFF) << 8) |
+         (((x >> 8) & 0xFF) << 16) | (((x >> 0) & 0xFF) << 24);
 }

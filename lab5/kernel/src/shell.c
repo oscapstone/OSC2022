@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "thread.h"
 #include "printf.h"
+#include "dtb.h"
 
 void clean_buffer(char * buffer, int buffer_len)
 {
@@ -23,6 +24,8 @@ void command_help()
     uart_puts("hello\t\t: print Hello World!\n");
     uart_puts("reboot\t\t: reboot the device\n");
     uart_puts("mailbox\t\t: show information through mailbox\n");
+    uart_puts("dtb\t\t: parse device tree message\n");
+    uart_puts("dtb all\t\t: parse device tree message\n");
     uart_puts("ls\t\t: show all files\n");
     uart_puts("cat\t\t: show file info\n");
     uart_puts("test\t\t: test simple allocator\n");
@@ -178,6 +181,9 @@ void command_thread_test2() {
 void command_thread_test3() {
     thread_test3(); 
 }
+
+void command_dtb_print(int all) { dtb_print(all); }
+
 void parse_command(char * buffer)
 {
     if ( !strcmp(buffer, "help")) command_help();
@@ -193,6 +199,8 @@ void parse_command(char * buffer)
     else if ( !strncmp(buffer, "setTimeout", 10)) command_set_timeout(&buffer[11]);
     else if ( !strcmp(buffer, "buddy test")) command_buddy_test();
     else if ( !strcmp(buffer, "dma test")) command_dma_test();
+    else if ( !strcmp(buffer, "dtb"))  command_dtb_print(0);
+    else if ( !strcmp(buffer, "dtb all"))  command_dtb_print(1);
     else if ( !strcmp(buffer, "t1")) command_thread_test1();
     else if ( !strcmp(buffer, "t2")) command_thread_test2();
     else if ( !strcmp(buffer, "t3")) command_thread_test3();

@@ -63,7 +63,7 @@ thread_info *thread_create(void (*func)()) {
   thread->status = THREAD_READY;
   thread->next = 0;
   thread->kernel_stack_base = (uint64_t)malloc(STACK_SIZE);
-  thread->user_stack_base = 0;
+  thread->user_stack_base = (uint64_t)malloc(STACK_SIZE);
   thread->user_program_base =
       USER_PROGRAM_BASE + thread->pid * USER_PROGRAM_SIZE;
   thread->context.fp = thread->kernel_stack_base + STACK_SIZE;
@@ -148,9 +148,7 @@ void kill_zombies() {
 
 void exec(const char *program_name, const char **argv) {
   thread_info *cur = get_current();
-  if (cur->user_stack_base == 0) {
-    cur->user_stack_base = (uint64_t)malloc(STACK_SIZE);
-  }
+
   uint64_t user_sp = cur->user_stack_base + STACK_SIZE;
   cur->user_program_size = cpio_load_user_program(program_name, cur->user_program_base);
   // printf("cur->pid = %d, cur->user_program_base = %x\n",cur->pid,cur->user_program_base);
