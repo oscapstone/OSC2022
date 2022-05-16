@@ -9,6 +9,8 @@
 #define EXIT 5
 #define MBOX_CALL 6
 #define KILL 7
+#define SIGNAL_ 8
+#define SIGKILL 9
 
 #endif
 
@@ -22,5 +24,7 @@ extern int fork();
 extern void exit();
 extern int mbox_call(unsigned char ch, unsigned int *mbox);
 extern void kill(int pid);
+extern void singal(int SIGNAL, void (*handler)());
+extern void signal_kill(int pid, int SIGNAL);
 
 #endif  

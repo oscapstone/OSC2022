@@ -49,3 +49,15 @@ kill:
     mov x8, KILL
     svc #0
     ret
+
+.global signal
+signal:
+    mov x8, SIGNAL_
+    svc #0
+    ret
+
+.global signal_kill
+signal_kill:
+    mov x8, SIGKILL
+    svc #0
+    ret
