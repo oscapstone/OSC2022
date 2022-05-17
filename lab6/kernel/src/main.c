@@ -12,6 +12,7 @@
 #include "shell.h"
 
 // #include "device_tree.h"
+int a;
 void main()
 {
     // set up serial console
@@ -24,6 +25,9 @@ void main()
     timeout_event_init();
     enable_interrupt();
     thread_init();
+    printf("%p\n", &a);
+    int b;
+    printf("%p\n", &b);
     run_shell();
 }
 

@@ -1,8 +1,10 @@
 #pragma once
-#include "utils.h"
 #include <stdint.h>
-#define PAGE_BASE_ADDR ((uint64_t)0x10000000)
-#define PAGE_END_ADDR ((uint64_t)0x20000000)
+#include "utils.h"
+#include "mmu.h"
+
+#define PAGE_BASE_ADDR ((uint64_t)(KVA + 0x10000000))
+#define PAGE_END_ADDR ((uint64_t)(KVA + 0x20000000))
 #define PAGE_SIZE ((uint64_t)(4 * kb))
 #define MAX_PAGE_NUM \
   ((uint64_t)((PAGE_END_ADDR - PAGE_BASE_ADDR) / PAGE_SIZE))  // 65536

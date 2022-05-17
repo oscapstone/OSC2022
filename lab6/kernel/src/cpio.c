@@ -1,5 +1,4 @@
 #include "cpio.h"
-
 #include "printf.h"
 #include "string.h"
 #include "utils.h"

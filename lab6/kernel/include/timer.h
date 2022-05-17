@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#define CORE0_TIMER_IRQ_CTRL ((volatile unsigned int *)(0x40000040))
-#define CORE0_INTERRUPT_SOURCE ((volatile unsigned int *)(0x40000060))
+#include "mmu.h"
+#define CORE0_TIMER_IRQ_CTRL ((volatile unsigned int *)(KVA + 0x40000040))
 
 typedef struct timeout_event {
   uint32_t register_time;

@@ -9,8 +9,6 @@
 #include "utils.h"
 #include "thread.h"
 #include "printf.h"
-// #include "device_tree.h"
-#define RAMFS_ADDR 0x8000000
 
 void clean_buffer(char * buffer, int buffer_len);
 void command_help();
