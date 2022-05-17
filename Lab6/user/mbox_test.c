@@ -1,7 +1,6 @@
 #include "system_call.h"
 #include "mail_box.h"
 
-volatile unsigned int  __attribute__((aligned(16))) my_mailbox[36];
 
 void mbox_test() {
     /* test mbox_call */
@@ -21,7 +20,7 @@ void mbox_test() {
     // else
     //     printf("fail\n");
 
-
+    volatile unsigned int  __attribute__((aligned(16))) my_mailbox[36];
     my_mailbox[0] = 7 * 4; // buffer size in bytes
     my_mailbox[1] = MBOX_REQUEST;
     // tags begin

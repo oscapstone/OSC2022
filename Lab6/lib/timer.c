@@ -63,6 +63,7 @@ void pop_timer() {
     timer_list = timer_list->next;
     //core_timer_enable();
     timer->call_back(timer->args);
+    kfree((void*)timer);
     if (!timer_list)
         core_timer_disable();
     else

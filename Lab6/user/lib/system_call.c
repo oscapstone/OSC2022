@@ -179,3 +179,9 @@ put:        *dst++ = *fmt;
     // number of bytes written
     return dst-orig;
 }
+
+void delay(unsigned int clock) {
+    while (clock--) {
+        asm volatile("nop");
+    }
+}

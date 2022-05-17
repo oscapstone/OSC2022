@@ -6,7 +6,7 @@
 /* map va for pa */
 void map_pages(void* page_table, uint64_t va, int page_num, uint64_t pa) {
 	if (!page_table)
-		uart_printf("[ERROR] null page table!\n");
+		uart_printf("[ERROR][map_pages] null page table!\n");
 
 	for (int n = 0; n < page_num; ++n) {
 		unsigned long _va = (unsigned long)(va + n * 4096);
@@ -31,9 +31,35 @@ void map_pages(void* page_table, uint64_t va, int page_num, uint64_t pa) {
 			table = (unsigned long*)PA2VA(entry); //address of the first entry of next level table
 		}
 		if (table[index[3]])
-			uart_printf("[ERROR] the VA has already been mapped!\n");
+			uart_printf("[ERROR][map_pages] the VA has already been mapped!\n");
 		//MAIR_IDX_NORMAL_NOCACHE << 2: index to MAIR (8 * 8bytes register)
 		table[index[3]] = (pa + n * 4096) | (1<<10) | (1<<6) | MAIR_IDX_NORMAL_NOCACHE << 2 | PD_TABLE;
+	}
+}
+
+void dupPT(void* page_table_src, void* page_table_dst, int level) {
+	if (page_table_src == 0 || page_table_dst == 0)
+		uart_printf("[ERROR][dupPT] invalid table!");
+
+	//frame
+	if (level == 4) {
+		char* src = (char*)PA2VA(page_table_src);
+		char* dst = (char*)PA2VA(page_table_dst);
+		for (int i = 0; i < 4096; ++i)
+			dst[i] = src[i];
+		return;
+	}
+
+	//table
+	unsigned long* table_src = (unsigned long*)PA2VA(page_table_src);
+	unsigned long* table_dst = (unsigned long*)PA2VA(page_table_dst);
+	for (int i = 0; i < 512; ++i) {
+		if (table_src[i] != 0) {
+			initPT((void**)&table_dst[i]);
+			dupPT((void*)(table_src[i] & 0xfffffffff000), (void*)(table_dst[i]), level + 1);
+			unsigned long tmp = table_src[i] & 0xfff;
+			table_dst[i] |= tmp;
+		}
 	}
 }
 
@@ -43,6 +69,8 @@ void initPT(void** page_table) {
 		table[i] = 0;
 	*page_table = (void*)VA2PA(table);
 }
+
+void freePT(void** page_table) {}
 
 void mmu_init() {
 	//setup tcr & mair

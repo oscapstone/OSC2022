@@ -16,5 +16,6 @@ void kill(int pid);
 /* utility functions */
 unsigned int printf(char* fmt,...);
 unsigned int vsprintf(char *dst,char* fmt, __builtin_va_list args);
+void delay(unsigned int clock);
 
 #endif

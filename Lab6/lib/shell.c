@@ -136,8 +136,8 @@ void parse_command() {
     else if (compare_string(buffer, "test_dummy") == 0) {
         run_user_program("dummy_test.img", NULL);
     }
-    else if (compare_string(buffer, "test_sys") == 0) {
-        run_user_program("syscall.img", NULL);
+    else if (compare_string(buffer, "test_vm") == 0) {
+        run_user_program("vm.img", NULL);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");
@@ -147,7 +147,7 @@ void parse_command() {
         uart_send_string("ls                 : print files in rootfs\n");
         uart_send_string("cat                : print file content\n");
         uart_send_string("async_uart         : test async uart\n");
-        uart_send_string("test_timer         : test timer multiplexing\n");
+        uart_send_string("test_timer_lab3    : test timer multiplexing\n");
         uart_send_string("test_page          : test buddy system\n");
         uart_send_string("test_dyn           : test dynamic allocator\n");
         uart_send_string("test_fork          : test user program\n");

@@ -27,7 +27,7 @@ void cpio_list() {
         align_4(&headerPathname_size); // The pathname is followed by NUL bytes so that the total size of the fixed header plus pathname is a multiple	of four.
         align_4(&file_size);           // Likewise, the	file data is padded to a multiple of four bytes.
         uart_send_string(addr + sizeof(cpio_header)); // print the fine name
-        uart_send_string("\r\n");
+        uart_printf("   %d\n", file_size);
         addr += (headerPathname_size + file_size);
     }
 }

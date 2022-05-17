@@ -10,6 +10,7 @@
 #include "cpio.h"
 #include "shell.h"
 #include "mail_box.h"
+#include "vm.h"
 
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
@@ -44,7 +45,7 @@ void lower_sync_handler(trap_frame *tf) {
                     break;
                 case 4:
                     sys_fork(tf);
-                    thread_schedule();
+                    //thread_schedule();
                     break;
                 case 5:
                     sys_exit(regs[0]);
@@ -149,7 +150,11 @@ size_t sys_uartwrite(const char buf[], size_t size) {
 
 int sys_exec(trap_frame *tf, const char *name, char *const argv[]) {
     task_struct *cur_task = get_current();
+    freePT(&(cur_task->page_table));
+    initPT(&(cur_task->page_table));
     load_program((char*)name, cur_task->page_table);
+    for (int i = 0; i < 4; ++i)
+        map_pages(cur_task->page_table, 0xffffffffb000 + i * 0x1000, 1, VA2PA(page_malloc(0)));
     _argv = (char**)argv;
     tf->elr_el1 = (unsigned long)USER_PROGRAM_VA;
     tf->sp_el0 = cur_task->user_fp;
@@ -160,7 +165,7 @@ void sys_fork(trap_frame *tf) {
     task_struct *parent = get_current();
     task_struct *child = thread_create(NULL);
     int child_id = child->id;
-    unsigned long user_fp = child->user_fp;
+    //unsigned long user_fp = child->user_fp;
     task_struct *prev = child->prev;
     task_struct *next = child->next;
 
@@ -174,36 +179,38 @@ void sys_fork(trap_frame *tf) {
         dst++;
     }
 
+    initPT(&(child->page_table));
+    // dupPT(parent->page_table, child->page_table, 0);
+
     /* set up the correct value for registers */
     parent->context.sp = (unsigned long)tf;
     if ((unsigned long)child > (unsigned long)parent)
         child->context.sp = parent->context.sp + ((unsigned long)child - (unsigned long)parent);
     else
         child->context.sp = parent->context.sp - ((unsigned long)parent - (unsigned long)child);
-    int parent_ustack_size = (parent->user_fp) - (tf->sp_el0) + 1;
-    child->context.fp = (unsigned long)child + PAGE_SIZE_4K - 1;
+    //int parent_ustack_size = (parent->user_fp) - (tf->sp_el0) + 1;
+    child->context.fp = (unsigned long)child + PAGE_SIZE_4K - 16;
     child->context.lr = (unsigned long)child_return_from_fork;
     child->id = child_id;
-    child->user_fp = user_fp;
+    //child->user_fp = user_fp;
     child->prev = prev;
     child->next = next;
     trap_frame *child_tf = (trap_frame*)(child->context.sp);
-    child_tf->sp_el0 = (child->user_fp) - parent_ustack_size + 1;
+    //child_tf->sp_el0 = (child->user_fp) - parent_ustack_size + 1;
     child_tf->regs[0] = 0;
     child_tf->regs[29] = child->context.fp;
     tf->regs[0] = child->id;
-
     child->handler = parent->handler;
 
     /* copy the user stack of parent to child */
-    char *src_stack = (char*)(tf->sp_el0);
-    char *dst_stack = (char*)(child_tf->sp_el0);
+    // char *src_stack = (char*)(tf->sp_el0);
+    // char *dst_stack = (char*)(child_tf->sp_el0);
     
-    while(parent_ustack_size--) {
-        *dst_stack = *src_stack;
-        src_stack++;
-        dst_stack++;
-    }
+    // while(parent_ustack_size--) {
+    //     *dst_stack = *src_stack;
+    //     src_stack++;
+    //     dst_stack++;
+    // }
 
     debug_printf("[DEBUG][sys_fork] parent: %d, child: %d\n", parent->id, child->id);
 }

@@ -1,6 +1,7 @@
 #include "system_call.h"
 
-void mix_test() {
+void timer_test() {
+    //printf("\nTimer Test\n");
     fork();
     fork();
     fork();

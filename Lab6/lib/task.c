@@ -29,12 +29,11 @@ void run_user_program(const char* name, char *const argv[]) {
     user_addr = USER_PROGRAM_VA;
     for (int i = 0; i < 4; ++i)
         map_pages(task->page_table, 0xffffffffb000 + i * 0x1000, 1, VA2PA(page_malloc(0)));
-    task->user_fp = 0xfffffffff000 - 16;  // update user stack frame pointer
     user_sp = task->user_fp;
     user_page_table = (unsigned long)(task->page_table);
     add_timer(read_sysreg(cntfrq_el0) >> 5, normal_timer, NULL); // < 0.1s
-    core_timer_enable();
-    debug_mode = 0;
+    // core_timer_enable();
+    // debug_mode = 0;
     idle();
 }
 
@@ -58,6 +57,7 @@ task_struct* thread_create(void *func) {
     new_task->context.fp = (unsigned long)new_task + PAGE_SIZE_4K - 16;
     new_task->context.lr = (unsigned long)func;
     new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 16;  // kernel stack pointer for the thread
+    new_task->user_fp = 0xfffffffff000 - 16;
     new_task->state = RUNNING;
     new_task->id = task_cnt++;
     new_task->handler = NULL;
