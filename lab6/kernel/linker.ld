@@ -1,6 +1,7 @@
 SECTIONS
 {
-    . = 0x80000;
+    . = 0xffff000000000000;
+    . += 0x80000;
    
     .text.boot : { *(.text.boot) }
     .text :  { *(.text) }
@@ -13,7 +14,9 @@ SECTIONS
     .bss : { *(.bss* .bss.*) } 
     __bss_end = .;
 
-    . = ALIGN(16);
+    . = ALIGN(0x00001000);
+    pg_dir = .;
+	.data.pgd : { . += (3 * (1 << 12)); }
 
     __heap_start = .;
     __kernel_end = .;
