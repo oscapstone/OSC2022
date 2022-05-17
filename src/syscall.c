@@ -53,11 +53,11 @@ int kernel_exec(trap_frame* tf,const char* name, char *const argv[])
 }
 int sys_exec(trap_frame* tf,const char* name, char *const argv[])
 {
-    char *file_start = nullptr;
-    unsigned long filesize;
-    cpio_get_addr(file_start,&filesize);
-    char *new_start = my_malloc(filesize);
-    memcpy(new_start,file_start,filesize);
+    char **file_start = my_malloc(sizeof(char*));
+    unsigned long* filesize = my_malloc(sizeof(unsigned long));
+    cpio_get_addr(file_start,filesize);
+    char *new_start = my_malloc(*filesize);
+    memcpy(new_start,*file_start,*filesize);
     if(filesize!=0){ // file not found if filesize == 0
         tf->sp_el0 = (unsigned long)(get_current()->user_stack + THREAD_STACK_SIZE);
         tf->elr_el1 = (unsigned long)new_start;

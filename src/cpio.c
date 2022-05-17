@@ -132,7 +132,7 @@ void cpio_cat(){
     }
 }
 
-void cpio_get_addr(char* filedata,unsigned long* filesize){
+unsigned long cpio_get_addr(char** filedata,unsigned long* filesize){
     cpio_newc_header* cnh = (cpio_newc_header*)cpio_addr;
     cpio_newc_header* next_header;
     char *filename;
@@ -143,7 +143,7 @@ void cpio_get_addr(char* filedata,unsigned long* filesize){
     read_string(&read_name);
     
     while(1){
-        if(cpio_parse_header(cnh,&filename,filesize,&filedata,&next_header)!=0){
+        if(cpio_parse_header(cnh,&filename,filesize,filedata,&next_header)!=0){
             writes_uart("File not found!\r\n");
             *filesize=0;
             break;
@@ -156,7 +156,8 @@ void cpio_get_addr(char* filedata,unsigned long* filesize){
         else if(strncmp(read_name,filename,strlen(read_name))==0){
             // writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
             // writes_uart("\r\n");
-            // return (unsigned long long)filedata;
+            
+            return (unsigned long long)filedata;
             break;
         }
         //writes_n_uart(filename,parse_hex_str(cnh->c_namesize,sizeof(cnh->c_namesize)));

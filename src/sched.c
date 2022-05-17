@@ -139,11 +139,13 @@ Thread_struct* pop_thread()
 }
 void thread_exec()
 {
-    char *file_start = nullptr;
-    unsigned long filesize;
-    cpio_get_addr(file_start,&filesize);
-    char *new_start = my_malloc(filesize);
-    memcpy(new_start,file_start,filesize);
+    char **file_start = my_malloc(sizeof(char*));
+    unsigned long *filesize = my_malloc(sizeof(unsigned long));
+    // cpio_get_addr(file_start,&filesize);
+    cpio_get_addr(file_start,filesize);
+
+    char *new_start = my_malloc(*filesize);
+    memcpy(new_start,*file_start,*filesize);
     asm volatile(
         "mov x0, 0\n\t" // 
         "msr spsr_el1, x0\n\t"

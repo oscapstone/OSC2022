@@ -3,7 +3,7 @@
 #include "string.h"
 #include "timer.h"
 #include "task.h"
-
+#include "syscall.h"
 void enable_interrupt(){
     asm volatile(
         "msr DAIFClr, 0xf"
@@ -17,10 +17,11 @@ void disable_interrupt(){
 }
 
 
-void exception_entry(){
-    busy_wait_writes("EXCEPTION ENTRY",TRUE);
+void exception_entry(trap_frame* tf){
+    // busy_wait_writes("EXCEPTION ENTRY",TRUE);
     // spsr_el1, elr_el1, and esr_el1
     unsigned long long reg_spsr_el1, reg_elr_el1,reg_esr_el1;
+    unsigned int svc_num;
     asm volatile(
         "mrs %0,spsr_el1\n\t"
         "mrs %1,elr_el1\n\t"
@@ -29,13 +30,44 @@ void exception_entry(){
           "=r" (reg_elr_el1),
           "=r" (reg_esr_el1)
     );
-    writes_uart("Exception\r\n");
-    writes_uart("spsr_el1: ");
-    writehex_uart(reg_spsr_el1,1);
-    writes_uart("reg_elr_el1: ");
-    writehex_uart(reg_elr_el1,1);
-    writes_uart("reg_esr_el1: ");
-    writehex_uart(reg_esr_el1,1);
+    unsigned long long ec = reg_esr_el1>>26;
+    if(ec == 0b010101){
+        switch (tf->x8)
+        {
+        case 0: // getpid
+            sys_getpid(tf);
+            break;
+        case 1: // uart_read
+            sys_uart_read(tf,tf->x0,tf->x1);
+            break;
+        case 2: // uart_write
+            sys_uart_write(tf,tf->x0,tf->x1);
+            break;
+        case 3: // exec
+            
+            break;
+        case 4: // fork
+            break;
+        case 5: // exit
+            break;
+        case 6: // mbox_call
+            break;
+        case 7: // kill
+            break;
+        default:
+            break;
+        }
+    }
+    else{
+        writes_uart("Exception\r\n");
+        writes_uart("spsr_el1: ");
+        writehex_uart(reg_spsr_el1,1);
+        writes_uart("reg_elr_el1: ");
+        writehex_uart(reg_elr_el1,1);
+        writes_uart("reg_esr_el1: ");
+        writehex_uart(reg_esr_el1,1);
+    }
+    
     return;
 }
 

@@ -112,6 +112,7 @@ main_loop:
 
 exception_handler:
     save_all
+    mov x0,sp
     bl exception_entry
     load_all
     eret
