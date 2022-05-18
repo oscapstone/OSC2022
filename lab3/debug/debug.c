@@ -43,6 +43,10 @@ void log_kernel_start(){
     );
     printf("heap_start=%p\n", &__heap_start);
 
-    printf("current exception level %u\r\n", get_currentEL());
+    printf("current exception level: %u\r\n", get_currentEL());
+    printf("SP_EL0:                  0x%x\r\n", get_SP_ELx(0));
+    printf("DAIF:                    0x%x\r\n", get_DAIF());
+    printf("SPSel:                   0x%x\r\n", get_SPSel());
+    printf("stack pointer:           %p\r\n", &currentEL);
 
 }
