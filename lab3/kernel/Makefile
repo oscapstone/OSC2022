@@ -15,7 +15,8 @@ OBJECTS = \
 		shell.o \
 		reboot.o \
 	    main.o \
-		start.o
+		start.o \
+		entry.o
 
 .PHONY: all 
 all: $(OBJECTS) 

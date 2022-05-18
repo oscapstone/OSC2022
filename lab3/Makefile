@@ -32,9 +32,11 @@ LIBS = \
 	 $(OUTPUT)/cpio.o \
 	 $(OUTPUT)/simple_malloc.o \
 	 $(OUTPUT)/fdt_parse.o \
+	 $(OUTPUT)/asm.o
 
 KOBJECTS = \
 		 $(OUTPUT)/start.o \
+		 $(OUTPUT)/entry.o \
 		 $(OUTPUT)/mini_uart.o \
 		 $(OUTPUT)/mailbox.o \
 		 $(OUTPUT)/main.o \

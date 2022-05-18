@@ -1,6 +1,7 @@
 #include "types.h"
 #include "utils.h"
 #include "debug/debug.h"
+#include "asm.h"
 extern int __bss_start, __bss_end;
 extern int __text_start, __text_end;
 extern int __rodata_start, __rodata_end;
@@ -14,6 +15,7 @@ int debug = 0;
 #endif
 
 void log_kernel_start(){
+    uint64_t currentEL;
     if(debug == 0) return;
     printf("text_start=%p, text_end=%p, text_size=%u\r\n", \
            &__text_start, \
@@ -40,5 +42,7 @@ void log_kernel_start(){
            (uint64_t)&__bss_end - (uint64_t)&__bss_start
     );
     printf("heap_start=%p\n", &__heap_start);
+
+    printf("current exception level %u\r\n", get_currentEL());
 
 }

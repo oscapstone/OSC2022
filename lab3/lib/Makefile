@@ -18,7 +18,8 @@ LIBS = \
 	 list.o \
 	 cpio.o \
 	 simple_malloc.o \
-	 fdt_parse.o
+	 fdt_parse.o \
+	 asm.o
 		
 
 all: $(LIBS) 

@@ -74,7 +74,7 @@ void fdt_parser(uint8_t* fdt, fdt_callback callback){
                 finished = 1;
                 break;
             default:
-                printf("Parsing error!!\n");
+                //printf("Parsing error!!\n");
         }
     }
 }

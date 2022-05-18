@@ -37,4 +37,6 @@ SECTIONS
     . = ALIGN(0x1000);
     __bss_end = .;
     __heap_start = .;
+
+    __EL1_stack = 0x200000;
 }
