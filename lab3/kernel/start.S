@@ -26,6 +26,9 @@ bss_zero:
     b bss_zero
 
 end:
+// modify vbar_el1 before changing exception level to 1
+    adr x0, EL1_exception_vector_table
+    msr vbar_el1, x0
 // from el2 to el1
     bl from_el2_to_el1
 

@@ -1,10 +1,10 @@
-	.macro	ventry	label
+    .macro	ventry	label
 	.align	7
 	b	\label
 	.endm
 
 
-    .macro	kernel_entry
+    .macro	save_all
     sub sp, sp, 32 * 8
     stp x0, x1, [sp ,16 * 0]
     stp x2, x3, [sp ,16 * 1]
@@ -24,7 +24,7 @@
     str x30, [sp, 16 * 15]
 	.endm
 
-    .macro kernel_exit
+    .macro load_all
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
     ldp x4, x5, [sp ,16 * 2]
@@ -42,43 +42,68 @@
     ldp x28, x29, [sp ,16 * 14]
     ldr x30, [sp, 16 * 15]
     add sp, sp, 32 * 8
-    eret
     .endm
 
 
-/* exception vector table */
+// exception vector table 
 
 .align 11
 .global EL1_exception_vector_table
 EL1_exception_vector_table:
-/* Exception from the current EL while using SP_EL0 */
+// Exception from the current EL while using SP_EL0 
     ventry	invalid_handler  		// Synchronous EL1t
 	ventry	invalid_handler			// IRQ EL1t
 	ventry	invalid_handler			// FIQ EL1t
 	ventry	invalid_handler	    	// Error EL1t
 
-/* Exception from the current EL while using SP_ELx */
+// Exception from the current EL while using SP_ELx 
 	ventry	el1_sync_handler        // Synchronous EL1h
 	ventry	el1_irq_handler         // IRQ EL1h
 	ventry	invalid_handler   	    // FIQ EL1h
 	ventry	invalid_handler		    // Error EL1h
 
-/* Exception from a lower EL at least one lower EL is AArch64 */
+// Exception from a lower EL at least one lower EL is AArch64 
 	ventry	el0_sync_handler        // Synchronous 64-bit EL0
 	ventry	el0_irq_handler         // IRQ 64-bit EL0
 	ventry	invalid_handler   	    // FIQ 64-bit EL0
 	ventry	invalid_handler		    // Error 64-bit EL0
 
-/* Exception from a lower EL and all lower ELs are AArch32 */
+// Exception from a lower EL and all lower ELs are AArch32 
 	ventry	invalid_handler   	    // Synchronous 32-bit EL0
 	ventry	invalid_handler   	    // IRQ 32-bit EL0
 	ventry	invalid_handler   	    // FIQ 32-bit EL0
 	ventry	invalid_handler		    // Error 32-bit EL0
 
 
+
 invalid_handler:
-el0_sync_handler:
 el0_irq_handler:
 el1_sync_handler:
 el1_irq_handler:
+    save_all
     nop
+    load_all
+    eret
+
+el0_sync_handler:
+    save_all
+    mrs x24, esr_el1
+    lsr x24, x24, #26
+    cmp x24, #0x15
+
+    b.eq svc_handler
+    b    nothing
+
+svc_handler:
+    adr x24, syscall_table
+    ldr x24, [x24]
+
+    blr x24
+
+    str x0, [sp]
+    load_all
+    eret
+
+nothing:
+    load_all 
+    eret

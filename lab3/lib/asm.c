@@ -53,4 +53,35 @@ uint64_t get_SPSel(){
     );
     return spsel;
 }
-
+uint64_t get_ESR_EL1(){
+    uint64_t esr_el1 = 0;
+    asm volatile("mrs %0, esr_el1"
+                 : "=&r" (esr_el1)
+                 :
+    );
+    return esr_el1;
+}
+uint64_t get_SPSR_EL1(){
+    uint64_t spsr_el1 = 0;
+    asm volatile("mrs %0, spsr_el1"
+                 : "=&r" (spsr_el1)
+                 :
+    );
+    return spsr_el1;
+}
+uint64_t get_ELR_EL1(){
+    uint64_t elr_el1 = 0;
+    asm volatile("mrs %0, elr_el1"
+                 : "=&r" (elr_el1)
+                 :
+    );
+    return elr_el1;
+}
+uint64_t get_SP(){
+    uint64_t sp = 0;
+    asm volatile("mov %0, sp"
+                 : "=&r" (sp)
+                 :
+    );
+    return sp;
+}

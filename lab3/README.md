@@ -3,13 +3,13 @@
 ## Features
 
 - Basic Exercise 1
-    - [x] UART Bootloader 
+    - [x] Exception  
 - Basic Exercise 2
-    - [x] Initial Ramdisk 
+    - [ ] Interrupt 
 - Basic Exercise 3      
-    - [x] Simple Allocator 
+    - [ ] Rpi3’s Peripheral Interrupt  
 - Advanced Exercise 1
-    - [x] Bootloader Self Relocation
+    - [ ] Timer Multiplexing  
 - Advanced Exercise 2
-    - [x] Devicetree
+    - [ ] Concurrent I/O Devices Handling 
 

@@ -16,7 +16,9 @@ OBJECTS = \
 		reboot.o \
 	    main.o \
 		start.o \
-		entry.o
+		entry.o \
+		syscall_test.o \
+		syscall_table.o
 
 .PHONY: all 
 all: $(OBJECTS) 

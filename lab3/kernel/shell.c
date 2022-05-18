@@ -35,6 +35,7 @@ void simple_shell(){
             printf("reboot  : reboot the device\r\n");
             printf("ls      : list files\r\n");
             printf("cat     : cat files\r\n");
+            printf("laod    : load user program\r\n");
 
         }else if(strcmp(buf, "hello") == 0){
             printf("Hello World!\r\n");
@@ -51,9 +52,17 @@ void simple_shell(){
             reboot(100); 
             while(1);
         }else if(strcmp(buf, "ls") == 0){
-           initrdfs_ls();
+            initrdfs_ls();
         }else if(strcmp(buf, "cat") == 0){
-           initrdfs_cat();
+            initrdfs_cat();
+        }else if(strcmp(buf, "load") == 0){
+            initrdfs_loadfile("test.img",(uint8_t*) 0x100000);
+            asm volatile("mov x0, 0x3c0\n\t" 
+                         "msr spsr_el1, x0\n\t"
+                         "mov x0, #0x100000\n\t"
+                         "msr elr_el1, x0\n\t"
+                         "eret\n\t"
+            );
         }  
     }
 } 

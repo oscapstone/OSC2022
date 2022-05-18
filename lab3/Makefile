@@ -37,6 +37,8 @@ LIBS = \
 KOBJECTS = \
 		 $(OUTPUT)/start.o \
 		 $(OUTPUT)/entry.o \
+		 $(OUTPUT)/syscall_test.o \
+		 $(OUTPUT)/syscall_table.o \
 		 $(OUTPUT)/mini_uart.o \
 		 $(OUTPUT)/mailbox.o \
 		 $(OUTPUT)/main.o \
