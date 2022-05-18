@@ -55,6 +55,9 @@ void dupPT(void* page_table_src, void* page_table_dst, int level) {
 	unsigned long* table_dst = (unsigned long*)PA2VA(page_table_dst);
 	for (int i = 0; i < 512; ++i) {
 		if (table_src[i] != 0) {
+			// if () {
+				
+			// }
 			initPT((void**)&table_dst[i]);
 			dupPT((void*)(table_src[i] & 0xfffffffff000), (void*)(table_dst[i]), level + 1);
 			unsigned long tmp = table_src[i] & 0xfff;
@@ -141,13 +144,18 @@ end1:\n\
 }
 
 /* for video program */
-void vc_identity_mapping(void* page_table) {
-	if (!page_table)
-		uart_printf("[ERROR][vc_identity_mapping] null page table!\n");
+// void vc_identity_mapping(void* page_table) {
+// 	if (!page_table)
+// 		uart_printf("[ERROR][vc_identity_mapping] null page table!\n");
 
-	for (uint64_t va = 0x3c0000000000; va <= 0x3f0000000000 - 0x40000000; va += 0x40000000) {
-		int index = (va >> 39) & 0x1ff; //index of each L1 table
-		uint64_t* table = (uint64_t*)PA2VA(page_table);
-		table[index] = va | BOOT_PUD_ATTR;
-	}
-}
+// 		/*
+// 			index for 0x3c000000 & 0x3f000000 (1G frame)
+// 			0011 1100 0000 0000 00
+// 			0011 1111 0000 0000 00
+// 		*/
+// 	for (uint64_t i = 0b001111000000000000; i < 0b001111110000000000; ++i) {
+// 		uart_printf("%d\n", i);
+// 		uint64_t* table = (uint64_t*)PA2VA(page_table);
+// 		*(table + i * 8) = ((uint64_t)0x3c0000000000 + i * (uint64_t)0x40000000) | BOOT_PUD_ATTR;
+// 	}
+// }

@@ -54,9 +54,9 @@ void create_root_thread() {
 task_struct* thread_create(void *func) {
     task_struct* new_task = (task_struct*)page_malloc(0);
     initPT(&(new_task->page_table));
-    vc_identity_mapping(new_task->page_table);  //for video program
-    // for (uint64_t va = 0x00003c000000000000; va <= 0x00003f000000000000 - 4096; va += 4096)
-    //     map_pages(new_task->page_table, va, 1, va);
+    //vc_identity_mapping(new_task->page_table);  //for video program
+    for (uint64_t va = 0x3c000000; va <= 0x3f000000 - 4096; va += 4096)
+        map_pages(new_task->page_table, va, 1, va);
     new_task->context.fp = (unsigned long)new_task + PAGE_SIZE_4K - 16;
     new_task->context.lr = (unsigned long)func;
     new_task->context.sp = (unsigned long)new_task + PAGE_SIZE_4K - 16;  // kernel stack pointer for the thread
