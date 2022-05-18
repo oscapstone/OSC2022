@@ -1,7 +1,7 @@
-_fdt_ptr = 0x9000000;
 SECTIONS
 {
-    . = 0x80000;
+    . = 0xffff000000000000;
+    . += 0x80000;
     .text : { KEEP(*(.text.boot)) *(.text .text.* .gnu.linkonce.t*) }
     .rodata : { *(.rodata .rodata.* .gnu.linkonce.r*) }
     .data : { *(.data .data.* .gnu.linkonce.d*) }

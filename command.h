@@ -1,8 +1,5 @@
 // void input_buffer_overflow_message(char[]);
 
-void set(long addr, unsigned int value);
-void reset(int tick);
-void cancel_reset();
 void exec_reboot();
 
 void exec_help();

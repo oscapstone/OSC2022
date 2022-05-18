@@ -8,6 +8,7 @@
 
 #define AUX_IRQ (1 << 29)
 #define IRQ_PENDING_1			((volatile unsigned int*)(MMIO_BASE+0x0000b204))
+#define CORE0_TIMER_IRQ_CTRL 	((volatile unsigned int*)(MMIO_BASE+0x40000040))
 #define CORE0_INTERRUPT_SOURCE	((volatile unsigned int *)(0x40000060))
 
 
@@ -27,7 +28,8 @@ void enable_timer_interrupt() {
 	asm volatile("mov x0, 1				\n");
 	asm volatile("msr cntp_ctl_el0, x0	\n"); // enable
 	asm volatile("mov x0, 2				\n");
-	asm volatile("ldr x1, =0x40000040	\n"); // CORE0_TIMER_IRQ_CTRL
+	// asm volatile("mov x1, %0	\n"::"r"(CORE0_TIMER_IRQ_CTRL)); // CORE0_TIMER_IRQ_CTRL
+	asm volatile("ldr x1, =0xFFFF000040000040	\n"); // CORE0_TIMER_IRQ_CTRL
 	asm volatile("str x0, [x1]			\n"); // unmask timer interrupt
 }
 
@@ -35,7 +37,8 @@ void disable_timer_interrupt() {
 	asm volatile("mov x0, 0				\n");
 	asm volatile("msr cntp_ctl_el0, x0	\n"); // enable
 	asm volatile("mov x0, 0				\n");
-	asm volatile("ldr x1, =0x40000040	\n"); // CORE0_TIMER_IRQ_CTRL
+	// asm volatile("mov x1, %0	\n"::"r"(CORE0_TIMER_IRQ_CTRL)); // CORE0_TIMER_IRQ_CTRL
+	asm volatile("ldr x1, =0xFFFF000040000040	\n"); // CORE0_TIMER_IRQ_CTRL
 	asm volatile("str x0, [x1]			\n"); // mask timer interrupt
 }
 

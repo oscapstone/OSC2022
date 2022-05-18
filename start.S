@@ -47,7 +47,7 @@
     ldr x30, [sp, 16 * 15]
     // nested interrupt
     ldr x0, [sp, 16 * 15 + 8]
-    msr spsr_el1,x0
+    msr spsr_el1, x0
     ldr x0,  [sp, 16 * 16]
     msr elr_el1, x0
     ldr x0,  [sp, 16 * 16 + 8]
@@ -62,6 +62,8 @@
 .global _start
 
 _start:
+    // store fdt-address at register x9
+    mov x9, x0
     // read cpu id, stop slave cores
     mrs     x1, mpidr_el1
     and     x1, x1, #3
@@ -70,11 +72,7 @@ _start:
 1:  wfe
     b       1b
 2:  // cpu id == 0
-
-    // loading fdt-address at register x0
-    ldr x1, =_fdt_ptr
-    str x0, [x1]
-    
+   
     // exception level init
     bl from_el2_to_el1
     // the next instruction runs in EL1
@@ -83,8 +81,11 @@ _start:
 	adr x0, exception_vector_table
 	msr VBAR_EL1, x0
 
+    // set MMU identity paging
+    bl identity_paging
+
     // set top of stack just before our code
-    ldr     x1, =0x3C000000
+    ldr     x1, =0xFFFF00003C000000
     mov     sp, x1
 
     // clear bss
@@ -247,3 +248,89 @@ get_el:
 get_current:
     mrs x0, tpidr_el1
     ret
+
+#define TCR_CONFIG_REGION_48bit (((64 - 48) << 0) | ((64 - 48) << 16))
+#define TCR_CONFIG_4KB ((0b00 << 14) |  (0b10 << 30))
+#define TCR_CONFIG_DEFAULT (TCR_CONFIG_REGION_48bit | TCR_CONFIG_4KB)
+#define MAIR_DEVICE_nGnRnE 0b00000000
+#define MAIR_NORMAL_NOCACHE 0b01000100
+#define MAIR_IDX_DEVICE_nGnRnE 0
+#define MAIR_IDX_NORMAL_NOCACHE 1
+#define PD_TABLE 0b11
+#define PD_BLOCK 0b01
+#define PD_PAGE 0b11
+#define PD_ACCESS (1 << 10)
+#define BOOT_PGD_ATTR PD_TABLE
+#define BOOT_PUD_ATTR PD_TABLE
+
+#define PD_RAM_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
+#define PD_PERIPHERAL_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
+#define PD_RAM (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
+#define PD_OUTPUT_MASK 0x0000fffffffff000
+
+identity_paging:
+    ldr x0, = TCR_CONFIG_DEFAULT
+    msr tcr_el1, x0
+
+    ldr x0, =( \
+    (MAIR_DEVICE_nGnRnE << (MAIR_IDX_DEVICE_nGnRnE * 8)) | \
+    (MAIR_NORMAL_NOCACHE << (MAIR_IDX_NORMAL_NOCACHE * 8)) \
+    )
+    msr mair_el1, x0
+
+    mov x0, 0x0000 // PGD's page frame at 0x1000
+    mov x1, 0x2000 // PUD's page frame at 0x2000
+
+    // PGD's PUD
+    ldr x2, = BOOT_PGD_ATTR
+    orr x2, x1, x2 // combine the physical address of next level page with attribute.
+    str x2, [x0]
+
+    // PUD's PMD
+    ldr x2, = BOOT_PUD_ATTR
+    mov x3, 0x3000 // PMD's page frame at 0x3000
+    orr x3, x2, x3
+    str x3, [x1]
+
+    // PUD's 0x40000000 ~ 0x7FFFFFFF
+    ldr x2, = PD_PERIPHERAL_ATTR
+    mov x3, 0x40000000
+    orr x3, x2, x3
+    str x3, [x1, 8] // 2nd 1GB mapped by the 2nd entry of PUD
+
+    // PMD's 0x00000000 ~ 0x3F000000
+    mov x1, 0x3000 // PMD's page frame at 0x3000
+    ldr x10, = PD_PERIPHERAL_ATTR
+    mov x2, 0x00000000
+    mov x4, #504
+8:  orr x3, x10, x2
+    str x3, [x1] // 2nd 1GB mapped by the 2nd entry of PUD
+    add x1, x1, #8
+    add x2, x2, #0x200000
+    sub x4, x4, #1
+    cbnz x4, 8b
+
+    // PMD's 0x3F000000 ~ 0x3FFFFFFF
+    ldr x10, = PD_PERIPHERAL_ATTR
+    mov x4, #8
+9:  orr x3, x10, x2
+    str x3, [x1]
+    add x1, x1, #8
+    add x2, x2, #0x200000
+    sub x4, x4, #1
+    cbnz x4, 9b
+
+    mov x1, 0x1000
+    msr ttbr0_el1, x0 // load PGD to the bottom translation-based register.
+    msr ttbr1_el1, x0 // also load PGD to the upper translation based register.
+
+    mrs x2, sctlr_el1
+    orr x2 , x2, 1
+    msr sctlr_el1, x2 // enable MMU, cache remains disabled
+
+    dsb ish 
+    isb
+  
+    ldr x0, =0xffff000000000000
+    add x30, x30, x0
+	ret

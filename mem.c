@@ -245,8 +245,7 @@ mem_frame *chunk_malloc(unsigned int size) {
     }
     target->free = 0;
 #ifdef MEM_DEMO_LOG
-    uart_hex(target->address);
-    uart_send('\n');
+    printf("%x\n", target->address);
 #endif
     return target;
 }
@@ -341,12 +340,12 @@ void memory_reserve(unsigned long start, unsigned long end, char* message) {
         }
     }
 #ifdef MEM_DEMO_LOG
-    printf("reserve %s:\t%x\t---%x\n", message, start, end);
+    printf("reserve %s:\t%x------%x\n", message, start, end);
 #endif
 };
 
 void startup_allocation() {
-    memory_reserve((unsigned long)0x0000, (unsigned long)0x1000, "multicore boot"); // Spin tables for multicore boot
+    memory_reserve((unsigned long)0xFFFF000000000000, (unsigned long)0xFFFF000000001000, "multicore boot"); // Spin tables for multicore boot
     memory_reserve((unsigned long)&_start, (unsigned long)&_end, "Kernel image");   // Kernel image in the physical memory
     memory_reserve((unsigned long)cpio_start, (unsigned long)cpio_end, "Initramfs");// Initramfs
     memory_reserve((unsigned long)fdt_start, (unsigned long)fdt_end, "Devicetree");  // Devicetree
