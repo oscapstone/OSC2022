@@ -168,7 +168,7 @@ void sys_fork(trap_frame *tf) {
     //unsigned long user_fp = child->user_fp;
     task_struct *prev = child->prev;
     task_struct *next = child->next;
-
+    
     /* copy the task context & kernel stack (including trap frame) of parent to child */
     char* src = (char*)parent;
     char* dst = (char*)child;
@@ -181,7 +181,7 @@ void sys_fork(trap_frame *tf) {
 
     initPT(&(child->page_table));
     dupPT(parent->page_table, child->page_table, 0);
-
+    
     /* set up the correct value for registers */
     parent->context.sp = (unsigned long)tf;
     if ((unsigned long)child > (unsigned long)parent)

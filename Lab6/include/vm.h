@@ -31,5 +31,6 @@ void initPT(void** page_table);
 void freePT(void** page_table);
 void map_pages(void* page_table, uint64_t va, int page_num, uint64_t pa);
 void dupPT(void* page_table_src, void* page_table_dst, int level);
+void vc_identity_mapping(void* page_table_src);
 
 #endif

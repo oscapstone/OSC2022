@@ -31,7 +31,7 @@ void map_pages(void* page_table, uint64_t va, int page_num, uint64_t pa) {
 			table = (unsigned long*)PA2VA(entry); //address of the first entry of next level table
 		}
 		if (table[index[3]])
-			uart_printf("[ERROR][map_pages] the VA has already been mapped!\n");
+			uart_printf("[ERROR][map_pages] the VA: %x has already been mapped!\n", va);
 		//MAIR_IDX_NORMAL_NOCACHE << 2: index to MAIR (8 * 8bytes register)
 		table[index[3]] = (pa + n * 4096) | (1<<10) | (1<<6) | MAIR_IDX_NORMAL_NOCACHE << 2 | PD_TABLE;
 	}
@@ -130,12 +130,24 @@ end1:\n\
 
 	asm volatile("mrs x0, sctlr_el1	\n");
 	asm volatile("orr x0 , x0, 1	\n");  //enalble mmu for EL1&0 (bit 0 of sctlr_el1)
-	asm volatile("msr sctlr_el1, x0	\n");  //forces the change to be seen by the next instruction
-	asm volatile("isb	\n");
+	asm volatile("msr sctlr_el1, x0	\n");  
+	asm volatile("isb	\n");  //forces the change to be seen by the next instruction
 
 	//no longer running on 0x80000
 	asm volatile("\
 		ldr x0, =0xffff000000000000\n\
 		add x30, x30, x0\n\
 	"::);
+}
+
+/* for video program */
+void vc_identity_mapping(void* page_table) {
+	if (!page_table)
+		uart_printf("[ERROR][vc_identity_mapping] null page table!\n");
+
+	for (uint64_t va = 0x3c0000000000; va <= 0x3f0000000000 - 0x40000000; va += 0x40000000) {
+		int index = (va >> 39) & 0x1ff; //index of each L1 table
+		uint64_t* table = (uint64_t*)PA2VA(page_table);
+		table[index] = va | BOOT_PUD_ATTR;
+	}
 }
