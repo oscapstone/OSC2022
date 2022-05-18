@@ -81,4 +81,4 @@ end_rebase_bootloader:
     ret
 
 .section ".data"
-_dtb: .long 0
+_dtb: .dword 0

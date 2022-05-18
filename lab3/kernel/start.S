@@ -47,5 +47,5 @@ from_el2_to_el1:
     eret // return to EL1
 
 .section ".data"
-_dtb: .long 0
+_dtb: .dword 0
 
