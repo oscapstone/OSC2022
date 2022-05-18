@@ -44,4 +44,4 @@ run1:
 
 
 debug:
-	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -serial null -serial stdio -display none -S -s -initrd initramfs.cpio
+	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -serial null -serial stdio -display none -S -s -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
