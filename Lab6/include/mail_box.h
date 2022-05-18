@@ -23,7 +23,7 @@ extern volatile unsigned int mailbox[36];
 #define GET_BOARD_REVISION  0x00010002
 #define GET_ARM_EMEORY      0x00010005
 
-int mailbox_call(unsigned char ch, volatile unsigned int *mailbox);
+int mailbox_call(unsigned char ch, volatile unsigned int *mailbox, volatile unsigned int *mailbox_va);
 
 
 /* old macros from lab1 */

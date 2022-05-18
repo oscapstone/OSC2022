@@ -9,21 +9,24 @@ volatile unsigned int  __attribute__((aligned(16))) mailbox[36];
 /**
  * Make a mailbox call. Returns 0 on failure, non-zero on success
  */
-int mailbox_call(unsigned char ch, volatile unsigned int *mailbox)
+int mailbox_call(unsigned char ch, volatile unsigned int *mailbox, volatile unsigned int *mailbox_va)
 {
     volatile unsigned int r = (((volatile unsigned int)((volatile unsigned long)mailbox)&~0xF) | (ch&0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
     /* write the address of our message to the mailbox with channel identifier */
+    
     *MBOX_WRITE = r;
+    
     /* now wait for the response */
     while(1) {
         /* is there a response? */
         do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_EMPTY);
         /* is it a response to our message? */
-        if(r == *MBOX_READ)
+        if(r == *MBOX_READ) {
             /* is it a valid successful response? */
-            return mailbox[1]==MBOX_RESPONSE;
+            return mailbox_va[1]==MBOX_RESPONSE;
+        }
     }
     return 0;
 }
@@ -65,7 +68,7 @@ void get_board_revision() {
     mailbox[5] = 0; // value buffer
     // tags end
     mailbox[6] = MBOX_TAG_LAST;
-    if (mailbox_call(MBOX_CH_PROP, mailbox))
+    if (mailbox_call(MBOX_CH_PROP, mailbox, mailbox))
         uart_printf("board revision number: 0x%x\n", mailbox[5]);
     else
         uart_printf("can not get board revision number!\n");
@@ -82,7 +85,7 @@ void get_arm_memory() {
     mailbox[6] = 0; // value buffer
     // tags end
     mailbox[7] = MBOX_TAG_LAST;
-    if (mailbox_call(MBOX_CH_PROP, mailbox)) {
+    if (mailbox_call(MBOX_CH_PROP, mailbox, mailbox)) {
         uart_printf("base address: %x\n", mailbox[5]);
         uart_printf("memory size: %x\n", mailbox[6]);
     }
@@ -99,7 +102,7 @@ void get_serial_number() {
     mailbox[5] = 0;                    // clear output buffer
     mailbox[6] = 0;
     mailbox[7] = MBOX_TAG_LAST;
-    if(mailbox_call(MBOX_CH_PROP, mailbox))
+    if(mailbox_call(MBOX_CH_PROP, mailbox, mailbox))
         uart_printf("serial number is: %x%x\n", mailbox[5], mailbox[6]);
     else
         uart_printf("can not get serial number!\n");

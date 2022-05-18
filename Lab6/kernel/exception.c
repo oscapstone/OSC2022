@@ -45,7 +45,7 @@ void lower_sync_handler(trap_frame *tf) {
                     break;
                 case 4:
                     sys_fork(tf);
-                    //thread_schedule();
+                    thread_schedule();
                     break;
                 case 5:
                     sys_exit(regs[0]);
@@ -180,7 +180,7 @@ void sys_fork(trap_frame *tf) {
     }
 
     initPT(&(child->page_table));
-    // dupPT(parent->page_table, child->page_table, 0);
+    dupPT(parent->page_table, child->page_table, 0);
 
     /* set up the correct value for registers */
     parent->context.sp = (unsigned long)tf;
@@ -225,7 +225,18 @@ void sys_exit() {
 
 int sys_mbox_call(unsigned char ch, volatile unsigned int *mbox) {
     debug_printf("[DEBUG][sys_mbox_call]");
-    return mailbox_call(ch, mbox);
+    if (((uint64_t)mbox & 0xFFFF000000000000) == 0) {   //lower va
+        //uart_printf("va: %x\n", mbox);
+        asm volatile("mov x0, %0    \n"::"r"(mbox));
+        asm volatile("at s1e0r, x0  \n");
+        uint64_t frame_addr = (uint64_t)read_sysreg(par_el1) & (0xFFFFFFFFF << 12);
+        uint64_t pa = frame_addr | ((uint64_t)mbox & 0xFFF);
+        //uart_printf("frame_addr: %x, pa: %x\n", frame_addr, pa);
+        if ((read_sysreg(par_el1) & 0x1) == 1)
+            uart_printf("[ERROR][sys_mbox_call] va translation fail!\n");
+        return mailbox_call(ch, (volatile unsigned int*)pa, mbox);
+    }
+    return mailbox_call(ch, (volatile unsigned int*)mbox, mbox);
 }
 
 void sys_kill(int pid) {

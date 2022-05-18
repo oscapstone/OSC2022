@@ -32,8 +32,8 @@ void run_user_program(const char* name, char *const argv[]) {
     user_sp = task->user_fp;
     user_page_table = (unsigned long)(task->page_table);
     add_timer(read_sysreg(cntfrq_el0) >> 5, normal_timer, NULL); // < 0.1s
-    // core_timer_enable();
-    // debug_mode = 0;
+    core_timer_enable();
+    debug_mode = 0;
     idle();
 }
 
