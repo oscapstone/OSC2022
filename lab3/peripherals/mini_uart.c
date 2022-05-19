@@ -1,14 +1,30 @@
 #include "types.h"
 #include "peripherals/iomapping.h"
 #include "peripherals/mini_uart.h"
+#include "debug/debug.h"
+#include "asm.h"
+#include "utils.h"
+static ring_buffer* rx_rbuf = NULL;
+static ring_buffer* tx_rbuf = NULL;
+
 inline void delay_cycles(uint64_t n){
     for(register uint64_t i = 0 ; i < n ; i++) asm volatile("nop");
 }
 
-/**
- * @brief Enable UART 
- */
-void mini_uart_init(void){
+inline void enable_mini_uart_irq(uint32_t tx){
+    uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
+
+    if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b10 | old_ier);
+    else IO_MMIO_write32(AUX_MU_IER_REG, 0b01 | old_ier);
+}
+inline void disable_mini_uart_irq(uint32_t tx){
+    uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
+
+    if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b01 & old_ier);
+    else IO_MMIO_write32(AUX_MU_IER_REG, 0b10 & old_ier);
+}
+
+void mini_uart_init(){
     // GPIO 14 & 15 take function 0
     // Read out GPFSEL1 register
     uint32_t tmp = IO_MMIO_read32(GPFSEL1);
@@ -59,7 +75,8 @@ void mini_uart_init(void){
     
     // Start UART
     IO_MMIO_write32(AUX_MU_CNTL_REG, 3);
-    return;
+
+        return;
 }
 
 uint8_t mini_uart_read(void){
@@ -82,4 +99,37 @@ void write_str(char* buf){
     return;
 }
 
+void mini_uart_irq_init(){
+    rx_rbuf = create_ring_buf(4096 * 2 - 1);
+    tx_rbuf = create_ring_buf(4095 * 2 - 1);
 
+
+    IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
+    // only enable receive interrupt. transmit interrupts should be enable when user want to transmit data.
+    enable_mini_uart_irq(RX);
+}
+
+void mini_uart_irq_write(){
+
+}
+void mini_uart_irq_read(){
+    while((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
+        uint8_t b[1];
+        b[1] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
+        ring_buf_write(rx_rbuf, b, 1);
+    }
+}
+size_t get_mini_uart_rx_len(){
+    return get_ring_buf_len(rx_rbuf);
+}
+
+uint8_t mini_uart_aio_read(void){
+    uint8_t b[1];
+    while(ring_buf_is_empty(rx_rbuf));
+
+    disable_mini_uart_irq(RX);
+    ring_buf_read(rx_rbuf, b, 1);
+    enable_mini_uart_irq(RX);
+
+    return b[1];
+}

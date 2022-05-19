@@ -33,10 +33,11 @@ void simple_shell(){
             printf("help    : print this help menu\r\n");
             printf("hello   : print Hello World!\r\n");
             printf("info    : print hardware infomation\r\n");
-            printf("reboot  : reboot the device\r\n");
             printf("ls      : list files\r\n");
             printf("cat     : cat files\r\n");
             printf("laod    : load user program\r\n");
+            printf("time    : print time after booting\r\n");
+            printf("reboot  : reboot the device\r\n");
 
         }else if(strcmp(buf, "hello") == 0){
             printf("Hello World!\r\n");
@@ -69,4 +70,4 @@ void simple_shell(){
             printf("Seconds after booting: %l.%l\r\n", t / HZ, t % HZ);
         }
     }
-} 
+}

@@ -22,8 +22,6 @@ void init_core_timer(){
     freq = get_CNTFRQ_EL0();
     set_CNTP_TVAL_EL0(freq / HZ);
     enable_core_timer_irq();
-    
-    INFO("Init core timer");
 }
 void core_timer_irq_handler(){
     uint64_t freq;
@@ -34,7 +32,6 @@ void core_timer_irq_handler(){
 
     jiffies += 1;
     enable_core_timer_irq();
-    LOG("core timer irq DAIF: %x", get_DAIF());
 }
 
 uint64_t inline get_jiffies(){

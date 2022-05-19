@@ -32,6 +32,7 @@ LIBS = \
 	 $(OUTPUT)/cpio.o \
 	 $(OUTPUT)/simple_malloc.o \
 	 $(OUTPUT)/fdt_parse.o \
+	 $(OUTPUT)/ring_buffer.o \
 	 $(OUTPUT)/asm.o
 
 KOBJECTS = \

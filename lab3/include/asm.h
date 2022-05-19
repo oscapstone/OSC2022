@@ -3,6 +3,7 @@
 extern uint32_t get_currentEL();
 extern uint64_t get_SP_ELx(uint32_t);
 extern uint64_t get_DAIF();
+extern void set_DAIF(uint64_t);
 extern uint64_t get_SPSel();
 extern uint64_t get_ESR_EL1();
 extern uint64_t get_SPSR_EL1();

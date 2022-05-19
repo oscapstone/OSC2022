@@ -19,7 +19,8 @@ LIBS = \
 	 cpio.o \
 	 simple_malloc.o \
 	 fdt_parse.o \
-	 asm.o
+	 asm.o \
+	 ring_buffer.o
 		
 
 all: $(LIBS) 

@@ -44,6 +44,13 @@ uint64_t get_DAIF(){
     );
     return daif >> 6;
 }
+void set_DAIF(uint64_t n){
+    asm volatile("mov x0, %[n]\n\t"
+                 "msr daif, x0"
+                 :
+                 :[n] "r" (n)
+    );
+}
 
 uint64_t get_SPSel(){
     uint64_t spsel = 0;
