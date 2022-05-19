@@ -5,9 +5,6 @@
 typedef void (*Handler)();
 
 
-
-
-
 typedef struct _Task{
     struct list_head list;
     unsigned int priority;

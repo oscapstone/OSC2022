@@ -230,3 +230,31 @@ int do_kill(int pid){
     schedule();
     return 0;
 }
+
+void sys_signal(TrapFrame *trapFrame){
+
+}
+
+void sys_signal_kill(TrapFrame *trapFrame){
+    disable_irq();
+    int pid = trapFrame->x[0];
+    int signal = trapFrame->x[1];
+    int status = do_signal_kill(pid, signal);
+
+    if(status == -1) 
+        print_string(UITOA, "[x] signal_kill fail, pid: ", pid, 1);
+    else
+        print_string(UITOA, "[*] signal_kill ready, pid: ", pid, 1);
+
+    enable_irq();
+}
+
+int do_signal_kill(int pid, int signal){
+    if(!(pid >= 0 && pid < MAX_THREAD))
+        return -1;
+    if(thread_pool[pid].state != RUNNING)
+        return -1;
+
+    thread_pool[pid].signal_count[signal]++;
+    return 0;    
+}

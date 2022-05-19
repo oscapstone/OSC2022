@@ -7,6 +7,7 @@
 #include <irq.h>
 #include <uart.h>
 #include <syscall.h>
+#include <signal.h>
 
 Thread *thread_pool;
 Thread *run_thread_head;
@@ -47,7 +48,10 @@ Thread *thread_create(void(*func)()){
     new_thread->ctx.fp = (unsigned long)new_thread->kstack_addr + STACK_SIZE;
     new_thread->ctx.sp = (unsigned long)new_thread->kstack_addr + STACK_SIZE;
     new_thread->ctx.lr = (unsigned long)func;
-
+    
+    for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
+        new_thread->signal_handler[i] = sig_default_handler;
+    }
 
     print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
     uart_puts(" | ");

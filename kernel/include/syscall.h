@@ -18,6 +18,8 @@ void sys_fork(TrapFrame *);
 void sys_exit(TrapFrame *);
 void sys_mbox_call(TrapFrame *);
 void sys_kill(TrapFrame *);
+void sys_signal(TrapFrame *);
+void sys_signal_kill(TrapFrame *);
 
 int do_getpid();
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);
@@ -25,6 +27,7 @@ void *load_program(file_info *fileInfo);
 int do_fork(TrapFrame *trapFrame);
 void do_exit(int status);
 int do_kill(int pid);
+int do_signal_kill(int pid, int signal);
 
 int kernel_exec(char *name);
 

@@ -4,7 +4,9 @@
 #include <list.h>
 
 #define MAX_THREAD 0x100
+#define MAX_SIG_HANDLER 0x20
 #define STACK_SIZE 0x1000
+
 
 enum thread_state{
     NOUSE,
@@ -28,7 +30,7 @@ typedef struct _cpu_context{
     unsigned long sp; // stact pointer
 }CpuContext;
 
-
+typedef void (*SigHandler)();
 typedef struct _Thread{
     struct list_head list;
     CpuContext ctx;
@@ -38,6 +40,12 @@ typedef struct _Thread{
     void *kstack_addr;
     void *code_addr; // use in exec
     unsigned int code_size; // use in exec
+
+    /* signal */
+    SigHandler signal_handler[MAX_SIG_HANDLER];
+    unsigned int signal_count[MAX_SIG_HANDLER];
+    
+
 }Thread;
 
 extern Thread* get_current();
