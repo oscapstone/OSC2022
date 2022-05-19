@@ -18,7 +18,9 @@ OBJECTS = \
 		start.o \
 		entry.o \
 		syscall_test.o \
-		syscall_table.o
+		syscall_table.o \
+		timer.o \
+		irq_handler.o
 
 .PHONY: all 
 all: $(OBJECTS) 

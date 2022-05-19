@@ -47,6 +47,8 @@ KOBJECTS = \
 		 $(OUTPUT)/shell.o \
 		 $(OUTPUT)/debug.o \
 		 $(OUTPUT)/initrdfs.o \
+		 $(OUTPUT)/timer.o \
+		 $(OUTPUT)/irq_handler.o \
 		 $(LIBS)
 
 BOBJECTS = \
@@ -54,6 +56,7 @@ BOBJECTS = \
 		 $(OUTPUT)/uart_boot.o \
 		 $(OUTPUT)/mini_uart.o \
 		 $(OUTPUT)/debug.o \
+		 $(OUTPUT)/timer.o \
 		 $(LIBS)
 
 

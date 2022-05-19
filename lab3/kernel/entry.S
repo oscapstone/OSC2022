@@ -77,11 +77,17 @@ EL1_exception_vector_table:
 
 
 invalid_handler:
-el0_irq_handler:
 el1_sync_handler:
-el1_irq_handler:
     save_all
     nop
+    load_all
+    eret
+
+
+el1_irq_handler:
+el0_irq_handler:
+    save_all
+    bl irq_handelr
     load_all
     eret
 

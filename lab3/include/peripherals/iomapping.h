@@ -66,6 +66,16 @@
 // mailbox register base address
 #define MBOX_REG (IO_BASE + 0xB880)
 
+// interrupt
+#define IRQ_BASIC_PENDING (IO_BASE + 0xB200)
+#define IRQ_PENDING_1 (IO_BASE + 0xB204)
+#define IRQ_PENDING_2 (IO_BASE + 0xB208)
+#define CORE0_INTERRUPT_SOURCE (IO_BASE + 0x1000060)
+
+// timer 
+#define CORE0_TIMER_IRQ_CTRL   (IO_BASE + 0x1000040)
+
+
 // watch dog
 #define PM_PASSWORD (IO_BASE + 0x1b000000)
 #define PM_RSTC (IO_BASE + 0x10001c)
@@ -73,6 +83,9 @@
 
 #define IO_MMIO_write32(addr, val) *(uint32_t*)addr = val
 #define IO_MMIO_read32(addr) *(uint32_t*)addr 
+#define IO_MMIO_write64(addr, val) *(uint64_t*)addr = val
+#define IO_MMIO_read64(addr) *(uint64_t*)addr 
+
 
 
 #endif

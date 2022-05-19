@@ -85,3 +85,43 @@ uint64_t get_SP(){
     );
     return sp;
 }
+uint64_t get_CNTP_CTL_EL0(){
+    uint64_t cntp_ctl_el0 = 0;
+    asm volatile("mrs %0, cntp_ctl_el0"
+                 : "=&r" (cntp_ctl_el0)
+                 :
+    );
+    return cntp_ctl_el0;
+}
+void set_CNTP_CTL_EL0(uint64_t n){
+    asm volatile("mov x0, %[n]\n\t"
+                 "msr cntp_ctl_el0, x0"
+                 :
+                 :[n] "r" (n)
+    );
+}
+uint64_t get_CNTFRQ_EL0(){
+    uint64_t cntfrq_el0 = 0;
+    asm volatile("mrs %0, cntfrq_el0"
+                 : "=&r" (cntfrq_el0)
+                 :
+    );
+    return cntfrq_el0;
+}
+
+void set_CNTP_TVAL_EL0(uint64_t n){
+    asm volatile("mov x0, %[n]\n\t"
+                 "msr cntp_tval_el0, x0"
+                 :
+                 :[n] "r" (n)
+    );
+}
+uint64_t get_CNTPCT_EL0(){
+    uint64_t cntpct_el0 = 0;
+    asm volatile("mrs %0, cntpct_el0"
+                 : "=&r" (cntpct_el0)
+                 :
+    );
+    return cntpct_el0;
+}
+
