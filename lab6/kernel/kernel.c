@@ -17,7 +17,7 @@ void kernel_main(void)
 	enable_interrupt();
 	uart_send_string("OSDI 2022 Spring\n");
 
-	copy_process(PF_KTHREAD, (unsigned long)&shell_loop, 0, 0);
+	copy_process(PF_KTHREAD, (unsigned long)&shell_loop, 0/*, 0*/);
 
 	while (1) {
 		kill_zombies();

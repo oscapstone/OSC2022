@@ -4,7 +4,7 @@
 
 static void *DEVTREE_ADDRESS = 0;
 
-unsigned int to_lendian(unsigned int n) {
+unsigned long to_lendian(unsigned long n) {
     return ((n>>24)&0x000000FF) |
            ((n>>8) &0x0000FF00) |
            ((n<<8) &0x00FF0000) |

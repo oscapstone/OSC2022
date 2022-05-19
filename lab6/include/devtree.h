@@ -59,6 +59,6 @@ void devtree_getaddr ();
 void fdt_traverse ( void (*callback)(char *, char *, struct fdt_prop *) );
 
 // ARM uses little endian
-unsigned int to_lendian (unsigned int);
+unsigned long to_lendian (unsigned long);
 
 #endif

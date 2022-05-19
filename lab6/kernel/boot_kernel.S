@@ -44,7 +44,7 @@ proc_hang:
     b proc_hang
 
 set_exception_vector_table:
-    adr x0, exception_vector_table  
+    ldr x0, =exception_vector_table  
     msr vbar_el1, x0
     ret
 
@@ -62,7 +62,7 @@ set_tcr:
     ret
 
 set_mair:
-    ldr x0, =(MAIR_VALUE)
+    ldr x0, =MAIR_VALUE
     msr mair_el1, x0
     ret
 

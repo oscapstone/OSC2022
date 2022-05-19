@@ -22,3 +22,11 @@ cpu_switch_to:
 	ldr	x30, [x8]
 	mov	sp, x9
 	ret
+
+.global update_pgd
+update_pgd:
+	msr ttbr0_el1, x0 // switch translation based address.
+	tlbi vmalle1is // invalidate all TLB entries
+	dsb ish // ensure completion of TLB invalidatation
+	isb // clear pipeline
+	ret

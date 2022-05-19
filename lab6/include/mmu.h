@@ -4,6 +4,8 @@
 #define VA_START            0xffff000000000000
 #define VA_MASK             0x0000ffffffffffff
 
+#define PAGE_MASK			      0xfffffffffffff000
+
 #define TCR_CONFIG_REGION_48bit (((64 - 48) << 0) | ((64 - 48) << 16))
 #define TCR_CONFIG_4KB          ((0b00 << 14) | (0b10 << 30))
 #define TCR_CONFIG_DEFAULT      (TCR_CONFIG_REGION_48bit | TCR_CONFIG_4KB)
@@ -20,11 +22,30 @@
 
 #define PD_TABLE 0b11
 #define PD_BLOCK 0b01
+#define PT_ENTRY 0b11
 #define PD_ACCESS (1 << 10)
 #define BOOT_PGD_ATTR PD_TABLE
 #define BOOT_PUD_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)	
 
+#define PTE_USR_RO_PTE      (PD_ACCESS | (0b11<<6) | (MAIR_IDX_NORMAL_NOCACHE<<2) | PT_ENTRY)
+#define PTE_USR_RW_PTE      (PD_ACCESS | (0b01<<6) | (MAIR_IDX_NORMAL_NOCACHE<<2) | PT_ENTRY)
+
 #define SCTLR_MMU_DISABLED  0
 #define SCTLR_MMU_ENABLED   1
+
+#define PGD_SHIFT   (12 + 3*9)
+#define PUD_SHIFT   (12 + 2*9)
+#define PMD_SHIFT   (12 + 9)
+
+#ifndef __ASSEMBLER__
+
+#include "sched.h"
+
+void map_page(struct task_struct *task, unsigned long va, unsigned long page);
+unsigned long map_table(unsigned long *table, unsigned long shift, unsigned long va, int* new_table);
+void map_table_entry(unsigned long *pte, unsigned long va, unsigned long pa);
+unsigned long va2phys(unsigned long va);
+
+#endif
 
 #endif

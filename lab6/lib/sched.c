@@ -1,5 +1,6 @@
 #include "../include/sched.h"
 #include "mm.h"
+#include "mmu.h"
 #include "exception.h"
 #include "mini_uart.h"
 
@@ -57,6 +58,7 @@ void switch_to(struct task_struct *next) {
         return;
     struct task_struct *prev = current;
     current = next;
+    update_pgd(next->mm.pgd);
     cpu_switch_to(prev, next);
 }
 
@@ -81,7 +83,7 @@ void exit_process() {
     // should only be accessed using syscall
     // preempt_disable();
     current->state = TASK_ZOMBIE;
-    free((void*)current->stack);
+    //free((void*)current->stack); // free resources
     // preempt_enable();
     schedule();
 }
@@ -98,7 +100,14 @@ void kill_zombies() {
         p = task[i];
         if (p && p->state == TASK_ZOMBIE) {
             printf("Zombie found with pid: %d.\n", p->id);
-            free(p);
+            // for loop free user pages and kernel pages
+            for (int i=0; i<p->mm.user_pages_count; i++) {
+                free((void*)(p->mm.user_pages[i].phys_addr+VA_START));
+            }
+            for (int i=0; i<p->mm.kernel_pages_count; i++) {
+                free((void*)(p->mm.kernel_pages[i]+VA_START));
+            }
+            free(p); // free task struct
             task[i] = NULL;
         }
         

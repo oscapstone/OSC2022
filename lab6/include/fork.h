@@ -11,10 +11,11 @@
 #define PSR_MODE_EL3t	0x0000000c
 #define PSR_MODE_EL3h	0x0000000d
 
-int copy_process(unsigned long, unsigned long, unsigned long, unsigned long);
-int move_to_user_mode(unsigned long);
+int copy_process(unsigned long, unsigned long, unsigned long/*, unsigned long*/);
+int move_to_user_mode(unsigned long, unsigned long, unsigned long);
 struct pt_regs *task_pt_regs(struct task_struct *);
 void new_user_process(unsigned long);
+int copy_virt_memory(struct task_struct *);
 
 struct pt_regs {
     unsigned long regs[31];

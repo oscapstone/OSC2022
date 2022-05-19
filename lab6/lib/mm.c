@@ -1,4 +1,5 @@
 #include "mm.h"
+#include "mmu.h"
 #include "math.h"
 #include "memory.h"
 #include "mini_uart.h"
@@ -12,6 +13,21 @@ static unsigned int reserved_num = 0;
 static void* reserved_se[MAX_RESERVABLE][2] = {{0x0, 0x0}}; // expects to be sorted and addresses [,)
 extern char __kernel_end;
 static char *__kernel_end_ptr = &__kernel_end;
+
+unsigned long allocate_user_page(struct task_struct *task, unsigned long va) {
+    unsigned long page = (unsigned long)malloc(PAGE_SIZE);
+    if (page == 0) 
+        return NULL;
+    map_page(task, va, page);
+    return page + VA_START;
+}
+
+unsigned long allocate_kernel_page() {
+    unsigned long page = (unsigned long)malloc(PAGE_SIZE);
+    if(page == NULL)
+        return NULL;
+    return page + VA_START;
+}
 
 void *malloc(unsigned int size) {
 
@@ -36,7 +52,8 @@ void *malloc(unsigned int size) {
     while (t != req_order) {
         struct frame* l_tmp = frame_list[t];
         frame_list[t] = l_tmp->next;
-        frame_list[t]->prev = NULL;
+        if (frame_list[t] != NULL)
+            frame_list[t]->prev = NULL;
         //printf("[info] Split at order %d, new head is 0x%x.\n", t+1, frame_list[t]);
 
         unsigned int off = pow(2, l_tmp->val-1);
@@ -61,7 +78,8 @@ void *malloc(unsigned int size) {
 
     struct frame* ret = frame_list[req_order];
     frame_list[req_order] = ret->next;
-    frame_list[req_order]->prev = NULL;
+    if (frame_list[req_order] != NULL)
+        frame_list[req_order]->prev = NULL;
     
     ret->val = ret->val;
     ret->state = ALLOCATED;
@@ -293,7 +311,7 @@ void init_mm_reserve() {
     max_size = PAGE_SIZE * pow(2, MAX_ORDER-1);
     n_frames = (MEM_REGION_END-MEM_REGION_BEGIN) / PAGE_SIZE;
 
-    memory_reserve((void*)0x0, __kernel_end_ptr); // spin tables, kernel image
+    memory_reserve((void*)0x0, (void*)((unsigned long long)__kernel_end_ptr&VA_MASK)); // spin tables, kernel image
     memory_reserve((void*)0x20000000, (void*)0x20010000); // hard code reserve initramfs
     
     for (unsigned int i=0; i<n_frames; i++) {

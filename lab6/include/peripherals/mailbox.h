@@ -1,7 +1,9 @@
 #ifndef _P_MAILBOX_H
 #define _P_MAILBOX_H
 
-#define MMIO_BASE       0x3f000000
+#include "mmu.h"
+
+#define MMIO_BASE       VA_START + 0x3f000000
 #define MAILBOX_BASE    MMIO_BASE + 0xb880
 
 #define MAILBOX_READ    (volatile unsigned int*) (MAILBOX_BASE)

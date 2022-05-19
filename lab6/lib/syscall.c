@@ -5,6 +5,7 @@
 #include "mm.h"
 #include "../include/cpio.h"
 #include "string.h"
+#include "mmu.h"
 #include "mini_uart.h"
 
 int sys_getpid() {
@@ -19,14 +20,13 @@ unsigned sys_uartread(char buf[], unsigned size) {
 }
 
 unsigned sys_uartwrite(const char buf[], unsigned size) {
-    //printf("%s", buf);
     for(int i=0; i<size; i++)
         uart_send(buf[i]);
     return size;
 } 
 
 int sys_exec(const char *name, char *const argv[]) {
-    struct cpio_newc_header *header;
+    /*struct cpio_newc_header *header;
     unsigned int filesize;
     unsigned int namesize;
     unsigned int offset;
@@ -73,35 +73,39 @@ int sys_exec(const char *name, char *const argv[]) {
     if(move_loc == NULL) return -1;
     for (int i=0; i<filesize; i++) {
         ((char*)move_loc)[i] = ((char*)code_loc)[i];
-    }
+    }*/
     preempt_disable();
 
     // free old program location
     struct pt_regs *p = task_pt_regs(current);
-    p->pc = (unsigned long)move_loc; // move to beginning of program
-    p->sp = current->stack+PAGE_SIZE;
+    p->pc = 0; // move to beginning of program
+    p->sp = 0xfffffffff000;
 
     preempt_enable();
 
-    return -1; // only on failure
-}
+    return -1; // only on failure*/
+    // not real exec, only a restart of current process
+} // fix
 
 int sys_fork() {
-    return copy_process(0, 0, 0, (unsigned long)malloc(4*4096));
+    return copy_process(0, 0, 0/*, 0*/);
 }
 
 void sys_exit(int status) {
     exit_process();
 }
 
-int sys_mbox_call(unsigned char ch, unsigned int *mbox) {
-    unsigned int r = (((unsigned int)((unsigned long)mbox)&~0xF) | (ch&0xF));
+int sys_mbox_call(unsigned char ch, volatile unsigned int *mbox) {
+    printf("mbox: 0x%x\n", mbox);
+    unsigned long ka_mbox = va2phys((unsigned long)mbox) + ((unsigned long)mbox&0xFFF);
+    printf("mbox kernel addr location: 0x%x\n", ka_mbox);
+    unsigned int r = (((unsigned int)((unsigned long)ka_mbox)&~0xF) | (ch&0xF));
     while(*MAILBOX_STATUS & MAILBOX_FULL);
     *MAILBOX_WRITE = r;
     while (1) {
         while (*MAILBOX_STATUS & MAILBOX_EMPTY) {}
         if (r == *MAILBOX_READ) {
-            return mbox[1]==REQUEST_SUCCEED;
+            return ((unsigned int *)(ka_mbox+VA_START))[1]==REQUEST_SUCCEED;
         }
     }
     return 0;
@@ -121,7 +125,7 @@ void sys_kill(int pid) {
             preempt_disable();
             printf("Kill target acquired.\n");
             p->state = TASK_ZOMBIE;
-            free((void *)p->stack);
+            //free((void *)p->stack);
             preempt_enable();
             break;
         }

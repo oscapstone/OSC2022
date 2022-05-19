@@ -3,6 +3,7 @@
 #include "../include/sched.h"
 #include "fork.h"
 #include "string.h"
+#include "mmu.h"
 
 void *DEVTREE_CPIO_BASE = 0;
 
@@ -28,7 +29,7 @@ void initramfs_callback(char *node_name, char *prop_name, struct fdt_prop *prop)
     if (stringncmp(node_name, "chosen", 7) == 0 && 
         stringncmp(prop_name, "linux,initrd-start", 19) == 0) {
 
-        DEVTREE_CPIO_BASE = (void*)to_lendian(*((unsigned int*)(prop + 1)));
+        DEVTREE_CPIO_BASE = (void*)to_lendian(*((unsigned int*)(prop + 1))) + VA_START;
 
     }
 

@@ -40,6 +40,11 @@ struct dynamic_pool {
     struct node *free_head;
 };
 
+#include "sched.h"
+
+unsigned long allocate_user_page(struct task_struct *, unsigned long);
+unsigned long allocate_kernel_page();
+
 void *malloc(unsigned int);
 void free(void *);
 void init_mm();
@@ -50,6 +55,7 @@ void chunk_free(void *);
 void memory_reserve(void*, void*);
 void init_mm_reserve();
 
+void memcpy(unsigned long dst, unsigned long src, unsigned long n);
 void memzero(unsigned long, unsigned long);
 
 #endif  /*_MM_H */

@@ -40,15 +40,31 @@ struct cpu_context {
     unsigned long pc;
 };
 
+#define MAX_PROCESS_PAGES   128
+
+struct user_page {
+    unsigned long phys_addr;
+    unsigned long virt_addr;
+};
+
+struct mm_struct {
+    unsigned long pgd;
+    int user_pages_count;
+    struct user_page user_pages[MAX_PROCESS_PAGES];
+    int kernel_pages_count;
+    unsigned long kernel_pages[MAX_PROCESS_PAGES];
+};
+
 struct task_struct {
     struct cpu_context cpu_context;
     long state;
     long counter;
     long priority;
     long preempt_count;
-    unsigned long stack;
+    //unsigned long stack; //remove
     unsigned long flags;
     long id;
+    struct mm_struct mm;
 };
 
 extern void sched_init();
@@ -60,11 +76,13 @@ extern void switch_to(struct task_struct *);
 extern void cpu_switch_to(struct task_struct *, struct task_struct *);
 extern void exit_process();
 extern void kill_zombies();
+extern void update_pgd(unsigned long);
 
 #define INIT_TASK \
 { \
 {0,0,0,0,0,0,0,0,0,0,0,0,0},\
-0, 0, 1, 0, 0, PF_KTHREAD, 0 \
+0, 0, 1, 0, PF_KTHREAD, 0, \
+{0,0,{{0}},0,{0}}\
 }
 
 #endif
