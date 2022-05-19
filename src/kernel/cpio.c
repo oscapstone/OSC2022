@@ -132,7 +132,7 @@ void cpio_cat(char *cpio, char *filename)
     }
 }
 
-char *cpio_load_prog(char *cpio, char *filename)
+uint32 cpio_load_prog(char *cpio, const char *filename, char **output_data)
 {
     char *cur = cpio;
 
@@ -144,7 +144,7 @@ char *cpio_load_prog(char *cpio, char *filename)
         if (*(uint32 *)&pheader->c_magic[0] != 0x37303730 &&
             *(uint16 *)&pheader->c_magic[4] != 0x3130) {
             uart_printf("[*] Only support new ASCII format of cpio.\r\n");
-            return NULL;
+            return 0;
         }
 
         uint32 namesize = _cpio_read_8hex(pheader->c_namesize);
@@ -164,15 +164,15 @@ char *cpio_load_prog(char *cpio, char *filename)
 
         if (!strcmp(filename, curfilename)) {
             // Found it!
-            char *mem = (char *)kmalloc(filesize);
-            memncpy(mem, curcontent, filesize);
-            return mem;
+            *output_data = (char *)kmalloc(filesize);
+            memncpy(*output_data, curcontent, filesize);
+            return filesize;
         }
 
         // TRAILER!!!
         if (namesize == 0xb && !strcmp(curfilename, "TRAILER!!!")) {
             uart_printf("[*] File not found.\r\n");
-            return NULL;
+            return 0;
         }
     } 
 }
@@ -189,11 +189,11 @@ static int initramfs_fdt_parser(int level, char *cur, char *dt_strings)
     case FDT_PROP:
         prop = (struct fdt_property *)nodehdr;
         if (!strcmp("linux,initrd-start", dt_strings + fdtp_nameoff(prop))) {
-            initramfs_base = TO_CHAR_PTR(fdt32_ld((fdt32_t *)&prop->data));
+            initramfs_base = TO_CHAR_PTR(PA2VA(fdt32_ld((fdt32_t *)&prop->data)));
             uart_printf("[*] initrd addr base: %x\r\n", initramfs_base);
             ok += 1;
         } else if (!strcmp("linux,initrd-end", dt_strings + fdtp_nameoff(prop))) {
-            initramfs_end = TO_CHAR_PTR(fdt32_ld((fdt32_t *)&prop->data));
+            initramfs_end = TO_CHAR_PTR(PA2VA(fdt32_ld((fdt32_t *)&prop->data)));
             uart_printf("[*] initrd addr end : %x\r\n", initramfs_end);
             ok += 1;
         }
