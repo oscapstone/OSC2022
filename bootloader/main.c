@@ -26,7 +26,11 @@ void main(char* arg){
   printf("Welcome UART bootloader!!\n\rPlease input the kernel size:\n\r");
   for(int i = 0; i < 4; i++){
     c = uart_getc_pure();
-    kernel_size += c<<(i*8);
+    if(c >= 0x30 && c < 0x40)
+      c -= 0x30;
+    else if(c > 0x60 && c < 0x67)
+      c -= 0x57;
+    kernel_size += c<<(i*4);
   }
   for(int i = 0; i < kernel_size; i++){
     c = uart_getc_pure();

@@ -8,6 +8,7 @@
 
 static task *run_queue = NULL;
 static task *zombies_queue = NULL;
+static task *temp_queue = NULL;
 static int pid = 1;
 static void enqueue(task **queue, task *new_task);
 static void *dequeue(task **queue);
@@ -169,12 +170,38 @@ void foo(){
   sys_exit();
 }
 
-void *find_task(uint64_t pid){
+void remove_task(uint64_t pid){
   task *cur = run_queue;
+  task *pre = NULL;
   while(cur){
     if(pid == cur->pid){
-      return cur;
+      pre->next = cur->next;
+      temp_queue = cur;
+      temp_queue->next = NULL;
+      return;
     }
+    pre = cur;
+    cur = cur->next;
+  }
+  return;
+}
+
+void add_to_queue(){
+  if(temp_queue){
+    task *cur = run_queue;
+    while (cur->next){
+      cur = cur->next;
+    }
+    cur->next = temp_queue;
+    temp_queue = NULL;
+  }
+}
+
+void *find_task(uint64_t pid){
+  task *cur = run_queue;
+  while (cur){
+    if(cur->pid == pid)
+      return cur;
     cur = cur->next;
   }
   return 0;

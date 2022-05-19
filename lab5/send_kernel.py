@@ -1,5 +1,4 @@
-from serial import Serial
-from pwn import p64
+from serial import Serial    # pyserial
 import argparse
 import time
 
@@ -15,7 +14,7 @@ with open(args.filename,'rb') as fd:
   print("Kernel image size : ", hex(length))
   with Serial(args.device, args.baud) as ser:
     for i in range(4):
-      ser.write(p64(length)[i:i+1])
+      ser.write(bytes(hex(length)[5-i:5-i+1], 'ascii'))
       ser.flush()
     print("Start sending kernel img by uart...")
     for i in range(length):

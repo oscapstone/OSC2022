@@ -44,4 +44,6 @@ void kill_thread(int pid);
 void switch_to_user_space();
 void fork_test();
 void foo();
+void remove_task(uint64_t pid);
+void add_to_queue();
 void *find_task(uint64_t pid);

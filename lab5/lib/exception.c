@@ -9,7 +9,8 @@
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
-static uint64_t _pid = 0;
+static uint32_t signal_exit = 0;
+static uint64_t signal_pid = 0;
 
 void invalid_exception_router(uint64_t x0){
   uint64_t elr_el1, esr_el1, spsr_el1;
@@ -117,6 +118,10 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = child->pid;
   }else if(frame->x8 == 5){        // exit
     task *cur = get_current();
+    if(signal_exit){
+      signal_exit = 0;
+      sys_kill(signal_pid);
+    }
     cur->state = EXIT;
     schedule();
   }else if(frame->x8 == 6){        // mbox call
@@ -129,9 +134,11 @@ void sync_router(uint64_t x0, uint64_t x1){
     task *cur = get_current();
     cur->handler = (void (*)())frame->x1;
   }else if(frame->x8 == 9){       // signal kill
-    task *cur = get_current();
-    _handler = (handler_func)cur->handler;
-    _pid = frame->x0;
+    task *target = find_task(frame->x0);
+    _handler = (handler_func)target->handler;
+    signal_pid = frame->x0;
+    signal_exit = 1;
+    remove_task(frame->x0);
     task *handler_task = task_create(NULL, USER);
     handler_task->target_func = (uint64_t)signal_handler_wrapper;
   }
@@ -140,7 +147,8 @@ void sync_router(uint64_t x0, uint64_t x1){
 void signal_handler_wrapper(){
   if (_handler){
     _handler();
+    add_to_queue();
   }
-  sys_kill(_pid);
+  signal_exit = 0;
   sys_exit();
 }
