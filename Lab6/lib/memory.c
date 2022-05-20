@@ -48,10 +48,10 @@ uint64_t page_malloc(int sz) {
 
 /* currently support 4K page request only, the value of frame array may be wrong otherwise */
 uint64_t request_page(int size) {
-    if (!get_free_num()) {
-        uart_printf("[ERROR][request_page] run out of memory!\n");
-        while (1) {}
-    }
+    // if (!get_free_num()) {
+    //     uart_printf("[ERROR][request_page] run out of memory!\n");
+    //     while (1) {}
+    // }
 
     if (size < 0 || size > 3) {
         uart_printf("[ERROR][request_page] request_page(%d): illegal argument!\n", size);
@@ -167,7 +167,8 @@ void merge_page(uint64_t index, int size) {
 void pop_front(frame_free_node **list) {
     frame_free_node *free_node = *list;
     *list = (*list)->next;
-    (*list)->prev = NULL;
+    if (*list)
+        (*list)->prev = NULL;
     return_free_node(free_node);
 }
 

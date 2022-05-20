@@ -1,9 +1,6 @@
 #include "system_call.h"
 
 void timer_test() {
-    // printf("\nTimer Test\n");
-    // fork();
-    // fork();
     fork();
 
     for (int i = 1; i <= 10000000; ++i) {

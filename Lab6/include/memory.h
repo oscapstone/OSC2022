@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include "peripherals/base.h"
 
-#define MEMORY_BASE_ADDR (KVA + 0x0)
-#define MEMORY_END_ADDR (KVA + 0x8000000 - 4096)
+#define MEMORY_BASE_ADDR (KVA + 0x10000000)
+#define MEMORY_END_ADDR (KVA + 0x10000000 + 0x10000000)
 #define PAGE_SIZE_4K ((uint64_t)1 << 12)
 #define FRAME_ARRAY_SIZE ((MEMORY_END_ADDR - MEMORY_BASE_ADDR) / PAGE_SIZE_4K)
 #define MAX_32K_NUM (FRAME_ARRAY_SIZE / 8)

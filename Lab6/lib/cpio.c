@@ -83,6 +83,13 @@ void load_program(char *name, void *page_table) {
         align_4(&headerPathname_size); 
         align_4(&file_size);           
 
+        asm volatile("mov x0, %0 			\n"::"r"(page_table));
+        asm volatile("dsb ish 	\n");  //ensure write has completed
+        asm volatile("msr ttbr0_el1, x0 	\n"); //switch translation based address.
+        asm volatile("tlbi vmalle1is 	\n");  //invalidates cached copies of translation table entries from L1 TLBs
+        asm volatile("dsb ish 	\n");  //ensure completion of TLB invalidatation
+        asm volatile("isb 	\n");  //clear pipeline
+
         unsigned char *file_content = target + headerPathname_size;
         int sz = file_size / 4096 + (file_size % 4096 != 0);
         for (int i = 0; i < sz; ++i) {

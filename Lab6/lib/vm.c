@@ -19,7 +19,6 @@ void map_pages(void* page_table, uint64_t va, int page_num, uint64_t pa) {
 		index[1] = _va & 0x1ff;
 		_va >>= 9;
 		index[0] = _va & 0x1ff;
-
 		unsigned long* table = (unsigned long*)PA2VA(page_table);
 		for (int i = 0; i <= 2; ++i) {
 			if (!table[index[i]]) {
@@ -127,7 +126,6 @@ end1:\n\
 	//setting L1 table for lower VA region (0000)
 	asm volatile("msr ttbr0_el1, %0\n"::"r"(0)); //ensure to read correct inst when mmu opened
 	//setting L1 table for higher VA region (ffff)
-	asm volatile("msr ttbr1_el1, %0\n"::"r"(0));
 	asm volatile("msr ttbr1_el1, %0\n"::"r"(0));
 	asm volatile("isb	\n");  //forces the changes to be seen before the MMU is enabled
 
