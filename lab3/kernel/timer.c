@@ -39,6 +39,11 @@ void init_timer_list(void){
  *  @param duration in microsecond
  */
 void add_timer(timer_callback callback, uint8_t* data, uint64_t duration){
+    if(duration == 0){
+        callback(data);
+        return;
+    }
+
     timer_t* t = (timer_t*)simple_malloc(sizeof(timer_t)); 
 
     t->ticks = duration / (1000 / HZ);

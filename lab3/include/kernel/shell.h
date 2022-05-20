@@ -11,5 +11,5 @@
 
 void simple_shell(void);
 
-#define DELIM " \t"
+#define DELIM " \t\n\r"
 #endif

@@ -83,7 +83,6 @@ void simple_shell(){
             
             token = strtok(NULL, DELIM);
             if(token == NULL) continue;
-            printf("%s\r\n", token);
             len = strlen(token);
             data = (char*)simple_malloc(len + 1);
             strcpy(data, token);

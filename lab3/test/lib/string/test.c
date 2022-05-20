@@ -8,7 +8,7 @@
 int main()
 {
     // Declaration of string
-    char gfg[100] = " Geeks - for - geeks - Contribute";
+    char *gfg = "setTimeout 123";
  
     // Declaration of delimiter
     const char s[4] = "-";
