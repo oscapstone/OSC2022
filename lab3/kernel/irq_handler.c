@@ -5,7 +5,7 @@
 #include "types.h"
 #include "debug/debug.h"
 #include "asm.h"
-void irq_handelr(){
+void irq_handler(){
     uint32_t irq_pending_1 = IO_MMIO_read32(IRQ_PENDING_1);
     uint32_t core0_irq_source = IO_MMIO_read32(CORE0_INTERRUPT_SOURCE);
     uint32_t auxirq, uart_irq_type;
@@ -19,14 +19,14 @@ void irq_handelr(){
                 disable_mini_uart_irq(RX);
                 // Receiver holds valid byte
                 mini_uart_irq_read();
-                LOG("rx ring buffer's length: %c", mini_uart_aio_read());
                 enable_mini_uart_irq(RX);
             }else if(uart_irq_type == TX){
                 // Transmit holding register empty
                 disable_mini_uart_irq(TX);
                 mini_uart_irq_write();
-                
-                enable_mini_uart_irq(TX);
+                if(mini_uart_get_tx_len() > 0){
+                    enable_mini_uart_irq(TX);
+                }
             }else{
                 LOG("UART interrupt");
             }

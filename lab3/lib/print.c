@@ -3,7 +3,9 @@
 #include "types.h"
 #include "peripherals/mini_uart.h"
 #include <stdarg.h>
+int32_t aio_print(char* fmt, ...){
 
+}
 int32_t printf(char *fmt, ...){
     uint32_t uval;
     int32_t val;
@@ -26,7 +28,7 @@ int32_t printf(char *fmt, ...){
                     utoa(uval, str, 10);
                     p = str;
                     while(*p){
-                        mini_uart_write(*p++);
+                        mini_uart_aio_write(*p++);
                         count++;
                     }
                     break;
@@ -35,7 +37,7 @@ int32_t printf(char *fmt, ...){
                     itoa(val, str, 10);
                     p = str;
                     while(*p){
-                        mini_uart_write(*p++);
+                        mini_uart_aio_write(*p++);
                         count++;
                     }
                     break;
@@ -44,26 +46,26 @@ int32_t printf(char *fmt, ...){
                     ltoa(lval, str, 10);
                     p = str;
                     while(*p){
-                        mini_uart_write(*p++);
+                        mini_uart_aio_write(*p++);
                         count++;
                     }
                     break;
                 case 'c':
                     ch = va_arg(ap, int);
-                    mini_uart_write(ch);
+                    mini_uart_aio_write(ch);
                     count++;
                     break;
                 case 'p':
                     addr = va_arg(ap, void*);
                     utoa((uint64_t)addr, str, 16);
 
-                    mini_uart_write('0');
-                    mini_uart_write('x');
+                    mini_uart_aio_write('0');
+                    mini_uart_aio_write('x');
                     count += 2;
                     
                     p = str;
                     while(*p){
-                        mini_uart_write(*p++);
+                        mini_uart_aio_write(*p++);
                         count++;
                     }
                     break;
@@ -74,7 +76,7 @@ int32_t printf(char *fmt, ...){
                     utoa(uval, str, 16);
                     p = str;
                     while(*p){
-                        mini_uart_write(*p++);
+                        mini_uart_aio_write(*p++);
                         count++;
                     }
 
@@ -83,20 +85,20 @@ int32_t printf(char *fmt, ...){
                     s = va_arg(ap, char*);
                     p = s;
                     while(*p){
-                        mini_uart_write(*p++);
+                        mini_uart_aio_write(*p++);
                         count++;
                     }
                     break;
                 case '%':
-                    mini_uart_write('%');
+                    mini_uart_aio_write('%');
                     count++;
                 default:
-                    mini_uart_write('%');
-                    mini_uart_write(c);
+                    mini_uart_aio_write('%');
+                    mini_uart_aio_write(c);
                     count += 2;
             }
         }else{
-            mini_uart_write(c);
+            mini_uart_aio_write(c);
             count++;
         }
     }
@@ -104,9 +106,9 @@ int32_t printf(char *fmt, ...){
     return count;
 }
 int32_t putchar(uint8_t ch){
-    mini_uart_write(ch);
+    mini_uart_aio_write(ch);
     return ch;
 }
 int32_t getchar(){
-    return mini_uart_read();
+    return mini_uart_aio_read();
 }

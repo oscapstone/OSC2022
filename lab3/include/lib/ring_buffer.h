@@ -15,5 +15,5 @@ extern size_t ring_buf_write(ring_buffer*, uint8_t*, size_t);
 extern size_t ring_buf_read(ring_buffer*, uint8_t*, size_t);
 extern uint8_t ring_buf_is_full(ring_buffer*);
 extern uint8_t ring_buf_is_empty(ring_buffer*);
-extern size_t get_ring_buf_len(ring_buffer*);
+extern size_t ring_buf_get_len(ring_buffer*);
 #endif

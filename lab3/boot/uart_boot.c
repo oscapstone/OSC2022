@@ -31,16 +31,16 @@ uint64_t uart_recv_kernel(uint64_t dtb){
     mini_uart_init();
     
     recv_boot_header();
-    printf("Receive A...\r\n");
+//    printf("Receive A...\r\n");
 
     base = recv_kernel_base();
-    printf("Receive kernel base 0x%x...\r\n", base);
+//    printf("Receive kernel base 0x%x...\r\n", base);
 
     size = recv_kernel_size();
-    printf("Receive kernel size 0x%x...\r\n", size);
+//    printf("Receive kernel size 0x%x...\r\n", size);
 
     recv_kernel(base, size);  
-    printf("Jump to kernel iamge...\r\n");
+//    printf("Jump to kernel iamge...\r\n");
 
     delay_cycles(10000);
     ((void (*)(uint64_t))base)(dtb);

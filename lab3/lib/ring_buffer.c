@@ -42,6 +42,6 @@ size_t ring_buf_read(ring_buffer* rbuf, uint8_t* data, size_t s){
     rbuf->count -= count;
     return count;
 }
-size_t get_ring_buf_len(ring_buffer* rbuf){
+size_t ring_buf_get_len(ring_buffer* rbuf){
     return rbuf->count;
 }

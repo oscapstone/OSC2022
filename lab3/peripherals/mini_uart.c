@@ -99,6 +99,21 @@ void write_str(char* buf){
     return;
 }
 
+void write_hex(uint64_t n){
+    int i = 0;
+    char buf[16];
+    char *hex_table = "0123456789abcdef";
+    do{
+        buf[i] = hex_table[n & 0xf];
+        n = n >> 4;
+        i++;
+    }while(n);
+    do{
+        i--;
+        mini_uart_write(buf[i]);
+    }while(i > 0);
+}
+
 void mini_uart_irq_init(){
     rx_rbuf = create_ring_buf(4096 * 2 - 1);
     tx_rbuf = create_ring_buf(4095 * 2 - 1);
@@ -109,18 +124,15 @@ void mini_uart_irq_init(){
     enable_mini_uart_irq(RX);
 }
 
-void mini_uart_irq_write(){
-
-}
 void mini_uart_irq_read(){
     while((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
         uint8_t b[1];
-        b[1] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
+        b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
         ring_buf_write(rx_rbuf, b, 1);
     }
 }
-size_t get_mini_uart_rx_len(){
-    return get_ring_buf_len(rx_rbuf);
+size_t mini_uart_get_rx_len(){
+    return ring_buf_get_len(rx_rbuf);
 }
 
 uint8_t mini_uart_aio_read(void){
@@ -130,6 +142,26 @@ uint8_t mini_uart_aio_read(void){
     disable_mini_uart_irq(RX);
     ring_buf_read(rx_rbuf, b, 1);
     enable_mini_uart_irq(RX);
+    return b[0];
+}
 
-    return b[1];
+void mini_uart_irq_write(){
+    uint8_t b[1];
+    if(IO_MMIO_read32(AUX_MU_LSR_REG) & (0x1 << 5)){
+        if(ring_buf_read(tx_rbuf, b, 1)){
+            IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
+        }
+    }
+}
+size_t mini_uart_get_tx_len(){
+    return ring_buf_get_len(tx_rbuf);
+}
+
+void mini_uart_aio_write(uint8_t c){
+    uint8_t b[1];
+    while(ring_buf_is_full(tx_rbuf));
+    b[0] = c;
+    disable_mini_uart_irq(TX);
+    ring_buf_write(tx_rbuf, b, 1);
+    enable_mini_uart_irq(TX);
 }

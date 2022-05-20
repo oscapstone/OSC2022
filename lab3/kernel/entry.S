@@ -87,7 +87,7 @@ el1_sync_handler:
 el1_irq_handler:
 el0_irq_handler:
     save_all
-    bl irq_handelr
+    bl irq_handler
     load_all
     eret
 
