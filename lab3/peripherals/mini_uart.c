@@ -13,11 +13,30 @@ inline void enable_mini_uart_irq(uint32_t tx){
     if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b10 | old_ier);
     else IO_MMIO_write32(AUX_MU_IER_REG, 0b01 | old_ier);
 }
+
+inline void enable_mini_uart_tx_irq(){
+    if(mini_uart_get_tx_len() > 0){
+        enable_mini_uart_irq(TX);
+    }
+}
+
+inline void enable_mini_uart_rx_irq(){
+    enable_mini_uart_irq(RX);
+}
+
 inline void disable_mini_uart_irq(uint32_t tx){
     uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
 
     if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b01 & old_ier);
     else IO_MMIO_write32(AUX_MU_IER_REG, 0b10 & old_ier);
+}
+
+inline void disable_mini_uart_tx_irq(){
+    disable_mini_uart_irq(TX);
+}
+
+inline void disable_mini_uart_rx_irq(){
+    disable_mini_uart_irq(RX);
 }
 
 void mini_uart_init(){

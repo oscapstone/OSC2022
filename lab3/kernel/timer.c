@@ -67,14 +67,12 @@ void init_core_timer(){
 }
 void core_timer_irq_handler(){
     uint64_t freq;
-    disable_core_timer_irq();
 
     freq = get_CNTFRQ_EL0();
     set_CNTP_TVAL_EL0(freq / HZ);
 
     jiffies += 1;
     time_irq_callback();
-    enable_core_timer_irq();
 }
 
 uint64_t inline get_jiffies(){
