@@ -1,9 +1,12 @@
 #include "types.h"
 #include "peripherals/iomapping.h"
-#include "kernel/timer.h"
 #include "debug/debug.h"
 #include "asm.h"
+#include "utils.h"
+#include "kernel/timer.h"
+
 static uint64_t jiffies = 0;
+static struct list_head timer_list;
 
 /*
  * We use core timer to update jiffies
@@ -37,4 +40,18 @@ void core_timer_irq_handler(){
 uint64_t inline get_jiffies(){
     return jiffies;
 }
+
+void init_timer_list(void){
+    INIT_LIST_HEAD(&timer_list);
+}
+
+// unit of duration is ms
+void add_timer(timer_callback callback, uint8_t* data, uint64_t duration){
+   timer_t* t = (timer_t*)simple_malloc(sizeof(timer_t)); 
+   t->ticks = duration / (1000 / HZ);
+   t->callback = callback;
+   t->data = data;
+   list_add(&t->list, &timer_list);
+}
+
 
