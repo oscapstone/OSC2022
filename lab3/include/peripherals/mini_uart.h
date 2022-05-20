@@ -24,6 +24,7 @@ extern uint8_t mini_uart_aio_read(void);
 extern void mini_uart_irq_write();
 extern size_t mini_uart_get_tx_len();
 extern void mini_uart_aio_write(uint8_t);
+extern ssize_t aio_write_bytes(uint8_t *, size_t);
 
 
 

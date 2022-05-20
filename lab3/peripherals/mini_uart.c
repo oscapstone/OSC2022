@@ -165,3 +165,8 @@ void mini_uart_aio_write(uint8_t c){
     ring_buf_write(tx_rbuf, b, 1);
     enable_mini_uart_irq(TX);
 }
+
+ssize_t aio_write_bytes(uint8_t* buf, size_t n){
+    for(uint64_t i = 0 ; i < n ; i++) mini_uart_aio_write(buf[i]);
+    return n;
+}
