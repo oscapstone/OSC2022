@@ -9,7 +9,7 @@
 - Basic Exercise 3      
     - [x] Rpi3’s Peripheral Interrupt  
 - Advanced Exercise 1
-    - [ ] Timer Multiplexing  
+    - [x] Timer Multiplexing  
 - Advanced Exercise 2
     - [ ] Concurrent I/O Devices Handling 
 
