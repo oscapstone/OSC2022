@@ -7,7 +7,7 @@
 - Basic Exercise 2
     - [x] Interrupt 
 - Basic Exercise 3      
-    - [ ] Rpi3’s Peripheral Interrupt  
+    - [x] Rpi3’s Peripheral Interrupt  
 - Advanced Exercise 1
     - [ ] Timer Multiplexing  
 - Advanced Exercise 2
