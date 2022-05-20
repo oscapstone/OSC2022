@@ -7,10 +7,11 @@ char buf[0x2000];
 void setTimeout_callback(void* data){
     uint64_t t = get_jiffies();
     printf("Elapsed time after booting: %l.%l\r\n", t / HZ, t % HZ);
+    printf("Your message: %s\r\n",(char*) data);
 }
 void simple_shell(){
     unsigned int i;
-    char ch;
+    char ch, *token;
     printf(miku_ascii);
     printf("\r\n\r\n");
     while(1){
@@ -30,21 +31,26 @@ void simple_shell(){
                 i++;
             }
         }
-        // match comman
-        if(strcmp(buf, "help") == 0){
-            printf("help        : print this help menu\r\n");
-            printf("hello       : print Hello World!\r\n");
-            printf("info        : print hardware infomation\r\n");
-            printf("ls          : list files\r\n");
-            printf("cat         : cat files\r\n");
-            printf("laod        : load user program\r\n");
-            printf("time        : print time after booting\r\n");
-            printf("reboot      : reboot the device\r\n");
-            printf("setTimeout  : set a N seconds timer task\r\n");
 
-        }else if(strcmp(buf, "hello") == 0){
+        token = strtok(buf, DELIM); 
+        if(token == NULL) continue;
+        // match comman
+        if(strcmp(token, "help") == 0){
+            printf("help        : print this help menu\r\n" \
+                   "hello       : print Hello World!\r\n" \
+                   "info        : print hardware infomation\r\n" \
+                   "ls          : list files\r\n" \
+                   "cat         : cat files\r\n" \
+                   "laod        : load user program\r\n" \
+                   "time        : print time after booting\r\n" \
+                   "reboot      : reboot the device\r\n" \
+                   "setTimeout  : set a N seconds timer task\r\n" \
+                   "              setTimeout <str> <sec>\r\n" \
+            );
+
+        }else if(strcmp(token, "hello") == 0){
             printf("Hello World!\r\n");
-        }else if(strcmp(buf, "info") == 0){
+        }else if(strcmp(token, "info") == 0){
             uint32_t tmp[2];
             MBox_get_board_revision(tmp);
             printf("Board revision: 0x%x\r\n", tmp[0]);
@@ -52,15 +58,15 @@ void simple_shell(){
             MBox_get_arm_memory(tmp);
             printf("Memory base:    0x%x\r\n", tmp[0]);
             printf("Memory size:    0x%x\r\n", tmp[1]);
-        }else if(strcmp(buf, "reboot") == 0){
+        }else if(strcmp(token, "reboot") == 0){
             printf("Start rebooting...\r\n");
             reboot(100); 
             while(1);
-        }else if(strcmp(buf, "ls") == 0){
+        }else if(strcmp(token, "ls") == 0){
             initrdfs_ls();
-        }else if(strcmp(buf, "cat") == 0){
+        }else if(strcmp(token, "cat") == 0){
             initrdfs_cat();
-        }else if(strcmp(buf, "load") == 0){
+        }else if(strcmp(token, "load") == 0){
             initrdfs_loadfile("test.img",(uint8_t*) 0x100000);
             asm volatile("mov x0, 0x0\n\t" 
                          "msr spsr_el1, x0\n\t"
@@ -68,14 +74,28 @@ void simple_shell(){
                          "msr elr_el1, x0\n\t"
                          "eret\n\t"
             );
-        }else if(strcmp(buf, "time") == 0){
-            uint64_t t = get_jiffies();
-            printf("Elapsed time after booting: %l.%l\r\n", t / HZ, t % HZ);
-        }else if(strcmp(buf, "setTimeout") == 0){
-            uint64_t t = get_jiffies();
-            add_timer(setTimeout_callback, NULL, 5000);
-            printf("Elapsed time after booting: %l.%l\r\n", t / HZ, t % HZ);
-            printf("Timer will trigger after 5 seconds\r\n");
+        }else if(strcmp(token, "time") == 0){
+            uint64_t j = get_jiffies();
+            printf("Elapsed time after booting: %l.%l\r\n", j / HZ, j % HZ);
+        }else if(strcmp(token, "setTimeout") == 0){
+            uint64_t j = 0, len = 0, timeout = 0;
+            char *data = NULL;
+            
+            token = strtok(NULL, DELIM);
+            if(token == NULL) continue;
+            printf("%s\r\n", token);
+            len = strlen(token);
+            data = (char*)simple_malloc(len + 1);
+            strcpy(data, token);
+
+            token = strtok(NULL, DELIM);
+            if(token == NULL) continue;
+            timeout = atoul(token);
+
+            j = get_jiffies();
+            add_timer(setTimeout_callback, data, timeout * 1000);
+            printf("Elapsed time after booting: %l.%l\r\n", j / HZ, j % HZ);
+            printf("Timer will trigger after %l seconds\r\n", timeout);
         }
     }
 }

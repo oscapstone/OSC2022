@@ -3,6 +3,7 @@
 #include "types.h"
 #include "lib/print.h"
 #include "lib/string.h"
+#include "lib/simple_malloc.h"
 #include "peripherals/mailbox.h"
 #include "kernel/reboot.h"
 #include "fs/initrdfs.h"
@@ -10,4 +11,5 @@
 
 void simple_shell(void);
 
+#define DELIM " \t"
 #endif

@@ -33,7 +33,11 @@ void init_timer_list(void){
     INIT_LIST_HEAD(&timer_list);
 }
 
-// unit of duration is ms
+/**
+ *  Timer with 10 microsecond resolution
+ *
+ *  @param duration in microsecond
+ */
 void add_timer(timer_callback callback, uint8_t* data, uint64_t duration){
     timer_t* t = (timer_t*)simple_malloc(sizeof(timer_t)); 
 

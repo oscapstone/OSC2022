@@ -145,6 +145,16 @@ char * ultoa(uint64_t value, char* str, uint32_t base){
     return str;
 
 }
+uint64_t atoul(const char* str){
+    uint64_t val = 0;
+    const char* ps = str;
+    while(*ps){
+        val *= 10;
+        val += (*ps - '0');
+        ps++;
+    }
+    return val;
+}
 int32_t strcmp(char* str1, char* str2){
     do{
         if(*str1 > *str2) return 1;

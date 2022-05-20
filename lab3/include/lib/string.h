@@ -15,4 +15,5 @@ extern void* memset(void*, int, size_t);
 extern int32_t memcmp(void*, const void*, size_t);
 extern uint8_t hex2dec(char);
 extern char* strtok(char*,const char*);
+extern uint64_t atoul(const char*);
 #endif
