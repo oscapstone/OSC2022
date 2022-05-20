@@ -1,6 +1,7 @@
 #ifndef _RING_BUFFER_H_ 
 #define _RING_BUFFER_H_
 #include "types.h"
+#include "lib/simple_malloc.h"
 
 typedef struct{
     size_t size;

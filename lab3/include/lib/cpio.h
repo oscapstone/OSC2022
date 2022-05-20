@@ -1,8 +1,13 @@
 #ifndef _CPIO_H_
 #define _CPIO_H_
 
-#include "utils.h"
 #include "types.h"
+#include "lib/list.h"
+#include "lib/fdt_parse.h"
+#include "lib/string.h"
+#include "lib/print.h"
+#include "lib/simple_malloc.h"
+#include "debug/debug.h"
 
 #define FILE_TYPE_MASK          0170000
 #define FILE_TYPE_SOCKET        0140000

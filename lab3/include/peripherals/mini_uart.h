@@ -2,6 +2,11 @@
 #define _MINI_UART_H_
 
 #include "types.h"
+#include "asm.h"
+#include "peripherals/iomapping.h"
+#include "debug/debug.h"
+#include "lib/print.h"
+#include "lib/ring_buffer.h"
 
 #define SYSTEM_CLOCK_RATE (250000000)
 #define BAUD_RATE 115200

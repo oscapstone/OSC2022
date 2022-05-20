@@ -1,6 +1,6 @@
 #include "types.h"
 #include "peripherals/mini_uart.h"
-#include "utils.h"
+#include "lib/print.h"
 
 void recv_boot_header(){
     while('A' != mini_uart_read());  

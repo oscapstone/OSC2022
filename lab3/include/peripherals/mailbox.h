@@ -2,6 +2,9 @@
 #define _MAILBOX_H_
 
 #include "types.h"
+#include "lib/string.h"
+#include "debug/debug.h"
+#include "peripherals/iomapping.h"
 
 #define MBOX_CHANNEL_POWER          0
 #define MBOX_CHANNEL_FRAME_BUF      1

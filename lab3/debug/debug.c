@@ -1,7 +1,5 @@
-#include "types.h"
-#include "utils.h"
 #include "debug/debug.h"
-#include "asm.h"
+
 extern int __bss_start, __bss_end;
 extern int __text_start, __text_end;
 extern int __rodata_start, __rodata_end;

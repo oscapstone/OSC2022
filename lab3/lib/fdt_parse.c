@@ -1,6 +1,5 @@
 #include "lib/fdt_parse.h"
-#include "utils.h"
-#include "types.h"
+
 // callback type for fdt_parser
 // void* (*)(fdt_node* node, fdt_property* prop)
 

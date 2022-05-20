@@ -1,7 +1,13 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 #include "types.h"
-#include "utils.h"
+#include "lib/list.h"
+#include "lib/simple_malloc.h"
+#include "peripherals/iomapping.h"
+#include "debug/debug.h"
+#include "asm.h"
+
+
 #define HZ 100
 
 typedef void (*timer_callback)(void*);

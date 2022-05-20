@@ -1,8 +1,9 @@
 #include "types.h"
 #include "peripherals/mini_uart.h"
 #include "fs/initrdfs.h"
-#include "utils.h"
 #include "kernel/timer.h"
+#include "lib/print.h"
+#include "lib/simple_malloc.h"
 extern int __heap_start;
 void kernel_init(void *dtb){
     init_core_timer();

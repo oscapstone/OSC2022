@@ -1,7 +1,9 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
-#include "utils.h"
+#include "lib/print.h"
+#include "types.h"
+#include "asm.h"
 
 #define DEBUG_KERNEL_START() log_kernel_start()
 #define LOG(fmt, ...) \

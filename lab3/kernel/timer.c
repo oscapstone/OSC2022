@@ -1,8 +1,3 @@
-#include "types.h"
-#include "peripherals/iomapping.h"
-#include "debug/debug.h"
-#include "asm.h"
-#include "utils.h"
 #include "kernel/timer.h"
 
 static uint64_t jiffies = 0;

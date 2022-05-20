@@ -1,7 +1,5 @@
-#include "utils.h"
-#include "types.h"
-#include "debug/debug.h"
-#include "peripherals/mini_uart.h"
+#include "fs/initrdfs.h"
+
 static struct fentry * root;
 
 void initrdfs_init(void* addr){

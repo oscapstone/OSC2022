@@ -1,8 +1,8 @@
 #include "peripherals/iomapping.h"
 #include "kernel/timer.h"
 #include "peripherals/mini_uart.h"
-#include "utils.h"
 #include "types.h"
+#include "lib/print.h"
 #include "debug/debug.h"
 #include "asm.h"
 void irq_handler(){

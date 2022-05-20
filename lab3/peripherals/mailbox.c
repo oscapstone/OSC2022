@@ -1,7 +1,4 @@
-#include "types.h"
-#include "debug/debug.h"
 #include "peripherals/mailbox.h"
-#include "peripherals/iomapping.h"
 
 static uint32_t MBox_buf[4096] __attribute__((aligned(16)));
 

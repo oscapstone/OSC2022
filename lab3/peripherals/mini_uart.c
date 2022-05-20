@@ -1,9 +1,5 @@
-#include "types.h"
-#include "peripherals/iomapping.h"
 #include "peripherals/mini_uart.h"
-#include "debug/debug.h"
-#include "asm.h"
-#include "utils.h"
+
 static ring_buffer* rx_rbuf = NULL;
 static ring_buffer* tx_rbuf = NULL;
 

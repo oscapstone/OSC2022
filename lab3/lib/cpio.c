@@ -1,6 +1,4 @@
-#include "types.h"
-#include "utils.h"
-#include "debug/debug.h"
+#include "lib/cpio.h"
 
 uint32_t cpio_hex2dec(const char *s){
     uint32_t ret = 0;

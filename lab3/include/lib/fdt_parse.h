@@ -1,6 +1,9 @@
 #ifndef _FDT_PARSE_H_
 #define _FDT_PARSE_H_
 #include "types.h"
+#include "lib/print.h"
+#include "lib/simple_malloc.h"
+#include "lib/string.h"
 
 #define FDT_BEGIN_NODE  bswap32(0x00000001)
 #define FDT_END_NODE    bswap32(0x00000002)

@@ -1,7 +1,7 @@
 #include "types.h"
-#include "utils.h"
 #include "debug/debug.h"
 #include "asm.h"
+#include "lib/print.h"
 uint64_t sys_hello(uint64_t x0){
     LOG("Enter sys_hello");
     printf("CurrentEL:  %x\r\n", get_currentEL());

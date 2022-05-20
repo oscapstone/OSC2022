@@ -1,5 +1,4 @@
 #include "lib/ring_buffer.h"
-#include "utils.h"
 ring_buffer* create_ring_buf(size_t s){
     ring_buffer* tmp = (ring_buffer*)simple_malloc(sizeof(ring_buffer));
     tmp->buf = (uint8_t*)simple_malloc(s + 1);

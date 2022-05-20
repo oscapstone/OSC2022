@@ -1,8 +1,5 @@
 #include "lib/print.h"
-#include "lib/string.h"
-#include "types.h"
-#include "peripherals/mini_uart.h"
-#include <stdarg.h>
+
 int32_t aio_print(char* fmt, ...){
 
 }
