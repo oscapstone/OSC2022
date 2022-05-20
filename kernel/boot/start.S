@@ -108,7 +108,8 @@ sync_exception_entry:
 
 irq_entry:
     save_all
-    mrs     x1, spsr_el1
+    mrs     x0, spsr_el1
+    mov     x1, sp
     bl      irq_handler
     load_all
     eret

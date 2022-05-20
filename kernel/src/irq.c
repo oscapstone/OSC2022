@@ -4,19 +4,28 @@
 #include <uart.h>
 #include <string.h>
 #include <sched.h>
+#include <signal.h>
+#include <syscall.h>
 
 extern Thread *run_thread_head;
 
-void irq_handler(unsigned long long what, unsigned long long spsr){     
-    // char buf[10];
+void irq_handler(unsigned long long spsr, TrapFrame *trapFrame){     
     // uart_sputs("---------IRQ Handler---------\n");
     if(*CORE0_IRQ_SOURCE & 0x2) Time_interrupt(spsr);
     else if(*CORE0_IRQ_SOURCE & 0x100) GPU_interrupt();
+
+        // print_string(UITOHEX, "spsr = ", spsr, 0);
+        // print_string(UITOHEX, "pid = ", get_current()->id, 1);
+    /* check the spsr if it is from user mode */
+    spsr &= 0b1111;
+    if(spsr == 0x0){
+        check_sig_queue(trapFrame);
+    } 
 }
 
 void Time_interrupt(unsigned long long spsr){
-    unsigned long long frq = 0;
-    asm volatile("mrs %0, cntfrq_el0\n\t" :"=r"(frq));
+    // unsigned long long frq = 0;
+    // asm volatile("mrs %0, cntfrq_el0\n\t" :"=r"(frq));
     // print_string(UITOHEX, "spsr = ", (unsigned long long)spsr, 1);
     // spsr &= 0b1111;
     // if(spsr == 0x0){

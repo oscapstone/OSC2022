@@ -159,6 +159,14 @@ int do_fork(TrapFrame *trapFrame){
     /* copy context */
     memcpy((char *)&new_thread->ctx, (char *)&curr_thread->ctx, sizeof(CpuContext));
 
+    /* copy signal */
+    memcpy((char *)&new_thread->sig_info_pool, (char *)&curr_thread->sig_info_pool, MAX_SIG_HANDLER);
+    for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
+        if(new_thread->sig_info_pool[i].ready > 0){
+            list_add_tail(&new_thread->sig_info_pool[i].list, &new_thread->sig_queue_head.list);
+        }
+    }
+
     // print_string(UITOHEX, "(child)new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
     
@@ -169,7 +177,7 @@ int do_fork(TrapFrame *trapFrame){
     //                         (trapFrame->elr_el1 - (unsigned long)curr_thread->code_addr);
     new_trapFrame->elr_el1 = trapFrame->elr_el1;
 
-    /* set new code return to after eret */
+    /* set new pc return to after eret */
     new_trapFrame->sp_el0 = ((unsigned long)new_thread->ustack_addr + STACK_SIZE) -
                             (((unsigned long)curr_thread->ustack_addr + STACK_SIZE) - trapFrame->sp_el0);
    
@@ -255,6 +263,26 @@ int do_signal_kill(int pid, int signal){
     if(thread_pool[pid].state != RUNNING)
         return -1;
 
-    thread_pool[pid].signal_count[signal]++;
+    /* 
+     * add the signal to the thread's ready queue 
+     * if ther signal isn't in ready queue, add it.
+     */
+    if(thread_pool[pid].sig_info_pool[signal].ready == 0){
+        list_add_tail(&thread_pool[pid].sig_info_pool[signal].list, &thread_pool[pid].sig_queue_head.list);
+    }
+    thread_pool[pid].sig_info_pool[signal].ready++;
     return 0;    
+}
+
+void sys_sigreturn(TrapFrame *trapFrame){
+    disable_irq();
+    Thread *current = get_current();
+    /* load the old trap frame */
+    memcpy((char *)&current->old_tp, (char *)trapFrame, sizeof(trapFrame));
+    kfree(current->sig_stack_addr);
+    kfree(current->old_tp);
+    current->sig_stack_addr = NULL;
+    current->old_tp = NULL;
+
+    enable_irq();
 }

@@ -31,6 +31,12 @@ typedef struct _cpu_context{
 }CpuContext;
 
 typedef void (*SigHandler)();
+typedef struct sig_list_{
+    struct list_head list;
+    unsigned int ready;
+    SigHandler handler;
+}SignalInfo;
+
 typedef struct _Thread{
     struct list_head list;
     CpuContext ctx;
@@ -42,10 +48,10 @@ typedef struct _Thread{
     unsigned int code_size; // use in exec
 
     /* signal */
-    SigHandler signal_handler[MAX_SIG_HANDLER];
-    unsigned int signal_count[MAX_SIG_HANDLER];
-    
-
+    SignalInfo sig_info_pool[MAX_SIG_HANDLER]; // all signal info
+    SignalInfo sig_queue_head; // ready queue
+    void *sig_stack_addr;
+    void *old_tp;
 }Thread;
 
 extern Thread* get_current();

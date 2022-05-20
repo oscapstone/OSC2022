@@ -23,6 +23,13 @@ void init_thread_pool_and_head(){
         thread_pool[i].kstack_addr = NULL;
         thread_pool[i].code_addr = NULL;
         thread_pool[i].code_size = 0;
+        
+        for(unsigned int j = 0; j < MAX_SIG_HANDLER; j++){
+            INIT_LIST_HEAD(&thread_pool[i].sig_info_pool[j].list);
+            thread_pool[i].sig_info_pool[j].ready = 0;
+            thread_pool[i].sig_info_pool[j].handler = NULL;
+        }
+        INIT_LIST_HEAD(&thread_pool[i].sig_queue_head.list);
     }
 
     run_thread_head = (Thread *)kmalloc(sizeof(Thread));
@@ -50,7 +57,7 @@ Thread *thread_create(void(*func)()){
     new_thread->ctx.lr = (unsigned long)func;
     
     for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
-        new_thread->signal_handler[i] = sig_default_handler;
+        new_thread->sig_info_pool[i].handler = sig_default_handler;
     }
 
     print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);

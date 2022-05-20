@@ -11,6 +11,7 @@
 #define KILL 7
 #define SIGNAL_ 8
 #define SIGKILL 9
+#define SIGRETURN 20
 
 #endif
 

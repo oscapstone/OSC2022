@@ -20,6 +20,7 @@ void sys_mbox_call(TrapFrame *);
 void sys_kill(TrapFrame *);
 void sys_signal(TrapFrame *);
 void sys_signal_kill(TrapFrame *);
+void sys_sigreturn(TrapFrame *);
 
 int do_getpid();
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);
