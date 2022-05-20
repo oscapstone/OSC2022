@@ -15,7 +15,7 @@ typedef void (*timer_callback)(void*);
 typedef struct{
     uint64_t ticks;
     timer_callback callback;
-    uint8_t *data;
+    void *data;
     struct list_head list;
 }timer_t;
 

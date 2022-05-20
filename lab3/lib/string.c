@@ -198,3 +198,53 @@ uint8_t hex2dec(char hex){
         return (uint8_t)hex - (uint8_t)'A' + 10;
     }
 }
+uint8_t _is_delim(char c,const char* delim){
+    uint32_t i = 0;
+    while(delim[i]){
+        if(c == delim[i++]) return 1;
+    }
+    return 0;
+}
+char* _next_token(char* s,const char* delim){
+    char* pos = s;
+
+    do{
+        if(*pos == '\0'){
+            return NULL;
+        }else if(_is_delim(*pos, delim)){
+            *pos = '\0';
+            return pos + 1;
+        }
+        pos++;
+    }while(1);
+}
+char* _skip_delim(char* s,const char* delim){
+    char* pos = s;
+    while(*pos != '\0' && _is_delim(*pos, delim)) pos++;
+    return pos;
+}
+char* strtok(char* s,const char* delim){
+    static char *pos = NULL; 
+    char *tmp_pos = NULL;
+    if(s == NULL){
+        if(pos == NULL || *pos =='\0') return NULL;
+        
+        tmp_pos = pos = _skip_delim(pos, delim);
+        if(*pos != '\0'){
+            pos = _next_token(pos, delim);
+        }else{
+            pos = tmp_pos = NULL;
+        }
+    }else{
+        if(*s == '\0') return NULL;
+
+        pos = s;
+        tmp_pos = pos = _skip_delim(pos, delim);
+        if(*pos != '\0'){
+            pos = _next_token(pos, delim);
+        }else{
+            pos = tmp_pos = NULL;
+        }
+    }
+    return tmp_pos;
+}

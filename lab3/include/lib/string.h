@@ -14,4 +14,5 @@ extern void* memcpy(void*, const void*, size_t);
 extern void* memset(void*, int, size_t);
 extern int32_t memcmp(void*, const void*, size_t);
 extern uint8_t hex2dec(char);
+extern char* strtok(char*,const char*);
 #endif
