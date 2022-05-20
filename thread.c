@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "gpio.h"
 #include "cpio.h"
+#include "command.h"
 #include "mem.h"
 #include "mbox.h"
 
@@ -20,7 +21,7 @@ void schedule(){
 			thread_list.end->next = thread_list.beg;
 			thread_list.end = thread_list.beg;
 			thread_list.beg = thread_list.beg->next;
-			thread_list.end->next = 0;
+			thread_list.end->next = NULLPTR;
 		} while(thread_list.beg->iszombie == 1);// skip zombie
 
         switch_to(get_current(), &thread_list.beg->context);
@@ -43,7 +44,7 @@ void kill_zombies(){
             thread_list.end->next = thread_list.beg;
             thread_list.end = thread_list.beg;
             thread_list.beg = thread_list.beg->next;
-            thread_list.end->next = 0;
+            thread_list.end->next = NULLPTR;
         }
     } while(thread_list.beg->pid);// idle thread
 
@@ -73,7 +74,7 @@ Thread *thread_create(void *program_start) {
     new->context.lr = (unsigned long)program_start;
     new->context.sp = (unsigned long)new->user_stack + USER_STACK_SIZE;
 
-	new->next = 0;
+	new->next = NULLPTR;
 	thread_list.end->next = new;
 	thread_list.end = new;
 
@@ -84,6 +85,7 @@ Thread *thread_create(void *program_start) {
 
 void init_schedule() {
     timer_register();
+    thread_list.beg = thread_list.end = NULLPTR;
     Thread* init = thread_create(idle);
 	asm volatile("msr tpidr_el1, %0\n"::"r"((unsigned long)init));
 
@@ -93,8 +95,8 @@ void init_schedule() {
     // enable_timer_interrupt();
     
     // run();
-	
-    // load_cpio("syscall.img");
+	asm volatile("msr ttbr0_el1, %0	\n"::"r"(0x5000));
+    load_cpio("syscall.img");
 
     // for(int i = 0; i < 3; ++i) { // N should > 2
     //     thread_create(foo);
@@ -109,9 +111,9 @@ void exec_thread(char *data, unsigned int filesize) {
 	user_thread->next = thread_list.beg;
 	thread_list.beg = user_thread;
     thread_list.end = thread_list.beg->next;
-    thread_list.end->next = 0;
+    thread_list.end->next = NULLPTR;
 
-    user_thread->program = (char *)0x7000000;
+    user_thread->program = (char *)0xFFFF000007000000;
     user_thread->program_size = filesize;
 	user_thread->context.lr = (unsigned long)user_thread->program;
 
@@ -134,7 +136,7 @@ void jump_thread(char *data, unsigned int filesize) {
 	
     Thread *user_thread = thread_list.beg;
 
-    user_thread->program = (char *)0x7000000;
+    user_thread->program = (char *)0xFFFF000007000000;
     user_thread->program_size = filesize;
 
 	user_thread->context.lr = (unsigned long)user_thread->program;
@@ -230,11 +232,14 @@ int fork(Trap_Frame *tpf) {
 
 void exit(Trap_Frame *tpf, int status) {
     thread_list.beg->iszombie = 1;
+    exec_reboot();
 }
 
 int syscall_mbox_call(Trap_Frame *tpf, unsigned char ch, unsigned int *mbox) {
     disable_current_interrupt();
-    unsigned long r = (((unsigned long)((unsigned long)mbox) & ~0xF) | (ch & 0xF));
+    // physical mailbox address
+    unsigned int *pmbox = (unsigned int *)((unsigned long)mbox - KVA);
+    unsigned long r = (((unsigned long)((unsigned long)pmbox) & ~0xF) | (ch & 0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");} while (*MBOX_STATUS & MBOX_FULL);
     /* write the address of our message to the mailbox with channel identifier */
@@ -281,7 +286,7 @@ void run() {
 	user_thread->next = thread_list.beg;
 	thread_list.beg = user_thread;
     thread_list.end = thread_list.beg->next;
-    thread_list.end->next = 0;
+    thread_list.end->next = NULLPTR;
 
 	enable_current_interrupt();
 

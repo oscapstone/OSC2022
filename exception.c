@@ -8,8 +8,8 @@
 
 #define AUX_IRQ (1 << 29)
 #define IRQ_PENDING_1			((volatile unsigned int*)(MMIO_BASE+0x0000b204))
-#define CORE0_TIMER_IRQ_CTRL 	((volatile unsigned int*)(MMIO_BASE+0x40000040))
-#define CORE0_INTERRUPT_SOURCE	((volatile unsigned int *)(0x40000060))
+#define CORE0_TIMER_IRQ_CTRL 	((volatile unsigned int*)(KVA+0x40000040))
+#define CORE0_INTERRUPT_SOURCE	((volatile unsigned int *)(KVA+0x40000060))
 
 
 void enable_current_interrupt() {

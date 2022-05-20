@@ -76,13 +76,13 @@ _start:
     // exception level init
     bl from_el2_to_el1
     // the next instruction runs in EL1
+    
+    // set MMU identity paging
+    bl identity_paging
 
     // set exception vector table
 	adr x0, exception_vector_table
 	msr VBAR_EL1, x0
-
-    // set MMU identity paging
-    bl identity_paging
 
     // set top of stack just before our code
     ldr     x1, =0xFFFF00003C000000
@@ -260,10 +260,12 @@ get_current:
 #define PD_BLOCK 0b01
 #define PD_PAGE 0b11
 #define PD_ACCESS (1 << 10)
+#define USER_RW ((1 << 6) | (0 << 7))
 #define BOOT_PGD_ATTR PD_TABLE
 #define BOOT_PUD_ATTR PD_TABLE
 
 #define PD_RAM_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
+#define USER_READ_WRITE (PD_ACCESS | USER_RW | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
 #define PD_PERIPHERAL_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
 #define PD_RAM (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
 #define PD_OUTPUT_MASK 0x0000fffffffff000
@@ -300,9 +302,39 @@ identity_paging:
 
     // PMD's 0x00000000 ~ 0x3F000000
     mov x1, 0x3000 // PMD's page frame at 0x3000
-    ldr x10, = PD_PERIPHERAL_ATTR
+    ldr x10, = PD_RAM_ATTR
     mov x2, 0x00000000
-    mov x4, #504
+    mov x4, #1
+5:  orr x3, x10, x2
+    str x3, [x1] // 2nd 1GB mapped by the 2nd entry of PUD
+    add x1, x1, #8
+    add x2, x2, #0x200000
+    sub x4, x4, #1
+    cbnz x4, 5b
+
+    // PMD's 0x00000000 ~ 0x3F000000
+    ldr x10, = USER_READ_WRITE
+    mov x4, #478
+6:  orr x3, x10, x2
+    str x3, [x1] // 2nd 1GB mapped by the 2nd entry of PUD
+    add x1, x1, #8
+    add x2, x2, #0x200000
+    sub x4, x4, #1
+    cbnz x4, 6b
+
+    // PMD's 0x00000000 ~ 0x3F000000
+    ldr x10, = PD_RAM_ATTR
+    mov x4, #1
+7:  orr x3, x10, x2
+    str x3, [x1] // 2nd 1GB mapped by the 2nd entry of PUD
+    add x1, x1, #8
+    add x2, x2, #0x200000
+    sub x4, x4, #1
+    cbnz x4, 7b
+
+    // PMD's 0x00000000 ~ 0x3F000000
+    ldr x10, = PD_RAM_ATTR
+    mov x4, #24
 8:  orr x3, x10, x2
     str x3, [x1] // 2nd 1GB mapped by the 2nd entry of PUD
     add x1, x1, #8
@@ -320,7 +352,32 @@ identity_paging:
     sub x4, x4, #1
     cbnz x4, 9b
 
-    mov x1, 0x1000
+    mov x3, 0x5000 // PGD's page frame at 0x1000
+    mov x1, 0x6000 // PUD's page frame at 0x2000
+    // PGD's PUD
+    ldr x2, = BOOT_PGD_ATTR
+    orr x2, x1, x2 // combine the physical address of next level page with attribute.
+    str x2, [x3]
+
+    // PUD's PMD
+    ldr x2, = BOOT_PUD_ATTR
+    mov x3, 0x7000 // PMD's page frame at 0x3000
+    orr x3, x2, x3
+    str x3, [x1]
+
+    // PMD's 0x00000000 ~ 0x3F000000
+    mov x1, 0x7000 // PMD's page frame at 0x3000
+    ldr x10, = USER_READ_WRITE
+    mov x2, 0x3C000000
+    mov x4, #24
+10: orr x3, x10, x2
+    str x3, [x1, 480*8] // 2nd 1GB mapped by the 2nd entry of PUD
+    add x1, x1, #8
+    add x2, x2, #0x200000
+    sub x4, x4, #1
+    cbnz x4, 10b
+
+    mov x1, 0x5000
     msr ttbr0_el1, x0 // load PGD to the bottom translation-based register.
     msr ttbr1_el1, x0 // also load PGD to the upper translation based register.
 

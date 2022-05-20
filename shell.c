@@ -41,7 +41,7 @@ void shell() {
     uart_puts("# ");
 
     enable_current_interrupt(); // ------v
-    // init_schedule();
+    init_schedule();
 
     // read input
     while (1) {

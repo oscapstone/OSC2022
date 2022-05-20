@@ -3,6 +3,7 @@
 #include "uart.h"
 
 // #define MEM_DEMO_LOG
+#define NULLPTR ((void*)0xFFFF000000000000)
 #define BUDDY_MAX_ORDER 5
 #define BUDDY_MAX_LEN (1 << BUDDY_MAX_ORDER)
 #define FRAME_SIZE 4096
@@ -10,7 +11,7 @@
 #define RESERVED_LEN 32
 extern unsigned char _start, _end;
 
-unsigned long mem_position = (unsigned long)&_end;
+unsigned long mem_position = (unsigned long)0xFFFF000009000000;
 
 void* simple_malloc(unsigned long size) {
     void *chunk = (void*)mem_position;
@@ -137,7 +138,7 @@ mem_frame *ask_mem(unsigned int need_order) {
     unsigned int current_order = need_order + 1;
     while (current_order <= BUDDY_MAX_ORDER) {
         mem_frame *target = buddy_system[current_order].next;
-        if (!target) {
+        if (target == NULLPTR) {
             current_order++;
         }
         else {
@@ -163,7 +164,7 @@ mem_frame *buddy_malloc(unsigned int size) {
     }
 
     mem_frame *target = buddy_system[need_order].next;
-    if (!target) {
+    if (target == NULLPTR) {
         target = ask_mem(need_order);
     }
 
@@ -195,7 +196,7 @@ chunk *init_chunk(mem_frame *target) {
         slot->chunk_slot[i].position = i;
     }
     slot->chunk_slot[0].order = FRAME_SIZE/CHUNK_SIZE;
-    slot->chunk_slot[0].next = 0;
+    slot->chunk_slot[0].next = NULLPTR;
     slot->chunk_slot[0].prev = slot->curr;
     return slot;
 };
@@ -240,7 +241,7 @@ mem_frame *ask_chunk(unsigned int need_len) {
 mem_frame *chunk_malloc(unsigned int size) {
     unsigned int need_len = (size-1) / CHUNK_SIZE +1;
     mem_frame *target = find_slot(need_len);
-    if (!target) {
+    if (target == NULLPTR) {
         target = ask_chunk(need_len);
     }
     target->free = 0;
@@ -253,7 +254,7 @@ mem_frame *chunk_malloc(unsigned int size) {
 int slot_merge(mem_frame *slot) {
     // right
     mem_frame *target = slot->next;
-    if (target != 0 && target->free) {
+    if (target != NULLPTR && target->free) {
         target->free = 0;
         slot->order += target->order;
         target->next->prev = slot;
@@ -380,7 +381,7 @@ void init_buddy() {
         frame_array[i].free = 0;
     }
     for (int i=0; i<BUDDY_MAX_ORDER+1; i++) {
-        buddy_system[i].next = 0;
+        buddy_system[i].next = NULLPTR;
         buddy_system[i].next->prev = &buddy_system[i];
     }
     buddy_system[5].next->prev = &frame_array[0];
@@ -391,7 +392,7 @@ void init_buddy() {
     buddy_system[5].next->free = 1;
     
     // init chunk slots
-    chunk_system.next = 0;
+    chunk_system.next = NULLPTR;
     chunk_system.next->prev = &chunk_system;
 
     mem_position -= FRAME_SIZE*BUDDY_MAX_LEN;

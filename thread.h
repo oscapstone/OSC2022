@@ -2,6 +2,7 @@
 #define THREAD_h
 
 #include "exception.h"
+#define NULLPTR ((void*)0xFFFF000000000000)
 #define THREAD_SIZE 0x1000
 #define USER_STACK_SIZE 0x1000
 #define KERNEL_STACK_SIZE 0x1000
