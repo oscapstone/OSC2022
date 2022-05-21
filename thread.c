@@ -38,6 +38,8 @@ void kill_zombies(){
             Thread *zombie = thread_list.beg;
             thread_list.beg = thread_list.beg->next;
             zombie->iszombie = 0;
+            kfree(zombie->user_stack);
+            kfree(zombie->kernel_stack);
             kfree(zombie);
         }
         else {
@@ -62,13 +64,13 @@ void idle() {
 Thread *thread_create(void *program_start) {
 	// disable_current_interrupt();
 
-    Thread *new = kmalloc(THREAD_SIZE + USER_STACK_SIZE + KERNEL_STACK_SIZE);
+    Thread *new = kmalloc(THREAD_SIZE);
 
     new->pid = thread_list.pid_cnt++;
     new->parent = new->iszombie = 0;
 
-    new->user_stack = (char*)((unsigned long)new + THREAD_SIZE);
-    new->kernel_stack = (char*)((unsigned long)new + THREAD_SIZE + USER_STACK_SIZE);
+    new->user_stack = (char*)kmalloc(USER_STACK_SIZE);
+    new->kernel_stack = (char*)kmalloc(KERNEL_STACK_SIZE);
     
 	new->context.fp = (unsigned long)new->user_stack + USER_STACK_SIZE;
     new->context.lr = (unsigned long)program_start;
@@ -95,7 +97,6 @@ void init_schedule() {
     // enable_timer_interrupt();
     
     // run();
-	asm volatile("msr ttbr0_el1, %0	\n"::"r"(0x5000));
     load_cpio("syscall.img");
 
     // for(int i = 0; i < 3; ++i) { // N should > 2
@@ -206,8 +207,11 @@ int fork(Trap_Frame *tpf) {
 	child->parent = parent->pid;
     int parent_pid = parent->pid;
 
-    for (int i = 0; i < (USER_STACK_SIZE+KERNEL_STACK_SIZE); i++) {
+    for (int i = 0; i < (USER_STACK_SIZE); i++) {
         child->user_stack[i] = parent->user_stack[i];
+    }
+    for (int i = 0; i < (KERNEL_STACK_SIZE); i++) {
+        child->kernel_stack[i] = parent->kernel_stack[i];
     }
     
     store_context(get_current());

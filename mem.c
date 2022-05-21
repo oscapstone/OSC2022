@@ -11,7 +11,7 @@
 #define RESERVED_LEN 32
 extern unsigned char _start, _end;
 
-unsigned long mem_position = (unsigned long)0xFFFF000009000000;
+unsigned long mem_position = (unsigned long)0xFFFF000002000000;
 
 void* simple_malloc(unsigned long size) {
     void *chunk = (void*)mem_position;
@@ -113,13 +113,13 @@ mem_frame *check_merge(mem_frame *my_frame) {
     if (buddy_frame->free && buddy_frame->order == my_frame->order)
         return master ? my_frame : buddy_frame;
     else
-        return 0;
-    return 0;
+        return NULLPTR;
+    return NULLPTR;
 };
 
 void merge(mem_frame *my_frame) {
     mem_frame *merge_frame = check_merge(my_frame);
-    if (merge_frame) {
+    if (merge_frame != NULLPTR) {
         mem_frame *buddy_frame = &frame_array[merge_frame->position + (1 << merge_frame->order)];
         merge_frame->order++;
         buddy_frame->order++;
@@ -150,7 +150,7 @@ mem_frame *ask_mem(unsigned int need_order) {
         }
     } 
     printf("out-of-memory");
-    return 0;
+    return NULLPTR;
 }
 
 mem_frame *buddy_malloc(unsigned int size) {
@@ -202,6 +202,8 @@ chunk *init_chunk(mem_frame *target) {
 };
 
 mem_frame *slot_malloc(chunk *my_chunk, mem_frame *slot, unsigned int need_len) {
+    if (need_len == slot->order)
+        return slot;
     mem_frame *bound = &my_chunk->chunk_slot[need_len+slot->position];
     bound->next = slot->next;
     slot->next->prev = bound;
@@ -217,9 +219,9 @@ mem_frame *slot_malloc(chunk *my_chunk, mem_frame *slot, unsigned int need_len) 
 mem_frame *find_slot(unsigned int need_len) {
     chunk *target = chunk_system.next;
     mem_frame *slot;
-    while (target) {
+    while (target != NULLPTR) {
         slot = target->curr;
-        while (slot) {
+        while (slot != NULLPTR) {
             if (slot->free && slot->order >= need_len) {
                 slot = slot_malloc(target, slot, need_len);
                 return slot;
@@ -228,7 +230,7 @@ mem_frame *find_slot(unsigned int need_len) {
         }
         target = target->next;
     }
-    return 0;    
+    return NULLPTR;    
 };
 
 mem_frame *ask_chunk(unsigned int need_len) {
