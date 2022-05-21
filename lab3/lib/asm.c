@@ -1,4 +1,12 @@
 #include "types.h"
+void local_irq_enable(){
+    asm volatile("msr DAIFClr, 0xf");
+}
+
+void local_irq_disable(){
+    asm volatile("msr DAIFSet, 0xf");
+}
+
 uint32_t get_currentEL(){
     uint64_t curEL = 0;
     asm volatile("mrs %0, CurrentEL"
