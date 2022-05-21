@@ -26,5 +26,6 @@ extern void enable_core_timer_irq();
 extern void disable_core_timer_irq();
 extern void init_timer_list(); 
 extern void add_timer(timer_callback, uint8_t*, uint64_t);
+extern void timer_softirq_callback();
 
 #endif

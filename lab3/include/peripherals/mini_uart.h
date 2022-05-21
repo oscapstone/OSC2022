@@ -34,5 +34,7 @@ extern void enable_mini_uart_tx_irq();
 extern void enable_mini_uart_rx_irq();
 extern void disable_mini_uart_tx_irq();
 extern void disable_mini_uart_rx_irq();
+extern void mini_uart_tx_softirq_callback();
+extern void mini_uart_rx_softirq_callback();
 
 #endif

@@ -20,7 +20,8 @@ LIBS = \
 	 simple_malloc.o \
 	 fdt_parse.o \
 	 asm.o \
-	 ring_buffer.o
+	 ring_buffer.o \
+	 bitops.o
 		
 
 all: $(LIBS) 

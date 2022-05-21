@@ -72,8 +72,7 @@ void do_softirq(){
 
 void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , irq_funcptr disable_device_irq){
     if(nr == CORE0_TIMER) {
-        printf("\r\r%l\r\n", CORE0_TIMER);
-        write_str("\r\ntimer0\r\n");
+        write_str("timer0\r\n");
     }
     if(nr == MINI_UART_RX) {
         write_str("rx\r\n");

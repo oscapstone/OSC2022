@@ -8,6 +8,7 @@
 #include "kernel/reboot.h"
 #include "fs/initrdfs.h"
 #include "kernel/timer.h"
+#include "kernel/irq_handler.h"
 
 void simple_shell(void);
 

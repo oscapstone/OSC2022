@@ -46,6 +46,7 @@ void simple_shell(){
                    "reboot      : reboot the device\r\n" \
                    "setTimeout  : set a N seconds timer task\r\n" \
                    "              setTimeout <str> <sec>\r\n" \
+                   "irq_count   : list irq count\r\n"
             );
 
         }else if(strcmp(token, "hello") == 0){
@@ -95,6 +96,12 @@ void simple_shell(){
             add_timer(setTimeout_callback, data, timeout * 1000);
             printf("Elapsed time after booting: %l.%l\r\n", j / HZ, j % HZ);
             printf("Timer will trigger after %l seconds\r\n", timeout);
+        }else if(strcmp(token, "irq_count") == 0){
+            printf("irq_count: ");
+            for(uint32_t i = 0 ; i < END_OF_LIST ; i++){
+                printf("%l   ", irq_count[i]); 
+            }
+            printf("\r\n");
         }
     }
 }

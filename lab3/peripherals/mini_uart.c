@@ -139,6 +139,12 @@ void mini_uart_irq_init(){
     enable_mini_uart_irq(RX);
 }
 
+void mini_uart_tx_softirq_callback(){
+}
+
+void mini_uart_rx_softirq_callback(){
+}
+
 void mini_uart_irq_read(){
     while((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
         uint8_t b[1];
