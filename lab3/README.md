@@ -11,5 +11,5 @@
 - Advanced Exercise 1
     - [x] Timer Multiplexing  
 - Advanced Exercise 2
-    - [ ] Concurrent I/O Devices Handling 
+    - [x] Concurrent I/O Devices Handling 
 
