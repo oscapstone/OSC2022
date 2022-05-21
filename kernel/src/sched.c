@@ -24,12 +24,15 @@ void init_thread_pool_and_head(){
         thread_pool[i].code_addr = NULL;
         thread_pool[i].code_size = 0;
         
+        /* init signal */
         for(unsigned int j = 0; j < MAX_SIG_HANDLER; j++){
             INIT_LIST_HEAD(&thread_pool[i].sig_info_pool[j].list);
             thread_pool[i].sig_info_pool[j].ready = 0;
             thread_pool[i].sig_info_pool[j].handler = NULL;
         }
         INIT_LIST_HEAD(&thread_pool[i].sig_queue_head.list);
+        thread_pool[i].sig_stack_addr = NULL;
+        thread_pool[i].old_tp = NULL;
     }
 
     run_thread_head = (Thread *)kmalloc(sizeof(Thread));
@@ -58,6 +61,7 @@ Thread *thread_create(void(*func)()){
     
     for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
         new_thread->sig_info_pool[i].handler = sig_default_handler;
+        INIT_LIST_HEAD(&new_thread->sig_info_pool[i].list);
     }
 
     print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
@@ -87,15 +91,32 @@ void kill_zombie(){
         if(tmp->state == EXIT){
             kfree(tmp->ustack_addr);
             kfree(tmp->kstack_addr);
-            tmp->state = NOUSE;
             tmp->ustack_addr = NULL;
             tmp->kstack_addr = NULL;
+            tmp->code_addr = NULL;
+            tmp->code_size = 0;
+            tmp->state = NOUSE;
             /* cannot remove code_addr beacuse fork process share the code?? */
             // if(tmp->code_addr != NULL){
             //     kfree(tmp->code_addr);
             // }
-            tmp->code_addr = NULL;
-            tmp->code_size = 0;
+           
+
+            /* init signal */
+            for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
+                tmp->sig_info_pool[i].ready = 0;
+                tmp->sig_info_pool[i].handler = sig_default_handler;
+                INIT_LIST_HEAD(&tmp->sig_info_pool[i].list);
+            }
+            INIT_LIST_HEAD(&tmp->sig_queue_head.list);
+            if(tmp->sig_stack_addr != NULL)
+                kfree(tmp->sig_stack_addr);
+            if(tmp->old_tp != NULL)
+                kfree(tmp->old_tp);
+            tmp->sig_stack_addr = NULL;
+            tmp->old_tp = NULL;
+
+            /* remove from run_thread_head */
             list_del_entry(&tmp->list);
         }
     }

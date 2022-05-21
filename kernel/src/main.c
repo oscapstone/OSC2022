@@ -29,7 +29,7 @@ int main(unsigned long dtb_base){
     enable_timer_irq();
     enable_irq(); // DAIF set to 0b0000
 
-    // kernel_exec("user2.img");
+    // kernel_exec("syscall.img");
     // kernel_main();
 
     PrintWelcome();

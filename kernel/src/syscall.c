@@ -9,6 +9,8 @@
 #include <string.h>
 #include <timer.h>
 #include <mailbox.h>
+#include <sched.h>
+#include <signal.h>
 
 extern Thread *thread_pool;
 extern Thread *run_thread_head;
@@ -81,6 +83,22 @@ int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
     /* set current trapFrame elr_el1(begin of code) and sp_el0(begin of user stack)*/
     trapFrame->elr_el1 = (unsigned long)curr_thread->code_addr;
     trapFrame->sp_el0 = (unsigned long)curr_thread->ustack_addr + STACK_SIZE;
+
+
+    /* maybe need to reset the signal 0.0? */
+    for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
+        curr_thread->sig_info_pool[i].ready = 0;
+        curr_thread->sig_info_pool[i].handler = sig_default_handler;
+        INIT_LIST_HEAD(&curr_thread->sig_info_pool[i].list);
+    }
+    INIT_LIST_HEAD(&curr_thread->sig_queue_head.list);
+    if(curr_thread->sig_stack_addr != NULL)
+        kfree(curr_thread->sig_stack_addr);
+    if(curr_thread->old_tp != NULL)
+        kfree(curr_thread->old_tp);
+    curr_thread->sig_stack_addr = NULL;
+    curr_thread->old_tp = NULL;
+
     enable_irq();
     return 0;
 }
@@ -160,7 +178,7 @@ int do_fork(TrapFrame *trapFrame){
     memcpy((char *)&new_thread->ctx, (char *)&curr_thread->ctx, sizeof(CpuContext));
 
     /* copy signal */
-    memcpy((char *)&new_thread->sig_info_pool, (char *)&curr_thread->sig_info_pool, MAX_SIG_HANDLER);
+    memcpy((char *)&new_thread->sig_info_pool, (char *)&curr_thread->sig_info_pool, MAX_SIG_HANDLER * sizeof(SignalInfo));
     for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
         if(new_thread->sig_info_pool[i].ready > 0){
             list_add_tail(&new_thread->sig_info_pool[i].list, &new_thread->sig_queue_head.list);
@@ -239,8 +257,25 @@ int do_kill(int pid){
     return 0;
 }
 
-void sys_signal(TrapFrame *trapFrame){
+void sys_signal_register(TrapFrame *trapFrame){
+    disable_irq();
+    int signal = trapFrame->x[0];
+    SigHandler handler = (SigHandler)trapFrame->x[1];
+    int status = do_signal_register(signal, handler);
+    if(status == -1) 
+        print_string(UITOA, "[x] signal register fail, signal: ", signal, 1);
+    // else
+        // print_string(UITOA, "[*] signal register success, signal: ", signal, 1);
+    enable_irq();
+}
 
+int do_signal_register(int signal, SigHandler handler){
+    Thread *curr_thread = get_current();
+    if(!(signal >= 0 && signal < MAX_SIG_HANDLER))
+        return -1;
+    
+    curr_thread->sig_info_pool[signal].handler = handler;
+    return 0;
 }
 
 void sys_signal_kill(TrapFrame *trapFrame){
@@ -251,8 +286,8 @@ void sys_signal_kill(TrapFrame *trapFrame){
 
     if(status == -1) 
         print_string(UITOA, "[x] signal_kill fail, pid: ", pid, 1);
-    else
-        print_string(UITOA, "[*] signal_kill ready, pid: ", pid, 1);
+    // else
+    //     print_string(UITOA, "[*] signal_kill ready, pid: ", pid, 1);
 
     enable_irq();
 }
@@ -278,7 +313,7 @@ void sys_sigreturn(TrapFrame *trapFrame){
     disable_irq();
     Thread *current = get_current();
     /* load the old trap frame */
-    memcpy((char *)&current->old_tp, (char *)trapFrame, sizeof(trapFrame));
+    memcpy((char *)trapFrame, (char *)current->old_tp, sizeof(TrapFrame));
     kfree(current->sig_stack_addr);
     kfree(current->old_tp);
     current->sig_stack_addr = NULL;

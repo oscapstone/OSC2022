@@ -12,16 +12,16 @@ void check_sig_queue(TrapFrame *trapFrame){
     disable_irq();
     Thread *current = get_current();
 
+
     // if(current->running_signal == 1)
     //     goto ENABLE_IRQ;
-    // uart_puts("HI");
     if(list_empty(&current->sig_queue_head.list)){
         goto ENABLE_IRQ;
     }
-
+    
     SignalInfo *sigInfo = (SignalInfo *)current->sig_queue_head.list.next;
     if(sigInfo->ready > 0){
-        sigInfo->ready--;
+        sigInfo->ready = 0;
         /* call the default handler(do_exit(0)) */
         if(sigInfo->handler == sig_default_handler){
             sigInfo->handler(); 

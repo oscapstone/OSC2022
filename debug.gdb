@@ -1,3 +1,3 @@
 file kernel8.elf
-b *0x81920
+b *sys_sigreturn
 target remote :1234

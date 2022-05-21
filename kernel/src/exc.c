@@ -57,7 +57,7 @@ void syscall_handler(unsigned int syscall_id, TrapFrame *trapFrame){
         sys_kill(trapFrame);
         break;
     case SIGNAL_:
-        sys_signal(trapFrame);
+        sys_signal_register(trapFrame);
         break;
     case SIGKILL:
         sys_signal_kill(trapFrame);
