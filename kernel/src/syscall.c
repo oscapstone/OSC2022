@@ -34,6 +34,7 @@ int do_getpid(){
 
 /* Return the number of bytes read by reading size byte into the user-supplied buffer buf. */
 void sys_uart_read(TrapFrame *trapFrame){
+    disable_irq();
     char *buf = (char *)trapFrame->x[0];
     unsigned int size = trapFrame->x[1];
     enable_irq();
@@ -45,12 +46,13 @@ void sys_uart_read(TrapFrame *trapFrame){
 
 /* Return the number of bytes written after writing size byte from the user-supplied buffer buf. */
 void sys_uart_write(TrapFrame *trapFrame){
+    disable_irq();
     const char *buf = (char *)trapFrame->x[0];
     unsigned int size = trapFrame->x[1];
     unsigned int i;
     enable_irq();
     for(i = 0; i < size; i++){
-        async_uart_putc(buf[i]);
+        uart_putc(buf[i]);
     }
     disable_irq();
     trapFrame->x[0] = i;

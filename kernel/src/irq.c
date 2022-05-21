@@ -14,8 +14,6 @@ void irq_handler(unsigned long long spsr, TrapFrame *trapFrame){
     if(*CORE0_IRQ_SOURCE & 0x2) Time_interrupt(spsr);
     else if(*CORE0_IRQ_SOURCE & 0x100) GPU_interrupt();
 
-        // print_string(UITOHEX, "spsr = ", spsr, 0);
-        // print_string(UITOHEX, "pid = ", get_current()->id, 1);
     /* check the spsr if it is from user mode */
     spsr &= 0b1111;
     if(spsr == 0x0){
