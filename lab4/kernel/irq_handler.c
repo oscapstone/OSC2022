@@ -36,13 +36,6 @@ void set_softirq_pending(uint16_t val){
     softirq_s.pending = val;
 }
 
-void local_irq_enable(){
-    asm volatile("msr DAIFClr, 0xf");
-}
-
-void local_irq_disable(){
-    asm volatile("msr DAIFSet, 0xf");
-}
 
 void add_softirq_task(uint32_t softirq_nr){
     softirq_s.pending |= (1 << softirq_nr);
@@ -71,13 +64,6 @@ void do_softirq(){
 }
 
 void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , irq_funcptr disable_device_irq){
-    if(nr == CORE0_TIMER) {
-        write_str("timer0\r\n");
-    }
-    if(nr == MINI_UART_RX) {
-        write_str("rx\r\n");
-        printf("pending: %x\r\n", get_softirq_pending());
-    }
     disable_device_irq();
     irq_count[nr]++;
     do_hardirq();

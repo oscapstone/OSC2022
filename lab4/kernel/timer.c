@@ -26,7 +26,6 @@ void timer_softirq_callback(){
             t->callback(t->data); 
         }
     }
-    while(1);
 }
 
 void init_timer_list(void){
