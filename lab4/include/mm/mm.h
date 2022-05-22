@@ -17,6 +17,13 @@ struct mem_block{
     uint64_t end;
     struct list_head list;
 };
+
+struct mem_node{
+    uint64_t start;
+    uint64_t end;
+    char *name;
+    struct list_head list;
+};
 extern void mm_init(void *);
 
 #endif

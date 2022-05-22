@@ -41,5 +41,5 @@ SECTIONS
     __heap_start = .;
 
     __EL1_stack_size = 0x4000;
-    __EL1_stack = 0x200000;
+    __EL1_stack = 0x20000000;
 }
