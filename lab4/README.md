@@ -11,6 +11,6 @@
 - Advanced Exercise 2
     - [ ] Reserved Memory  
 - Advanced Exercise 3
-    - [ ] Startup Allocation 
+    - [x] Startup Allocation 
 
 
