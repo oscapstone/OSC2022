@@ -71,19 +71,21 @@ int exec_thread(char *data, unsigned int filesize)
 {
     thread_t *t = thread_create(data, filesize);
 
-    mappages(t->context.ttbr0_el1, 0x3C000000L, 0x3000000L, 0x3C000000L);
-    mappages(t->context.ttbr0_el1, 0x3F000000L, 0x1000000L, 0x3F000000L);
-    mappages(t->context.ttbr0_el1, 0x40000000L, 0x40000000L, 0x40000000L);
+    mappages(t->context.ttbr0_el1, 0x3C000000L, 0x3000000L, 0x3C000000L, 0);
+    mappages(t->context.ttbr0_el1, 0x3F000000L, 0x1000000L, 0x3F000000L, 0);
+    mappages(t->context.ttbr0_el1, 0x40000000L, 0x40000000L, 0x40000000L, 0);
 
-    mappages(t->context.ttbr0_el1, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(t->stack_alloced_ptr));
-    mappages(t->context.ttbr0_el1, 0x0, filesize, (size_t)VIRT_TO_PHYS(t->data));
+    mappages(t->context.ttbr0_el1, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(t->stack_alloced_ptr), 0);
+    mappages(t->context.ttbr0_el1, 0x0, filesize, (size_t)VIRT_TO_PHYS(t->data), 0);
+
+    // for signal wrapper
+    mappages(t->context.ttbr0_el1, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), PD_RDONLY);
 
     t->context.ttbr0_el1 = VIRT_TO_PHYS(t->context.ttbr0_el1);
     t->context.sp = 0xfffffffff000;
     t->context.fp = 0xfffffffff000;
     t->context.lr = 0L;
 
-    t->context.lr = (unsigned long)0L;
     //copy file into data
     for (int i = 0; i < filesize;i++)
     {
@@ -100,8 +102,13 @@ int exec_thread(char *data, unsigned int filesize)
         "msr spsr_el1, xzr\n\t" // enable interrupt in EL0. You can do it by setting spsr_el1 to 0 before returning to EL0.
         "msr sp_el0, %2\n\t"
         "mov sp, %3\n\t"
+        "dsb ish\n\t"        // ensure write has completed
         "msr ttbr0_el1, %4\n\t"
-        "eret\n\t" ::"r"(&t->context),"r"(t->context.lr), "r"(t->context.sp), "r"(t->kernel_stack_alloced_ptr + KSTACK_SIZE), "r"(t->context.ttbr0_el1));
+        "tlbi vmalle1is\n\t" // invalidate all TLB entries
+        "dsb ish\n\t"        // ensure completion of TLB invalidatation
+        "isb\n\t"            // clear pipeline"
+        "eret\n\t" ::"r"(&t->context),
+        "r"(t->context.lr), "r"(t->context.sp), "r"(t->kernel_stack_alloced_ptr + KSTACK_SIZE), "r"(t->context.ttbr0_el1));
 
     return 0;
 }

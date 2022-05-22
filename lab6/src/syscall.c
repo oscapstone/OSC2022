@@ -32,7 +32,9 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size; i++)
     {
-        uart_async_putc(buf[i]);
+        lock();
+        uart_putc(buf[i]);
+        unlock();
     }
     tpf->x0 = i;
     return i;
@@ -47,7 +49,7 @@ int exec(trapframe_t *tpf,const char *name, char *const argv[])
     curr_thread->data = kmalloc(curr_thread->datasize);
 
     //remap code
-    mappages(PHYS_TO_VIRT(curr_thread->context.ttbr0_el1), 0x0, curr_thread->datasize, (size_t)VIRT_TO_PHYS(curr_thread->data));
+    mappages(PHYS_TO_VIRT(curr_thread->context.ttbr0_el1), 0x0, curr_thread->datasize, (size_t)VIRT_TO_PHYS(curr_thread->data), 0);
 
     for (unsigned int i = 0; i < curr_thread->datasize; i++)
     {
@@ -77,13 +79,16 @@ int fork(trapframe_t *tpf)
         newt->singal_handler[i] = curr_thread->singal_handler[i];
     }
 
-    mappages(newt->context.ttbr0_el1, 0x3C000000L, 0x3000000L, 0x3C000000L);
-    mappages(newt->context.ttbr0_el1, 0x3F000000L, 0x1000000L, 0x3F000000L);
-    mappages(newt->context.ttbr0_el1, 0x40000000L, 0x40000000L, 0x40000000L);
+    mappages(newt->context.ttbr0_el1, 0x3C000000L, 0x3000000L, 0x3C000000L,0);
+    mappages(newt->context.ttbr0_el1, 0x3F000000L, 0x1000000L, 0x3F000000L,0);
+    mappages(newt->context.ttbr0_el1, 0x40000000L, 0x40000000L, 0x40000000L,0);
 
     // remap code and stack
-    mappages(newt->context.ttbr0_el1, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(newt->stack_alloced_ptr));
-    mappages(newt->context.ttbr0_el1, 0x0, newt->datasize, (size_t)VIRT_TO_PHYS(newt->data));
+    mappages(newt->context.ttbr0_el1, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(newt->stack_alloced_ptr),0);
+    mappages(newt->context.ttbr0_el1, 0x0, newt->datasize, (size_t)VIRT_TO_PHYS(newt->data),0);
+
+    // for signal wrapper
+    mappages(newt->context.ttbr0_el1, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), PD_RDONLY);
 
     //在這段page被蓋爁
     int parent_pid = curr_thread->pid;
@@ -107,7 +112,7 @@ int fork(trapframe_t *tpf)
     }
 
     //在這段page被蓋爁
-    
+
     store_context(get_current());
     //for child
     if( parent_pid != curr_thread->pid)
@@ -182,7 +187,5 @@ void signal_kill(int pid, int signal)
 
 void sigreturn(trapframe_t *tpf)
 {
-    unsigned long signal_ustack = tpf->sp_el0 % USTACK_SIZE == 0 ? tpf->sp_el0 - USTACK_SIZE : tpf->sp_el0 & (~(USTACK_SIZE - 1));
-    kfree((char*)signal_ustack);
     load_context(&curr_thread->signal_saved_context);
 }

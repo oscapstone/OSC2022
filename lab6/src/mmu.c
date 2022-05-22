@@ -14,7 +14,8 @@ void* set_2M_kernel_mmu(void* x0)
         if ((0x00000000 + (0x200000L) * i) >= 0x3F000000L)
         {
             pud_table[i] = PD_ACCESS + PD_BLOCK + (0x00000000 + (0x200000L) * i) + (MAIR_DEVICE_nGnRnE << 2) + PD_UK_ACCESS;
-        }else
+        }
+        else
         {
             pud_table[i] = PD_ACCESS + PD_BLOCK + (0x00000000 + (0x200000L) * i) + (MAIR_IDX_NORMAL_NOCACHE << 2);
         }
@@ -35,7 +36,7 @@ void* set_2M_kernel_mmu(void* x0)
 }
 
 // pa,va aligned to 4K
-void map_one_page(size_t *virt_pgd_p, size_t va, size_t pa)
+void map_one_page(size_t *virt_pgd_p, size_t va, size_t pa, size_t flag)
 {
     size_t *table_p = virt_pgd_p;
     for (int level = 0; level < 4; level++)
@@ -45,7 +46,7 @@ void map_one_page(size_t *virt_pgd_p, size_t va, size_t pa)
         if (level == 3)
         {
             table_p[idx] = pa;
-            table_p[idx] |= PD_ACCESS | PD_TABLE | (MAIR_IDX_NORMAL_NOCACHE << 2) | (PD_UK_ACCESS);
+            table_p[idx] |= PD_ACCESS | PD_TABLE | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_UK_ACCESS | PD_KNX | flag;
             return;
         }
 
@@ -54,7 +55,7 @@ void map_one_page(size_t *virt_pgd_p, size_t va, size_t pa)
             size_t* newtable_p =kmalloc(0x1000);
             memset(newtable_p, 0, 0x1000);
             table_p[idx] = VIRT_TO_PHYS((size_t)newtable_p);
-            table_p[idx] |= PD_ACCESS | PD_TABLE | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_UK_ACCESS;
+            table_p[idx] |= PD_ACCESS | PD_TABLE | (MAIR_IDX_NORMAL_NOCACHE << 2) | flag;
         }
 
         table_p = (size_t*)PHYS_TO_VIRT((size_t)(table_p[idx] & ENTRY_ADDR_MASK));
@@ -62,11 +63,12 @@ void map_one_page(size_t *virt_pgd_p, size_t va, size_t pa)
 }
 
 //give 
-void mappages(size_t *virt_pgd_p, size_t va, size_t size, size_t pa)
+void mappages(size_t *virt_pgd_p, size_t va, size_t size, size_t pa, size_t flag)
 {
+    pa = pa - (pa % 0x1000); // align
     for (size_t s = 0; s < size; s+=0x1000)
     {
-        map_one_page(virt_pgd_p, va + s, pa + s);
+        map_one_page(virt_pgd_p, va + s, pa + s, flag);
     }
 }
 

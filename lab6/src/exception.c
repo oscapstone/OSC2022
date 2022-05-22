@@ -10,6 +10,11 @@
 // For svc 0 (supervisor call)
 void sync_64_router(trapframe_t* tpf)
 {
+    //uart_printf("syscall no : %d\r\n", tpf->x8);
+    //uart_printf("elr_el1    : 0x%x\r\n", tpf->elr_el1);
+    //uart_printf("sp_el0    : 0x%x\r\n", tpf->sp_el0);
+    //uart_printf("spsr_el1    : 0x%x\r\n", tpf->spsr_el1);
+    //while(1);
     enable_interrupt();
     unsigned long long syscall_no = tpf->x8;
 

@@ -14,9 +14,11 @@
 
 #define PD_TABLE 0b11L
 #define PD_BLOCK 0b01L
-#define PD_UNX (1L<<54)
+#define PD_UNX (1L << 54)
+#define PD_KNX (1L << 53)
 #define PD_ACCESS (1L << 10)
 #define PD_UK_ACCESS (1L << 6)
+#define PD_RDONLY    (1L << 7)
 #define BOOT_PGD_ATTR PD_TABLE
 #define BOOT_PUD_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
 
@@ -30,8 +32,8 @@
 #define kernel_pud_addr 0x2000
 
 void *set_2M_kernel_mmu(void *x0);
-void map_one_page(size_t *pgd_p, size_t va, size_t pa);
-void mappages(size_t *pgd_p, size_t va, size_t size, size_t pa);
+void map_one_page(size_t *pgd_p, size_t va, size_t pa, size_t flag);
+void mappages(size_t *pgd_p, size_t va, size_t size, size_t pa, size_t flag);
 void free_page_tables(size_t *page_table, int level);
 
 #endif //__ASSEMBLER__
