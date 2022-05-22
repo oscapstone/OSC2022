@@ -29,7 +29,6 @@ void c_irq_handler() {
   volatile uint64_t irq_src = *CORE0_IRQ_SOURCE;
   if (irq_src & (1<<1)) {
     // bit 1 indicates cntpnsirq interrupt
-    // print("[K] Receive core_timer irq\n");
     timerInterruptHandler();
   } else if (irq_src & (1<<8)) {
     print("[K] Receive GPU irq\n");

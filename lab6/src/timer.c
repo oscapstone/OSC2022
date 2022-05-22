@@ -1,8 +1,7 @@
 #include "timer.h"
 #include "mini_uart.h"
+#include "mmu.h"
 #include <stdint.h>
-
-#define CORE0_TIMER_IRQ_CTRL ((volatile uint32_t*)0x40000040)
 
 uint64_t get_cpu_freq() {
   static uint64_t cpu_freq;

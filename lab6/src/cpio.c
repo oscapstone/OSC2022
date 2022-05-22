@@ -1,6 +1,7 @@
 #include "cpio.h"
 #include "string.h"
 #include <stddef.h>
+#include <textio.h>
 
 #define FILENAME_LEN 256
 #define min(x, y) ((x) > (y) ? (y) : (x))
@@ -51,6 +52,7 @@ uint32_t cpio_read(struct cpio_newc_header *p_header, uint32_t offset,
   uint32_t fsize = cpio_filesize(p_header) - offset;
   char *content = ((char*)p_header) + sizeof(struct cpio_newc_header) + nsize + offset;
   int i;
+  // kprintf("fsize: 0x%x, size: 0x%x, buf: 0x%x, cont: 0x%x\n", fsize, size, buf, content);
   for (i = 0; i < fsize && i < size; i++) {
     buf[i] = content[i];
   }
@@ -85,6 +87,7 @@ struct cpio_newc_header *cpio_first(uint64_t addr) {
   }
   return p_header;
 }
+
 
 struct cpio_newc_header* find_file(uint64_t initrd_addr, const char *filename, uint32_t namelen) {
   static char fname[FILENAME_LEN];

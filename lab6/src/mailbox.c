@@ -1,6 +1,8 @@
 #include "mailbox.h"
+#include "mmu.h"
+#include "task.h"
 
-#define MAILBOX_BASE    0x3f00b880
+#define MAILBOX_BASE    0xffff00003f00b880l
 
 #define MAILBOX_READ    ((volatile unsigned int*)MAILBOX_BASE)
 #define MAILBOX_STATUS  ((volatile unsigned int*)(MAILBOX_BASE + 0x18))
@@ -19,7 +21,8 @@
 #define END_TAG             0x00000000
 
 int syscall_mbox_call(unsigned char ch, unsigned int *mbox) {
-  unsigned long r = ((unsigned long)mbox & 0xFFFFFFF0) | (ch & 0xF);
+  mbox = translate(currentTask, (uint64_t)mbox);
+  unsigned long r = ((unsigned long)mbox & 0xFFFFFFF0l) | (ch & 0xF);
   while ((*MAILBOX_STATUS) & MAILBOX_FULL);
   *MAILBOX_WRITE = r;
   while (1) {

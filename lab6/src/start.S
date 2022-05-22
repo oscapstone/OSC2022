@@ -56,14 +56,51 @@ _setup_mmu:
         ldr x2, =BOOT_PGD_ATTR
         orr x2, x1, x2 // combine the physical address of next level page with attribute.
         str x2, [x0]
-
-        ldr x2, =BOOT_PUD_ATTR
-        mov x3, #0x00000000
-        orr x3, x2, x3
-        str x3, [x1] // 1st 1GB mapped by the 1st entry of PUD
+        
+        ldr x2, =BOOT_DEV_ATTR
         mov x3, #0x40000000
         orr x3, x2, x3
         str x3, [x1, 8] // 2nd 1GB mapped by the 2nd entry of PUD
+        
+        mov x2, #0x2000
+        movk x2, #4, lsl #16 // PMD's page frame at 0x42000
+        orr x3, x2, #PD_TABLE
+        str x3, [x1]
+        // mov x3, #0x00000000
+        // orr x3, x2, x3
+        // str x3, [x1] // 1st 1GB mapped by the 1st entry of PUD
+
+        // flat map 0x0 ~ 0x3f00_0000 as normal ram 0x3f00_0000 ~ 0x4000_0000 as device memory
+        // require x2 as PMD address
+        // x3 as attribute, x1 as target addr, x4 as counter, count from [0, 512), x5 tmp
+        // 0~504
+        ldr x3, =BOOT_NORM_ATTR
+        mov x1, #0x0
+        mov x4, #504
+
+__normal_ram_loop:      
+        orr x5, x1, x3
+        str x5, [x2]
+        
+        add x2, x2, #8
+        add x1, x1, #512, lsl #12
+        sub x4, x4, #1
+        cbnz x4, __normal_ram_loop
+        
+
+        // 504~511
+        ldr x3, =BOOT_DEV_ATTR
+        mov x1, #0x3F000000
+        mov x4, #8
+        
+__device_mem_loop:      
+        orr x5, x1, x3
+        str x5, [x2]
+        
+        add x2, x2, #8
+        add x1, x1, #512, lsl #12
+        sub x4, x4, #1
+        cbnz x4, __device_mem_loop
 
         msr ttbr0_el1, x0 // load PGD to the bottom translation-based register.
         msr ttbr1_el1, x0 // also load PGD to the upper translation based register.

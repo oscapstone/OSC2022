@@ -13,9 +13,11 @@ extern struct list readylist;
 extern struct listItem taskListItem[MAX_TASKS];
 
 void syscall_kill(int pid) {
-  if (pid == currentTask->pid) {
+  if (pid == 0 || pid >= MAX_TASKS) {
+    kprintf("Cannot kill task no.%d\n", pid);
+  } else if (pid == currentTask->pid) {
     currentTask->state = eTerminated;
-    while(1) asm volatile("nop");
+    schedule();
   } else {
     // kprintf("You have no permission to kill %d\n", pid);
     kprintf("kill process %d\n", pid);

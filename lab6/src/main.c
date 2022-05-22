@@ -15,8 +15,10 @@
 
 #define BUF_LEN 256
 
-uint32_t initrd_addr;
-uint32_t initrd_end;
+uint32_t pInitrdAddr;
+uint32_t pInitrdEnd;
+
+uint64_t vInitrdAddr;
 
 extern uint64_t __kernel_begin;
 extern uint64_t __bss_end;
@@ -29,7 +31,7 @@ void set_initrd_addr(const char* node_name, const char *prop_name, void* value, 
   // size 0x00000004
   if (strncmp(node_name, "chosen", 255) == 0) {
     if (strncmp(prop_name, "linux,initrd-start", 255) == 0) {
-      initrd_addr = fdt32_to_cpu(*(uint32_t*)value);
+      pInitrdAddr = fdt32_to_cpu(*(uint32_t*)value);
     }
   }
 }
@@ -40,7 +42,7 @@ void set_initrd_end(const char* node_name, const char *prop_name, void* value, u
   // size 0x00000004
   if (strncmp(node_name, "chosen", 255) == 0) {
     if (strncmp(prop_name, "linux,initrd-end", 255) == 0) {
-      initrd_end = fdt32_to_cpu(*((uint32_t*)value));
+      pInitrdEnd = fdt32_to_cpu(*((uint32_t*)value));
     }
   }
 }
@@ -51,17 +53,21 @@ void init_memory() {
   fdt_traverse(set_initrd_end);
  
   // reserve initrd
-  initrd_end = align_addr(initrd_end);
-  uint64_t initrd_size = initrd_end - initrd_addr;
-  memory_reserve((initrd_addr - MEMORY_BASE) / FRAME_SIZE, initrd_size / FRAME_SIZE);
-  kprintf("[K] Initframfs Addr: 0x%lx\n", initrd_addr);
-  kprintf("[K] Initframfs Size: 0x%lx\n", initrd_size);
+  pInitrdEnd = align_addr(pInitrdEnd);
+  uint64_t initrdSize = pInitrdEnd - pInitrdAddr;
 
+  vInitrdAddr = pInitrdAddr + VA_START;
+  
+  memory_reserve(physicalToIndex(pInitrdAddr), initrdSize / FRAME_SIZE);
+  kprintf("[K] Initframfs Addr: 0x%lx\n", vInitrdAddr);
+  kprintf("[K] Initframfs Size: 0x%x\n", initrdSize);
   // reserve spin tables
   memory_reserve(0, 1);
-  memory_reserve(0x40000/FRAME_SIZE, 2);
+  /* TODO if use finer granule, this should be modified */
+  memory_reserve(physicalToIndex(EL1_PGD), 3);
 
   // reserve kernel img
+  // ??
   uint64_t aligned_kernel_end = align_addr((uint64_t)&__bss_end);
   uint64_t kernel_begin = (uint64_t)&__kernel_begin / FRAME_SIZE * FRAME_SIZE;
   uint64_t kernel_size = aligned_kernel_end - kernel_begin;
@@ -74,41 +80,43 @@ void init_memory() {
   kprintf("[K] Device Tree Addr: 0x%lx\n", fdt_begin);
   kprintf("[K] Device Tree Size: 0x%lx\n", fdt_size);
   print("[K] Memory Reserved.\n");
+
+  // reserve framebuffer for vc
+  memory_reserve(physicalToIndex(0x3E000000), 0x1000000 / FRAME_SIZE);
+  kprintf("[K] Frame Buffer Addr: 0x%lx\n", 0x3E000000);
 }
 
-
 static void stupidTask() {
-  kprintf("<K> Start A Thread in Kernel Space\n");
+  kprintf("<StupidTask> Start A Thread in Kernel Space\n");
 
+  /* this is required by syscall.img */
   uint64_t tmp;
   asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
   tmp |= 1;
   asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
 
-  const char img[] = "syscall.img";
-  struct cpio_newc_header *p_header = find_file(VA_START+initrd_addr, img, strlen(img));
+  
+  const char img[] = "vm.img";
+  struct cpio_newc_header *p_header = find_file(vInitrdAddr, img, strlen(img));
   if (p_header == NULL) {
-    kprintf("<K> Failed to find syscall.img\n");
+    kprintf("<StupidTask> Failed to find syscall.img\n");
   }
-
-  struct taskControlBlock* currentTask = getCurrentTCB();
 
   uint32_t filesize = cpio_filesize(p_header);
   int pagecnt = filesize / FRAME_SIZE;
   if (filesize % FRAME_SIZE) pagecnt++;
 
+
   uint64_t va_exe = 0x0;
   uint64_t va_stack = 0xffffffffb000;
   
-  void* text_page = allocate_user_page(currentTask, va_exe, pagecnt);
-  cpio_read(p_header, 0, text_page, filesize); // load exe file
+  void* exe_page = allocate_user_page(currentTask, va_exe, pagecnt);
+  cpio_read(p_header, 0, exe_page, filesize);
+  
   void* user_stack_page = allocate_user_page(currentTask, va_stack, 4);
   memset(user_stack_page, 0, 4 * FRAME_SIZE);
-
-  currentTask->userStackPage = (void*)va_stack;
-  currentTask->userStackExp = 2;
   
-  startInEL0((uint64_t)va_exe);
+  startInEL0(va_exe, va_stack + 4 * FRAME_SIZE);
 }
 
 int kernel_main() {

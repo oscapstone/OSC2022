@@ -28,6 +28,7 @@ uint32_t cpio_read(struct cpio_newc_header *p_header, uint32_t offset,
 
 struct cpio_newc_header *cpio_nextfile(struct cpio_newc_header *);
 struct cpio_newc_header *cpio_first(uint64_t addr);
-struct cpio_newc_header* find_file(uint64_t addr, const char *filename, uint32_t namelen);
+struct cpio_newc_header *find_file(uint64_t addr, const char *filename,
+                                   uint32_t namelen);
 
 #endif

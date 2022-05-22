@@ -21,16 +21,18 @@
 #define PD_ACCESS_PERM (0x01 << 6)
 
 #define BOOT_PGD_ATTR PD_TABLE
-#define BOOT_PUD_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
+#define BOOT_DEV_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
+#define BOOT_NORM_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
 
 #define NORM_PTE_ATTR (PD_PAGE | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_ACCESS | PD_ACCESS_PERM)
-#define NORM_PDB_ATTR (PD_BLOCK | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_ACCESS)
+#define NORM_PDB_ATTR (PD_BLOCK | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_ACCESS | PD_ACCESS_PERM)
 #define DEV_PDB_ATTR (PD_BLOCK | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_ACCESS)
-
 
 #define VA_START 0xffff000000000000
 #define NORMAL_ATTR ATTR_RW | PD_ACCESS | PD_TABLE
 
+#define EL1_PGD 0x40000
+#define EL1_PUD 0x41000
 
 #define PGD_SHIFT 39
 #define PUD_SHIFT 30
@@ -48,11 +50,17 @@
 /* return the virtual address of a pgd */
 void* create_pgd(struct taskControlBlock* tsk);
 /* return the kva of the next level table */
-uint64_t* map_table(uint64_t *table, uint64_t shift, uint64_t va, int *new_table);
+uint64_t* map_table(struct taskControlBlock* tsk, uint64_t *table, uint64_t shift, uint64_t va);
 void map_entry(uint64_t *pte, uint64_t va, uint64_t pa);
 void map_page(struct taskControlBlock* tsk, uint64_t va, uint64_t pa);
 void *allocate_user_page(struct taskControlBlock *tsk, uint64_t va,
                          int page_num);
+void *allocate_kernel_page(struct taskControlBlock *tsk, int exp);
+void *translate(struct taskControlBlock *tsk, uint64_t va);
+void* flat_mapping_block(struct taskControlBlock* tsk, uint64_t addr, uint64_t num_2m_blk);
+
+void flush_tlb(uint64_t newpgd);
+
 #endif
 
 #endif

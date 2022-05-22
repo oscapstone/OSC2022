@@ -2,12 +2,13 @@
 #define TASK_H
 
 #include <stdint.h>
+#include "mem.h"
 
 #define MAX_TASKS 256
 #define MAX_PRIORITY 30
 #define TIME_QUANTUM_MSEC 10
-#define MAX_USER_PAGES 128
-#define MAX_KERNEL_PAGES 128
+#define MAX_USER_PAGES 32
+#define MAX_KERNEL_PAGES 32
 
 typedef enum { eFree=0, eRunning, eReady, eBlocked, eTerminated} eTaskState;
 
@@ -40,9 +41,9 @@ struct el0_regs {
 
 struct taskMemoryInfo {
   uint64_t pgd;
-  uint64_t user_pages[MAX_USER_PAGES];
+  struct pageBlock user_pages[MAX_USER_PAGES];
   uint64_t user_pages_cnt;
-  uint64_t kernel_pages[MAX_KERNEL_PAGES];
+  struct pageBlock kernel_pages[MAX_KERNEL_PAGES];
   uint64_t kernel_pages_cnt;
 };
 
@@ -51,25 +52,17 @@ struct taskControlBlock {
   uint32_t priority;
   eTaskState state;
   struct el1_regs regs;
-  void* kernelStackPage;
-  void* userStackPage;
-  int userStackExp;
-  int exePageExp;
-  void* exePage;
   struct taskMemoryInfo mem;
 };
 
 
-
-int getCurrentPid();
-struct taskControlBlock* getCurrentTCB();
 struct taskControlBlock* addTask(void (*func)(), int priority);
 
 void schedule();
 void startScheduler();
 void reset_timer();
 void timerInterruptHandler();
-void startInEL0(uint64_t pc);
+void startInEL0(uint64_t pc, uint64_t sp);
 
 
 int syscall_getpid();
@@ -81,5 +74,7 @@ extern void context_switch(struct taskControlBlock *old_tcb,
                            struct taskControlBlock *new_tcb,
                            uint64_t reg_offset);
 
+
+extern struct taskControlBlock *currentTask;
 
 #endif

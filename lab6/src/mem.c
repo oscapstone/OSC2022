@@ -3,10 +3,10 @@
 #include "mem.h"
 #include "textio.h"
 #include "devtree.h"
+#include "mmu.h"
 
 #define FREE_BODY -1
 #define ALLOCATED -3
-
 
 #define FRAME_IDX(frame_list_node) (frame_list_node-frame_list)
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -155,15 +155,18 @@ int allocate_frame(int reqexp) {
     frame_array[idx+i] = ALLOCATED;
   }
 
-  kprintf("[KMem] Page No.%d (size: 0x%x) is allocated\n", idx, (1<<reqexp)*FRAME_SIZE); 
+  // kprintf("[KMem] Page No.%d (size: 0x%x) is allocated\n", idx, (1<<reqexp)*FRAME_SIZE); 
   return idx;
 }
 
 
 int deallocate_frame(int idx) {
-  if (frame_array[idx] != ALLOCATED) return -1;
+  if (frame_array[idx] != ALLOCATED) {
+    kprintf("[KMem] failed to deallocate %d - %d\n", idx, frame_array[idx]);
+    return -1;
+  }
 
-  kprintf("[KMem] Deallocate page: %d\n", idx);
+  // kprintf("[KMem] Deallocate page: %d\n", idx);
   
   frame_array[idx] = 0;
   append_frame(&frame_list[idx], 0);
@@ -171,7 +174,7 @@ int deallocate_frame(int idx) {
   for (int i = 0; i < MAX_EXP; i++) {
     int buddy_idx = idx ^ (1<<i);
     if (frame_array[buddy_idx] == i) {
-      kprintf("[K] Merge frame %d and %d\n", idx, buddy_idx);
+      // kprintf("[K] Merge frame %d and %d\n", idx, buddy_idx);
       remove_frame(&frame_list[buddy_idx], i);
       remove_frame(&frame_list[idx], i);
       if (buddy_idx < idx) {
@@ -269,6 +272,10 @@ void* getContFreePage(int cnt, int *exp) {
   return (void*)(MEMORY_BASE + idx * FRAME_SIZE);
 }
 
-void returnPage(void *ptr) {
-  deallocate_frame(((uint64_t)ptr - MEMORY_BASE) / FRAME_SIZE);
+int physicalToIndex(unsigned long addr) {
+  return (int)((addr - MEMORY_BASE) / FRAME_SIZE);
+}
+
+int kVirtualToIndex(unsigned long addr) {
+  return (int)((addr - VA_START - MEMORY_BASE) / FRAME_SIZE);
 }

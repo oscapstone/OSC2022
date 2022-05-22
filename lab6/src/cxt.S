@@ -32,3 +32,12 @@ context_switch:
         msr esr_el1, x13
         msr sp_el0, x14
         ret
+
+        .global flush_tlb
+flush_tlb:      
+        dsb ish
+        msr ttbr0_el1, x0
+        tlbi vmalle1is
+        dsb ish
+        isb
+        ret
