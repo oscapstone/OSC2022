@@ -183,6 +183,6 @@ void mm_init(void *dtb){
     INFO("Memory unused size  : %p", get_unused_size());
     
     // initialize buddy system 
-    buddy_init(&mem_unusedmap, &mem_rsvmap, mem_map);
+    buddy_init(&mem_rsvmap, &mem_unusedmap, mem_map);
 
 }
