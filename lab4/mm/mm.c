@@ -17,7 +17,8 @@ void reserve_memory(uint64_t start, uint64_t end){
     struct list_head *head;
     struct mem_block *mb = simple_malloc(sizeof(struct mem_block));
     struct mem_block *tmp_mb;
-
+    
+    start = ALIGN_DOWN(start, PAGE_SIZE);
     end = ALIGN_UP(end, PAGE_SIZE);
     mb->start = start;
     mb->end = end;
