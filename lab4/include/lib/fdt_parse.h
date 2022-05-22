@@ -40,6 +40,7 @@ typedef struct{
 
 typedef void* (*fdt_callback)(uint32_t, fdt_node*, fdt_property*, int32_t);
 typedef void (*fdt_rsvmap_callback)(uint64_t, uint64_t);
+extern void fdt_parse_header(uint8_t*, fdt_header*);
 extern void fdt_parser(uint8_t*, fdt_callback);
 extern void* fdt_print_callback(uint32_t, fdt_node*, fdt_property*, int32_t);
 extern void fdt_parse_rsvmap(uint8_t*, fdt_rsvmap_callback);

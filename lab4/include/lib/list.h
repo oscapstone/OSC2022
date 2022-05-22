@@ -18,4 +18,6 @@ extern void list_add(struct list_head* node, struct list_head*);
 extern void list_add_tail(struct list_head*, struct list_head*);
 extern void list_del(struct list_head*);
 extern int list_empty(struct list_head*);
+extern int list_is_last(struct list_head*, struct list_head*);
+extern int list_is_head(struct list_head*, struct list_head*);
 #endif

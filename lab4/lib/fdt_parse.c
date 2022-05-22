@@ -3,6 +3,7 @@
 // callback type for fdt_parser
 // void* (*)(fdt_node* node, fdt_property* prop)
 
+static fdt_header header;
 void fdt_parse_header(uint8_t* fdt, fdt_header* pheader){
     int i = 0;
     uint32_t *ph = (uint32_t*)pheader, *pfdt = (uint32_t *)fdt;
@@ -11,7 +12,6 @@ void fdt_parse_header(uint8_t* fdt, fdt_header* pheader){
         uint32_t tmp = pfdt[i];
         ph[i] = bswap32(tmp); 
     }
-    
 }
 
 void fdt_parser(uint8_t* fdt, fdt_callback callback){
@@ -26,7 +26,7 @@ void fdt_parser(uint8_t* fdt, fdt_callback callback){
     uint32_t len;
     uint32_t str_offset;
 
-    fdt_header * pheader = (fdt_header*)simple_malloc(sizeof(fdt_header));
+    fdt_header * pheader = &header;
     fdt_parse_header(fdt, pheader);
 
     pdt_struct = (uint32_t *)(fdt + pheader->off_dt_struct);
@@ -81,11 +81,10 @@ void fdt_parse_rsvmap(uint8_t* fdt, fdt_rsvmap_callback callback){
     uint64_t *mem_rsvmap;
     uint64_t start, end;
     uint64_t count = 0;
-    fdt_header * pheader = (fdt_header*)simple_malloc(sizeof(fdt_header));
+    fdt_header * pheader = &header;
     fdt_parse_header(fdt, pheader);
 
     mem_rsvmap = (uint64_t*)(fdt + pheader->off_mem_rsvmap);
-    printf("mem_rsvmap: %p\r\n", mem_rsvmap);
     do{
         start = bswap64(mem_rsvmap[count * 2]);
         end = start + bswap64(mem_rsvmap[count * 2 + 1]);

@@ -35,3 +35,11 @@ void list_del(struct list_head* node){
 int list_empty(struct list_head* head){
     return (head->next == head);
 }
+
+int list_is_last(struct list_head* node, struct list_head* head){
+    return head->prev == node;
+}
+
+int list_is_head(struct list_head* node, struct list_head* head){
+    return head == node;
+}
