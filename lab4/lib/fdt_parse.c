@@ -77,7 +77,25 @@ void fdt_parser(uint8_t* fdt, fdt_callback callback){
         }
     }
 }
+void fdt_parse_rsvmap(uint8_t* fdt, fdt_rsvmap_callback callback){
+    uint64_t *mem_rsvmap;
+    uint64_t start, end;
+    uint64_t count = 0;
+    fdt_header * pheader = (fdt_header*)simple_malloc(sizeof(fdt_header));
+    fdt_parse_header(fdt, pheader);
 
+    mem_rsvmap = (uint64_t*)(fdt + pheader->off_mem_rsvmap);
+    printf("mem_rsvmap: %p\r\n", mem_rsvmap);
+    do{
+        start = bswap64(mem_rsvmap[count * 2]);
+        end = start + bswap64(mem_rsvmap[count * 2 + 1]);
+        if(end)
+            callback(start, end);
+        else
+            break;
+        count++;
+    }while(1);
+}
 void* fdt_print_callback(uint32_t token, fdt_node* node, fdt_property* prop, int32_t layer){
     if(node != NULL){
         for(uint32_t i = 0 ; i < layer * 4 ; i++){

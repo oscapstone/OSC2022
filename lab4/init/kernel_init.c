@@ -1,9 +1,5 @@
-#include "types.h"
-#include "peripherals/mini_uart.h"
-#include "fs/initrdfs.h"
-#include "kernel/timer.h"
-#include "lib/print.h"
-#include "lib/simple_malloc.h"
+#include "init/kernel_init.h"
+
 extern int __heap_start;
 void kernel_init(void *dtb){
     init_core_timer();
@@ -14,6 +10,7 @@ void kernel_init(void *dtb){
     // init_malloc_state should be executed before simple_malloc is using
     init_malloc_state(&__heap_start);
     fdt_parser(dtb, fdt_initrdfs_callback); 
+    mm_init(dtb); 
     return; 
 }
 

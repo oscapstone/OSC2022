@@ -51,6 +51,8 @@ KOBJECTS = \
 		 $(OUTPUT)/initrdfs.o \
 		 $(OUTPUT)/timer.o \
 		 $(OUTPUT)/irq_handler.o \
+		 $(OUTPUT)/page_alloc.o \
+		 $(OUTPUT)/mm.o \
 		 $(LIBS)
 
 BOBJECTS = \
@@ -77,6 +79,7 @@ start:
 	$(MAKE) -C lib OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C debug OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C fs OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
+	$(MAKE) -C mm OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 
 link: $(OBJECTS)
 	$(LD) -T kernel/$(LINKER_FILE) -o $(OUTPUT)/$(KNAME).elf $(KOBJECTS) $(LDFLAGS)
