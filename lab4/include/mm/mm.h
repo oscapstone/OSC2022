@@ -9,8 +9,6 @@
 #include "lib/string.h"
 #include "mm/page_alloc.h"
 
-#define PAGE_SHIFT 12
-#define PAGE_SIZE (1ul << PAGE_SHIFT)
 
 struct mem_block{
     uint64_t start;
@@ -24,6 +22,13 @@ struct mem_node{
     char *name;
     struct list_head list;
 };
+
+extern struct list_head mem_rsvmap;
+extern struct list_head mem_unusedmap;
+extern struct mem_node memory_node;
+extern struct page *mem_map;
+
 extern void mm_init(void *);
+
 
 #endif

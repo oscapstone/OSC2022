@@ -7,10 +7,10 @@ extern int __kernel_image_end;
 extern int __EL1_stack_size;
 extern int __EL1_stack;
 
-static struct list_head mem_rsvmap;
-static struct list_head mem_unusedmap;
-static struct mem_node memory_node;
-static struct page *mem_map;
+struct list_head mem_rsvmap;
+struct list_head mem_unusedmap;
+struct mem_node memory_node;
+struct page *mem_map;
 
 void reserve_memory(uint64_t start, uint64_t end){
     struct list_head *node;
@@ -183,6 +183,6 @@ void mm_init(void *dtb){
     INFO("Memory unused size  : %p", get_unused_size());
     
     // initialize buddy system 
-    buddy_init(&mem_rsvmap, &mem_unusedmap, mem_map);
+    buddy_init();
 
 }

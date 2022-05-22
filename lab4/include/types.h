@@ -39,4 +39,6 @@ typedef int64_t                 ssize_t;
                     ((n & 0x000000000000ff00) <<  40)| \
                     ((n & 0x00000000000000ff) <<  56)) 
 
+#define min(x, y) ((x) < (y) ? (x) : (y)) 
+
 #endif
