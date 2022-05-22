@@ -10,7 +10,7 @@ extern int __EL1_stack;
 static struct list_head mem_rsvmap;
 static struct list_head mem_unusedmap;
 static struct mem_node memory_node;
-static struct page *page_table;
+static struct page *mem_map;
 
 void reserve_memory(uint64_t start, uint64_t end){
     struct list_head *node;
@@ -60,7 +60,7 @@ size_t get_unused_size(){
         start = mb->start;
         end = mb->end;
         size += (end - start);
-        printf("start: %p, end: %p\r\n", start, end);
+        //printf("start: %p, end: %p\r\n", start, end);
     }
     return size;
 }
@@ -116,7 +116,7 @@ void _create_memory_rsvmap(void *dtb){
     fdt_parser(dtb, _reserve_cpio);
    
     // Create struct page table for mapping every physical frame to it
-    page_table = simple_malloc(sizeof(struct page) * (memory_node.end >> PAGE_SHIFT));
+    mem_map = simple_malloc(sizeof(struct page) * (memory_node.end >> PAGE_SHIFT));
 
     // reserve memory for simple memory allocator
     start = (uint64_t)&__heap_start;
@@ -170,7 +170,7 @@ void* _get_memory_node(uint32_t token, fdt_node* node, fdt_property* prop, int32
 
 void mm_init(void *dtb){
     INFO("Init mm subsystem..");
-    // initialize global variable
+    // initialize mm's global variable
     INIT_LIST_HEAD(&mem_rsvmap);
     INIT_LIST_HEAD(&mem_unusedmap);
     fdt_parser((uint8_t*)dtb, _get_memory_node);
@@ -181,4 +181,8 @@ void mm_init(void *dtb){
     INFO("Memory node: %s, size: %p", memory_node.name, memory_node.end - memory_node.start);
     INFO("Memory reserved size: %p", get_reserved_size());
     INFO("Memory unused size  : %p", get_unused_size());
+    
+    // initialize buddy system 
+    buddy_init(&mem_unusedmap, &mem_rsvmap, mem_map);
+
 }
