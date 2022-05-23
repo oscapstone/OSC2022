@@ -4,7 +4,7 @@
 
 // #define MEM_DEMO_LOG
 #define NULLPTR ((void*)0xFFFF000000000000)
-#define BUDDY_MAX_ORDER 5
+#define BUDDY_MAX_ORDER 7
 #define BUDDY_MAX_LEN (1 << BUDDY_MAX_ORDER)
 #define FRAME_SIZE 4096
 #define CHUNK_SIZE 32

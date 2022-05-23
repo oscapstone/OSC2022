@@ -121,13 +121,25 @@ void exec_thread(char *data, unsigned int filesize) {
     thread_list.end = thread_list.beg->next;
     thread_list.end->next = NULLPTR;
 
-    user_thread->program = (char *)(PHYSICAL_USER_PROGRAM+KVA);
     user_thread->program_size = filesize;
 	user_thread->context.lr = VIRTUAL_USER_PROGRAM;
 
-    for (int i = 0; i < filesize; i++) {
-        user_thread->program[i] = data[i];
+    // char *a = kmalloc(4096);
+    // char *b = kmalloc(400);
+    // char *c = kmalloc(4000);
+    // kfree(a);
+    // kfree(b);
+    int tmpsize = 0;
+    while (tmpsize < filesize) {
+        int tmprange = (filesize-tmpsize) > 4096 ? 4096 : (filesize-tmpsize);
+        // printf("-------------\n");
+        user_thread->program = (char*)page_alloc((unsigned long)user_thread->pgd, VIRTUAL_USER_PROGRAM + tmpsize , 0, USER_READ_WRITE);
+        for (int i = 0; i < tmprange; i++) {
+            user_thread->program[i] = data[tmpsize+i];
+        }
+        tmpsize += 4096;
     }
+    // kfree(c);
 
     load_pgd(user_thread->pgd);
     enable_current_interrupt();
@@ -145,16 +157,16 @@ void jump_thread(char *data, unsigned int filesize) {
 	
     Thread *user_thread = thread_list.beg;
 
-    user_thread->program = (char *)(PHYSICAL_USER_PROGRAM+KVA);
+    // user_thread->program = (char *)(PHYSICAL_USER_PROGRAM+KVA);
     user_thread->program_size = filesize;
 
 	user_thread->context.lr = VIRTUAL_USER_PROGRAM;
 	user_thread->context.fp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
     user_thread->context.sp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
 
-    for (int i = 0; i < filesize; i++) {
-        user_thread->program[i] = data[i];
-    }
+    // for (int i = 0; i < filesize; i++) {
+    //     user_thread->program[i] = data[i];
+    // }
 
 }
 

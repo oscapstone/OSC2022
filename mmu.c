@@ -100,5 +100,5 @@ void video_paging(unsigned long pgd, unsigned long pud, unsigned long pmd) {
 
 void user_default_paging() {
     video_paging(0x5000, 0x6000, 0x7000);
-    block_alloc(0x7000+KVA, PHYSICAL_USER_PROGRAM, USER_READ_WRITE, 0);
+    // block_alloc(0x7000+KVA, PHYSICAL_USER_PROGRAM, USER_READ_WRITE, 0);
 }
