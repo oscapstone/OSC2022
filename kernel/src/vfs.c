@@ -39,33 +39,58 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     if(pathname == NULL || *target_file == NULL) return -1;
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
-    int err = vfs_lookup(pathname, target_path, target_vnode);
-    if(err) return -1;
+    char component_name[MAX_PATHNAME_LEN];
+    int err = vfs_lookup(pathname, target_path, target_vnode, component_name);
+    if(err == -1) return err; // worng pathname
     // 2. Create a new file handle for this vnode if found.
-    
+    if(target_vnode != NULL){
+        *target_file = create_fd(target_vnode);
+        return 0;
+    } 
     // 3. Create a new file if O_CREAT is specified in flags and vnode not found
     // lookup error code shows if file exist or not or other error occurs
+    else{
+        if(flags & O_CREAT){
+            // create a new file
+            int err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
+            if(err) return err;
+        }
+    }
+
     // 4. Return error code if fails
     return 0;
 }
 
-int vfs_lookup(const char* pathname, Dentry *target_path, VNode *target_vnode) {
-    char component_name[256];
+int vfs_lookup(const char* pathname, Dentry *target_path, VNode *target_vnode, char *component_name) {
+    int ready_return = 0;
     // 1. Lookup pathname
     if(pathname[0] == '/'){
         int idx = 1;
+        char tmp_buf[MAX_PATHNAME_LEN];
         target_path = rootfs->root_dentry;
         find_component_name(pathname + idx, component_name, '/');
         while(component_name[0] != '\0'){
+            /* 
+             * ready_return is 1 beacuse it couldn't find child vnode before
+             * The next component name is not '\0' now, it's not the last component name
+             * Therefore, it is a wrong pathname, even if the flag is O_CREAT, it also cannot create a new file
+             */
+            if(ready_return) return -1;
             /* find the next vnode */
             if(target_vnode != NULL) target_path = target_vnode->dentry;
-            int err = target_path->vnode->v_ops->lookup(target_path->vnode, &target_vnode, component_name);
-            if(err) return err;
+            int err = rootfs->root_dentry->vnode->v_ops->lookup(target_path->vnode, &target_vnode, component_name);
+            if(err){
+                ready_return = 1;
+                /* save the component name in tmp_buf beacuse it will check the last name */
+                strcpy(tmp_buf, component_name);
+            } 
 
             /* find next component name*/
             idx += strlen(component_name) + 1;
             find_component_name(pathname + idx, component_name, '/');
         }
+        /* if the last component name is '\0', it is a file name */
+        if(ready_return) strcpy(component_name, tmp_buf);
     }
 
     // TODO: check the relative path
@@ -79,6 +104,15 @@ void find_component_name(const char *pathname, char *component_name, char delimi
         i++;
     }
     component_name[i] = '\0';
+}
+
+File *create_fd(VNode *target_vnode){
+    File *new_file = (File *)kmalloc(sizeof(File));
+    new_file->vnode = target_vnode;
+    new_file->f_pos = 0;
+    new_file->f_ops = target_vnode->f_ops;
+    new_file->flags = 0;
+    return new_file;
 }
 
 // int traversal_path(const char *pathname, Dentry *target_path, char *target_name){
