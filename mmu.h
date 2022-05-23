@@ -18,7 +18,23 @@
 #define PD_RAM_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
 #define USER_READ_WRITE (PD_ACCESS | USER_RW | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
 #define PD_PERIPHERAL_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
-#define PD_RAM (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
-#define PD_OUTPUT_MASK 0x0000fffffffff000
 
-void video_paging();
+#define PD_ADDRESS_MASK 0x0000FFFFFFFFF000
+#define PAGE_OFFSET_MASK 0xFFF
+
+#define VIRTUAL_USER_STACK 0xFFFFFFFFD000
+#define VIRTUAL_KERNEL_STACK 0xFFFFFFFFE000
+#define VIRTUAL_USER_PROGRAM 0x0
+#define PHYSICAL_USER_PROGRAM 0x07000000
+
+extern unsigned long store_pgd();
+
+unsigned long get_high_pa(void *ptr);
+unsigned long get_low_pa(void *ptr);
+void page_table_init(unsigned long* table);
+unsigned long* create_page_table();
+void page_table_alloc(unsigned long table, unsigned long next, unsigned long attribute, unsigned int offset);
+void* page_alloc(unsigned long pgd, unsigned long virtual_addr, unsigned long physical_addr, unsigned long attribute);
+void page_free(unsigned long pgd, unsigned long virtual_addr);
+void video_paging(unsigned long pgd, unsigned long pud, unsigned long pmd);
+void user_default_paging();

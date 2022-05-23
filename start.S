@@ -363,3 +363,17 @@ identity_paging:
     ldr x0, =0xffff000000000000
     add x30, x30, x0
 	ret
+
+.global store_pgd
+store_pgd:
+    mrs x0, ttbr0_el1 // switch translation based address.
+    ret
+
+.global load_pgd
+load_pgd:
+    dsb ish // ensure write has completed
+    msr ttbr0_el1, x0 // switch translation based address.
+    tlbi vmalle1is // invalidate all TLB entries
+    dsb ish // ensure completion of TLB invalidatation
+    isb // clear pipeline
+    ret

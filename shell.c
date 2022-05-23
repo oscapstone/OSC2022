@@ -4,7 +4,6 @@
 #include "uart.h"
 #include "exception.h"
 #include "thread.h"
-#include "mmu.h"
 int parse(char input_char, int buffer_counter) {
     if ((input_char > 31 && input_char < 127) || input_char == 9) {
         buffer_counter++;
@@ -42,7 +41,6 @@ void shell() {
     uart_puts("# ");
 
     enable_current_interrupt(); // ------v
-    video_paging();
     init_schedule();
 
     // read input

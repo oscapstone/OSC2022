@@ -3,6 +3,7 @@
 #include "gpio.h"
 #include "uart.h"
 #include "utils.h"
+#include "command.h"
 #include "timer.h"
 #include "thread.h"
 
@@ -148,7 +149,8 @@ void lower_irq_entry() {
 
 void invalid_entry() {
 	dump();
-		printf("No such exception\n");
+	printf("No such exception\n");
+	exec_reboot();
 	while (1)
         ;
 }

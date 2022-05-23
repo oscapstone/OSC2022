@@ -6,6 +6,7 @@
 #include "cpio.h"
 #include "command.h"
 #include "mem.h"
+#include "mmu.h"
 #include "mbox.h"
 
 Thread_List thread_list;
@@ -23,7 +24,7 @@ void schedule(){
 			thread_list.beg = thread_list.beg->next;
 			thread_list.end->next = NULLPTR;
 		} while(thread_list.beg->iszombie == 1);// skip zombie
-
+        load_pgd(thread_list.beg->pgd);
         switch_to(get_current(), &thread_list.beg->context);
 	}
 
@@ -40,6 +41,7 @@ void kill_zombies(){
             zombie->iszombie = 0;
             kfree(zombie->user_stack);
             kfree(zombie->kernel_stack);
+            page_free(zombie->pgd, VIRTUAL_KERNEL_STACK);
             kfree(zombie);
         }
         else {
@@ -66,15 +68,19 @@ Thread *thread_create(void *program_start) {
 
     Thread *new = kmalloc(THREAD_SIZE);
 
+    unsigned long *pgd = create_page_table();
+    new->pgd = (unsigned long)pgd - KVA;
+
     new->pid = thread_list.pid_cnt++;
     new->parent = new->iszombie = 0;
 
-    new->user_stack = (char*)kmalloc(USER_STACK_SIZE);
-    new->kernel_stack = (char*)kmalloc(KERNEL_STACK_SIZE);
-    
-	new->context.fp = (unsigned long)new->user_stack + USER_STACK_SIZE;
+    page_table_alloc((unsigned long)pgd, 0x6000, BOOT_PGD_ATTR, 0);
+    new->user_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_USER_STACK, 0, USER_READ_WRITE);
+    new->kernel_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_KERNEL_STACK, 0, PD_RAM_ATTR);
+
+	new->context.fp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
     new->context.lr = (unsigned long)program_start;
-    new->context.sp = (unsigned long)new->user_stack + USER_STACK_SIZE;
+    new->context.sp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
 
 	new->next = NULLPTR;
 	thread_list.end->next = new;
@@ -87,6 +93,7 @@ Thread *thread_create(void *program_start) {
 
 void init_schedule() {
     timer_register();
+    user_default_paging();
     thread_list.beg = thread_list.end = NULLPTR;
     Thread* init = thread_create(idle);
 	asm volatile("msr tpidr_el1, %0\n"::"r"((unsigned long)init));
@@ -95,9 +102,9 @@ void init_schedule() {
 
     // set_time_shift(5);
     // enable_timer_interrupt();
-    
+
     // run();
-    load_cpio("syscall.img");
+    // load_cpio("syscall.img");
 
     // for(int i = 0; i < 3; ++i) { // N should > 2
     //     thread_create(foo);
@@ -114,20 +121,21 @@ void exec_thread(char *data, unsigned int filesize) {
     thread_list.end = thread_list.beg->next;
     thread_list.end->next = NULLPTR;
 
-    user_thread->program = (char *)0xFFFF000007000000;
+    user_thread->program = (char *)(PHYSICAL_USER_PROGRAM+KVA);
     user_thread->program_size = filesize;
-	user_thread->context.lr = (unsigned long)user_thread->program;
+	user_thread->context.lr = VIRTUAL_USER_PROGRAM;
 
     for (int i = 0; i < filesize; i++) {
-        // printf("i");
         user_thread->program[i] = data[i];
     }
+
+    load_pgd(user_thread->pgd);
     enable_current_interrupt();
     asm volatile("msr tpidr_el1, %0	\n": :"r"(&user_thread->context));
     asm volatile("msr elr_el1, %0	\n": :"r"(user_thread->context.lr));
     asm volatile("msr spsr_el1, xzr	\n");
     asm volatile("msr sp_el0, %0	\n": :"r"(user_thread->context.sp));
-    asm volatile("mov sp, %0	    \n": :"r"(user_thread->kernel_stack + KERNEL_STACK_SIZE));
+    asm volatile("mov sp, %0	    \n": :"r"(VIRTUAL_KERNEL_STACK + KERNEL_STACK_SIZE));
     asm volatile("eret	\n");
 
 	// enable_current_interrupt();
@@ -137,12 +145,12 @@ void jump_thread(char *data, unsigned int filesize) {
 	
     Thread *user_thread = thread_list.beg;
 
-    user_thread->program = (char *)0xFFFF000007000000;
+    user_thread->program = (char *)(PHYSICAL_USER_PROGRAM+KVA);
     user_thread->program_size = filesize;
 
-	user_thread->context.lr = (unsigned long)user_thread->program;
-	user_thread->context.fp = (unsigned long)user_thread->user_stack + USER_STACK_SIZE;
-    user_thread->context.sp = (unsigned long)user_thread->user_stack + USER_STACK_SIZE;
+	user_thread->context.lr = VIRTUAL_USER_PROGRAM;
+	user_thread->context.fp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
+    user_thread->context.sp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
 
     for (int i = 0; i < filesize; i++) {
         user_thread->program[i] = data[i];
@@ -181,7 +189,6 @@ size_t uartwrite(Trap_Frame *tpf,const char buf[], size_t size) {
 
 int exec(Trap_Frame *tpf,const char* name, char *const argv[]) {
     disable_current_interrupt();
-    // printf((char *)argv);
     jump_cpio((char*)name);
 	enable_current_interrupt();
 
@@ -191,7 +198,7 @@ int exec(Trap_Frame *tpf,const char* name, char *const argv[]) {
     asm volatile("msr elr_el1, %0	\n": :"r"(thread_list.beg->context.lr));
     asm volatile("msr spsr_el1, xzr	\n");
     asm volatile("msr sp_el0, %0	\n": :"r"(thread_list.beg->context.sp));
-    asm volatile("mov sp, %0	    \n": :"r"(thread_list.beg->kernel_stack + KERNEL_STACK_SIZE));
+    asm volatile("mov sp, %0	    \n": :"r"(VIRTUAL_KERNEL_STACK + KERNEL_STACK_SIZE));
     asm volatile("eret	\n");
 
     return 0;
@@ -218,17 +225,18 @@ int fork(Trap_Frame *tpf) {
     // separate parent and child
     if(thread_list.beg->pid == parent_pid) {
         child->context = parent->context;
-        child->context.fp += ((unsigned long)child - (unsigned long)parent);
-        child->context.sp += ((unsigned long)child - (unsigned long)parent);
+        // MMU
+        // child->context.fp += ((unsigned long)child - (unsigned long)parent);
+        // child->context.sp += ((unsigned long)child - (unsigned long)parent);
 
         enable_current_interrupt();
 
         tpf->x0 = child->pid;
         return child->pid;
     }
-
-    tpf = (Trap_Frame*)((unsigned long)tpf + (unsigned long)child - (unsigned long)parent);
-    tpf->sp_el0 += ((unsigned long)child - (unsigned long)parent);
+    // MMU
+    // tpf = (Trap_Frame*)((unsigned long)tpf + (unsigned long)child - (unsigned long)parent);
+    // tpf->sp_el0 += ((unsigned long)child - (unsigned long)parent);
     tpf->x0 = 0;
 
     return 0;
@@ -242,7 +250,7 @@ void exit(Trap_Frame *tpf, int status) {
 int syscall_mbox_call(Trap_Frame *tpf, unsigned char ch, unsigned int *mbox) {
     disable_current_interrupt();
     // physical mailbox address
-    unsigned int *pmbox = (unsigned int *)((unsigned long)mbox - KVA);
+    unsigned int *pmbox = (unsigned int *)get_low_pa(mbox);
     unsigned long r = (((unsigned long)((unsigned long)pmbox) & ~0xF) | (ch & 0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");} while (*MBOX_STATUS & MBOX_FULL);
@@ -298,7 +306,7 @@ void run() {
     asm volatile("msr elr_el1, %0	\n": :"r"(user_thread->context.lr));
     asm volatile("msr spsr_el1, xzr	\n");
     asm volatile("msr sp_el0, %0	\n": :"r"(user_thread->context.sp));
-    asm volatile("mov sp, %0	    \n": :"r"(user_thread->kernel_stack + KERNEL_STACK_SIZE));
+    asm volatile("mov sp, %0	    \n": :"r"(VIRTUAL_KERNEL_STACK + KERNEL_STACK_SIZE));
     asm volatile("eret	\n");
 }
 

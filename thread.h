@@ -11,6 +11,8 @@
 extern void switch_to(void *curr_context, void *next_context);
 extern void store_context(void *curr_context);
 extern void load_context(void *curr_context);
+extern unsigned long store_pgd();
+extern void load_pgd(unsigned long next_pgd);
 extern void *get_current();
 extern int get_el();
 
@@ -38,6 +40,7 @@ typedef struct Thread{
     char *user_stack, *kernel_stack;
     char *program;
 	unsigned int program_size;
+    unsigned long pgd;
 	struct Thread* next;
 } Thread;
 
