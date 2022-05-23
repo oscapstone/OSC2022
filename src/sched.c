@@ -4,16 +4,18 @@
 #include "sched.h"
 #include "exception.h"
 #include "cpio.h"
+#include "timer.h"
+#include "syscall.h"
+#include "signal.h"
 #define TASK_POOL_SIZE 20
 
 extern void switch_to(Thread_struct* prev, Thread_struct* next);
-extern Thread_struct* get_current();
 
 Thread_struct* thread_pool;
 Thread_struct* run_queue;
 Thread_struct* wait_queue;
 
-void thread_create(void (*f)()){
+int thread_create(void (*f)()){
     int i;
     for (i = 0; i < TASK_POOL_SIZE; i++)
     {
@@ -27,30 +29,41 @@ void thread_create(void (*f)()){
     thread_pool[i].cpu_context.lr = (unsigned long)f;
     thread_pool[i].cpu_context.fp = (unsigned long)(thread_pool[i].kernel_stack + THREAD_STACK_SIZE);
     thread_pool[i].cpu_context.sp = (unsigned long)(thread_pool[i].kernel_stack + THREAD_STACK_SIZE);
+    for(int j=0;j<20;j++)
+    {
+        thread_pool[i].signal_handler[j] = signal_default_handler;
+        thread_pool[i].signal_count[j] = 0;
+    }
+    thread_pool[i].signal_ustack = nullptr;
+    thread_pool[i].run_handler = nullptr;
     writes_uart("Create Thread ");
     write_int_uart(i,TRUE);
     push_thread(&thread_pool[i]);
+    return i;
 }
 void schedule()
 {
-    // disable_interrupt();
+    disable_interrupt();
     if(run_queue != nullptr)
     {
         Thread_struct* next = pop_thread(run_queue);
         // context_switch(next);
         Thread_struct* cur = get_current();
-        if (cur->state == RUNNING) 
+        if (cur->state == RUNNING && cur->id !=0) 
         {
             push_thread(cur);
         }
-        writes_uart("From ");
-        write_int_uart(cur->id,FALSE);
-        writes_uart(" schedule to ");
-        write_int_uart(next->id,TRUE);
-        iter_runqueue();
+        // busy_wait_writes("From ",FALSE);
+        // busy_wait_writeint(cur->id,FALSE);
+        // busy_wait_writes(" schedule to ",FALSE);
+        // busy_wait_writeint(next->id,TRUE);
+        // iter_runqueue();
+        enable_interrupt();
+        // enable_timer_interrupt();
         switch_to(cur,next);
     }
-    // enable_interrupt();
+    enable_interrupt();
+    return;
 }
 void context_switch(Thread_struct* next) {
 
@@ -98,11 +111,11 @@ void iter_runqueue()
 {
     Thread_struct* node = run_queue;
     while(node != nullptr){
-        write_int_uart(node->id,FALSE);
-        writes_uart("->");
+        busy_wait_writeint(node->id,FALSE);
+        busy_wait_writes("->",FALSE);
         node = node->next;
     }
-    writes_uart("\r\n");
+    busy_wait_writes("\r\n",FALSE);
 }
 void push_thread(Thread_struct* t)
 {
@@ -139,6 +152,7 @@ Thread_struct* pop_thread()
 }
 void thread_exec()
 {
+    
     char **file_start = my_malloc(sizeof(char*));
     unsigned long *filesize = my_malloc(sizeof(unsigned long));
     // cpio_get_addr(file_start,&filesize);
@@ -146,14 +160,33 @@ void thread_exec()
 
     char *new_start = my_malloc(*filesize);
     memcpy(new_start,*file_start,*filesize);
+    Thread_struct* cur_thread = get_current();
     asm volatile(
         "mov x0, 0\n\t" // 
         "msr spsr_el1, x0\n\t"
         "msr elr_el1, %0\n\t"
         "msr sp_el0,%1\n\t"
-        "eret\n\t" // 
+        "mov sp, %2\n\t"
+        "msr tpidr_el1, %3\n\t"
         ::"r" (new_start),
-        "r" (get_current()->user_stack)
+        "r" ((char*)(cur_thread->user_stack+THREAD_STACK_SIZE)),
+        "r" ((char*)(cur_thread->kernel_stack+THREAD_STACK_SIZE)),
+        "r" ((char*)cur_thread)
         : "x0"
     );
+    
+    asm volatile(
+        "eret\n\t" // 
+    );
+}
+Thread_struct* get_thread(int id){
+    return &(thread_pool[id]);
+}
+void kill_thread(int id)
+{
+    thread_pool[id].state = ZOMBIE;
+}
+void raise_signal(int pid,int signal)
+{
+    thread_pool[pid].signal_count[signal]++;
 }

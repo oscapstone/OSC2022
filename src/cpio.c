@@ -4,6 +4,7 @@
 #include "shell.h"
 #include "utils.h"
 #include "dtb.h"
+#include "exception.h"
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
 #define CPIO_ALIGNMENT 4
@@ -166,7 +167,7 @@ unsigned long cpio_get_addr(char** filedata,unsigned long* filesize){
         // writes_uart("\r\n");
         cnh = next_header;
     }
-    // return 0;
+    return 0;
 }
 
 void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop){

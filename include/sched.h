@@ -1,6 +1,7 @@
 #ifndef _SCHEDULE_HEADER_
 #define _SCHEDULE_HEADER_
-#define THREAD_STACK_SIZE 4096
+#define THREAD_STACK_SIZE 4096//4096
+#include "signal.h"
 enum task_state
 {
     EMPTY,
@@ -34,9 +35,13 @@ typedef struct Thread_struct
     void* user_stack;
     void* kernel_stack;
     struct Thread_struct *next,*prev;
-    // long counter;
-    // int priority;
-    // long preempt_count;
+    // void (*singal_handler[10])();
+    void (*signal_handler[20])();
+    unsigned int signal_count[20];
+    void* signal_ustack;
+    void (*run_handler)();
+    cpu_context saved_context;
+
 }Thread_struct;
 typedef struct task_queue
 {
@@ -44,7 +49,7 @@ typedef struct task_queue
     struct task_queue *next,*prev;
 }task_queue;
 
-void thread_create(void (*f)());
+int thread_create(void (*f)());
 Thread_struct current_thread();
 void schedule();
 void idle();
@@ -57,4 +62,8 @@ void context_switch(Thread_struct* next);
 Thread_struct* pop_thread();
 void thread_exit();
 void thread_exec();
+Thread_struct* get_thread(int);
+void kill_thread(int);
+extern Thread_struct* get_current();
+void raise_signal(int pid,int signal);
 #endif

@@ -315,3 +315,19 @@ void busy_wait_writeint(int s,bool newline){
     if(newline)
         busy_wait_writes("\r\n",FALSE);
 }
+void busy_wait_writehex(unsigned long long h,bool newline)
+{
+    busy_wait_writes("0x",FALSE);
+    unsigned int n;
+    int c;
+    for(c=28;c>=0;c-=4) {
+        
+        n=(h>>c)&(0xF); // n = 1,2,3....th byte of h from left to right.
+        
+        n+=n>9?0x37:0x30; // int 0~9 -> char '0'~'9', 10~15 -> 'A'~'F'
+        busy_wait_writec(n);
+    }
+    if(newline==1){
+        busy_wait_writes("\r\n",FALSE);
+    }
+}

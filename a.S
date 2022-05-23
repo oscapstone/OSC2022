@@ -50,7 +50,7 @@ main_loop:
 	b busy_loop
 
 .macro save_all
-    sub sp, sp, 16 * 18
+    sub sp, sp, 16 * 17
     stp x0, x1, [sp ,16 * 0]
     stp x2, x3, [sp ,16 * 1]
     stp x4, x5, [sp ,16 * 2]
@@ -67,28 +67,29 @@ main_loop:
     stp x26, x27, [sp ,16 * 13]
     stp x28, x29, [sp ,16 * 14]
     
-    str x30,   [sp, 16 * 15]
+    mrs x9, sp_el0
+    stp x30,x9,  [sp, 16 * 15]
     // for nested interrupt
-    mrs x0, spsr_el1
-    mrs x1, elr_el1
-    stp x0,x1, [sp, 16 * 16]
+    mrs x9, spsr_el1
+    mrs x10, elr_el1
+    stp x9,x10, [sp, 16 * 16]
 
     // ldp x0, x1, [sp ,16 * 0]
 
     // for el0 user stack pointer
-    mrs x0, sp_el0
-    str x0,   [sp, 16 * 17]
+    
 
 .endm
 
 // load general registers from stack
 .macro load_all
-    ldr x0, [sp, 16 * 17]
-    msr sp_el0,x0
 
-    ldp x0,x1,[sp, 16 * 16]
-    msr spsr_el1,x0
-    msr elr_el1,x1
+    ldp x30,x9, [sp, 16 * 15]
+    msr sp_el0,x9
+
+    ldp x9,x10,[sp, 16 * 16]
+    msr spsr_el1,x9
+    msr elr_el1,x10
 
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
@@ -105,10 +106,15 @@ main_loop:
     ldp x24, x25, [sp ,16 * 12]
     ldp x26, x27, [sp ,16 * 13]
     ldp x28, x29, [sp ,16 * 14]
-    ldr x30, [sp, 16 * 15]
+    // ldr x30, [sp, 16 * 15]
 
-    add sp, sp, 16 * 18
+    add sp, sp, 16 * 17
 .endm
+
+.global load_eret
+load_eret:
+    load_all
+    eret
 
 exception_handler:
     save_all
@@ -119,6 +125,7 @@ exception_handler:
 
 irq_handler:
     save_all
+    mov x0,sp
     bl irq_entry
     load_all
     eret
@@ -225,4 +232,28 @@ switch_to:
 .global get_current
 get_current:
     mrs x0, tpidr_el1
+    ret
+
+.global save_cpu_context
+save_cpu_context:
+    stp x19, x20, [x0, 16 * 0]
+    stp x21, x22, [x0, 16 * 1]
+    stp x23, x24, [x0, 16 * 2]
+    stp x25, x26, [x0, 16 * 3]
+    stp x27, x28, [x0, 16 * 4]
+    stp fp, lr, [x0, 16 * 5]
+    mov x9, sp
+    str x9, [x0, 16 * 6]
+    ret
+
+.global load_cpu_context
+load_cpu_context:
+    ldp x19, x20, [x0, 16 * 0]
+    ldp x21, x22, [x0, 16 * 1]
+    ldp x23, x24, [x0, 16 * 2]
+    ldp x25, x26, [x0, 16 * 3]
+    ldp x27, x28, [x0, 16 * 4]
+    ldp fp, lr, [x0, 16 * 5]
+    ldr x9, [x0, 16 * 6]
+    mov sp,  x9
     ret

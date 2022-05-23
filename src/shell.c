@@ -210,7 +210,7 @@ void handle_command(enum Action action, char *buffer){
             writes_uart("ccreboot   : cancel reboot the device\r\n");
             writes_uart("ls         : print the files in rootfs.\r\n");
             writes_uart("cat        : print the file information\r\n");
-            writes_uart("usrprog    : load user program and run it\r\n");
+            writes_uart("prog       : load user program and run it\r\n");
             writes_uart("timeout    : set timer timeout events\r\n");
             writes_uart("mmalloc    : test the malloc function\r\n");
             writes_uart("mfree      : free testing malloc address\r\n");

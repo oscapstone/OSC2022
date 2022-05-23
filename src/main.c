@@ -14,6 +14,11 @@ extern Thread_struct* get_current();
 void foo()
 {
     for(int i = 0; i < 10; ++i) {
+        unsigned long long reg_sp_el0;
+        asm volatile(
+            "mrs %0,sp_el0\n\t"
+            : "=r" (reg_sp_el0)
+        );
         writes_uart("Thread id: ");
         write_int_uart(get_current()->id,FALSE);
         writes_uart(" ");
@@ -37,6 +42,10 @@ int main(){
     // register unsigned long dtb_reg asm ("x15");
     
     //init_frame_freelist();
+    uint64_t tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
     init_uart();
     init_uart_buf();
     init_taskq();
@@ -56,13 +65,13 @@ int main(){
     // writes_uart("╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
     
     writes_uart("Hello World!\r\n");
+    
     // for (int i = 0; i < 10; i++)
     // {
     //     thread_create(foo);
     // }
     // idle();
-    
-    
+    // disable_timer_interrupt();
     while(1)
     { 
         // writes_uart("main\r\n");

@@ -22,7 +22,7 @@ void writes_n_uart(char *s, unsigned int size);
 void writes_nl_uart(char *s);
 void writehex_uart(unsigned int h,int newline);
 void write_int_uart(unsigned int,bool newline);
-
+void busy_wait_writehex(unsigned long long h,bool newline);
 //void writeaddr_uart(unsigned int*);
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
 #define GPFSEL1         ((volatile unsigned int*)(MMIO_BASE+0x00200004))

@@ -4,6 +4,8 @@
 #include "timer.h"
 #include "task.h"
 #include "syscall.h"
+#include "sched.h"
+#include "signal.h"
 void enable_interrupt(){
     asm volatile(
         "msr DAIFClr, 0xf"
@@ -21,7 +23,6 @@ void exception_entry(trap_frame* tf){
     // busy_wait_writes("EXCEPTION ENTRY",TRUE);
     // spsr_el1, elr_el1, and esr_el1
     unsigned long long reg_spsr_el1, reg_elr_el1,reg_esr_el1;
-    unsigned int svc_num;
     asm volatile(
         "mrs %0,spsr_el1\n\t"
         "mrs %1,elr_el1\n\t"
@@ -30,6 +31,10 @@ void exception_entry(trap_frame* tf){
           "=r" (reg_elr_el1),
           "=r" (reg_esr_el1)
     );
+    /*
+    https://developer.arm.com/documentation/ddi0601/2021-12/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-?lang=en
+    EC, bits [31:26], 0b010101: SVC instruction execution in AArch64 state.
+    */
     unsigned long long ec = reg_esr_el1>>26;
     if(ec == 0b010101){
         switch (tf->x8)
@@ -38,27 +43,40 @@ void exception_entry(trap_frame* tf){
             sys_getpid(tf);
             break;
         case 1: // uart_read
-            sys_uart_read(tf,tf->x0,tf->x1);
+            sys_uart_read(tf,(char*)tf->x0,tf->x1);
             break;
         case 2: // uart_write
-            sys_uart_write(tf,tf->x0,tf->x1);
+            sys_uart_write(tf,(char*)tf->x0,tf->x1);
             break;
         case 3: // exec
-            
+            sys_exec(tf,(char*)tf->x0,(char**)tf->x1);
             break;
         case 4: // fork
+            sys_fork(tf);
             break;
         case 5: // exit
+            sys_exit(tf);
             break;
         case 6: // mbox_call
+            sys_mbox_call(tf,(unsigned char)tf->x0,(unsigned int*)tf->x1);
             break;
         case 7: // kill
+            sys_kill(tf,(int)tf->x0);
             break;
+        case 8:
+            signal_register(tf->x0, (void (*)())(tf->x1));
+            break;
+        case 9:
+            signal_kill(tf->x0,tf->x1);
+            break;
+        case 21:
+            sigreturn();
         default:
             break;
         }
     }
     else{
+        disable_timer_interrupt();
         writes_uart("Exception\r\n");
         writes_uart("spsr_el1: ");
         writehex_uart(reg_spsr_el1,1);
@@ -66,13 +84,13 @@ void exception_entry(trap_frame* tf){
         writehex_uart(reg_elr_el1,1);
         writes_uart("reg_esr_el1: ");
         writehex_uart(reg_esr_el1,1);
+        enable_timer_interrupt();
     }
-    
     return;
 }
 
 int curr_task_privilege = 100;
-void irq_entry(){
+void irq_entry(trap_frame* tf){
         
     // writes_uart("IRQ entry\r\n");
     // writes_uart("Interrupt Source:");
@@ -124,14 +142,14 @@ void irq_entry(){
         add_task(Timer_interrupt_handler,INTERRUPT_PRIVILEGE_TIMER);
         if(curr_task_privilege<INTERRUPT_PRIVILEGE_TIMER)
                 return;
-        //itr_timer_queue();
         enable_interrupt();
         //writes_nl_uart("DO TIMER INTERRUPT NOW");
         do_task(&curr_task_privilege);
-        if(!is_timerq_empty())
-        {
-            enable_timer_interrupt();
-        }
+        // if(!is_timerq_empty())
+        // {
+        enable_timer_interrupt();
+        schedule();
+        //}
         // Timer_interrupt_handler();
     }
     else{
@@ -142,6 +160,11 @@ void irq_entry(){
     // asm volatile(
     //     "msr DAIFClr, 0xf"
     // );
+    // if the exception|irq is from user mode(el0), because kernel doesn't have content in Thread_struct.
+    if ((tf->spsr_el1 & 0b1111) == 0)
+    {
+        run_signal(tf);
+    }
     
     return;
 }
@@ -173,35 +196,42 @@ void Timer_interrupt_handler(){
         );
     //itr_timer_queue();
     // busy_wait_writes("TIMER INT",TRUE);
-    if(is_timerq_empty()){
-        write_int_uart((int)(time_count/time_freq),0);
-        writes_uart(" seconds After booting\r\n");
-        // set_expired_time(0x0fffffff);
-        disable_timer_interrupt();
-        return;
-    }
-    else{
-        writes_uart("Current time is: ");
-        write_int_uart((int)(time_count/time_freq),1);
-        timer* h = get_head_timer();
-        h->callback(h->message);
-        // writes_uart("DEBUG:");
-        // writes_nl_uart(h->message);
-        if(h->next==nullptr){
-            writes_uart("next timer is not exist.\r\n");
-            h = to_next_timer();
-            disable_timer_interrupt();
-        }
-        else{
-            h = to_next_timer();
-            writes_uart("Found next timer in ");
-            write_int_uart(h->value,TRUE);
-            unsigned long long time_count=0;
-            unsigned long long time_freq=0;
-            get_current_time(&time_count,&time_freq);
-            set_expired_time(h->value - time_count/time_freq);
-            enable_timer_interrupt();
-        }
-    }
+    // for schedule timer interrupt
+    asm volatile(
+        "msr cntp_tval_el0, %0\n\t"
+        ::"r" (time_freq>>5)
+    );
+    // schedule();
+    
+    // if(is_timerq_empty()){
+    //     // write_int_uart((int)(time_count/time_freq),0);
+    //     // writes_uart(" seconds After booting\r\n");
+    //     // set_expired_time(0x0fffffff);
+    //     disable_timer_interrupt();
+    //     return;
+    // }
+    // else{
+    //     writes_uart("Current time is: ");
+    //     write_int_uart((int)(time_count/time_freq),1);
+    //     timer* h = get_head_timer();
+    //     h->callback(h->message);
+    //     // writes_uart("DEBUG:");
+    //     // writes_nl_uart(h->message);
+    //     if(h->next==nullptr){
+    //         writes_uart("next timer is not exist.\r\n");
+    //         h = to_next_timer();
+    //         disable_timer_interrupt();
+    //     }
+    //     else{
+    //         h = to_next_timer();
+    //         writes_uart("Found next timer in ");
+    //         write_int_uart(h->value,TRUE);
+    //         unsigned long long time_count=0;
+    //         unsigned long long time_freq=0;
+    //         get_current_time(&time_count,&time_freq);
+    //         set_expired_time(h->value - time_count/time_freq);
+    //         enable_timer_interrupt();
+    //     }
+    // }
     
 }
