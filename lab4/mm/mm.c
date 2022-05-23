@@ -45,7 +45,6 @@ size_t get_reserved_size(){
         mb = list_entry(node, struct mem_block, list);
         start = mb->start;
         end = mb->end;
-        //printf("%x, %x\r\n", start, end);
         size += (end - start);
     }
     return size;
@@ -61,7 +60,7 @@ size_t get_unused_size(){
         start = mb->start;
         end = mb->end;
         size += (end - start);
-        //printf("start: %p, end: %p\r\n", start, end);
+        LOG("unused map: start: %p, end: %p", start, end);
     }
     return size;
 }

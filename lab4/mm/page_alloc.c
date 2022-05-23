@@ -28,17 +28,17 @@ void _init_mem_map(){
     }
 }
 
-void _free_pages(uint64_t pfn, uint32_t order){
-    uint64_t end = pfn + (1 << order);
+void _free_pages(struct page* page, uint32_t order){
+    struct page* end_page = page + (1 << order);
     // initialize buddy group leader and add it to free list
-    mem_map[pfn].order = order;
-    list_add(&mem_map[pfn].list, &buddy.free_lists[order].list);
+    page->order = order;
+    list_add(&page->list, &buddy.free_lists[order].list);
     buddy.free_lists[order].count++;
 
     // initialize buddy group members
 
-    for(uint32_t i = pfn + 1 ; i < end ; i++){
-        mem_map[pfn].order |= BUDDY_GROUP_MEMBER;
+    for(struct page* p = page + 1 ; p < end_page ; p++){
+        p->order = BUDDY_GROUP_MEMBER;
     }
 }
 
@@ -51,9 +51,63 @@ void _free_pages_memory(uint64_t start, uint64_t end){
         // decrease the order if last page's pfn in buddy is larger than end 
         while(start + (1 << order) > end) order--;
 
-        _free_pages(start, order);
+        _free_pages(&mem_map[start], order);
         start += (1 << order);
     }
+}
+
+
+// split large buddy group to two small buddy groups
+void expand(struct page *page, uint32_t high, uint32_t low){
+    struct page* tmp_page;
+    while(high > low){
+        high--;
+        tmp_page = page + (1 << high);
+       
+        LOG("add page %p of order %u to free list",pfn_to_addr(page_to_pfn(page)) , high);
+        _free_pages(tmp_page, high);
+    }
+}
+
+struct page* _alloc_pages(uint32_t order){
+    LOG("_alloc_pages(%u)", order);
+    struct list_head *node;
+    struct free_list* free_list;
+    struct page* page, *tmp_page;
+   
+    // find appropriate buddy group for user
+    for(uint32_t i = order ; i < BUDDY_MAX_ORDER ; i++){
+        free_list = &buddy.free_lists[i];
+
+        if(list_empty(&free_list->list)){
+            LOG("free list of order %u is empty", i);
+            continue;
+        }
+       
+        page = list_first_entry(&free_list->list, struct page, list); 
+        list_del(&page->list);
+        free_list->count--;
+        LOG("get free page %p from order %u", pfn_to_addr(page_to_pfn(page)), i); 
+        
+
+        for(uint32_t j = 0 ; j < (1 << i) ; j++){
+            page[j].order = BUDDY_ALLOCATED;
+        }
+        
+        if(i > order){
+            LOG("start expand pages of order %u to order %u", i, order); 
+            expand(page, i, order);
+            LOG("end expand pages from order %u to order %u", i, order); 
+        }
+        return page; 
+    }
+    return NULL;
+}
+
+void* alloc_pages(uint32_t order){
+    struct page* page = _alloc_pages(order);
+    uint64_t pfn = page_to_pfn(page);
+    return pfn_to_addr(pfn);
 }
 
 void print_buddy_statistics(){
@@ -67,6 +121,86 @@ void print_buddy_statistics(){
     INFO("Total free page #: %l", free_page_count);
 }
 
+uint8_t* _debug_alloc_page(uint32_t order){
+    LOG("###########################################");
+    uint64_t free_page_count = 0;
+    uint64_t tmp;
+    uint8_t * ret;
+    for(uint32_t i = 0 ; i < BUDDY_MAX_ORDER ; i++){
+        tmp = buddy.free_lists[i].count;
+        LOG("free page's count of order %l = %l", i, tmp);
+        free_page_count += tmp * (1 << i);
+    }
+    ret = alloc_pages(order);
+    LOG("Total free page #: %l", free_page_count);
+    LOG(" allocate page: %p", ret);
+    return ret;
+}
+void _debug_buddy(){
+    uint8_t *arr[100];
+    int32_t i = 0, count = 0;
+    struct list_head* node;
+    struct page* page, *target_page;
+    for(i = 0 ; i < 3; i++){
+        arr[count] = _debug_alloc_page(0);
+        count++;
+    }
+    for(i = 0 ; i < 3; i++){
+        arr[count] = _debug_alloc_page(1);
+        count++;
+    }
+    for(i = 0 ; i < 4; i++){
+        arr[count] = _debug_alloc_page(2);
+        count++;
+    }
+    for(i = 0 ; i < 1; i++){
+        arr[count] = _debug_alloc_page(0);
+        count++;
+    }
+    for(i = 0 ; i < 3; i++){
+        arr[count] = _debug_alloc_page(3);
+        count++;
+    }
+    for(i = 0 ; i < 1; i++){
+        arr[count] = _debug_alloc_page(0);
+        count++;
+    }
+    for(i = 0 ; i < 1; i++){
+        arr[count] = _debug_alloc_page(1);
+        count++;
+    }
+    for(i = 0 ; i < 1; i++){
+        arr[count] = _debug_alloc_page(2);
+        count++;
+    }
+    for(i = 0 ; i < 1; i++){
+        arr[count] = _debug_alloc_page(0);
+        count++;
+    }
+    LOG("###########################################");
+    for(i = 0 ; i < count ; i++){
+        target_page = pfn_to_page(addr_to_pfn(arr[i]));
+        if(!(target_page->order & BUDDY_ALLOCATED)){
+            LOG("******* page %p didn't set to allocated *******", pfn_to_addr(page_to_pfn(page)));
+            goto error;
+        }
+        for(uint32_t j = 0 ; j < BUDDY_MAX_ORDER ; j++){
+            list_for_each(node, &buddy.free_lists[j].list){
+                page = list_entry(node, struct page, list);
+                if(target_page == page){
+                    LOG("******* allocated page didn't remove from free list *******", pfn_to_addr(page_to_pfn(page)));
+                    goto error;
+                }
+            }
+        }
+    }
+
+    LOG("******* Pass the testcases *******");
+    return; 
+error:
+    LOG("******* Something is wrong in buddy system alloc_pages *******");
+    return;
+}
 void buddy_init(){
     struct list_head * node;
     struct mem_block* mb;
@@ -92,4 +226,8 @@ void buddy_init(){
     }
     
     print_buddy_statistics();
+    if(debug)
+        _debug_buddy();
+    print_buddy_statistics();
+
 }

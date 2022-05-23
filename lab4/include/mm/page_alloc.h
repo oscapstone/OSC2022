@@ -16,8 +16,10 @@
 #define PAGE_SIZE (1ul << PAGE_SHIFT)
 
 #define _buddy_ffs(x) ((x) == 0 ? BUDDY_MAX_ORDER : ffs64(x))
-#define addr_to_pfn(addr) (addr >> PAGE_SHIFT)
-#define pfn_to_addr(n) (n << PAGE_SHIFT)
+#define addr_to_pfn(addr) ((uint64_t)(addr) >> PAGE_SHIFT)
+#define pfn_to_addr(n) ((void*)(n << PAGE_SHIFT))
+#define page_to_pfn(x) ((uint64_t)((struct page*)x - mem_map))
+#define pfn_to_page(x) ((struct page*)&mem_map[x])
 
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader
