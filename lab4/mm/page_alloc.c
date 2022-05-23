@@ -340,7 +340,23 @@ void _debug_buddy(){
         _debug_free_page(arr[count], 0);
         count++;
     }
-
+/*
+    // check the integrity of linked list by using grep to check how many unique lines
+    //
+    // ./debug.sh > t
+    // grep  "\[test\]" t|sort|uniq|wc -l
+    //
+    struct list_head* tmp_node;
+    struct page* tmp_page;
+    for(uint32_t i = 0 ; i < BUDDY_MAX_ORDER ; i++){
+        list_for_each(tmp_node, &buddy.free_lists[i].list){
+            tmp_page = list_entry(tmp_node, struct page, list); 
+            for(uint32_t j = 0; j < (1 << i) ; j++){
+                printf("[test] : %p\n", pfn_to_addr(page_to_pfn(tmp_page) + j));
+            }
+        }
+    }
+*/  
     LOG("******* Pass the testcases *******");
     return; 
 error:
