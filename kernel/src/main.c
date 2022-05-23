@@ -9,6 +9,7 @@
 #include <task.h>
 #include <sched.h>
 #include <syscall.h>
+#include <vfs.h>
 
 extern Thread *run_thread_head;
 
@@ -31,7 +32,7 @@ int main(unsigned long dtb_base){
 
     // kernel_exec("syscall.img");
     // kernel_main();
-
+    rootfs_init("tmpfs");
     PrintWelcome();
     ShellLoop();
     

@@ -7,7 +7,7 @@ struct vnode_operations* tmpfs_vnode_ops;
 
 int tmpfs_setup_mount(FileSystem *fs, Mount *mount){
     mount->fs = fs;
-    mount->root = tmpfs_create_dentry("/", NULL, D_DICT); 
+    mount->root_dentry = tmpfs_create_dentry("/", NULL, D_DIR); 
     return 0;
 }
 
@@ -15,8 +15,10 @@ Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type t
     Dentry *new_dentry = (Dentry *)kmalloc(sizeof(Dentry));
     new_dentry->name = (char *)kmalloc(sizeof(char) * strlen(name));
     strcpy(new_dentry->name, name);
-    if(parent != NULL){
-        list_add(&parent->list, &new_dentry->list);
+    new_dentry->parent = parent;
+    if(new_dentry->parent != NULL){
+        /* add to parent's child list */
+        list_add_tail(&parent->childs, &new_dentry->list); 
     }
     new_dentry->type = type;
     new_dentry->mount = NULL;
@@ -71,8 +73,39 @@ long tmpfs_lseek64(struct file* file, long offset, int whence){
 
 
 int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* component_name){
+    // if(*component_name == '\0'){
+    //     /* if the target name is empty, it is end of the directory */
+    //     return 0;
+    // } 
+    if(strcmp(component_name, ".")){
+        /* if the target name is ".", it is the same directory */
+        *target = dir_node;
+        return 0;
+    }
+    else if(strcmp(component_name, "..")){
+        /* if dentry is root path, return it */
+        if(dir_node->dentry->parent == NULL) return 0;
+        /* if dentry is not root path, find its parent */
+        *target = dir_node->dentry->parent->vnode;
+        return 0;
+    }
+    else{
+        /* need to find the child dentry */
+        struct list_head *pos;
+        list_for_each(pos, &dir_node->dentry->childs){
+            Dentry *tmp = (Dentry *)pos;
+            if(strcmp(tmp->name, component_name) == 0){
+                // TODO: need to check the dir is other filesystem
 
-    return 0;
+                /* if the target is a file,  return it */
+                *target = tmp->vnode;
+                return 0; 
+            }
+        }
+    }
+    /* if the target is not found, return error code */
+    *target = NULL;
+    return -1;
 }
 int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* component_name){
 
