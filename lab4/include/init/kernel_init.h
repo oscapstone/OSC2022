@@ -7,6 +7,7 @@
 #include "lib/print.h"
 #include "lib/simple_malloc.h"
 #include "mm/mm.h"
+#include "asm.h"
 
 extern void kernel_init(void *);
 
