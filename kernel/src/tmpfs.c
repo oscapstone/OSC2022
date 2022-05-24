@@ -52,35 +52,91 @@ void tmpfs_set_ops(){
 
 int tmpfs_write(struct file* file, const void* buf, size_t len){
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
+    char *src = (char *)buf;
+    size_t write_len = len;
+    size_t write_idx = 0;
 
+    struct list_head *pos;
+    list_for_each(pos, &inode_head->list){
+        TmpfsInode *block = (TmpfsInode *)pos;
+        if(file->f_pos >= block->idx * MAX_DATA_LEN){
+            continue;
+        }
 
+        /* f_pos is in the block of some offset */
+        size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
 
+        while(1){
+            if(write_len <= block->size - offset){
+                memcpy(block->data + offset, src + write_idx, write_len);
+                file->f_pos += write_len;
+                write_idx += write_len;
+                block->data[write_idx] = EOF;
+
+                block->size += write_len;
+                goto DONE;
+            }
+            else if(write_len > block->size - offset){
+                memcpy(block->data + offset, src + write_idx, block->size - offset);
+                file->f_pos += block->size - offset;
+                write_idx += block->size - offset;
+                write_len -= block->size - offset;
+                block->size = MAX_DATA_LEN;
+
+                /* add a new block */
+                TmpfsInode *new_block = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
+                new_block->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
+                new_block->idx = block->idx + 1;
+                new_block->size = 0;
+                new_block->vnode = inode_head->vnode;
+                list_add_tail(&inode_head->list, &new_block->list);
+
+                /* next round will write the data in the new block */
+                block = new_block;  
+            }
+        }
+    }
+
+DONE:
     return 0;
 }
 int tmpfs_read(struct file* file, void* buf, size_t len){
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
     char *dest = (char *)buf;
+    size_t read_len = len;
+    size_t read_idx = 0;
 
     /* iterate through all data inodes */
     struct list_head *pos;
     list_for_each(pos, &inode_head->list){
         TmpfsInode *block = (TmpfsInode *)pos;
-        if(file->f_pos + block->size > len){
-            /* len < MAX_DATA_LEN, read len is ok */
-            for(int i = 0; i < len && block->data[i] != EOF; i++){
-                dest[file->f_pos + i] = block->data[i];
-            }
-            break;
+        /* first need to iterate to the right block beacuse of the f_pos */
+        if(file->f_pos >= block->idx * MAX_DATA_LEN){
+            continue;
         }
-        else if(file->f_pos + block->size <= len){
-            /* len >= MAX_DATA_LEN, read MAX_DATA_LEN is ok */
-            for(int i = 0; i < block->size && block->data[i] != EOF; i++){
-                dest[file->f_pos + i] = block->data[i];
+        /* f_pos is in the block of the offset */
+        size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
+
+        if(read_len <= block->size - offset){
+            /* len < block size, read len is ok */
+            for(size_t i = 0; i < read_len && block->data[offset + i] != EOF; i++){
+                dest[read_idx + i] = block->data[offset + i];
             }
-            file->f_pos += block->size;
+            file->f_pos += read_len;
+            goto DONE;
+        }
+        else if(read_len > block->size - offset){
+            /* len >= block size, read MAX_DATA_LEN is ok */
+            for(size_t i = 0; (i < (block->size - offset)) && (block->data[offset + i] != EOF); i++){
+                dest[read_idx + i] = block->data[offset + i];
+            }
+            file->f_pos += block->size - offset;
+            read_idx += block->size - offset;
+            read_len -= block->size - offset;
         }
     }
 
+DONE:
     return 0;
 }
 int tmpfs_open(struct vnode* file_node, struct file** target){
@@ -143,17 +199,20 @@ int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* comp
 }
 
 int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* component_name){
+    /* create the dict info */
+    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE);
     /* create the inode list head */
     TmpfsInode *inode_head = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
-    inode_head->idx = 1;
+    inode_head->idx = 0;
+    inode_head->size = 0;
+    inode_head->vnode = new_dentry->vnode;
     /* create the real data block */
     TmpfsInode *inode = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
     inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
-    inode->idx = inode_head->idx;
+    inode->idx = 1;
     inode->size = 0;
+    inode->vnode = new_dentry->vnode;
 
-    /* create the dict info */
-    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE);
     new_dentry->vnode->internal = inode_head;
 
     /* add the new data block to inode_head */
