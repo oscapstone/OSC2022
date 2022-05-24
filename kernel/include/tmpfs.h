@@ -12,7 +12,7 @@ typedef struct tmpfs_inode{
      */
     unsigned long idx; 
     unsigned long size;
-    char *data; // data block size = MAX_DATA_LEN
+    char *data; // data block size = MAX_DATA_LEN(512)
     struct vnode* vnode;
 }TmpfsInode;
 

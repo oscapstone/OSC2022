@@ -1,6 +1,8 @@
 #include <tmpfs.h>
 #include <malloc.h>
 #include <string.h>
+#include <uart.h>
+#include <string.h>
 
 struct file_operations* tmpfs_file_ops;
 struct vnode_operations* tmpfs_vnode_ops;
@@ -14,6 +16,8 @@ int tmpfs_setup_mount(FileSystem *fs, Mount *mount){
 Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type){
     Dentry *new_dentry = (Dentry *)kmalloc(sizeof(Dentry));
     new_dentry->name = (char *)kmalloc(sizeof(char) * strlen(name));
+    INIT_LIST_HEAD(&new_dentry->list);
+    INIT_LIST_HEAD(&new_dentry->childs);
     strcpy(new_dentry->name, name);
     new_dentry->parent = parent;
     if(new_dentry->parent != NULL){
@@ -91,7 +95,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
                 new_block->vnode = inode_head->vnode;
                 list_add_tail(&inode_head->list, &new_block->list);
 
-                /* next round will write the data in the new block */
+                /* next round will write the data into the new block */
                 block = new_block;  
             }
         }
@@ -152,6 +156,10 @@ int tmpfs_open(struct vnode* file_node, struct file** target){
     return 0;
 }
 int tmpfs_close(struct file* file){
+    uart_puts("[*] Closed file: ");
+    uart_puts(file->vnode->dentry->name);
+    uart_puts("\n");
+
     kfree(file);
     file = NULL;
     return 0;
@@ -167,12 +175,12 @@ int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* comp
     //     /* if the target name is empty, it is end of the directory */
     //     return 0;
     // } 
-    if(strcmp(component_name, ".")){
+    if(strcmp(component_name, ".") == 0){
         /* if the target name is ".", it is the same directory */
         *target = dir_node;
         return 0;
     }
-    else if(strcmp(component_name, "..")){
+    else if(strcmp(component_name, "..") == 0){
         /* if dentry is root path, return it */
         if(dir_node->dentry->parent == NULL) return 0;
         /* if dentry is not root path, find its parent */
@@ -187,7 +195,7 @@ int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* comp
             if(strcmp(tmp->name, component_name) == 0){
                 // TODO: need to check the dir is other filesystem
 
-                /* if the target is a file,  return it */
+                /* if the target is a file/dir, return it */
                 *target = tmp->vnode;
                 return 0; 
             }

@@ -10,6 +10,7 @@
 #include <sched.h>
 #include <syscall.h>
 #include <vfs.h>
+#include <test_fs.h>
 
 extern Thread *run_thread_head;
 
@@ -30,9 +31,10 @@ int main(unsigned long dtb_base){
     enable_timer_irq();
     enable_irq(); // DAIF set to 0b0000
 
-    // kernel_exec("syscall.img");
-    // kernel_main();
     rootfs_init("tmpfs");
+
+    fs_test1();
+
     PrintWelcome();
     ShellLoop();
     

@@ -71,7 +71,7 @@ struct vnode_operations {
 void rootfs_init();
 int register_filesystem(FileSystem* fs);
 int vfs_open(const char* pathname, int flags, struct file** target);
-int vfs_lookup(const char* pathname, Dentry *target_dentry, VNode *target_vnode, char *component_name);
+int vfs_lookup(const char* pathname, Dentry **target_dentry, VNode **target_vnode, char *component_name);
 // int vfs_lookup(const char *pathname, Dentry *target_dentry, VNode *target_vnode);
 void find_component_name(const char *pathname, char *target_name, char delimiter);
 

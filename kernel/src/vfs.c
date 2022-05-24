@@ -36,41 +36,44 @@ int register_filesystem(FileSystem *fs) {
 }
 
 int vfs_open(const char* pathname, int flags, struct file** target_file) {
-    if(pathname == NULL || *target_file == NULL) return -1;
+    if(pathname == NULL) return -1;
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
-    int err = vfs_lookup(pathname, target_path, target_vnode, component_name);
-    if(err == -1) return err; // worng pathname
+    int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
+    if(err) return err; // worng pathname
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
+        if(target_vnode->dentry->type == D_DIR) return -1;
         err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
+        if(err == -1) return err;
         return 0;
     } 
-    // 3. Create a new file if O_CREAT is specified in flags and vnode not found
-    // lookup error code shows if file exist or not or other error occurs
+    // // 3. Create a new file if O_CREAT is specified in flags and vnode not found
+    // // lookup error code shows if file exist or not or other error occurs
     else{
         if(flags & O_CREAT){
-            // create a new file
             err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
             if(err) return err;
             err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
             if(err) return err;
+            uart_puts("[*] Created file: ");
+            uart_puts((*target_file)->vnode->dentry->name);
+            uart_puts("\n");
             return 0;
         }
     }
-
     // 4. Return error code if fails
     return -1;
 }
 
-int vfs_lookup(const char* pathname, Dentry *target_path, VNode *target_vnode, char *component_name) {
+int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode, char *component_name) {
     int ready_return = 0;
     // 1. Lookup pathname
     if(pathname[0] == '/'){
         int idx = 1;
         char tmp_buf[MAX_PATHNAME_LEN];
-        target_path = rootfs->root_dentry;
+        *target_path = rootfs->root_dentry;
         find_component_name(pathname + idx, component_name, '/');
         while(component_name[0] != '\0'){
             /* 
@@ -80,20 +83,20 @@ int vfs_lookup(const char* pathname, Dentry *target_path, VNode *target_vnode, c
              */
             if(ready_return) return -1;
             /* find the next vnode */
-            if(target_vnode != NULL) target_path = target_vnode->dentry;
-            int err = rootfs->root_dentry->vnode->v_ops->lookup(target_path->vnode, &target_vnode, component_name);
+            if(*target_vnode != NULL) *target_path = (*target_vnode)->dentry;
+            int err = rootfs->root_dentry->vnode->v_ops->lookup((*target_path)->vnode, target_vnode, component_name);
             if(err){
                 ready_return = 1;
-                /* save the component name in tmp_buf beacuse it will check the last name */
-                strcpy(tmp_buf, component_name);
             } 
+            /* save the component name in tmp_buf beacuse it will check the last name */
+            strcpy(tmp_buf, component_name);
 
             /* find next component name*/
             idx += strlen(component_name) + 1;
             find_component_name(pathname + idx, component_name, '/');
         }
         /* if the last component name is '\0', it is a file name */
-        if(ready_return) strcpy(component_name, tmp_buf);
+        strcpy(component_name, tmp_buf);
     }
 
     // TODO: check the relative path
