@@ -140,7 +140,7 @@ void _create_memory_unusedmap(){
             tmp_mb->end = mb->start;
             list_add_tail(&tmp_mb->list, &mem_unusedmap);
         }
-
+        INFO("unused map: start = %p, end = %p", tmp_mb->start, tmp_mb->end);
         unused_start = mb->end;
     }
 
