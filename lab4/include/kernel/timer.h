@@ -8,7 +8,7 @@
 #include "asm.h"
 
 
-#define HZ 100
+#define HZ 10
 
 typedef void (*timer_callback)(void*);
 
