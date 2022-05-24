@@ -4,6 +4,7 @@
 #include "lib/cpio.h"
 #include "lib/print.h"
 #include "lib/simple_malloc.h"
+#include "mm/slab.h"
 #include "lib/list.h"
 #include "lib/string.h"
 #include "debug/debug.h"

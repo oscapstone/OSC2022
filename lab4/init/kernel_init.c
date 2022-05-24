@@ -11,8 +11,8 @@ void kernel_init(void *dtb){
 
     // init_malloc_state should be executed before simple_malloc is using
     init_malloc_state(&__heap_start);
-    fdt_parser(dtb, fdt_initrdfs_callback); 
     mm_init(dtb); 
+    fdt_parser(dtb, fdt_initrdfs_callback); 
     return; 
 }
 
