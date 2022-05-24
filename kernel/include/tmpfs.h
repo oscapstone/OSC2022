@@ -2,7 +2,18 @@
 #define TMPFS_H_
 
 #include <vfs.h>
+#include <list.h>
 
+typedef struct tmpfs_inode{
+    struct list_head list;
+    /* 
+     * inode head: means the num of blocks
+     * data inode: means the idx 
+     */
+    unsigned long idx; 
+    char *data; // data block size = MAX_DATA_LEN
+    struct vnode* vnode;
+}TmpfsInode;
 
 int tmpfs_setup_mount(FileSystem *fs, Mount *mount);
 Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type);

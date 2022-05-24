@@ -44,7 +44,7 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     if(err == -1) return err; // worng pathname
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
-        *target_file = create_fd(target_vnode);
+        err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
         return 0;
     } 
     // 3. Create a new file if O_CREAT is specified in flags and vnode not found
@@ -52,13 +52,16 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     else{
         if(flags & O_CREAT){
             // create a new file
-            int err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
+            err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
             if(err) return err;
+            err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
+            if(err) return err;
+            return 0;
         }
     }
 
     // 4. Return error code if fails
-    return 0;
+    return -1;
 }
 
 int vfs_lookup(const char* pathname, Dentry *target_path, VNode *target_vnode, char *component_name) {
@@ -94,6 +97,7 @@ int vfs_lookup(const char* pathname, Dentry *target_path, VNode *target_vnode, c
     }
 
     // TODO: check the relative path
+    // TODO: the path need to save in global variable and thread info
     return 0;
 }
 
@@ -106,14 +110,6 @@ void find_component_name(const char *pathname, char *component_name, char delimi
     component_name[i] = '\0';
 }
 
-File *create_fd(VNode *target_vnode){
-    File *new_file = (File *)kmalloc(sizeof(File));
-    new_file->vnode = target_vnode;
-    new_file->f_pos = 0;
-    new_file->f_ops = target_vnode->f_ops;
-    new_file->flags = 0;
-    return new_file;
-}
 
 // int traversal_path(const char *pathname, Dentry *target_path, char *target_name){
 //     find_target_name(pathname, target_name, '/');
@@ -157,20 +153,23 @@ File *create_fd(VNode *target_vnode){
 int vfs_close(struct file* file) {
     // 1. release the file handle
     // 2. Return error code if fails
-    return 0;
+    if(file == NULL) return -1;
+    return file->f_ops->close(file);
 
 }
 
 int vfs_write(struct file* file, const void* buf, size_t len) {
     // 1. write len byte from buf to the opened file.
     // 2. return written size or error code if an error occurs.
-    return 0;
+    if(file == NULL) return -1;
+    return file->f_ops->write(file, buf, len);
 }
 
 int vfs_read(struct file* file, void* buf, size_t len) {
     // 1. read min(len, readable size) byte to buf from the opened file.
     // 2. block if nothing to read for FIFO type
     // 2. return read size or error code if an error occurs.
-    return 0;
+    if(file == NULL) return -1;
+    return file->f_ops->read(file, buf, len);
 }
 

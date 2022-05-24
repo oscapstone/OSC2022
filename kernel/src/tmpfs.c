@@ -55,15 +55,46 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
     return 0;
 }
 int tmpfs_read(struct file* file, void* buf, size_t len){
+    TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
+    char *dest = (char *)buf;
+
+    /* iterate through all data inodes */
+    struct list_head *pos;
+    list_for_each(pos, &inode_head->list){
+        TmpfsInode *block = (TmpfsInode *)pos;
+        if(file->f_pos + MAX_DATA_LEN > len){
+            /* len < MAX_DATA_LEN, read len is ok */
+            for(int i = 0; i < len && block->data[i] != EOF; i++){
+                dest[file->f_pos + i] = block->data[i];
+            }
+            break;
+        }
+        else if(file->f_pos + MAX_DATA_LEN <= len){
+            /* len >= MAX_DATA_LEN, read MAX_DATA_LEN is ok */
+            for(int i = 0; i < MAX_DATA_LEN && block->data[i] != EOF; i++){
+                dest[file->f_pos + i] = block->data[i];
+            }
+            file->f_pos += MAX_DATA_LEN;
+        }
+    }
 
     return 0;
 }
 int tmpfs_open(struct vnode* file_node, struct file** target){
-
+    if(file_node == NULL){
+        return -1;
+    }
+    File *new_file = (File *)kmalloc(sizeof(File));
+    new_file->vnode = file_node;
+    new_file->f_pos = 0;
+    new_file->f_ops = file_node->f_ops;
+    new_file->flags = 0;
+    *target = new_file;
     return 0;
 }
 int tmpfs_close(struct file* file){
-
+    kfree(file);
+    file = NULL;
     return 0;
 }
 long tmpfs_lseek64(struct file* file, long offset, int whence){
@@ -109,7 +140,23 @@ int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* comp
 }
 
 int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* component_name){
-    
+    /* create the inode list head */
+    TmpfsInode *inode_head = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
+    inode_head->idx = 1;
+    /* create the real data block */
+    TmpfsInode *inode = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
+    inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
+    inode->idx = inode_head->idx;
+
+    /* create the dict info */
+    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE);
+    new_dentry->vnode->internal = inode_head;
+
+    /* add the new data block to inode_head */
+    list_add_tail(&inode_head->list, &inode->list);
+
+    *target = new_dentry->vnode;
+
     return 0;
 }
 

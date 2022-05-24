@@ -10,6 +10,8 @@ enum dentry_type {
 };
 #define O_CREAT 1
 #define MAX_PATHNAME_LEN 256
+#define MAX_DATA_LEN 512
+#define EOF -1
 
 // file handle
 typedef struct file {
@@ -72,7 +74,6 @@ int vfs_open(const char* pathname, int flags, struct file** target);
 int vfs_lookup(const char* pathname, Dentry *target_dentry, VNode *target_vnode, char *component_name);
 // int vfs_lookup(const char *pathname, Dentry *target_dentry, VNode *target_vnode);
 void find_component_name(const char *pathname, char *target_name, char delimiter);
-File *create_fd(VNode *target_vnode);
 
 int vfs_close(struct file* file);
 int vfs_write(struct file* file, const void* buf, size_t len);
