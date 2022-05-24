@@ -1,5 +1,4 @@
 #include "mm/page_alloc.h"
-
 static struct buddy_system buddy;
 
 void _init_mem_map(){
@@ -57,9 +56,9 @@ void _free_pages_memory(uint64_t start, uint64_t end){
 }
 
 void _free_pages(struct page* page, uint32_t order){
-    struct page* leader_page, *member_page;
+    struct page* buddy_page; 
     uint64_t pfn = page_to_pfn(page);
-    uint64_t leader_pfn, member_pfn, tmp_pfn;
+    uint64_t buddy_pfn;
 
     // check the order of page
     if(BUDDY_IS_FREED(page)){
@@ -70,56 +69,26 @@ void _free_pages(struct page* page, uint32_t order){
         INFO("Error: _free_pages(%u) try to free pfn %p", order, pfn);
         return;
     }
+    
+    while(order < BUDDY_MAX_ORDER - 1){
+        buddy_pfn = find_buddy_pfn(pfn, order); 
+        buddy_page = pfn_to_page(buddy_pfn); 
 
-    // free pages that user want buddy to recycle
-    __free_pages(page, order); 
-
-    // check if current page is leader in buddy group
-    order++;
-    tmp_pfn = pfn & ~((1 << order) - 1); 
-    if(pfn == tmp_pfn){
-        leader_page = page;
-        leader_pfn = pfn;
-
-        member_page = page + (1 << (order - 1));
-        member_pfn = pfn + (1 << (order - 1));
-        if(PAGE_IS_RESERVED(member_page) || !BUDDY_IS_FREED(member_page) || !(member_page->order == order - 1)){
-            return;
-        }
-    }else{
-        leader_page = pfn_to_page(tmp_pfn);
-        leader_pfn = tmp_pfn;
-
-        member_page = page;
-        member_pfn = pfn;
-        if(PAGE_IS_RESERVED(leader_page) || !BUDDY_IS_FREED(leader_page) || !(leader_page->order == order - 1)){
-            return;
-        }
-    }
-
-    // try to merge pages
-    LOG("start merge pages");
-    while(order < BUDDY_MAX_ORDER){
-        if(!PAGE_IS_RESERVED(leader_page) && BUDDY_IS_FREED(leader_page) && (leader_page->order == order - 1)){
-            // remove two buddy from order - 1 free list
-            list_del(&leader_page->list);
-            list_del(&member_page->list);
-            buddy.free_lists[order - 1].count -= 2;
-
-            LOG("merge order %u %p and %p into order %u free list ", order - 1, pfn_to_addr(leader_pfn), pfn_to_addr(member_pfn), order);
-            LOG("add page %p to order %u free list",pfn_to_addr(page_to_pfn(leader_page)) , order);   
-            __free_pages(leader_page, order); 
-
-            member_page = leader_page;
-            member_pfn = leader_pfn;
-
-            leader_page = member_page -  (1 << order);
-            leader_pfn = member_pfn & ~((1 << order) - 1);
-            order++;
+        // Check if buddy is not reserved and freed
+        LOG("%p is buddy of %p in order %u free list and it can be merged", pfn_to_addr(buddy_pfn), pfn_to_addr(pfn), order);
+        if(!PAGE_IS_RESERVED(buddy_page) && BUDDY_IS_FREED(buddy_page) && buddy_page->order == order){
+            list_del(&buddy_page->list);
+            buddy.free_lists[order].count--;
         }else{
             break;
         }
+
+        pfn = pfn & ~(1 << order);
+        page = pfn_to_page(pfn);
+        order++;
     }
+    LOG("Merge %p into order %u free list ", pfn_to_addr(pfn), order);
+    __free_pages(page, order);
     LOG("end merge pages");
 
 }
@@ -246,7 +215,7 @@ uint8_t* _debug_free_page(void *addr, uint32_t order){
 }
 
 void _debug_buddy(){
-    uint8_t *arr[100];
+    uint8_t *arr[1500];
     int32_t i = 0, count = 0;
     struct list_head* node;
     struct page* page, *target_page;
@@ -282,7 +251,7 @@ void _debug_buddy(){
         arr[count] = _debug_alloc_page(2);
         count++;
     }
-    for(i = 0 ; i < 1; i++){
+    for(i = 0 ; i < 1000; i++){
         arr[count] = _debug_alloc_page(0);
         count++;
     }
@@ -336,11 +305,10 @@ void _debug_buddy(){
         _debug_free_page(arr[count], 2);
         count++;
     }
-    for(i = 0 ; i < 1; i++){
+    for(i = 0 ; i < 1000; i++){
         _debug_free_page(arr[count], 0);
         count++;
     }
-/*
     // check the integrity of linked list by using grep to check how many unique lines
     //
     // ./debug.sh > t
@@ -356,7 +324,6 @@ void _debug_buddy(){
             }
         }
     }
-*/  
     LOG("******* Pass the testcases *******");
     return; 
 error:

@@ -24,6 +24,7 @@
 #define pfn_to_addr(n) ((void*)(n << PAGE_SHIFT))
 #define page_to_pfn(x) ((uint64_t)((struct page*)x - mem_map))
 #define pfn_to_page(x) ((struct page*)&mem_map[x])
+#define find_buddy_pfn(pfn, order) (pfn ^ (1 << order))
 
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader
