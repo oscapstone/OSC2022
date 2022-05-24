@@ -251,7 +251,7 @@ void _debug_buddy(){
         arr[count] = _debug_alloc_page(2);
         count++;
     }
-    for(i = 0 ; i < 1000; i++){
+    for(i = 0 ; i < 1400; i++){
         arr[count] = _debug_alloc_page(0);
         count++;
     }
@@ -305,7 +305,7 @@ void _debug_buddy(){
         _debug_free_page(arr[count], 2);
         count++;
     }
-    for(i = 0 ; i < 1000; i++){
+    for(i = 0 ; i < 1400; i++){
         _debug_free_page(arr[count], 0);
         count++;
     }
