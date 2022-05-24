@@ -51,6 +51,9 @@ void tmpfs_set_ops(){
 }
 
 int tmpfs_write(struct file* file, const void* buf, size_t len){
+    TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
+
+
 
     return 0;
 }
@@ -62,19 +65,19 @@ int tmpfs_read(struct file* file, void* buf, size_t len){
     struct list_head *pos;
     list_for_each(pos, &inode_head->list){
         TmpfsInode *block = (TmpfsInode *)pos;
-        if(file->f_pos + MAX_DATA_LEN > len){
+        if(file->f_pos + block->size > len){
             /* len < MAX_DATA_LEN, read len is ok */
             for(int i = 0; i < len && block->data[i] != EOF; i++){
                 dest[file->f_pos + i] = block->data[i];
             }
             break;
         }
-        else if(file->f_pos + MAX_DATA_LEN <= len){
+        else if(file->f_pos + block->size <= len){
             /* len >= MAX_DATA_LEN, read MAX_DATA_LEN is ok */
-            for(int i = 0; i < MAX_DATA_LEN && block->data[i] != EOF; i++){
+            for(int i = 0; i < block->size && block->data[i] != EOF; i++){
                 dest[file->f_pos + i] = block->data[i];
             }
-            file->f_pos += MAX_DATA_LEN;
+            file->f_pos += block->size;
         }
     }
 
@@ -147,6 +150,7 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
     TmpfsInode *inode = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
     inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
     inode->idx = inode_head->idx;
+    inode->size = 0;
 
     /* create the dict info */
     Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE);

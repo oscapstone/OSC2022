@@ -11,6 +11,7 @@ typedef struct tmpfs_inode{
      * data inode: means the idx 
      */
     unsigned long idx; 
+    unsigned long size;
     char *data; // data block size = MAX_DATA_LEN
     struct vnode* vnode;
 }TmpfsInode;
