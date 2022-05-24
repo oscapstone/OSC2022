@@ -143,8 +143,9 @@ struct page* _alloc_pages(uint32_t order){
         LOG("get free page %p from order %u", pfn_to_addr(page_to_pfn(page)), i); 
         
 
-        for(uint32_t j = 0 ; j < (1 << i) ; j++){
-            page[j].order = BUDDY_ALLOCATED;
+        for(uint32_t j = 0 ; j < (1 << order) ; j++){
+            page[j].order = BUDDY_ALLOCATED|order;
+            page[j].buddy_leader = page;
         }
         
         if(i > order){

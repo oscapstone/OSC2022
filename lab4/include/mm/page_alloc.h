@@ -29,6 +29,7 @@
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader
 // if (order & BUDDY_ALLOCATED), then it is allocated 
+    struct page* buddy_leader;
     uint32_t order; 
     uint32_t type;
     struct list_head list;
@@ -46,6 +47,8 @@ struct buddy_system{
 extern void buddy_init();
 extern void* alloc_page();
 extern void* alloc_pages(uint32_t);
+extern void free_pages(void*, uint32_t);
+extern void free_page(void*);
 
 
 #endif
