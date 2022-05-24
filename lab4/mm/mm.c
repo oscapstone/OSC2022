@@ -184,6 +184,15 @@ void mm_init(void *dtb){
     
     // initialize buddy system 
     buddy_init();
-    
-    
+/*    if(debug)
+        debug_buddy();
+    if(debug)
+        debug_slab();
+
+*/
+    kmalloc_init();
+
+    if(debug){
+        debug_kmalloc();
+    }
 }

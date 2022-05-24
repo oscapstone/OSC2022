@@ -14,6 +14,7 @@ OUTPUT ?= .
 HEADERS ?= ../include
 OBJECTS = \
 		 page_alloc.o \
+		 slab.o \
 		 mm.o
 
 .PHONY: all 

@@ -147,11 +147,14 @@ struct page* _alloc_pages(uint32_t order){
             page[j].order = BUDDY_ALLOCATED|order;
             page[j].buddy_leader = page;
         }
-        
+
         if(i > order){
             LOG("start expand pages of order %u to order %u", i, order); 
             expand(page, i, order);
             LOG("end expand pages from order %u to order %u", i, order); 
+        }
+        for(uint32_t j = 0 ; j < (1 << order) ; j++){
+            LOG("2 %u Buddy leader %p", j, page[j].buddy_leader);
         }
         return page; 
     }
@@ -215,7 +218,7 @@ uint8_t* _debug_free_page(void *addr, uint32_t order){
     return ret;
 }
 
-void _debug_buddy(){
+void debug_buddy(){
     uint8_t *arr[1500];
     int32_t i = 0, count = 0;
     struct list_head* node;
@@ -355,9 +358,6 @@ void buddy_init(){
         _free_pages_memory(start_pfn, end_pfn);
     }
     
-    print_buddy_statistics();
-    if(debug)
-        _debug_buddy();
     print_buddy_statistics();
 
 }

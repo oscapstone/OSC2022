@@ -24,8 +24,8 @@ typedef int64_t                 ssize_t;
 #define container_of(ptr, type, member) \
     ((type* )((char*)ptr - offset_of(type, member)))
 
-#define ALIGN_UP(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN(val, align) ((val) & ~((align) - 1))
+#define ALIGN_UP(val, align) (((uint64_t)(val) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(val, align) ((uint64_t)(val) & ~((align) - 1))
 
 #define bswap32(n) (((n & 0xff000000) >> 24) | \
                     ((n & 0x00ff0000) >>  8) | \

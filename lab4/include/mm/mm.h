@@ -8,6 +8,7 @@
 #include "lib/list.h"
 #include "lib/string.h"
 #include "mm/page_alloc.h"
+#include "mm/slab.h"
 
 
 struct mem_block{

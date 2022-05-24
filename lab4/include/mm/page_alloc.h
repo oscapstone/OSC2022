@@ -25,11 +25,13 @@
 #define page_to_pfn(x) ((uint64_t)((struct page*)x - mem_map))
 #define pfn_to_page(x) ((struct page*)&mem_map[x])
 #define find_buddy_pfn(pfn, order) (pfn ^ (1 << order))
+#define get_page_order(p) (p->order & 0xffff)
+#define get_buddy_leader(p) (p->buddy_leader)
 
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader
 // if (order & BUDDY_ALLOCATED), then it is allocated 
-    struct page* buddy_leader;
+    void* buddy_leader;
     uint32_t order; 
     uint32_t type;
     struct list_head list;
@@ -49,7 +51,7 @@ extern void* alloc_page();
 extern void* alloc_pages(uint32_t);
 extern void free_pages(void*, uint32_t);
 extern void free_page(void*);
-
+extern void debug_buddy();
 
 #endif
 

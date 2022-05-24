@@ -53,6 +53,7 @@ KOBJECTS = \
 		 $(OUTPUT)/irq_handler.o \
 		 $(OUTPUT)/page_alloc.o \
 		 $(OUTPUT)/mm.o \
+		 $(OUTPUT)/slab.o \
 		 $(LIBS)
 
 BOBJECTS = \
