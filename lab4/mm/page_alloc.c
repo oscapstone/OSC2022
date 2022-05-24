@@ -153,9 +153,6 @@ struct page* _alloc_pages(uint32_t order){
             expand(page, i, order);
             LOG("end expand pages from order %u to order %u", i, order); 
         }
-        for(uint32_t j = 0 ; j < (1 << order) ; j++){
-            LOG("2 %u Buddy leader %p", j, page[j].buddy_leader);
-        }
         return page; 
     }
     return NULL;

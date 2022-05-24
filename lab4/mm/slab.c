@@ -128,6 +128,7 @@ void kfree(void* obj){
     struct page* buddy_leader = get_buddy_leader(page);
     struct slab* s = pfn_to_addr(page_to_pfn(buddy_leader));
 
+    LOG("kfree(%p) free an object", obj);
     slab_free(s, obj);
     
     if((int64_t)s->inuse < 0){

@@ -9,6 +9,7 @@
 #include "fs/initrdfs.h"
 #include "kernel/timer.h"
 #include "kernel/irq_handler.h"
+#include "mm/slab.h"
 
 void simple_shell(void);
 

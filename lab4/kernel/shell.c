@@ -57,6 +57,17 @@ void simple_shell(){
                    "setTimeout  : set a N seconds timer task\r\n" \
                    "              setTimeout <str> <sec>\r\n" \
                    "irq_count   : list irq count\r\n"
+				   "alloc_pages : get pages\r\n" \
+                   "              alloc_pages <order>\r\n" \
+				   "free_pages  : free pages\r\n" \
+                   "              free_pages <addr>\r\n" \
+				   "kmalloc     : get an object\r\n" \
+                   "              kmalloc <size>\r\n" \
+				   "kfree       : free an object\r\n" \
+                   "              kfree <addr>\r\n" \
+
+				   "page_info   : get buddy system's statistics\r\n" \
+
             );
 
         }else if(strcmp(token, "hello") == 0){
@@ -109,6 +120,46 @@ void simple_shell(){
             printf("Timer will trigger after %l seconds\r\n", timeout);
         }else if(strcmp(token, "irq_count") == 0){
             print_irq_count();    
-        }
+		}else if(strcmp(token, "alloc_pages") == 0){
+			uint32_t order;
+			void* p;
+
+			token = strtok(NULL, DELIM);
+            if(token == NULL) continue;
+            order = atoul(token);
+			p = alloc_pages(order);
+			printf("Allocate pages at %l\r\n", p);
+        }else if(strcmp(token, "free_pages") == 0){
+			void* p;
+			struct page* page;
+
+			token = strtok(NULL, DELIM);
+            if(token == NULL) continue;
+            p = (void*)atoul(token);
+			page = pfn_to_page(addr_to_pfn(p));
+			
+			free_pages(p, get_page_order(page));
+			printf("Free pages\r\n");
+        }else if(strcmp(token, "kmalloc") == 0){
+			uint32_t size;
+			void* p;
+
+			token = strtok(NULL, DELIM);
+            if(token == NULL) continue;
+            size = atoul(token);
+			p = kmalloc(size);
+			printf("Allocate an object at %l\r\n", p);
+        }else if(strcmp(token, "kfree") == 0){
+			void* p;
+
+			token = strtok(NULL, DELIM);
+            if(token == NULL) continue;
+            p = (void*)atoul(token);
+			
+			kfree(p);
+			printf("Free an object\r\n");
+        }else if(strcmp(token, "page_info") == 0){
+			print_buddy_statistics();
+		}
     }
 }
