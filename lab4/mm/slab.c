@@ -148,7 +148,7 @@ void debug_slab(){
 
     struct slab* s = slab_create(TEST_SIZE);
     
-    for(i = 0 ; i < 80000; i++){
+    for(i = 0 ; i < 1000; i++){
         a[i] = slab_alloc(s);
         LOG("%u: slab_alloc(%u) = %p", i, TEST_SIZE, a[i]);
         
@@ -162,7 +162,7 @@ void debug_slab(){
         slab_free(s, a[i]);
     }
 
-    for(i = 0 ; i < 80000; i++){
+    for(i = 0 ; i < 1000; i++){
         a[i] = slab_alloc(s);
         LOG("%u: slab_alloc(%u) = %p", i, TEST_SIZE, a[i]);
 
