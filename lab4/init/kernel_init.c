@@ -7,6 +7,7 @@ void kernel_init(void *dtb){
     mini_uart_init();
     mini_uart_irq_init();
 	local_irq_enable();		
+
     INFO("kernel start initialization...");
 
     // init_malloc_state should be executed before simple_malloc is using
