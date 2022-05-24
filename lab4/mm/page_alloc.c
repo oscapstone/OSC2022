@@ -358,6 +358,4 @@ void buddy_init(){
         _free_pages_memory(start_pfn, end_pfn);
     }
     
-    print_buddy_statistics();
-
 }

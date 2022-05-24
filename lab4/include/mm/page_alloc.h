@@ -52,6 +52,7 @@ extern void* alloc_pages(uint32_t);
 extern void free_pages(void*, uint32_t);
 extern void free_page(void*);
 extern void debug_buddy();
+extern void print_buddy_statistics();
 
 #endif
 
