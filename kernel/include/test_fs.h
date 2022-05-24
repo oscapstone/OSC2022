@@ -2,6 +2,6 @@
 #define TEST_FS_H_
 
 void fs_test1();
-
+void fs_test2();
 
 #endif

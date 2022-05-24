@@ -34,6 +34,7 @@ int main(unsigned long dtb_base){
     rootfs_init("tmpfs");
 
     fs_test1();
+    fs_test2();
 
     PrintWelcome();
     ShellLoop();

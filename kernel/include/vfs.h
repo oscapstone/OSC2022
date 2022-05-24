@@ -11,7 +11,7 @@ enum dentry_type {
 #define O_CREAT 1
 #define MAX_PATHNAME_LEN 256
 #define MAX_DATA_LEN 512
-#define EOF -1
+#define EOF (-1)
 
 // file handle
 typedef struct file {
