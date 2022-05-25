@@ -1,11 +1,10 @@
 #include "lib/simple_malloc.h"
 
-struct malloc_state mstate;
+extern int __heap_start;
+static struct malloc_state mstate = {
+    .last_remainder = (uint8_t*)&__heap_start
+};
 
-void init_malloc_state(void* heap_start){
-    INFO("Simple heap start address: %p", heap_start);
-    mstate.last_remainder = (uint8_t*)heap_start;
-}
 
 void* simple_malloc(size_t size){
     void* chunk = mstate.last_remainder;

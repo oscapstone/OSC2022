@@ -11,6 +11,5 @@ struct malloc_state{
 };
 
 extern void* simple_malloc(size_t);
-extern void init_malloc_state(void*);
 extern void* simple_malloc_get_remainder();
 #endif

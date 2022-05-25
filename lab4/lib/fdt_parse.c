@@ -31,7 +31,6 @@ void fdt_parser(uint8_t* fdt, fdt_callback callback){
 
     pdt_struct = (uint32_t *)(fdt + pheader->off_dt_struct);
     pdt_strings = fdt + pheader->off_dt_strings;
-
     // start parsing structure
     while(!finished){
         token = pdt_struct[count];
@@ -56,11 +55,12 @@ void fdt_parser(uint8_t* fdt, fdt_callback callback){
                 prop.value_len = bswap32(pdt_struct[count]);
                 str_offset = bswap32(pdt_struct[count + 1]);
                 prop.name = pdt_strings + str_offset;
+
                 prop.value = (uint8_t*)&pdt_struct[count + 2];
 
-                len = ALIGN_UP(prop.value_len, 4) / 4;
-                //printf("prop.value_len: %u, prop.name: %s, len: %u\n", prop.value_len, prop.name, len);
+                len = ALIGN_UP(prop.value_len, 4) >> 2;
                 len += 2;
+//                printf("prop.value_len: %u, prop.name: %s, len: %u\n", prop.value_len, prop.name, len);
 
                 count += len;
                 callback(token, NULL, &prop, layer);

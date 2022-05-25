@@ -155,11 +155,11 @@ void _create_memory_unusedmap(){
 void* _get_memory_node(uint32_t token, fdt_node* node, fdt_property* prop, int32_t layer){
     static int found_memory_node = 0;
     uint32_t* pw;
-    if(strcmp(node->name, "memory@0") == 0){
+    if(node != NULL && strcmp(node->name, "memory@0") == 0){
         memory_node.name = "memory@0";
         found_memory_node = 1;
     }
-    if(found_memory_node && strcmp(prop->name, "reg") == 0){
+    if(found_memory_node && prop != NULL && strcmp(prop->name, "reg") == 0){
         pw = (uint32_t*)prop->value;
         memory_node.start = bswap32(pw[0]);
         memory_node.end = memory_node.start + bswap32(pw[1]);
