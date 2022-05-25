@@ -56,19 +56,11 @@ KOBJECTS = \
 		 $(OUTPUT)/slab.o \
 		 $(LIBS)
 
-BOBJECTS = \
-		 $(OUTPUT)/boot.o \
-		 $(OUTPUT)/uart_boot.o \
-		 $(OUTPUT)/mini_uart.o \
-		 $(OUTPUT)/debug.o \
-		 $(OUTPUT)/timer.o \
-		 $(LIBS)
+
+.PHONY: all start kernel end clean dump
 
 
-.PHONY: all start bootloader kernel end clean dump
-
-
-all: start link bootloader kernel end
+all: start link kernel end
 
 start: 
 	@echo "Start building kernel8.img"
@@ -84,10 +76,6 @@ start:
 
 link: $(OBJECTS)
 	$(LD) -T kernel/$(LINKER_FILE) -o $(OUTPUT)/$(KNAME).elf $(KOBJECTS) $(LDFLAGS)
-	$(LD) -T boot/$(LINKER_FILE) -o $(OUTPUT)/$(BNAME).elf $(BOBJECTS) $(LDFLAGS) 
-
-bootloader:
-	$(OBJCOPY) -O binary $(OUTPUT)/$(BNAME).elf $(OUTPUT)/$(BNAME).img 
 
 kernel: $(OUTPUT)/$(KNAME).elf
 	$(OBJCOPY) -O binary $(OUTPUT)/$(KNAME).elf $(OUTPUT)/$(KNAME).img
