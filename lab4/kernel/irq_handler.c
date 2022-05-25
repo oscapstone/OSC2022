@@ -103,7 +103,7 @@ void irq_handler(){
         }
     }
     else{
-        //LOG("Unkown interrupt, DAIF: %x", get_DAIF());
+        LOG("Unkown interrupt, DAIF: %x", get_DAIF());
     }
 }
 
