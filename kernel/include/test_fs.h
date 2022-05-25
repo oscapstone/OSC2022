@@ -3,5 +3,6 @@
 
 void fs_test1();
 void fs_test2();
+void fs_test3();
 
 #endif

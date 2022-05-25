@@ -79,6 +79,7 @@ int vfs_close(struct file* file);
 int vfs_write(struct file* file, const void* buf, size_t len);
 int vfs_read(struct file* file, void* buf, size_t len);
 int vfs_mkdir(const char* pathname);
+int vfs_ls(const char* pathname);
 int vfs_mount(const char* target, const char* filesystem);
 
 #endif

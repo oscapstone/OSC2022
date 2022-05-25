@@ -35,6 +35,7 @@ int main(unsigned long dtb_base){
 
     fs_test1();
     fs_test2();
+    fs_test3();
 
     PrintWelcome();
     ShellLoop();

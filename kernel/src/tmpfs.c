@@ -212,9 +212,9 @@ int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* comp
 }
 
 int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* component_name){
-    /* create the dict info */
     // uart_puts(component_name);
     // uart_puts(((Dentry *)(dir_node->dentry->childs.next))->name);
+    /* create the dict info */
     Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE);
     /* create the inode list head */
     TmpfsInode *inode_head = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
@@ -241,6 +241,9 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
 }
 
 int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* component_name){
-    
+    /* create the dict info */
+    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_DIR);
+    *target = new_dentry->vnode;
+
     return 0;
 }
