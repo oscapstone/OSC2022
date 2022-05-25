@@ -17,36 +17,56 @@ void foo() {
   return;
 }
 
-void thread_test1() {
-  thread_info *idle_t = thread_create(0);
-  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
-  for (int i = 0; i < 5; ++i) {
-    thread_create(foo);
-  }
-  idle();
+void user_test1() {
+  const char *argv[] = {"argv_test", "-o", "arg2", 0};
+  exec("my_test", argv);
 }
 
 void user_test2() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
+  exec("my_test2", argv);
+}
+void user_test3() {
+  const char *argv[] = {"argv_test", "-o", "arg2", 0};
   exec("fork_test", argv);
 }
 
-void thread_test2() {
-  thread_info *idle_t = thread_create(0);
-  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
-  thread_create(user_test2);
-  idle();
-}
-
-void user_test3() {
+void user_test4() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
   exec("syscall.img", argv);
 }
 
-void thread_test3() {
+void user_test5() {
+  const char *argv[] = {"argv_test", "-o", "arg2", 0};
+  exec("vm.img", argv);
+}
+
+void thread_test1() { // thread test
+  thread_info *idle_t = thread_create(0);
+  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+  thread_create(user_test1);
+  thread_create(user_test2);
+  idle();
+}
+
+void thread_test2() { // fork test
   thread_info *idle_t = thread_create(0);
   asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
   thread_create(user_test3);
+  idle();
+}
+
+void thread_test3() { //vedio player1 test
+  thread_info *idle_t = thread_create(0);
+  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+  thread_create(user_test4);
+  idle();
+}
+
+void thread_test4() { //vedio player1 test
+  thread_info *idle_t = thread_create(0);
+  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+  thread_create(user_test5);
   idle();
 }
 

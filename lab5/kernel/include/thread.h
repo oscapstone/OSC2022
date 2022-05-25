@@ -57,6 +57,7 @@ void foo();
 void thread_test1();
 void thread_test2();
 void thread_test3();
+void thread_test4();
 
 void thread_init();
 thread_info *thread_create(void (*func)());

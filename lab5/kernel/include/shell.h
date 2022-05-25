@@ -27,5 +27,6 @@ void command_dma_test();
 void command_thread_test1() ;
 void command_thread_test2() ;
 void command_thread_test3() ;
+void command_thread_test4() ;
 void parse_command(char * buffer);
 void run_shell();
