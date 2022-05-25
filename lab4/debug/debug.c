@@ -39,7 +39,7 @@ void log_kernel_start(){
            &__bss_end, \
            (uint64_t)&__bss_end - (uint64_t)&__bss_start
     );
-    printf("heap_start=%p\n", &__heap_start);
+    printf("heap_start=%p\r\n", &__heap_start);
 
     printf("current exception level: %u\r\n", get_currentEL());
     printf("SP_EL0:                  0x%x\r\n", get_SP_ELx(0));
