@@ -119,6 +119,28 @@ void command_mailbox()
     }
 }
 
+unsigned int get_board_revision()
+{
+    // get board revision
+    mbox[0] = 8*4;                  // length of the message
+    mbox[1] = MBOX_REQUEST;         // this is a request message
+    
+    mbox[2] = MBOX_TAG_GETBDVS;     // get board revision
+    mbox[3] = 4;                    // buffer size
+    mbox[4] = 4;
+    mbox[5] = 0;                    // clear output buffer
+    mbox[6] = 0;
+
+    mbox[7] = MBOX_TAG_LAST;
+    if (mbox_call(MBOX_CH_PROP,mbox)) {
+        uart_puts("board revision is: ");
+        uart_hex(mbox[6]);
+        uart_hex(mbox[5]);
+        uart_puts("\n");
+    }
+    return mbox[5];
+}
+
 void command_test()
 {
     // test malloc

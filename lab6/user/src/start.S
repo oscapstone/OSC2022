@@ -14,6 +14,7 @@ _start:
 .global fork
 .global exec
 .global exit
+.global mbox_call
 
 getpid:
     mov x8, #0
@@ -42,6 +43,11 @@ fork:
 
 exit:
     mov x8, #5
+    svc 0
+    ret
+
+mbox_call:
+    mov x8, #6
     svc 0
     ret
 

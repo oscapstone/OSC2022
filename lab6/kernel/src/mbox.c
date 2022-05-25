@@ -26,8 +26,9 @@
 #include "gpio.h"
 #include "mmu.h"
 #include "printf.h"
+#include "mbox.h"
 /* mailbox message buffer */
-volatile unsigned int  __attribute__((aligned(16))) mbox[36];
+unsigned int  __attribute__((aligned(16))) mbox[8];
 
 #define VIDEOCORE_MBOX  (MMIO_BASE+0x0000B880)
 #define MBOX_READ       ((volatile unsigned int*)(VIDEOCORE_MBOX+0x0))
@@ -45,7 +46,8 @@ volatile unsigned int  __attribute__((aligned(16))) mbox[36];
  */
 int mbox_call(unsigned char ch, unsigned int *user_mbox)
 {
-    printf("[1]user_mbox[1]=%p\n",user_mbox[1]);
+    // printf("[1]user_mbox[1]=%p\n",user_mbox[1]);
+    // printf("[1]user_mbox[28]=%p\n",user_mbox[28]);
     unsigned int r = (((unsigned int)((unsigned long)VA2PA(user_mbox))&~0xF) | (ch&0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
@@ -58,7 +60,9 @@ int mbox_call(unsigned char ch, unsigned int *user_mbox)
         /* is it a response to our message? */
         if(r == *MBOX_READ)
             /* is it a valid successful response? */
-            printf("[2]user_mbox[1]=%p\n",user_mbox[1]);
+            // printf("[2]user_mbox[1]=%p\n",user_mbox[1]);
+            // printf("[2]user_mbox[28]=%p\n",user_mbox[28]);
+
             return user_mbox[1]==MBOX_RESPONSE;
     }
     return 0;

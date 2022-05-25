@@ -5,7 +5,7 @@
 #define STACK_SIZE 4096
 #define USER_STACK_BASE ((uint64_t)0xffffffffb000)
 #define USER_PROGRAM_BASE 0x80000
-#define USER_PROGRAM_SIZE (256 * kb)
+#define USER_PROGRAM_SIZE (512 * kb)
 
 #define MAX_PAGE_FRAME_PER_THREAD 1000
 

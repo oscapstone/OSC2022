@@ -36,8 +36,8 @@
 #define VA2PA(addr) ((uint64_t)(addr) & (uint64_t)0x0000ffffffffffff)
 #define PA2VA(addr) ((uint64_t)(addr) | (uint64_t)0xffff000000000000)
 
-#define PERIPHERAL_START 0x3c100000
-#define PERIPHERAL_END 0x3c300000
+#define PERIPHERAL_START 0x3c000000
+#define PERIPHERAL_END 0x3f000000
 
 void init_page_table(thread_info *thread, uint64_t **table);
 void update_page_table(thread_info *thread, uint64_t virtual_addr,

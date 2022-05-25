@@ -61,19 +61,19 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       const char **argv = (const char **)trap_frame->x[1];
       exec(program_name, argv);
     } else if (iss == 4) {  // fork
-      printf("[fork]\n");
+      // printf("[fork]\n");
       fork(sp);
     } else if (iss == 5) {  // exit
       exit();
     } else if (iss == 6) {  // mbox_call
-      printf("[mbox_call]\n");
+      // printf("[mbox_call]\n");
       thread_info *cur = get_current();
       unsigned int * mbox_user_va = (unsigned int *)trap_frame->x[1];
       unsigned int * mbox_user_pa = (unsigned int *)el0_VA2PA(cur,(uint64_t)mbox_user_va);
-      printf("mbox_user_va:%p\n",mbox_user_va);
-      printf("mbox_user_pa :%p\n",mbox_user_pa);
+      // printf("mbox_user_va:%p\n",mbox_user_va);
+      // printf("mbox_user_pa :%p\n",mbox_user_pa);
       unsigned int * mbox_kernel_va = (unsigned int *) PA2VA(mbox_user_pa);
-      printf("mbox_kernel_va :%p\n",mbox_kernel_va);      // trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
+      // printf("mbox_kernel_va :%p\n",mbox_kernel_va);      // trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
       trap_frame->x[0] = mbox_call(trap_frame->x[0],mbox_kernel_va);
     } else if (iss == 7) {  // kill
       kill((int)trap_frame->x[0]);

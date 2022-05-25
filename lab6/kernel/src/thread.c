@@ -19,7 +19,7 @@ void foo() {
 
 void user_test1() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
-  exec("my_test", argv);
+  exec("mailbox_test", argv);
 }
 
 void user_test2() {
@@ -41,11 +41,10 @@ void user_test5() {
   exec("vm.img", argv);
 }
 
-void thread_test1() { // thread test
+void thread_test1() { // mailbox test
   thread_info *idle_t = thread_create(0);
   asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
   thread_create(user_test1);
-  thread_create(user_test2);
   idle();
 }
 
@@ -143,7 +142,7 @@ void idle() {
 }
 
 void exit() {
-  printf("[exit]\n");
+  // printf("[exit]\n");
   thread_info *cur = get_current();
   // thread_free_page(cur);
   cur->status = THREAD_DEAD;
@@ -177,22 +176,24 @@ void kill_zombies() {
 }
 
 void exec(const char *program_name, const char **argv) {
-  printf("[exec]\n");
+  // printf("[exec]\n");
   thread_info *cur = get_current();
   if (cur->user_program_base == 0) {
     cur->user_program_base = thread_allocate_page(cur, USER_PROGRAM_SIZE);
     cur->user_stack_base = thread_allocate_page(cur, STACK_SIZE);
     init_page_table(cur, &(cur->pgd));
   }
-    printf("cur_pgd: 0x%p\n", (uint64_t)(cur->pgd));
-    printf("user program base: 0x%p\n", cur->user_program_base);
-    printf("user stack base: 0x%p\n", cur->user_stack_base);
+    // printf("cur_pgd: 0x%p\n", (uint64_t)(cur->pgd));
+    // printf("user program base: 0x%p\n", cur->user_program_base);
+    // printf("user stack base: 0x%p\n", cur->user_stack_base);
 
   cur->user_program_size =
       cpio_load_user_program(program_name, cur->user_program_base);
   for (uint64_t size = 0; size < cur->user_program_size; size += PAGE_SIZE) {
     uint64_t virtual_addr = USER_PROGRAM_BASE + size;
     uint64_t physical_addr = VA2PA(cur->user_program_base + size);
+    if(size==0)
+      printf("[first_map]va:%p map to pa:%p\n",virtual_addr,physical_addr);
     update_page_table(cur, virtual_addr, physical_addr, 0b101);
   }
   
@@ -202,7 +203,13 @@ void exec(const char *program_name, const char **argv) {
     // printf("identity_page=%p\n",identity_page);
     update_page_table(cur, identity_page , identity_page, 0b101);
   }
-
+  el0_VA2PA(cur,USER_PROGRAM_BASE);
+  el0_VA2PA(cur,0x3f000000);
+  el0_VA2PA(cur,0x3f000000-1);
+  el0_VA2PA(cur,0x3c25e76c);
+  el0_VA2PA(cur,0x3c100000);
+  el0_VA2PA(cur,0x3c000000);
+  el0_VA2PA(cur,0x3c000000-1);
   uint64_t virtual_addr = USER_STACK_BASE;
   uint64_t physical_addr = VA2PA(cur->user_stack_base);
   update_page_table(cur, virtual_addr, physical_addr, 0b110);

@@ -4,6 +4,8 @@
 #include "alloc.h"
 #include "printf.h"
 #include "thread.h"
+#include "exception.h"
+#include "mbox.h"
 
 void init_page_table(thread_info *thread, uint64_t **table) {
   *table = (uint64_t *)thread_allocate_page(thread, PAGE_SIZE);
@@ -55,6 +57,7 @@ void update_page_table(thread_info *thread, uint64_t virtual_addr,
 }
 
 uint64_t el0_VA2PA(thread_info *thread, uint64_t virtual_addr) {
+  disable_interrupt();
   uint32_t index[4] = {
       (virtual_addr >> 39) & 0x1ff, (virtual_addr >> 30) & 0x1ff,
       (virtual_addr >> 21) & 0x1ff, (virtual_addr >> 12) & 0x1ff};
@@ -70,7 +73,7 @@ uint64_t el0_VA2PA(thread_info *thread, uint64_t virtual_addr) {
   // printf("pgd: %p\n", (uint64_t)table);
   for (int level = 0; level < 3; level++) {
     if (table[index[level]] == 0) {
-      printf("Your page table implement unsuccessful\n");
+      printf("[el0_VA2PA]*Your page table implement unsuccessful*\n");
       break;
     }
     // printf("  [el0_VA2PA]table PA: 0x%p\n", (uint64_t)table[index[level]]);
