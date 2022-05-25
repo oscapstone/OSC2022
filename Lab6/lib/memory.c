@@ -175,6 +175,8 @@ void pop_front(frame_free_node **list) {
 /* remove the free node holding specify index from a list, if exits */
 void remove_from_list(frame_free_node **list, uint64_t index) {
     frame_free_node *target = free_node_table[index];
+    if (!target)
+        uart_printf("[ERROR][remove_from_list] illegal index!\n");
     free_node_table[index] = NULL;
     if (target->list_addr != list)
         uart_printf("[ERROR][remove_from_list] list address not matched!\n");
@@ -184,7 +186,10 @@ void remove_from_list(frame_free_node **list, uint64_t index) {
         (*list)->prev = NULL;
     }
     else {
-        target->next->prev = target->prev;
+        if (target->next)
+            target->next->prev = target->prev;
+        if (!target->prev)
+            uart_printf("[ERROR][remove_from_list] should not reach here!\n");
         target->prev->next = target->next;
     }
     return_free_node(target);
@@ -220,6 +225,8 @@ frame_free_node *get_free_node() {
 }
 
 void return_free_node(frame_free_node *node) {
+    if (!node)
+        uart_printf("[ERROR][return_free_node] null node!\n");
     node->next = node_pool_head;
     node_pool_head = node;
 }
