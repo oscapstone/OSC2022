@@ -76,7 +76,10 @@ void mappages(size_t *virt_pgd_p, size_t va, size_t size, size_t pa, size_t flag
 
 void add_vma(thread_t *t, size_t va, size_t size, size_t pa, size_t rwx, int is_alloced)
 {
-    vm_area_struct_t* new_area = kmalloc(sizeof(vm_area_struct_t));
+    // alignment
+    size = size % 0x1000 ? size + (0x1000 - size%0x1000): size;
+    
+    vm_area_struct_t *new_area = kmalloc(sizeof(vm_area_struct_t));
     new_area->rwx = rwx;
     new_area->area_size = size;
     new_area->virt_addr = va;

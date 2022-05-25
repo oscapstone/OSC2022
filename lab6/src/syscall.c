@@ -41,18 +41,43 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size)
 //In this lab, you won’t have to deal with argument passing
 int exec(trapframe_t *tpf,const char *name, char *const argv[])
 {
-    kfree(curr_thread->data);
+    // free alloced area and vma struct
+    // free alloced area and vma struct
+    list_head_t *pos = curr_thread->vma_list.next;
+    while (pos != &curr_thread->vma_list)
+    {
+        if (((vm_area_struct_t *)pos)->is_alloced)
+            kfree((void *)PHYS_TO_VIRT(((vm_area_struct_t *)pos)->phys_addr));
+
+        list_head_t *next_pos = pos->next;
+        kfree(pos);
+        pos = next_pos;
+    }
+
+    INIT_LIST_HEAD(&curr_thread->vma_list);
     curr_thread->datasize = get_file_size((char *)name);
     char *new_data = get_file_start((char *)name);
     curr_thread->data = kmalloc(curr_thread->datasize);
+    curr_thread->stack_alloced_ptr = kmalloc(USTACK_SIZE);
 
-    //remap code
-    mappages(PHYS_TO_VIRT(curr_thread->context.ttbr0_el1), 0x0, curr_thread->datasize, (size_t)VIRT_TO_PHYS(curr_thread->data), 0);
+    asm("dsb ish\n\t");      // ensure write has completed
+    free_page_tables(curr_thread->context.ttbr0_el1, 0);
+    memset(PHYS_TO_VIRT(curr_thread->context.ttbr0_el1), 0, 0x1000);
+    asm("tlbi vmalle1is\n\t" // invalidate all TLB entries
+        "dsb ish\n\t"        // ensure completion of TLB invalidatation
+        "isb\n\t");          // clear pipeline
 
-    for (unsigned int i = 0; i < curr_thread->datasize; i++)
-    {
-        curr_thread->data[i] = new_data[i];
-    }
+    // remap code
+    add_vma(curr_thread, 0, curr_thread->datasize, (size_t)VIRT_TO_PHYS(curr_thread->data), 7,1);
+    // remap stack
+    add_vma(curr_thread, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(curr_thread->stack_alloced_ptr), 7, 1);
+    // device
+    add_vma(curr_thread, 0x3C000000L, 0x3000000L, 0x3C000000L, 3, 0);
+    // for signal wrapper
+    add_vma(curr_thread, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), 5, 0);
+
+    //copy file into data
+    memcpy(curr_thread->data, new_data, curr_thread->datasize);
 
     //clear signal handler
     for (int i = 0; i <= SIGNAL_MAX; i++)

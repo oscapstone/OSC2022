@@ -60,16 +60,18 @@ void kill_zombies(){
             free_page_tables(((thread_t *)curr)->context.ttbr0_el1,0);
 
             // free alloced area and vma struct
-            list_head_t *pos = curr_thread->vma_list.next;
-            while(pos != &curr_thread->vma_list){
+            list_head_t *pos = ((thread_t *)curr)->vma_list.next;
+            while (pos != &((thread_t *)curr)->vma_list)
+            {
                 if (((vm_area_struct_t *)pos)->is_alloced)
-                    kfree( (void*)((vm_area_struct_t *)pos)->phys_addr );
+                    kfree((void*)PHYS_TO_VIRT(((vm_area_struct_t *)pos)->phys_addr));
 
                 list_head_t* next_pos = pos->next;
                 kfree(pos);
                 pos = next_pos;
             }
 
+            kfree(PHYS_TO_VIRT(((thread_t *)curr)->context.ttbr0_el1)); // free PGD
             ((thread_t *)curr)->iszombie = 0;
             ((thread_t *)curr)->isused = 0;
         }
