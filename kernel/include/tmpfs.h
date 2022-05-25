@@ -30,6 +30,7 @@ long tmpfs_lseek64(struct file* file, long offset, int whence);
 int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* component_name);
 int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* component_name);
 int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* component_name);
+int tmpfs_ls(struct vnode* target);
 
 
 #endif

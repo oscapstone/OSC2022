@@ -53,6 +53,7 @@ void tmpfs_set_ops(){
     tmpfs_vnode_ops->lookup = tmpfs_lookup;
     tmpfs_vnode_ops->create = tmpfs_create;
     tmpfs_vnode_ops->mkdir = tmpfs_mkdir;
+    tmpfs_vnode_ops->ls = tmpfs_ls;
 }
 
 int tmpfs_write(struct file* file, const void* buf, size_t len){
@@ -245,5 +246,22 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* compo
     Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_DIR);
     *target = new_dentry->vnode;
 
+    return 0;
+}
+
+int tmpfs_ls(struct vnode* target){
+    /* print the file/folder name */
+    struct list_head *pos;
+    list_for_each(pos, &target->dentry->childs){
+        Dentry *child = (Dentry *)pos;
+        uart_puts(child->name);
+        uart_puts("[");
+        if(child->type == D_DIR) uart_puts("DIR");
+        else uart_puts("FILE");
+        uart_puts("]");
+        uart_puts("\t");
+    }
+    uart_puts("\n");
+    
     return 0;
 }

@@ -59,8 +59,6 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
         idx = 1;
         *target_path = rootfs->root_dentry;
     }
-    // TODO: check the relative path
-    // TODO: the path need to save in global variable and thread info
     else{
         idx = 0;
         *target_path = global_dentry;
@@ -70,10 +68,10 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
     find_component_name(pathname + idx, component_name, '/');
     while(component_name[0] != '\0'){
         /* 
-            * ready_return is 1 beacuse it couldn't find child vnode before
-            * The next component name is not '\0' now, it's not the last component name
-            * Therefore, it is a wrong pathname, even if the flag is O_CREAT, it also cannot create a new file
-            */
+        * ready_return is 1 beacuse it couldn't find child vnode before
+        * The next component name is not '\0' now, it's not the last component name
+        * Therefore, it is a wrong pathname, even if the flag is O_CREAT, it also cannot create a new file
+        */
         if(ready_return) return -1;
         /* find the next vnode */
         if(*target_vnode != NULL) *target_path = (*target_vnode)->dentry;
@@ -163,16 +161,7 @@ int vfs_ls(const char *pathname){
     if(target_vnode == NULL) return -2; 
 
     /* print the file/folder name */
-    struct list_head *pos;
-    list_for_each(pos, &target_vnode->dentry->childs){
-        Dentry *child = (Dentry *)pos;
-        uart_puts(child->name);
-        uart_puts("[");
-        if(child->type == D_DIR) uart_puts("DIR");
-        else uart_puts("FILE");
-        uart_puts("]");
-        uart_puts("\n");
-    }
+    rootfs->root_dentry->vnode->v_ops->ls(target_vnode);
 
     return 0;
 }

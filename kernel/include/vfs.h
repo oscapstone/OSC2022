@@ -63,6 +63,7 @@ struct vnode_operations {
 					const char* component_name);
 	int (*mkdir)(struct vnode* dir_node, struct vnode** target,
 				const char* component_name);
+	int (*ls)(struct vnode* target);
 };
 
 

@@ -69,6 +69,9 @@ void fs_test3(){
         }
     }
     vfs_ls(NULL);
-    vfs_ls("path1/");
+    vfs_ls("./path1/");
     vfs_ls("path1/path2");
+    vfs_ls("path1/path2/../../");
+    err = vfs_ls("path1/abc");
+    if(err) uart_puts("[x] Failed to ls \"path1/abc\"\n");
 }
