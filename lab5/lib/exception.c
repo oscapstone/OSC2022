@@ -148,6 +148,8 @@ void signal_handler_wrapper(){
   if (_handler){
     _handler();
     add_to_queue();
+  }else{
+    sys_kill(signal_pid);  // no register kill thread
   }
   signal_exit = 0;
   sys_exit();

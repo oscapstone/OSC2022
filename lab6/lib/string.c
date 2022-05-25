@@ -38,8 +38,8 @@ int strcmp(const char *X, const char *Y){
   return *(const unsigned char*)X - *(const unsigned char*)Y;
 }
 
-int myHex2Int(char* str){
-  int res = 0;
+uint64_t myHex2Int(char* str){
+  uint64_t res = 0;
   for (int i = 0; str[i] != '\0'; ++i){
     if(str[i] > 0x60 && str[i] < 0x67){
       res = res * 16 + str[i] - 0x57;

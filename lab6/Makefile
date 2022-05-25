@@ -3,7 +3,7 @@ SRCDIR = lib
 CROSS_COMPILER_PREFIX = aarch64-linux-gnu
 SRC_FILE = $(wildcard lib/*.c) main.c
 OBJ_FILE = ${subst /$(SRCDIR),, $(addprefix $(BUILD_DIR)/, $(SRC_FILE:.c=.o))}  # $(SRCS:.c=.o)
-CFLAGS = -Wall -ffreestanding -nostdlib -nostartfiles -ggdb# -nostdinc
+CFLAGS = -Wall -ffreestanding -nostdlib -nostartfiles -ggdb # -nostdinc
 
 all: clean kernel8.img
 

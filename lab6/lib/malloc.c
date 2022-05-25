@@ -4,6 +4,8 @@
 #include "cpio.h"
 #include "dtb.h"
 
+#define KVA 0xffff000000000000
+
 static void* simple_malloc(size_t size);
 static void add_page_item(int index);
 static void delete_page_item(int index);
@@ -36,7 +38,6 @@ void page_init(){
   frame = (frame_info *)addr;
   sim_alloc_start = addr;
   sim_alloc_end = addr + PAGE_MAX_ENTRY * sizeof(frame_info);
-
   int non_init = PAGE_MAX_ENTRY;
   for(int head=0; head<PAGE_MAX_ENTRY;){
     (frame+head)->index = log2(non_init);
@@ -49,12 +50,13 @@ void page_init(){
     non_init -= power2(log2(non_init));
   }
   memory_reserve((uint64_t)sim_alloc_start, (uint64_t)sim_alloc_end);                                   // for simple_malloc
-  memory_reserve((uint64_t)0x0000, (uint64_t)0x1000);                                                   //spin table
+  memory_reserve((uint64_t)(KVA + 0x0000), (uint64_t)(KVA + 0x1000));                                   // spin table
+  memory_reserve((uint64_t)(KVA + 0x2000), (uint64_t)(KVA + 0x4000));                                   // virtual table
   memory_reserve((uint64_t)&_kernel_start, (uint64_t)&_kernel_end);                                     // kernel
-  memory_reserve((uint64_t)&_kernel_start - 0x2000, (uint64_t)&_kernel_start-0x1000);                   // stack
+  memory_reserve((uint64_t)&_kernel_start - 0x4000, (uint64_t)&_kernel_start-0x1);                      // stack
   memory_reserve((uint64_t)CPIO_DEFAULT_PLACE, (uint64_t)CPIO_DEFAULT_PLACE_END+0x1000);                // cpio size
   memory_reserve((uint64_t)dtb_place, (uint64_t)dtb_place+dtb_size);                                    // dtb
-  memory_reserve((uint64_t)USER_PROGRAM_SPACE, (uint64_t)USER_PROGRAM_SPACE+USER_PROGRAM_MAX_SIZE);     // user program
+  // memory_reserve((uint64_t)USER_PROGRAM_SPACE, (uint64_t)USER_PROGRAM_SPACE+USER_PROGRAM_MAX_SIZE);     // user program
   non_init = PAGE_MAX_ENTRY;
   for(int head=0; head<PAGE_MAX_ENTRY;){
     if((frame+head)->status == 0)
@@ -66,7 +68,7 @@ void page_init(){
 
 void add_page_item(int index){
   int level = (frame+index)->index;
-  page_item *free_page = (page_item *)(index*0x1000 + 0x1000-sizeof(page_item));
+  page_item *free_page = (page_item *)(KVA + index*0x1000 + 0x1000-sizeof(page_item));
   free_page->index = index;
   free_page->previous = NULL;
   free_page->next = NULL;
@@ -82,7 +84,7 @@ void add_page_item(int index){
 
 void delete_page_item(int index){
   int level = (frame+index)->index;
-  page_item *current = (page_item *)(index*0x1000 + 0x1000-sizeof(page_item));
+  page_item *current = (page_item *)(KVA + index*0x1000 + 0x1000-sizeof(page_item));
   page_item *previous = current->previous;
   page_item *next = current->next;
   if(next && previous){
@@ -101,10 +103,11 @@ void delete_page_item(int index){
 }
 
 void memory_reserve(uint64_t start, uint64_t end){
+  start -= KVA;
+  end -= KVA;
   int start_index = start/0x1000;
   int end_index = end/0x1000;
   int head = start_index ;
-
   while ((frame+head)->index == -1)
     head--;
 
@@ -119,13 +122,13 @@ void memory_reserve(uint64_t start, uint64_t end){
     }
   }
 
-  while(head+power2((frame+head)->index) < end_index){
+  while(head+power2((frame+head)->index) <= end_index){
     (frame+head)->status = 1;
     for(int i=1; i<power2((frame+head)->index); i++)
       (frame+head+i)->index = PAGE_RESERVED;
     head += power2((frame+head)->index);
   }
-  
+
   while(head+power2((frame+head)->index)-1 != end_index){
     (frame+head)->index = (frame+head)->index-1;
     (frame+head)->status = 0;
@@ -162,7 +165,7 @@ int page_allocate(size_t size){
 }
 
 void page_free(int index){
-  int size = (frame+index)->index;
+  uint32_t size = (frame+index)->index;
   add_page_item(index);
   (frame+index)->status = 0;
   for(int i=1; i<power2(size); i++){
@@ -208,11 +211,12 @@ void page_divide(int level){
     (frame+index+power2(level-1))->index = level-1;
     add_page_item(index+power2(level-1));
   }else{
-    if(level < 5){
+    if(level < PAGE_MAX_ORDER){
       page_divide(level+1);
       page_divide(level);
-    }else
+    }else{
       printf("No page can be divided!!!\n\r");
+    }
   }
 }
 
@@ -243,19 +247,19 @@ void *malloc(uint64_t size){
 }
 
 void *open_page(size_t size){
-  // printf("open %d\n\r", size);
   uint64_t page_index = page_allocate(size);
-  pool_header *page = (pool_header *)(0x1000*page_index);
+  // printf("open %d, index: %d\n\r", size, page_index);
+  pool_header *page = (pool_header *)(KVA + 0x1000*page_index);
   page->size = size;
-  page->total = (0x1000 - aling8(sizeof(pool_header))-16)/(size+1); // sub 8 for aling 8 of use array
+  page->total = (0x1000 - aling8(sizeof(pool_header))-8)/(size+1); // sub 8 for aling 8 of use array
   page->used = 1;
   page->next = pool;
   pool = page;
-  uint8_t *page_info = (uint8_t *)(0x1000*page_index + aling8(sizeof(pool_header)));
+  uint8_t *page_info = (uint8_t *)(KVA + 0x1000*page_index + aling8(sizeof(pool_header)));
   *page_info = 1;
   for(int i=1; i<page->total; i++)
     *(page_info+i) = 0;
-  return (void *)(0x1000*page_index+aling8(sizeof(pool_header))+aling8(page->total));
+  return (void *)(KVA + 0x1000*page_index+aling8(sizeof(pool_header))+aling8(page->total));
 }
 
 void free(void *addr){
@@ -273,7 +277,7 @@ void free(void *addr){
 }
 
 void remove_page(void *addr){
-  int index = (uint64_t)addr / 0x1000;
+  int index = ((uint64_t)addr - KVA) / 0x1000;
   pool_header *cur = pool;
   pool_header *pre = NULL;
   while (cur != addr){
@@ -306,9 +310,11 @@ int power2(int value){
 void show_frame(){
   printf("--------------frame state--------------\n\r");
   for(int i=0; i<PAGE_MAX_ENTRY; i++){
-    printf("frmae[%2d] = %2d, ", i, (frame+i)->index);
+    printf("frmae[%2d] = %2d(%d), ", i, (frame+i)->index, (frame+i)->status);
     if(i%4 == 3 || i+1 == PAGE_MAX_ENTRY)
       printf("\n\r");
+    if(i==23)
+      break;
   }
 }
 

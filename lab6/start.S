@@ -14,6 +14,11 @@ _start:
   mov     x12, x0                 // save the dtb_place
   bl      mmu_init
   mov     x0, x12                 // load the dtb_place
+
+  ldr x2, = boot_rest             // indirect branch to the virtual address
+  br  x2
+boot_rest:
+
 set_exception_vector_table:
   adr x1, exception_vector_table
   msr vbar_el1, x1

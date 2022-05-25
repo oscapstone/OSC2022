@@ -7,6 +7,7 @@
 #include "malloc.h"
 #include "scheduler.h"
 #include "timer.h"
+#include "mailbox.h"
 
 
 void test(){
@@ -47,7 +48,29 @@ void shell(){
             task_create((thread_func)addr, USER);
             idle_thread();
           }
+        }else if (!strcmp(args[0], "p")){
+          show_page_list();
+        }else if (!strcmp(args[0], "ff")){
+          show_frame();
+        }else if (!strcmp(args[0], "m")){
+          char *addr = malloc((uint64_t)myHex2Int(args[1]));
+          printf("0x%lx\n\r", addr);
+        }else if (!strcmp(args[0], "f")){
+          char *addr = (char *)((uint64_t)myHex2Int(args[1]));
+          free(addr);
+        }else if(!strcmp(args[0], "bb")){
+          volatile unsigned int  __attribute__((aligned(16))) mbox[8];
+          mbox[0] = 32; // buffer size in bytes
+          mbox[1] = 0x00000000;
+          mbox[2] = 0x10002; // tag identifier
+          mbox[3] = 8; // maximum of request and response value buffer's length.
+          mbox[4] = 0x00000000;
+          mbox[5] = 0; // value buffer
+          mbox[6] = 0;
+          mbox_call(8, (unsigned int *)mbox);
+          printf("0x%x\n\r", mbox[5]);
         }
+        
         printf("pi#  ");
         input[0] = 0;
       }
