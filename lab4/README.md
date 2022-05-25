@@ -3,13 +3,13 @@
 ## Features
 
 - Basic Exercise 1
-    - [ ] Buddy System  
+    - [x] Buddy System  
 - Basic Exercise 2 
-    - [ ] Dynamic Memory Allocator 
+    - [x] Dynamic Memory Allocator 
 - Advanced Exercise 1  
-    - [ ] Efficient Page Allocation  
+    - [x] Efficient Page Allocation  
 - Advanced Exercise 2
-    - [ ] Reserved Memory  
+    - [x] Reserved Memory  
 - Advanced Exercise 3
     - [x] Startup Allocation 
 
