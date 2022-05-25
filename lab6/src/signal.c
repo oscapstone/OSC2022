@@ -47,7 +47,6 @@ void run_signal(trapframe_t* tpf,int signal)
         "r"(tpf->spsr_el1), "r"(curr_thread->curr_signal_handler));
 }
 
-//TODO : register signal handler after MMU (el0 cannot run in kernel space)
 void signal_handler_wrapper()
 {
     //call function and system call sigreturn

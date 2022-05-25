@@ -56,10 +56,20 @@ void kill_zombies(){
         if (((thread_t *)curr)->iszombie)
         {
             list_del_entry(curr);
-            kfree(((thread_t *)curr)->stack_alloced_ptr);        // free stack
-            kfree(((thread_t *)curr)->kernel_stack_alloced_ptr); // free stack
+            kfree(((thread_t *)curr)->kernel_stack_alloced_ptr); // free kstack
             free_page_tables(((thread_t *)curr)->context.ttbr0_el1,0);
-            kfree(((thread_t *)curr)->data); // free data (don't free data because of fork)
+
+            // free alloced area and vma struct
+            list_head_t *pos = curr_thread->vma_list.next;
+            while(pos != &curr_thread->vma_list){
+                if (((vm_area_struct_t *)pos)->is_alloced)
+                    kfree( (void*)((vm_area_struct_t *)pos)->phys_addr );
+
+                list_head_t* next_pos = pos->next;
+                kfree(pos);
+                pos = next_pos;
+            }
+
             ((thread_t *)curr)->iszombie = 0;
             ((thread_t *)curr)->isused = 0;
         }
@@ -71,15 +81,10 @@ int exec_thread(char *data, unsigned int filesize)
 {
     thread_t *t = thread_create(data, filesize);
 
-    mappages(t->context.ttbr0_el1, 0x3C000000L, 0x3000000L, 0x3C000000L, 0);
-    mappages(t->context.ttbr0_el1, 0x3F000000L, 0x1000000L, 0x3F000000L, 0);
-    mappages(t->context.ttbr0_el1, 0x40000000L, 0x40000000L, 0x40000000L, 0);
-
-    mappages(t->context.ttbr0_el1, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(t->stack_alloced_ptr), 0);
-    mappages(t->context.ttbr0_el1, 0x0, filesize, (size_t)VIRT_TO_PHYS(t->data), 0);
-
-    // for signal wrapper
-    mappages(t->context.ttbr0_el1, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), PD_RDONLY);
+    add_vma(t, 0x3C000000L, 0x3000000L, 0x3C000000L,3, 0); // device
+    add_vma(t, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(t->stack_alloced_ptr), 7, 1); //stack
+    add_vma(t, 0x0, filesize, (size_t)VIRT_TO_PHYS(t->data), 7, 1); // text
+    add_vma(t, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), 5, 0); // for signal wrapper
 
     t->context.ttbr0_el1 = VIRT_TO_PHYS(t->context.ttbr0_el1);
     t->context.sp = 0xfffffffff000;
@@ -128,6 +133,7 @@ thread_t *thread_create(void *start, unsigned int filesize)
             break;
         }
     }
+    INIT_LIST_HEAD(&r->vma_list);
     r->iszombie = 0;
     r->isused = 1;
     r->context.lr = (unsigned long long)start;

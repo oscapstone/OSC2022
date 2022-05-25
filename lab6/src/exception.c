@@ -5,16 +5,27 @@
 #include "syscall.h"
 #include "sched.h"
 #include "signal.h"
-
+#include "mmu.h"
+#include "stddef.h"
 
 // For svc 0 (supervisor call)
-void sync_64_router(trapframe_t* tpf)
+void sync_64_router(trapframe_t *tpf, unsigned long x1)
 {
     //uart_printf("syscall no : %d\r\n", tpf->x8);
     //uart_printf("elr_el1    : 0x%x\r\n", tpf->elr_el1);
     //uart_printf("sp_el0    : 0x%x\r\n", tpf->sp_el0);
     //uart_printf("spsr_el1    : 0x%x\r\n", tpf->spsr_el1);
     //while(1);
+
+    //For MMU page fault
+    esr_el1_t *esr;
+    esr = (esr_el1_t *)&x1;
+    if (esr->ec == DATA_ABORT_LOWER || esr->ec == INS_ABORT_LOWER)
+    {
+        handle_abort(esr);
+        return;
+    }
+
     enable_interrupt();
     unsigned long long syscall_no = tpf->x8;
 
@@ -57,10 +68,17 @@ void sync_64_router(trapframe_t* tpf)
     else if (syscall_no == 9)
     {
         signal_kill(tpf->x0, tpf->x1);
+    }else if(syscall_no == 10)
+    {
+        sys_mmap(tpf,(void *)tpf->x0,tpf->x1,tpf->x2,tpf->x3,tpf->x4,tpf->x5);
     }
     else if (syscall_no == 50)
     {
         sigreturn(tpf);
+    }else
+    {
+        uart_printf("unknown syscall\r\n");
+        while(1);
     }
 
     /*
@@ -131,7 +149,7 @@ void irq_router(trapframe_t* tpf)
         run_preemptive_tasks();
         core_timer_enable(); // lab 3 : advanced 2 -> unmask device line
 
-        //at least two trhead running -> schedule for any timer irq
+        //at least two thread running -> schedule for any timer irq
         if (run_queue->next->next != run_queue)schedule();
     }
 

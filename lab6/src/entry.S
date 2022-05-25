@@ -62,6 +62,7 @@
     ldp x0, x1, [sp ,16 * 0]  // restore x0
     
     add sp, sp, 32 * 9
+
 .endm
 
 .macro    ventry    label
@@ -156,6 +157,7 @@ error_invalid_el1h:
 sync_el0_64:
     save_all
     mov x0, sp  // trap_frame
+    mrs x1, esr_el1
     bl sync_64_router
     load_all
     eret

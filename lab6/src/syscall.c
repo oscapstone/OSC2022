@@ -32,9 +32,7 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size; i++)
     {
-        lock();
-        uart_putc(buf[i]);
-        unlock();
+        uart_putc(buf[i]);   // some unknown bugs occur when uart_async_putc
     }
     tpf->x0 = i;
     return i;
@@ -79,39 +77,33 @@ int fork(trapframe_t *tpf)
         newt->singal_handler[i] = curr_thread->singal_handler[i];
     }
 
-    mappages(newt->context.ttbr0_el1, 0x3C000000L, 0x3000000L, 0x3C000000L,0);
-    mappages(newt->context.ttbr0_el1, 0x3F000000L, 0x1000000L, 0x3F000000L,0);
-    mappages(newt->context.ttbr0_el1, 0x40000000L, 0x40000000L, 0x40000000L,0);
+    list_head_t *pos;
+    list_for_each(pos, &curr_thread->vma_list){
 
-    // remap code and stack
-    mappages(newt->context.ttbr0_el1, 0xffffffffb000, 0x4000, (size_t)VIRT_TO_PHYS(newt->stack_alloced_ptr),0);
-    mappages(newt->context.ttbr0_el1, 0x0, newt->datasize, (size_t)VIRT_TO_PHYS(newt->data),0);
+        // ignore device and signal wrapper
+        if (((vm_area_struct_t *)pos)->virt_addr == USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED || ((vm_area_struct_t *)pos)->virt_addr == 0x3C000000L)
+        {
+            continue;
+        }
 
+        char *new_alloc = kmalloc(((vm_area_struct_t *)pos)->area_size);
+        add_vma(newt, ((vm_area_struct_t *)pos)->virt_addr, ((vm_area_struct_t *)pos)->area_size, (size_t)VIRT_TO_PHYS(new_alloc), ((vm_area_struct_t *)pos)->rwx, 1);
+
+        memcpy(new_alloc, (void*)PHYS_TO_VIRT(((vm_area_struct_t *)pos)->phys_addr), ((vm_area_struct_t *)pos)->area_size);
+    }
+
+    // device
+    add_vma(newt, 0x3C000000L, 0x3000000L, 0x3C000000L, 3, 0);
     // for signal wrapper
-    mappages(newt->context.ttbr0_el1, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), PD_RDONLY);
+    add_vma(newt, USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED, 0x2000, (size_t)VIRT_TO_PHYS(signal_handler_wrapper), 5, 0); // for signal wrapper
 
-    //在這段page被蓋爁
     int parent_pid = curr_thread->pid;
-
-    //copy data into new process
-    for (int i = 0; i < newt->datasize; i++)
-    {
-        newt->data[i] = curr_thread->data[i];
-    }
-
-    //copy user stack into new process
-    for (int i = 0; i < USTACK_SIZE; i++)
-    {
-        newt->stack_alloced_ptr[i] = curr_thread->stack_alloced_ptr[i];
-    }
 
     //copy stack into new process
     for (int i = 0; i < KSTACK_SIZE; i++)
     {
         newt->kernel_stack_alloced_ptr[i] = curr_thread->kernel_stack_alloced_ptr[i];
     }
-
-    //在這段page被蓋爁
 
     store_context(get_current());
     //for child
@@ -188,4 +180,34 @@ void signal_kill(int pid, int signal)
 void sigreturn(trapframe_t *tpf)
 {
     load_context(&curr_thread->signal_saved_context);
+}
+
+//only need to implement the anonymous page mapping in this Lab.
+void *sys_mmap(trapframe_t *tpf, void *addr, size_t len, int prot, int flags, int fd, int file_offset)
+{
+    len = len%0x1000?len + (0x1000 - len % 0x1000):len; // rounds up
+    addr = (unsigned long)addr%0x1000?addr + (0x1000 - (unsigned long)addr % 0x1000):addr;
+
+    // check if overlap
+    list_head_t *pos;
+    vm_area_struct_t *the_area_ptr = 0;
+    list_for_each(pos, &curr_thread->vma_list)
+    {
+        if (!(((vm_area_struct_t *)pos)->virt_addr >= (unsigned long)(addr + len) || ((vm_area_struct_t *)pos)->virt_addr + ((vm_area_struct_t *)pos)->area_size <= (unsigned long)addr))
+        {
+            the_area_ptr = (vm_area_struct_t *)pos;
+            break;
+        }
+    }
+
+    // test the end of the area as addr
+    if (the_area_ptr)
+    {
+        tpf->x0 = (unsigned long)sys_mmap(tpf, (void *)(the_area_ptr->virt_addr + the_area_ptr->area_size), len, prot, flags, fd, file_offset);
+        return (void *)tpf->x0;
+    }
+
+    add_vma(curr_thread, (unsigned long)addr, len, VIRT_TO_PHYS((unsigned long)kmalloc(len)), prot, 1);
+    tpf->x0 = (unsigned long)addr;
+    return (void*)tpf->x0;
 }

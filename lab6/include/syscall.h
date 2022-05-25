@@ -3,6 +3,7 @@
 
 #include "stddef.h"
 #include "exception.h"
+
 int getpid(trapframe_t *tpf);
 size_t uartread(trapframe_t *tpf,char buf[], size_t size);
 size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size);
@@ -14,5 +15,6 @@ void kill(trapframe_t *tpf,int pid);
 void signal_register(int signal, void (*handler)());
 void signal_kill(int pid, int signal);
 void sigreturn(trapframe_t *tpf);
+void *sys_mmap(trapframe_t *tpf, void *addr, size_t len, int prot, int flags, int fd, int file_offset);
 
 #endif

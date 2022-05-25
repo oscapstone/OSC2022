@@ -1,6 +1,7 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
+#include "stddef.h"
 // https://github.com/Tekki/raspberrypi-documentation/blob/master/hardware/raspberrypi/bcm2836/QA7_rev3.4.pdf p16
 #define CORE0_INTERRUPT_SOURCE ((volatile unsigned int *)(PHYS_TO_VIRT(0x40000060)))
 
@@ -68,7 +69,7 @@ typedef struct trapframe
 
 } trapframe_t;
 
-void sync_64_router(trapframe_t *tpf);
+void sync_64_router(trapframe_t *tpf, unsigned long esr_el1);
 void irq_router(trapframe_t *tpf);
 void invalid_exception_router();
 
@@ -85,5 +86,13 @@ static inline void disable_interrupt()
 unsigned long long is_disable_interrupt();
 void lock();
 void unlock();
+
+#define DATA_ABORT_LOWER 0b100100
+#define INS_ABORT_LOWER 0b100000
+
+#define TF_LEVEL0 0b000100
+#define TF_LEVEL1 0b000101
+#define TF_LEVEL2 0b000110
+#define TF_LEVEL3 0b000111
 
 #endif
