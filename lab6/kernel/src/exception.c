@@ -65,7 +65,12 @@ void sync_handler_lowerEL_64(uint64_t sp) {
     } else if (iss == 5) {  // exit
       exit();
     } else if (iss == 6) {  // mbox_call
+      // thread_info *cur = get_current();
+      // unsigned int * mbox_user_va = (unsigned int *)trap_frame->x[1];
+      // unsigned int * mbox_user_pa = (unsigned int *)el0_VA2PA(cur,(uint64_t)mbox_user_va);
+      // unsigned int * mbox_kernel_va = (unsigned int *) PA2VA(mbox_user_pa);
       trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
+      // trap_frame->x[0] = mbox_call(trap_frame->x[0],mbox_kernel_va);
     } else if (iss == 7) {  // kill
       kill((int)trap_frame->x[0]);
     } 

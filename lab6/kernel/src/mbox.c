@@ -24,7 +24,7 @@
  */
 
 #include "gpio.h"
-
+#include "mmu.h"
 /* mailbox message buffer */
 volatile unsigned int  __attribute__((aligned(16))) mbox[36];
 
@@ -44,7 +44,7 @@ volatile unsigned int  __attribute__((aligned(16))) mbox[36];
  */
 int mbox_call(unsigned char ch, unsigned int *user_mbox)
 {
-    unsigned int r = (((unsigned int)((unsigned long)user_mbox)&~0xF) | (ch&0xF));
+    unsigned int r = (((unsigned int)((unsigned long)VA2PA(user_mbox))&~0xF) | (ch&0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
     /* write the address of our message to the mailbox with channel identifier */
