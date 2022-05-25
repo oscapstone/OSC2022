@@ -110,7 +110,7 @@ void schedule() {
     return;
   }
   if (run_queue.head == run_queue.tail) {  // idle thread
-    // printf("left idle thread\n");
+    printf("left idle thread\n");
     free(run_queue.head);
     run_queue.head = run_queue.tail = 0;
     thread_cnt = 0;
@@ -143,8 +143,9 @@ void idle() {
 }
 
 void exit() {
+  printf("[exit]\n");
   thread_info *cur = get_current();
-  thread_free_page(cur);
+  // thread_free_page(cur);
   cur->status = THREAD_DEAD;
   schedule();
 }
@@ -182,10 +183,10 @@ void exec(const char *program_name, const char **argv) {
     cur->user_program_base = thread_allocate_page(cur, USER_PROGRAM_SIZE);
     cur->user_stack_base = thread_allocate_page(cur, STACK_SIZE);
     init_page_table(cur, &(cur->pgd));
-    // printf("cur_pgd: 0x%llx\n", (uint64_t)(cur->pgd));
-    // printf("user program base: 0x%llx\n", cur->user_program_base);
-    // printf("user stack base: 0x%llx\n", cur->user_stack_base);
   }
+    printf("cur_pgd: 0x%p\n", (uint64_t)(cur->pgd));
+    printf("user program base: 0x%p\n", cur->user_program_base);
+    printf("user stack base: 0x%p\n", cur->user_stack_base);
 
   cur->user_program_size =
       cpio_load_user_program(program_name, cur->user_program_base);
@@ -194,6 +195,14 @@ void exec(const char *program_name, const char **argv) {
     uint64_t physical_addr = VA2PA(cur->user_program_base + size);
     update_page_table(cur, virtual_addr, physical_addr, 0b101);
   }
+  
+  // map vc memory
+  for (uint64_t size = 0; size < PERIPHERAL_END - PERIPHERAL_START; size += PAGE_SIZE) {
+    uint64_t identity_page = PERIPHERAL_START + size; 
+    // printf("identity_page=%p\n",identity_page);
+    update_page_table(cur, identity_page , identity_page, 0b101);
+  }
+
   uint64_t virtual_addr = USER_STACK_BASE;
   uint64_t physical_addr = VA2PA(cur->user_stack_base);
   update_page_table(cur, virtual_addr, physical_addr, 0b110);
@@ -315,6 +324,9 @@ void kill (int kill_pid)
 
 uint64_t thread_allocate_page(thread_info *thread, uint64_t size) {
   page_frame *page_frame = buddy_allocate(size);
+  // printf("[thread_allocate_page]thread->page_frame_count=%d\n",thread->page_frame_count);
+  // printf("[thread_allocate_page]page_frame->id=%d\n",page_frame->id);
+  // printf("[thread_allocate_page]page_frame=%p\n",page_frame);
   thread->page_frame_ids[thread->page_frame_count++] = page_frame->id;
   return page_frame->addr;
 }
