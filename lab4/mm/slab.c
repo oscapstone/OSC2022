@@ -141,7 +141,7 @@ void kfree(void* obj){
     }
 }
 
-#define TEST_SIZE 130 
+#define TEST_SIZE 64 
 #define TEST_INVALID_SIZE ((1 << (BUDDY_MAX_ORDER - 1)) * PAGE_SIZE - SLAB_SIZE + 1)
 void debug_slab(){
     uint32_t i, max_i;
