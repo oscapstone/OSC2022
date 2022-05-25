@@ -7,13 +7,16 @@
 struct file_operations* tmpfs_file_ops;
 struct vnode_operations* tmpfs_vnode_ops;
 
+extern char *global_dir;
+extern Dentry *global_dentry;
+
 int tmpfs_setup_mount(FileSystem *fs, Mount *mount){
     mount->fs = fs;
-    mount->root_dentry = tmpfs_create_dentry("/", NULL, D_DIR); 
+    mount->root_dentry = tmpfs_create_dentry("/", NULL, D_DIR, mount); 
     return 0;
 }
 
-Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type){
+Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type, Mount *mount){
     Dentry *new_dentry = (Dentry *)kmalloc(sizeof(Dentry));
     new_dentry->name = (char *)kmalloc(sizeof(char) * strlen(name));
     INIT_LIST_HEAD(&new_dentry->list);
@@ -26,7 +29,7 @@ Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type t
         // uart_puts("[*] Added to parent's child list\n");
     }
     new_dentry->type = type;
-    new_dentry->mount = NULL;
+    new_dentry->mount = mount;
     new_dentry->vnode = tmpfs_create_vnode(new_dentry);
     return new_dentry;
 }
@@ -199,9 +202,7 @@ int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* comp
         list_for_each(pos, &dir_node->dentry->childs){
             Dentry *tmp = (Dentry *)pos;
             if(strcmp(tmp->name, component_name) == 0){
-                // TODO: need to check the dir is other filesystem
-
-                /* if the target is a file/dir, return it */
+                /* if the target is a file/dir/mountpoint, return it */
                 *target = tmp->vnode;
                 return 0; 
             }
@@ -216,7 +217,7 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
     // uart_puts(component_name);
     // uart_puts(((Dentry *)(dir_node->dentry->childs.next))->name);
     /* create the dict info */
-    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE);
+    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE, dir_node->dentry->mount);
     /* create the inode list head */
     TmpfsInode *inode_head = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
     inode_head->idx = 0;
@@ -243,16 +244,16 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
 
 int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* component_name){
     /* create the dict info */
-    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_DIR);
+    Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_DIR, dir_node->dentry->mount);
     *target = new_dentry->vnode;
 
     return 0;
 }
 
-int tmpfs_ls(struct vnode* target){
+int tmpfs_ls(struct dentry* target){
     /* print the file/folder name */
     struct list_head *pos;
-    list_for_each(pos, &target->dentry->childs){
+    list_for_each(pos, &target->childs){
         Dentry *child = (Dentry *)pos;
         uart_puts(child->name);
         uart_puts("[");
@@ -262,6 +263,14 @@ int tmpfs_ls(struct vnode* target){
         uart_puts("\t");
     }
     uart_puts("\n");
+
+    return 0;
+}
+
+int tmpfs_chdir(struct dentry *target){
+    /* change the current working directory */
+
     
+
     return 0;
 }

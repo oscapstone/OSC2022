@@ -7,24 +7,31 @@
 char *global_dir;
 Dentry *global_dentry;
 Mount *rootfs;
+FileSystem *fs_pool[MAX_FS_NUM];
 
 void rootfs_init(char *fs_name){
-    FileSystem *fs = NULL;
-    if(strcmp(fs_name, "tmpfs") == 0){
-        FileSystem *tmpfs = (FileSystem *)kmalloc(sizeof(FileSystem));
-        tmpfs->name = (char *)kmalloc(sizeof(char) * 6); // 6 is the length of "tmpfs"  
-        strcpy(tmpfs->name, "tmpfs");
-        tmpfs->setup_mount = tmpfs_setup_mount;
-        fs = tmpfs;
+    for(unsigned int idx = 0; idx < MAX_FS_NUM; idx++){
+        FileSystem *init_fs = (FileSystem *)kmalloc(sizeof(FileSystem));
+        init_fs->name = NULL;
+        init_fs->setup_mount = NULL;
+        fs_pool[idx] = init_fs;
     }
 
-    int err = register_filesystem(fs);
+    if(strcmp(fs_name, "tmpfs") == 0){
+        fs_pool[0]->name = (char *)kmalloc(sizeof(char) * 6); // 6 is the length of "tmpfs"  
+        strcpy(fs_pool[0]->name, "tmpfs");
+        fs_pool[0]->setup_mount = tmpfs_setup_mount;
+    }
+
+    int err = register_filesystem(fs_pool[0]);
     if(err) uart_puts("[x] Failed to register filesystem\n");
+    
+    rootfs = (Mount *)kmalloc(sizeof(Mount));
+    fs_pool[0]->setup_mount(fs_pool[0], rootfs);
 
     global_dir = (char *)kmalloc(sizeof(char) * 2046);
-    global_dir[0] = '/';
+    strcpy(global_dir, "/");
     global_dentry = rootfs->root_dentry;
-
 }
 
 
@@ -37,7 +44,10 @@ int register_filesystem(FileSystem *fs) {
         tmpfs_set_ops();
         uart_puts("[*] Registered tmpfs\n");
     }
-    fs->setup_mount(fs, rootfs);
+    else{
+        tmpfs_set_ops();
+        uart_puts("[*] Registered another fs\n");
+    }
 
     return 0;
 }
@@ -73,8 +83,8 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
         * Therefore, it is a wrong pathname, even if the flag is O_CREAT, it also cannot create a new file
         */
         if(ready_return) return -1;
-        /* find the next vnode */
-        if(*target_vnode != NULL) *target_path = (*target_vnode)->dentry;
+        
+        /* Try to find the child vnode */
         int err = rootfs->root_dentry->vnode->v_ops->lookup((*target_path)->vnode, target_vnode, component_name);
         if(err){
             ready_return = 1;
@@ -85,6 +95,19 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
         /* find next component name*/
         idx += strlen(component_name) + 1;
         find_component_name(pathname + idx, component_name, '/');
+
+        /* find the next vnode */
+        if(*target_vnode != NULL){
+            /* check the dir is mountpoint or not */
+            if((*target_vnode)->dentry->type == D_MOUNT){
+                *target_path = (*target_vnode)->dentry->mount->root_dentry;
+            }
+            else{
+                /* the next vnode is child vnode*/
+                *target_path = (*target_vnode)->dentry;
+            }
+            
+        } 
     }
     /* if the last component name is '\0', it is a file name */
     strcpy(component_name, tmp_buf);
@@ -101,7 +124,8 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     if(err) return -1; // worng pathname
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
-        if(target_vnode->dentry->type == D_DIR) return -2; // cannot open a directory
+        if(target_vnode->dentry->type == D_DIR || 
+            target_vnode->dentry->type == D_MOUNT) return -2; // cannot open a directory
         err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
         if(err == -1) return err;
         return 0;
@@ -161,18 +185,85 @@ int vfs_ls(const char *pathname){
     if(target_vnode == NULL) return -2; 
 
     /* print the file/folder name */
-    rootfs->root_dentry->vnode->v_ops->ls(target_vnode);
+    return rootfs->root_dentry->vnode->v_ops->ls(target_vnode->dentry);
+}
+
+int vfs_chdir(const char *pathname){
+    Dentry *target_path = NULL;
+    VNode *target_vnode = NULL;
+    char component_name[MAX_PATHNAME_LEN];
+    if(pathname == NULL){
+        global_dentry = rootfs->root_dentry;
+        strcpy(global_dir, "/");
+        target_path = global_dentry;
+        target_vnode = global_dentry->vnode;
+        return 0;
+    }
+    else{
+        int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
+        if(err) return -1; // worng pathname
+        if(target_vnode->dentry->type == D_FILE) return -2; // cannot change to a file
+    }
+
+    /* file/folder not exist */
+    if(target_vnode == NULL) return -2;
+
+    /* change the global_dentry and global_dir */
+    return rootfs->root_dentry->vnode->v_ops->chdir(target_vnode->dentry);
+}
+
+int vfs_mount(const char *pathname, const char *filesystem){
+    if(filesystem == NULL) return -1;
+    Dentry *target_path = NULL;
+    VNode *target_vnode = NULL;
+    char component_name[MAX_PATHNAME_LEN];
+    int err;
+    if(pathname == NULL){
+        target_path = global_dentry;
+        target_vnode = global_dentry->vnode;
+    }
+    else{
+        err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
+        if(err) return -1; // worng pathname
+    }
+    
+    /* target vnode isn't exist, cannot mount it */
+    if(target_vnode == NULL) return -2;
+        
+    /* target vnode is exist, can mount it */
+    FileSystem *target_fs = NULL;
+    unsigned int idx = 0;
+    /* find the filesystem */
+    for(; idx < MAX_FS_NUM; idx++){
+        if(fs_pool[idx] == NULL) break;
+        if(strcmp(filesystem, fs_pool[idx]->name) == 0){
+            target_fs = fs_pool[idx];
+            goto MOUNT_FS;
+        }
+    }
+    /* cannot find the filesystem , use the empty fs and register it*/
+    fs_pool[idx]->name = (char *)kmalloc(sizeof(char) * 6); // 6 is the length of "tmpfs"  
+    strcpy(fs_pool[idx]->name, filesystem);
+    fs_pool[idx]->setup_mount = tmpfs_setup_mount;
+    target_fs = fs_pool[idx];
+    err = register_filesystem(target_fs);
+    if(err) uart_puts("[x] Failed to register another filesystem\n");
+
+MOUNT_FS:;
+    /* mount the filesystem */
+    Mount *new_mount = (Mount *)kmalloc(sizeof(Mount));
+    target_fs->setup_mount(target_fs, new_mount);
+    new_mount->mount_parent = target_path->mount;
+    target_vnode->dentry->type = D_MOUNT;
 
     return 0;
 }
-
 
 int vfs_close(struct file* file) {
     // 1. release the file handle
     // 2. Return error code if fails
     if(file == NULL) return -1;
     return file->f_ops->close(file);
-
 }
 
 int vfs_write(struct file* file, const void* buf, size_t len) {

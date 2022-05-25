@@ -6,11 +6,13 @@
 
 enum dentry_type {
     D_DIR,
-    D_FILE
+    D_FILE,
+	D_MOUNT
 };
 #define O_CREAT 1
 #define MAX_PATHNAME_LEN 256
 #define MAX_DATA_LEN 512
+#define MAX_FS_NUM 32
 #define EOF (-1)
 
 // file handle
@@ -32,14 +34,15 @@ typedef struct dentry {
     struct list_head list;
     struct list_head childs;
 	struct dentry *parent;
-    struct mount* mount;
     char* name;
     enum dentry_type type;
     struct vnode* vnode;
+    struct mount* mount;
 }Dentry;
 
 typedef struct mount {
 	struct filesystem* fs;
+	struct mount* mount_parent;
 	struct dentry* root_dentry;
 }Mount;
 
@@ -63,7 +66,8 @@ struct vnode_operations {
 					const char* component_name);
 	int (*mkdir)(struct vnode* dir_node, struct vnode** target,
 				const char* component_name);
-	int (*ls)(struct vnode* target);
+	int (*ls)(struct dentry* target);
+	int (*chdir)(struct dentry* target);
 };
 
 
@@ -81,6 +85,7 @@ int vfs_write(struct file* file, const void* buf, size_t len);
 int vfs_read(struct file* file, void* buf, size_t len);
 int vfs_mkdir(const char* pathname);
 int vfs_ls(const char* pathname);
-int vfs_mount(const char* target, const char* filesystem);
+int vfs_chdir(const char* pathname);
+int vfs_mount(const char* pathname, const char* filesystem);
 
 #endif

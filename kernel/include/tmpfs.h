@@ -17,7 +17,7 @@ typedef struct tmpfs_inode{
 }TmpfsInode;
 
 int tmpfs_setup_mount(FileSystem *fs, Mount *mount);
-Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type);
+Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type, Mount* mount);
 VNode *tmpfs_create_vnode(Dentry *dentry);
 void tmpfs_set_ops();
 
@@ -30,7 +30,7 @@ long tmpfs_lseek64(struct file* file, long offset, int whence);
 int tmpfs_lookup(struct vnode* dir_node, struct vnode** target, const char* component_name);
 int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* component_name);
 int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* component_name);
-int tmpfs_ls(struct vnode* target);
-
+int tmpfs_ls(struct dentry* target);
+int tmpfs_chdir(struct dentry* target);
 
 #endif
