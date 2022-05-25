@@ -1,5 +1,4 @@
 #pragma once
-
 #define KVA 0xffff000000000000
 #define PERIPHERAL_BASE 0x3f000000
 
@@ -29,13 +28,3 @@
   (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_PAGE)
 #define BOOT_PTE_NORMAL_NOCACHE_ATTR \
   (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_PAGE)
-
-#include <stdint.h>
-
-#define VA2PA(addr) ((uint64_t)(addr) & (uint64_t)0x0000ffffffffffff)
-#define PA2VA(addr) ((uint64_t)(addr) | (uint64_t)0xffff000000000000)
-
-void init_page_table(uint64_t **table);
-void update_page_table(uint64_t *pgd, uint64_t virtual_addr,
-                       uint64_t physical_addr, int permission);
-                       

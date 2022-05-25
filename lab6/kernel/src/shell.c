@@ -181,7 +181,9 @@ void command_thread_test2() {
 void command_thread_test3() {
     thread_test3(); 
 }
-
+void command_thread_test4() {
+    thread_test4(); 
+}
 void command_dtb_print(int all) { dtb_print(all); }
 
 void parse_command(char * buffer)
@@ -204,6 +206,7 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "t1")) command_thread_test1();
     else if ( !strcmp(buffer, "t2")) command_thread_test2();
     else if ( !strcmp(buffer, "t3")) command_thread_test3();
+    else if ( !strcmp(buffer, "t4")) command_thread_test4();
     else command_not_found(buffer);
 }
 

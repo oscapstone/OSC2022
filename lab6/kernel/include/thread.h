@@ -3,8 +3,11 @@
 #include "utils.h"
 
 #define STACK_SIZE 4096
-#define USER_PROGRAM_BASE 0x30000000
-#define USER_PROGRAM_SIZE (1 * mb)
+#define USER_STACK_BASE ((uint64_t)0xffffffffb000)
+#define USER_PROGRAM_BASE 0x80000
+#define USER_PROGRAM_SIZE (256 * kb)
+
+#define MAX_PAGE_FRAME_PER_THREAD 1000
 
 #define THREAD_DEAD 1
 #define THREAD_FORK 2
@@ -36,6 +39,9 @@ typedef struct thread_info {
   uint64_t user_stack_base;
   uint64_t user_program_base;
   uint32_t user_program_size;
+  uint64_t *pgd;
+  uint32_t page_frame_ids[MAX_PAGE_FRAME_PER_THREAD];
+  uint32_t page_frame_count;
   struct thread_info *next;
 } thread_info;
 
@@ -57,6 +63,7 @@ void foo();
 void thread_test1();
 void thread_test2();
 void thread_test3();
+void thread_test4();
 
 void thread_init();
 thread_info *thread_create(void (*func)());
@@ -70,3 +77,7 @@ void fork(uint64_t sp);
 void handle_fork();
 void create_child(thread_info *parent, thread_info *child);
 void kill (int kill_pid);
+
+uint64_t thread_allocate_page(thread_info *thread, uint64_t size);
+void thread_free_page(thread_info *thread);
+void switch_pgd(uint64_t next_pgd);

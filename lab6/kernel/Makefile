@@ -40,8 +40,10 @@ run:
 	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 run1:
+	killall -9 qemu-system-aarch64
 	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -display vnc=127.0.0.4:0 -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
 
 debug:
+	killall -9 qemu-system-aarch64
 	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -serial null -serial stdio -display none -S -s -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb

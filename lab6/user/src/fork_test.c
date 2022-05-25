@@ -27,7 +27,7 @@ int main() {
       print_s(", ptr: ");
       print_h((unsigned long long)&cnt);
       print_s("\n");
-      delay(1000000000);
+      delay(100000000);
       ++cnt;
     }
   } else {
@@ -38,7 +38,7 @@ int main() {
       print_s(", child: ");
       print_i(ret);
       print_s("\n");
-      delay(1000000000);
+      delay(100000000);
     }
   }
   // while(1);

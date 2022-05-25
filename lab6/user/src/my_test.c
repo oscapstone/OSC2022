@@ -4,7 +4,7 @@ int main(int argc, char **argv) {
     print_s("Test1, pid ");
     print_i(getpid());
     print_s("\n");
-    delay(1000000000);
+    delay(100000000);
     // asm volatile("mov x8, #9");
     // asm volatile("svc 0");
   }
