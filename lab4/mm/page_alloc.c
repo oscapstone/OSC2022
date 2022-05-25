@@ -160,8 +160,11 @@ struct page* _alloc_pages(uint32_t order){
 
 // return 2^order pages
 void* alloc_pages(uint32_t order){
+    if(order > BUDDY_MAX_ORDER - 1) return NULL;
+
     struct page* page = _alloc_pages(order);
     uint64_t pfn = page_to_pfn(page);
+
     return pfn_to_addr(pfn);
 }
 
