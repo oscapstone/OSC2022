@@ -27,7 +27,7 @@ void rootfs_init(char *fs_name){
     if(err) uart_puts("[x] Failed to register filesystem\n");
     
     rootfs = (Mount *)kmalloc(sizeof(Mount));
-    fs_pool[0]->setup_mount(fs_pool[0], rootfs);
+    fs_pool[0]->setup_mount(fs_pool[0], rootfs, NULL); // NULL: rootfs no parent
 
     global_dir = (char *)kmalloc(sizeof(char) * 2046);
     strcpy(global_dir, "/");
@@ -166,6 +166,22 @@ int vfs_mkdir(const char *pathname){
     return 0;
 }
 
+int print_childs(Dentry *target){
+    struct list_head *pos;
+    list_for_each(pos, &target->childs){
+        Dentry *child = (Dentry *)pos;
+        uart_puts(child->name);
+        uart_puts("[");
+        if(child->type == D_DIR) uart_puts("DIR");
+        else if(child->type == D_MOUNT) uart_puts("MOUNT");
+        else uart_puts("FILE");
+        uart_puts("]");
+        uart_puts("\t");
+    }
+    uart_puts("\n");
+    return 0;
+}
+
 int vfs_ls(const char *pathname){
     /* now path */
     Dentry *target_path = NULL;
@@ -185,18 +201,51 @@ int vfs_ls(const char *pathname){
     if(target_vnode == NULL) return -2; 
 
     /* print the file/folder name */
-    return rootfs->root_dentry->vnode->v_ops->ls(target_vnode->dentry);
+    return print_childs(target_path);
+}
+
+
+int change_global_path(Dentry *target){
+    /* change the current working directory */
+    if(target->type == D_DIR){
+        /* if the target is a directory, change the current working directory */
+        global_dentry = target;
+    }
+    else if(target->type == D_MOUNT){
+        global_dentry = target->mount->root_dentry;
+    }
+    unsigned int idx = 0;
+    char *path_arr[50];
+    while(target != NULL){
+        /* it means the target is the another fs root path*/
+        if(strcmp(target->name, "/") == 0 && target->mount != NULL)
+            path_arr[idx] = target->mount_point_dentry->name;
+        else
+            path_arr[idx] = target->name;
+        target = target->parent;
+        idx++;
+    }
+    strcpy(global_dir, "/");
+    for(int i = idx - 2; i >= 0; i--){
+        strcat(global_dir, path_arr[i]);
+        strcat(global_dir, "/");
+    }
+    uart_puts(global_dir);
+    uart_puts("\n");
+    return 0;
 }
 
 int vfs_chdir(const char *pathname){
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
+
+    /* just cd is goto root path */
     if(pathname == NULL){
         global_dentry = rootfs->root_dentry;
         strcpy(global_dir, "/");
-        target_path = global_dentry;
-        target_vnode = global_dentry->vnode;
+        uart_puts(global_dir);
+        uart_puts("\n");
         return 0;
     }
     else{
@@ -209,8 +258,11 @@ int vfs_chdir(const char *pathname){
     if(target_vnode == NULL) return -2;
 
     /* change the global_dentry and global_dir */
-    return rootfs->root_dentry->vnode->v_ops->chdir(target_vnode->dentry);
+    return change_global_path(target_vnode->dentry);
+
 }
+
+
 
 int vfs_mount(const char *pathname, const char *filesystem){
     if(filesystem == NULL) return -1;
@@ -242,7 +294,7 @@ int vfs_mount(const char *pathname, const char *filesystem){
         }
     }
     /* cannot find the filesystem , use the empty fs and register it*/
-    fs_pool[idx]->name = (char *)kmalloc(sizeof(char) * 6); // 6 is the length of "tmpfs"  
+    fs_pool[idx]->name = (char *)kmalloc(sizeof(char) * (strlen(filesystem)+1)); 
     strcpy(fs_pool[idx]->name, filesystem);
     fs_pool[idx]->setup_mount = tmpfs_setup_mount;
     target_fs = fs_pool[idx];
@@ -252,12 +304,19 @@ int vfs_mount(const char *pathname, const char *filesystem){
 MOUNT_FS:;
     /* mount the filesystem */
     Mount *new_mount = (Mount *)kmalloc(sizeof(Mount));
-    target_fs->setup_mount(target_fs, new_mount);
-    new_mount->mount_parent = target_path->mount;
+    target_fs->setup_mount(target_fs, new_mount, target_path->mount);
+    /* change the target vnode's mount and type */
     target_vnode->dentry->type = D_MOUNT;
+    target_vnode->dentry->mount = new_mount;
+
+    new_mount->root_dentry->parent = target_vnode->dentry->parent;
+    /* for the chdir find the mount_point name */
+    new_mount->root_dentry->mount_point_dentry = target_vnode->dentry;
 
     return 0;
 }
+
+// TODO: umount
 
 int vfs_close(struct file* file) {
     // 1. release the file handle

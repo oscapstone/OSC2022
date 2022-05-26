@@ -10,8 +10,9 @@ struct vnode_operations* tmpfs_vnode_ops;
 extern char *global_dir;
 extern Dentry *global_dentry;
 
-int tmpfs_setup_mount(FileSystem *fs, Mount *mount){
+int tmpfs_setup_mount(FileSystem *fs, Mount *mount, Mount *mount_parent){
     mount->fs = fs;
+    mount->mount_parent = mount_parent;
     mount->root_dentry = tmpfs_create_dentry("/", NULL, D_DIR, mount); 
     return 0;
 }
@@ -26,7 +27,6 @@ Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type t
     if(new_dentry->parent != NULL){
         /* add to parent's child list */
         list_add_tail(&new_dentry->list, &parent->childs); 
-        // uart_puts("[*] Added to parent's child list\n");
     }
     new_dentry->type = type;
     new_dentry->mount = mount;
@@ -56,7 +56,6 @@ void tmpfs_set_ops(){
     tmpfs_vnode_ops->lookup = tmpfs_lookup;
     tmpfs_vnode_ops->create = tmpfs_create;
     tmpfs_vnode_ops->mkdir = tmpfs_mkdir;
-    tmpfs_vnode_ops->ls = tmpfs_ls;
 }
 
 int tmpfs_write(struct file* file, const void* buf, size_t len){
@@ -250,27 +249,3 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* compo
     return 0;
 }
 
-int tmpfs_ls(struct dentry* target){
-    /* print the file/folder name */
-    struct list_head *pos;
-    list_for_each(pos, &target->childs){
-        Dentry *child = (Dentry *)pos;
-        uart_puts(child->name);
-        uart_puts("[");
-        if(child->type == D_DIR) uart_puts("DIR");
-        else uart_puts("FILE");
-        uart_puts("]");
-        uart_puts("\t");
-    }
-    uart_puts("\n");
-
-    return 0;
-}
-
-int tmpfs_chdir(struct dentry *target){
-    /* change the current working directory */
-
-    
-
-    return 0;
-}

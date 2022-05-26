@@ -5,7 +5,7 @@
 #include <string.h>
 
 void fs_test1(){
-    uart_puts("--------------------------TEST VFS_OPEN--------------------------\n");
+    uart_puts("----------------------------TEST VFS_OPEN---------------------------\n");
     File *file_a = NULL;
     int err = vfs_open("hello", 0, &file_a);
     if(err) uart_puts("[x] Failed to open hello\n");
@@ -21,7 +21,7 @@ void fs_test1(){
 }
 
 void fs_test2(){
-    uart_puts("--------------------TEST VFS_WRITE & VFS_READ--------------------\n");
+    uart_puts("----------------------TEST VFS_WRITE & VFS_READ---------------------\n");
     File *a = NULL;
     int err = vfs_open("hello", O_CREAT, &a);
     if(err) uart_puts("[x] Failed to open \"hello\"\n");
@@ -54,7 +54,7 @@ void fs_test2(){
 }
 
 void fs_test3(){
-    uart_puts("---------------------TEST VFS_MKDIR & VFS_LS---------------------\n");
+    uart_puts("-----------------------TEST VFS_MKDIR & VFS_LS----------------------\n");
     vfs_mkdir("/path1");
     int err = vfs_mkdir("/path1/path2/");
     if(err){
@@ -72,6 +72,15 @@ void fs_test3(){
     vfs_ls("./path1/");
     vfs_ls("path1/path2");
     vfs_ls("path1/path2/../../");
-    err = vfs_ls("path1/abc");
-    if(err) uart_puts("[x] Failed to ls \"path1/abc\"\n");
+    // err = vfs_ls("path1/abc");
+    // if(err) uart_puts("[x] Failed to ls \"path1/abc\"\n");
+}
+
+void fs_test4(){
+    uart_puts("---------------------TEST VFS_MOUNT & VFS_UMONT---------------------\n");
+    vfs_chdir("path1");
+    vfs_chdir("path2");
+    vfs_chdir("../../");
+    
+
 }

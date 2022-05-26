@@ -38,6 +38,9 @@ typedef struct dentry {
     enum dentry_type type;
     struct vnode* vnode;
     struct mount* mount;
+
+	/* for the chdir find the mount_point's name */
+	struct dentry* mount_point_dentry;
 }Dentry;
 
 typedef struct mount {
@@ -48,7 +51,7 @@ typedef struct mount {
 
 typedef struct filesystem {
 	char* name;
-	int (*setup_mount)(struct filesystem* fs, struct mount* mount);
+	int (*setup_mount)(struct filesystem* fs, struct mount* mount, struct mount* mount_parent);
 }FileSystem;
 
 struct file_operations {
@@ -67,7 +70,6 @@ struct vnode_operations {
 	int (*mkdir)(struct vnode* dir_node, struct vnode** target,
 				const char* component_name);
 	int (*ls)(struct dentry* target);
-	int (*chdir)(struct dentry* target);
 };
 
 
@@ -85,7 +87,10 @@ int vfs_write(struct file* file, const void* buf, size_t len);
 int vfs_read(struct file* file, void* buf, size_t len);
 int vfs_mkdir(const char* pathname);
 int vfs_ls(const char* pathname);
+int print_childs(Dentry *target);
 int vfs_chdir(const char* pathname);
+int change_global_path(Dentry *target);
 int vfs_mount(const char* pathname, const char* filesystem);
+
 
 #endif
