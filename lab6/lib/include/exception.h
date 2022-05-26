@@ -1,8 +1,9 @@
 #include "gpio.h"
 #include "stdint.h"
+#include "mmu.h"
 
 // https://github.com/Tekki/raspberrypi-documentation/blob/master/hardware/raspberrypi/bcm2836/QA7_rev3.4.pdf p16
-#define CORE0_INTERRUPT_SOURCE ((volatile uint64_t *)(0x40000060))
+#define CORE0_INTERRUPT_SOURCE ((volatile uint64_t *)(KVA | 0x40000060))
 #define IRQS1_PENDING   ((volatile uint64_t *)(MMIO_BASE+0x0000b204))
 #define INTERRUPT_SOURCE_CNTPNSIRQ (1<<1)
 

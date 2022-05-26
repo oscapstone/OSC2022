@@ -23,6 +23,7 @@ typedef struct task{
   uint64_t user_sp;
   uint64_t sp_addr;
   uint32_t pid;
+  uint64_t *page_table;
   enum mode mode;
   void (*handler)();
   enum state state;
@@ -42,5 +43,3 @@ void schedule();
 void kill_zombies();
 void kill_thread(int pid);
 void switch_to_user_space();
-void fork_test();
-void foo();

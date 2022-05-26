@@ -4,8 +4,6 @@
 #include "cpio.h"
 #include "dtb.h"
 
-#define KVA 0xffff000000000000
-
 static void* simple_malloc(size_t size);
 static void add_page_item(int index);
 static void delete_page_item(int index);
@@ -51,7 +49,7 @@ void page_init(){
   }
   memory_reserve((uint64_t)sim_alloc_start, (uint64_t)sim_alloc_end);                                   // for simple_malloc
   memory_reserve((uint64_t)(KVA + 0x0000), (uint64_t)(KVA + 0x1000));                                   // spin table
-  memory_reserve((uint64_t)(KVA + 0x2000), (uint64_t)(KVA + 0x4000));                                   // virtual table
+  memory_reserve((uint64_t)(KVA + 0x2000), (uint64_t)(KVA + 0x4000));                                   // kernel virtual table
   memory_reserve((uint64_t)&_kernel_start, (uint64_t)&_kernel_end);                                     // kernel
   memory_reserve((uint64_t)&_kernel_start - 0x4000, (uint64_t)&_kernel_start-0x1);                      // stack
   memory_reserve((uint64_t)CPIO_DEFAULT_PLACE, (uint64_t)CPIO_DEFAULT_PLACE_END+0x1000);                // cpio size
@@ -162,6 +160,10 @@ int page_allocate(size_t size){
     (frame+current->index+i)->index = PAGE_ALLOCATED;
   page_list[level] = current->next;
   return current->index;
+}
+
+void *page_allocate_addr(size_t size){
+  return (void *)(page_allocate(size)*0x1000 + KVA);
 }
 
 void page_free(int index){

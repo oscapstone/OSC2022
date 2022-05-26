@@ -1,32 +1,48 @@
 #include "mmu.h"
+#include "malloc.h"
+#include "printf.h"
 
-#define TCR_CONFIG_REGION_48bit (((64 - 48) << 0) | ((64 - 48) << 16))
-#define TCR_CONFIG_4KB ((0b00 << 14) |  (0b10 << 30))
-#define TCR_CONFIG_DEFAULT (TCR_CONFIG_REGION_48bit | TCR_CONFIG_4KB)
+void map_pages(uint64_t* page_table, uint64_t va, uint64_t alloc){
+  uint32_t index[4]; // index of each table
+  va >>= 12;
+  index[3] = va & 0x1ff;
+  va >>= 9;
+  index[2] = va & 0x1ff;
+  va >>= 9;
+  index[1] = va & 0x1ff;
+  va >>= 9;
+  index[0] = va & 0x1ff;
+  uint64_t* table = (uint64_t *)PA2VA(page_table);
+  for (int i = 0; i < 3; i++) {
+    if (table[index[i]] == 0) {
+      init_PT((uint64_t**)&table[index[i]]);
+      table[index[i]] |= PD_TABLE;
+    }
+    uint64_t entry = table[index[i]];
+    entry = entry - (entry & 0xfff);
+    table = (uint64_t*)PA2VA(entry);
+  }
+  if (table[index[3]])
+		printf("[ERROR][map_pages] the VA: %x has already been mapped!\n\r", va);
+  table[index[3]] = (alloc) | (1<<10) | (1<<6) | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_TABLE;
+}
 
-#define MAIR_DEVICE_nGnRnE 0b00000000
-#define MAIR_NORMAL_NOCACHE 0b01000100
-#define MAIR_IDX_DEVICE_nGnRnE 0
-#define MAIR_IDX_NORMAL_NOCACHE 1
-#define MAIR_CONFIG_DEFAULT ((MAIR_DEVICE_nGnRnE<<(MAIR_IDX_DEVICE_nGnRnE*8))|(MAIR_NORMAL_NOCACHE<<(MAIR_IDX_NORMAL_NOCACHE*8)))
-
-#define PD_TABLE 0b11
-#define PD_BLOCK 0b01
-#define PD_ACCESS (1 << 10)
-#define BOOT_PGD_ATTR PD_TABLE
-#define BOOT_PUD_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
-#define BOOT_L2D_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)      // for L2 (peripherals)
-#define BOOT_L2N_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)     // for L2 (normal)
+void init_PT(uint64_t** page_table){
+  char *table = (char *)page_allocate_addr(0x1000);
+  for (int i = 0; i < 4096; ++i)
+		table[i] = 0;
+  *page_table = (void*)VA2PA(table);
+}
 
 void mmu_init(){
   // Set up TCR_EL1
   asm volatile("msr tcr_el1, %[output]\n"::[output]"r"(TCR_CONFIG_DEFAULT));
   /*
 		1000 0000 0001 0000 0000 0000 0001 0000
-		[5:0] the number of the most significant bits that must be all 0s // TTBR0_EL0
-		[21:16] the number of the most significant bits that must be all 1s // TTBR0_EL1
-		[15:14] granule size for user space	(00=4KB, 01=16KB, 11=64KB) // TTBR0_EL0
-		[31:30] granule size for kernel space // TTBR0_EL1
+		[5:0] the number of the most significant bits that must be all 0s // TTBR0_EL1
+		[21:16] the number of the most significant bits that must be all 1s // TTBR1_EL1
+		[15:14] granule size for user space	(00=4KB, 01=16KB, 11=64KB) // TTBR0_EL1
+		[31:30] granule size for kernel space // TTBR1_EL1
 	*/
   // Set up mair_el1
   asm volatile("msr mair_el1, %[output]\n"::[output]"r"(MAIR_CONFIG_DEFAULT));

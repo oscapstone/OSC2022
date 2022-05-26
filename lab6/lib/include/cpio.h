@@ -1,5 +1,9 @@
-#define USER_PROGRAM_SPACE 0x900000
+#include "stdint.h"
+#include "mmu.h"
+
+#define USER_PROGRAM_SPACE KVA + 0x900000
 #define USER_PROGRAM_MAX_SIZE 0x500000
+#define USER_PROGRAM_ADDR 0x0
 
 typedef struct cpio_header {
   char	   c_magic[6];
@@ -21,7 +25,7 @@ typedef struct cpio_header {
 void cpio_ls();
 void cpio_cat(char *str);
 void cpio_exec(char *str);
-void *load_program(char *name);
+void load_program(char *name, uint64_t *page_table);
 
 extern char *CPIO_DEFAULT_PLACE;
 extern char *CPIO_DEFAULT_PLACE_END;

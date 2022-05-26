@@ -6,6 +6,8 @@
 #include "cpio.h"
 #include "mailbox.h"
 #include "system.h"
+#include "mmu.h"
+#include "malloc.h"
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
@@ -45,31 +47,36 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = cur->pid;
   }else if(frame->x8 == 1){         // uart read
     interrupt_enable();
-    int read = 0;
     char *buf = (char *)frame->x0;
-    while (read < frame->x1){
-      *(buf+read) = uart_getc();
-      read++;
+    for(int i=0; i < frame->x1; i++){
+      buf[i] = uart_getc();
     }
-    frame->x0 = read;
+    frame->x0 = frame->x1;
     interrupt_disable();
   }else if(frame->x8 == 2){         // uart write
     interrupt_enable();
-    int sent = 0;
     char *buf = (char *)frame->x0;
-    while (sent < frame->x1){
-      uart_send(*buf++);
-      sent++;
-    }
-    frame->x0 = sent;
+    for(int i=0; i<frame->x1; i++)
+      uart_send(buf[i]);
+    frame->x0 = frame->x1;
     interrupt_disable();
   }else if(frame->x8 == 3){         // exec
+    printf("exec\n\r");
     char *name = (char *)frame->x0;
     task *cur = get_current();
-    frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
-    char *addr = load_program(name);
-    frame->elr_el1 = (uint64_t)addr;
+    init_PT(&(cur->page_table));
+    load_program(name, cur->page_table);
+    for (int i = 0; i < 4; i++)
+      map_pages(cur->page_table, 0xffffffffb000 + i*0x1000, VA2PA(page_allocate_addr(0x1000)));
+    frame->sp_el0 = cur->user_sp;
+    frame->elr_el1 = (uint64_t)USER_PROGRAM_ADDR;
     // char *argv = (char *)frame->x1;
+    asm volatile("mov x0, %0 			\n"::"r"(cur->page_table));
+    asm volatile("dsb ish 	\n");             // ensure write has completed
+	  asm volatile("msr ttbr0_el1, x0 	\n");   // switch translation based address.
+    asm volatile("tlbi vmalle1is 	\n");       // invalidates cached copies of translation table entries from L1 TLBs
+    asm volatile("dsb ish 	\n");             // ensure completion of TLB invalidatation
+    asm volatile("isb 	\n");                 // clear pipeline
     frame->x0 = 0;
   }else if(frame->x8 == 4){        // fork
     task *parent = get_current();
@@ -101,10 +108,10 @@ void sync_router(uint64_t x0, uint64_t x1){
     }
     if((uint64_t)child->sp_addr > (uint64_t)parent->sp_addr){
       child->sp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
-      // child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);      // fp is the chain this only move the fist element
+      child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);      // fp is the chain this only move the fist element
     }else if((uint64_t)child->sp_addr < (uint64_t)parent->sp_addr){
       child->sp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
-      // child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
+      child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
     }
     trap_frame *child_frame = (trap_frame *)child->sp;
     child_frame->x0 = 0;

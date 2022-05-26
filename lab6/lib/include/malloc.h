@@ -1,4 +1,5 @@
 #include "stdint.h"
+#include "mmu.h"
 
 #define PAGE_MAX_ORDER 16
 #define PAGE_FREE -1 
@@ -31,6 +32,7 @@ typedef struct pool_header {
 
 void page_init();
 int page_allocate(size_t size);
+void *page_allocate_addr(size_t size);
 void page_free(int index);
 void show_frame();
 void show_page_list();

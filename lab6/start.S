@@ -20,7 +20,7 @@ _start:
 boot_rest:
 
 set_exception_vector_table:
-  adr x1, exception_vector_table
+  ldr x1, =exception_vector_table
   msr vbar_el1, x1
   
   ldr     x1, =_start             // set top of stack just before our code (stack grows to a lower address per AAPCS64)

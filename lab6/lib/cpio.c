@@ -2,11 +2,12 @@
 #include "printf.h"
 #include "string.h"
 #include "malloc.h"
+#include "mmu.h"
 
 static int read_header(char *str, int size);
 
-char * CPIO_DEFAULT_PLACE;
-char * CPIO_DEFAULT_PLACE_END;
+char *CPIO_DEFAULT_PLACE;
+char *CPIO_DEFAULT_PLACE_END;
 
 void cpio_ls(){
   cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
@@ -84,9 +85,9 @@ int read_header(char *str, int size){
   return myHex2Int(a);
 }
 
-void *load_program(char *name){
+void load_program(char *name, uint64_t *page_table){
   cpio_header *cpio = (cpio_header *)CPIO_DEFAULT_PLACE;
-  char *header = cpio->c_magic;
+  char *header = (char *)PA2VA(cpio->c_magic);
   char *data;
   while(strcmp(header+110, "TRAILER!!!")){
     int namesize = read_header(header + 94, 8);
@@ -98,21 +99,21 @@ void *load_program(char *name){
     if(filesize%4){
       filesize += (4 - filesize%4);
     }
+
     if(!strcmp(header+110, name) && filesize != 0){
       data = header+110+namesize;
-      // allocate a space and copy the file which need to be executed
-      if(filesize > USER_PROGRAM_MAX_SIZE){
-        printf("file too large\n\r");
-        return 0;
+      int sz = filesize / 0x1000 + (filesize % 0x1000 != 0);
+      for (int i = 0; i < sz; i++) {
+        char *addr = (char *)page_allocate_addr(0x1000);
+        map_pages(page_table, USER_PROGRAM_ADDR + 0x1000 * i, (uint64_t)VA2PA(addr));
+        for (int j = 0; j < 0x1000; j++){
+          *(addr+j) = *(data+i*0x1000+j);
+        }
       }
-      char *addr = (char *)USER_PROGRAM_SPACE;
-      for(int i=0; i<filesize; i++){
-        *(addr+i) = *(data+i);
-      }
-      return addr;
+      return;
     }
     header = header + namesize + filesize + 110;
   }
   printf("can't find this file named \"%s\"\n\r", name);
-  return 0;
+  return;
 }

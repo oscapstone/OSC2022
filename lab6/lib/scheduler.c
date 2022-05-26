@@ -4,6 +4,7 @@
 #include "shell.h"
 #include "timer.h"
 #include "system.h"
+#include "mmu.h"
 
 static task *run_queue = NULL;
 static task *zombies_queue = NULL;
@@ -12,7 +13,8 @@ static void enqueue(task **queue, task *new_task);
 static void *dequeue(task **queue);
 
 void thread_init(void){
-  task_create(idle_thread, KERNEL);
+  task *cur = task_create(idle_thread, KERNEL);
+  cur->page_table = (uint64_t *)0x1000;
 }
 
 void idle_thread(void){
@@ -26,25 +28,24 @@ void idle_thread(void){
 
 void *task_create(thread_func func, enum mode mode){
   task *new_task = malloc(sizeof(task));
+  init_PT(&(new_task->page_table));     // init the PGD table
   new_task->mode = mode;
   new_task->next = NULL;
   new_task->pid = pid++;
   new_task->handler = NULL;
   new_task->state = RUNNING;
   if(mode == USER){
-    char *addr = malloc(THREAD_SP_SIZE);
-    new_task->user_sp = (uint64_t)addr;
-    addr += THREAD_SP_SIZE - 1;
-    addr -= (uint64_t)addr%0x10;
+    for (int i = 0; i < 4; i++)
+      map_pages(new_task->page_table, 0xffffffffb000 + i*0x1000, VA2PA(page_allocate_addr(0x1000)));
+    new_task->user_sp = 0xfffffffff000;
     new_task->lr = (uint64_t)switch_to_user_space;
     new_task->target_func = (uint64_t)func;
   }else{
     new_task->lr = (uint64_t)func;
   }
-  char *addr = malloc(THREAD_SP_SIZE);
+  char *addr = page_allocate_addr(0x1000);
   new_task->sp_addr = (uint64_t)addr;
-  addr += THREAD_SP_SIZE - 1;
-  addr -= (uint64_t)addr%0x10;
+  addr += 0x1000 - 0x10;
   new_task->fp = (uint64_t)addr;
   new_task->sp = (uint64_t)addr;
   enqueue(&run_queue, new_task);  
@@ -61,10 +62,19 @@ void schedule(){
     core_timer_interrupt_disable();
     shell();
   }
-  if(cur->state != EXIT)
+  if(cur->state != EXIT){
     enqueue(&run_queue, cur);
-  else
+  }else{
     enqueue(&zombies_queue, cur);
+  }
+
+  asm volatile("mov x0, %0 			\n"::"r"(next->page_table));
+  asm volatile("dsb ish 	\n");             // ensure write has completed
+	asm volatile("msr ttbr0_el1, x0 	\n");   // switch translation based address.
+  asm volatile("tlbi vmalle1is 	\n");       // invalidates cached copies of translation table entries from L1 TLBs
+  asm volatile("dsb ish 	\n");             // ensure completion of TLB invalidatation
+  asm volatile("isb 	\n");                 // clear pipeline
+
   switch_to(cur, next);
 }
 
@@ -73,8 +83,8 @@ void kill_zombies(){
   if(cur != NULL){
     free(cur);
     free((char *)cur->sp_addr);
-    if(cur->mode == USER)
-      free((char *)cur->user_sp);
+    // if(cur->mode == USER)
+    //   free((char *)(cur->user_sp));
   }
 }
 
@@ -125,9 +135,6 @@ void switch_to_user_space() {
   asm volatile("mov x0, 0   \n"::);
   asm volatile("msr spsr_el1, x0   \n"::);
   asm volatile("msr elr_el1,  %[output]   \n"::[output]"r"(cur->target_func));
-  uint64_t addr = cur->user_sp;
-  addr += THREAD_SP_SIZE - 1;
-  addr -= addr % 0x100;
-  asm volatile("msr sp_el0,   %[output]   \n"::[output]"r"(addr));
+  asm volatile("msr sp_el0,   %[output]   \n"::[output]"r"(cur->user_sp - 0x10));
   asm volatile("eret  \n"::);
 }
