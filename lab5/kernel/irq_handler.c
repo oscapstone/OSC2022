@@ -86,6 +86,11 @@ void irq_handler(){
     uint32_t core1_irq_source = IO_MMIO_read32(CORE1_IRQ_SOURCE);
     uint32_t core2_irq_source = IO_MMIO_read32(CORE2_IRQ_SOURCE);
     uint32_t core3_irq_source = IO_MMIO_read32(CORE3_IRQ_SOURCE);
+    uint32_t core0_fiq_source = IO_MMIO_read32(CORE0_FIQ_SOURCE);
+    uint32_t core1_fiq_source = IO_MMIO_read32(CORE1_FIQ_SOURCE);
+    uint32_t core2_fiq_source = IO_MMIO_read32(CORE2_FIQ_SOURCE);
+    uint32_t core3_fiq_source = IO_MMIO_read32(CORE3_FIQ_SOURCE);
+
     uint32_t auxirq, uart_irq_type;
     if(core0_irq_source & 2){
         //core timer interrupt
@@ -108,7 +113,7 @@ void irq_handler(){
         }
     }
     else{
-        LOG("Unkown interrupt, %x %x %x %x %x %x %x",irq_basic_pending, irq_pending_1, irq_pending_2, core0_irq_source, core1_irq_source, core2_irq_source, core3_irq_source );
+        LOG("Unkown interrupt, %x %x %x %x %x %x %x",irq_basic_pending, irq_pending_1, irq_pending_2, core0_irq_source, core1_irq_source, core2_irq_source, core3_irq_source, core0_fiq_source ,core1_fiq_source, core2_fiq_source, core3_fiq_source);
     }
 }
 
