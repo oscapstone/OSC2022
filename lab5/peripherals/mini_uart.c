@@ -138,6 +138,7 @@ void mini_uart_irq_init(){
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
     // only enable receive interrupt. transmit interrupts should be enable when user want to transmit data.
     enable_mini_uart_irq(RX);
+    enable_mini_uart_irq(RX);
 }
 
 void mini_uart_tx_softirq_callback(){
