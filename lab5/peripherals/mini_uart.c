@@ -88,8 +88,6 @@ void mini_uart_init(){
     // Set Baud rate to 115200
     IO_MMIO_write32(AUX_MU_BAUD_REG, BAUD_RATE_REG);
 
-    // No FIFO
-    IO_MMIO_write32(AUX_MU_IIR_REG, 6);
     
     // Start UART
     IO_MMIO_write32(AUX_MU_CNTL_REG, 3);
