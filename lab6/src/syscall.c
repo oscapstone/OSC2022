@@ -21,7 +21,7 @@ size_t uartread(trapframe_t *tpf,char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size;i++)
     {
-        buf[i] = uart_async_getc();
+        buf[i] = uart_getc();
     }
     tpf->x0 = i;
     return i;
@@ -32,7 +32,7 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size; i++)
     {
-        uart_putc(buf[i]);   // some unknown bugs occur when uart_async_putc
+        uart_putc(buf[i]);   // TODO : debug -> some unknown bugs occur when uart_async_putc (only in qemu)
     }
     tpf->x0 = i;
     return i;
@@ -210,7 +210,10 @@ void sigreturn(trapframe_t *tpf)
 //only need to implement the anonymous page mapping in this Lab.
 void *sys_mmap(trapframe_t *tpf, void *addr, size_t len, int prot, int flags, int fd, int file_offset)
 {
-    len = len%0x1000?len + (0x1000 - len % 0x1000):len; // rounds up
+    // relocate to zero
+    if (len + (unsigned long)addr >= 0xfffffffff000L)addr = 0L;
+
+    len = len % 0x1000 ? len + (0x1000 - len % 0x1000) : len; // rounds up
     addr = (unsigned long)addr%0x1000?addr + (0x1000 - (unsigned long)addr % 0x1000):addr;
 
     // check if overlap

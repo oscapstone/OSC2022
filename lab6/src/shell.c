@@ -18,8 +18,8 @@ void shell()
     core_timer_enable();
     while (1)
     {
-        uart_async_printf("# ");
-        uart_async_gets(cmd);
+        uart_printf("# ");
+        uart_gets(cmd);
         do_cmd(cmd);
     }
 }
@@ -28,19 +28,19 @@ void do_cmd(char *cmd)
 {
     if (strcmp(cmd, "help") == 0)
     {
-        uart_async_printf("help                            : print this help menu\r\n");
-        uart_async_printf("hello                           : print Hello World!\r\n");
-        uart_async_printf("reboot                          : reboot the device\r\n");
-        uart_async_printf("ls                              : list current directory\r\n");
-        uart_async_printf("cat                             : print content of a file\r\n");
-        uart_async_printf("show_device_tree                : show device tree\r\n");
-        uart_async_printf("exec                            : load a user program in the initramfs and run it in EL0\r\n");
-        uart_async_printf("setTimeout [MESSAGE] [SECONDS]  : print message after [SECONDS] seconds (non-blocking)\r\n");
-        uart_async_printf("clockAlert                      : alert every two seconds\r\n");
+        uart_printf("help                            : print this help menu\r\n");
+        uart_printf("hello                           : print Hello World!\r\n");
+        uart_printf("reboot                          : reboot the device\r\n");
+        uart_printf("ls                              : list current directory\r\n");
+        uart_printf("cat                             : print content of a file\r\n");
+        uart_printf("show_device_tree                : show device tree\r\n");
+        uart_printf("exec                            : load a user program in the initramfs and run it in EL0\r\n");
+        uart_printf("setTimeout [MESSAGE] [SECONDS]  : print message after [SECONDS] seconds (non-blocking)\r\n");
+        uart_printf("clockAlert                      : alert every two seconds\r\n");
     }
     else if (strcmp(cmd, "hello") == 0)
     {
-        uart_async_printf("Hello World!\r\n");
+        uart_printf("Hello World!\r\n");
     }
     else if (strcmp(cmd, "reboot") == 0)
     {
@@ -48,9 +48,9 @@ void do_cmd(char *cmd)
     }
     else if (strcmp(cmd, "cat") == 0)
     {
-        uart_async_printf("Filename: ");
+        uart_printf("Filename: ");
         char filepath[MAX_BUF_SIZE];
-        uart_async_gets(filepath);
+        uart_gets(filepath);
         cat(filepath);
     }
     else if (strcmp(cmd, "ls") == 0)
@@ -63,9 +63,9 @@ void do_cmd(char *cmd)
     }
     else if (strcmp(cmd, "exec") == 0) // in filesystem.c
     {
-        uart_async_printf("Filename: ");
+        uart_printf("Filename: ");
         char filepath[MAX_BUF_SIZE];
-        uart_async_gets(filepath);
+        uart_gets(filepath);
         execfile(filepath);
     }
     else if (strncmp(cmd, "setTimeout", sizeof("setTimeout") - 1) == 0)
@@ -74,14 +74,14 @@ void do_cmd(char *cmd)
         char *message = strchr(cmd, ' ');
         if (!message)
         {
-            uart_async_printf("setTimeout wrong format");
+            uart_printf("setTimeout wrong format");
             return;
         }
         message += 1;
         char *end_message = strchr(message, ' ');
         if (!end_message)
         {
-            uart_async_printf("setTimeout wrong format");
+            uart_printf("setTimeout wrong format");
             return;
         }
         *end_message = '\0';
@@ -94,7 +94,7 @@ void do_cmd(char *cmd)
     }
     else
     {
-        uart_async_printf("Unknown command!: %s\r\n", cmd);
+        uart_printf("Unknown command!: %s\r\n", cmd);
     }
 }
 

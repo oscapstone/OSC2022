@@ -25,7 +25,7 @@ int cat(char* thefilepath)
         {
             for(unsigned int i=0;i<filesize;i++)
             {
-                uart_async_putc(filedata[i]);
+                uart_putc(filedata[i]);
             }
             break;
         }
@@ -142,7 +142,7 @@ int ls(char* working_dir)
         }
 
         //if this is not TRAILER!!! (last of file)
-        if(header_pointer!=0)uart_async_printf("%s\r\n",filepath);
+        if(header_pointer!=0)uart_printf("%s\r\n",filepath);
     }
     return 0;
 }

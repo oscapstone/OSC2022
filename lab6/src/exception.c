@@ -200,4 +200,5 @@ void unlock()
     }
     if (lock_count == 0)
         enable_interrupt();
+
 }
