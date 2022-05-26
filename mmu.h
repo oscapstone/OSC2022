@@ -12,11 +12,13 @@
 #define PD_PAGE 0b11
 #define PD_ACCESS (1 << 10)
 #define USER_RW ((1 << 6) | (0 << 7))
+#define USER_RO ((1 << 6) | (1 << 7))
 #define BOOT_PGD_ATTR PD_TABLE
 #define BOOT_PUD_ATTR PD_TABLE
 
 #define PD_RAM_ATTR (PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
 #define USER_READ_WRITE (PD_ACCESS | USER_RW | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
+#define USER_READ_ONLY (PD_ACCESS | USER_RO | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_BLOCK)
 #define PD_PERIPHERAL_ATTR (PD_ACCESS | (MAIR_IDX_DEVICE_nGnRnE << 2) | PD_BLOCK)
 
 #define PD_ADDRESS_MASK 0x0000FFFFFFFFF000
@@ -36,5 +38,9 @@ unsigned long* create_page_table();
 void page_table_alloc(unsigned long table, unsigned long next, unsigned long attribute, unsigned int offset);
 void* page_alloc(unsigned long pgd, unsigned long virtual_addr, unsigned long physical_addr, unsigned long attribute);
 void page_free(unsigned long pgd, unsigned long virtual_addr);
+void change_attribute(unsigned long virtual_addr, unsigned long attribute);
 void video_paging(unsigned long pgd, unsigned long pud, unsigned long pmd);
 void user_default_paging();
+void lower_data_abort_handler();
+unsigned long demand_log(unsigned long* list, unsigned long virtual_addr);
+int demand_find(unsigned long* list, unsigned long virtual_addr);

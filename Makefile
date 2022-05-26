@@ -27,7 +27,7 @@ cpio:
 
 user:
 	rm initramfs.cpio
-	wget https://oscapstone.github.io/_downloads/58c515e3041658a045033c8e56ecff4c/initramfs.cpio
+	wget https://oscapstone.github.io/_downloads/4a3ff2431ab7fa74536c184270dbe5c0/vm.img
 
 run: all
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb

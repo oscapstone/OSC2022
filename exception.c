@@ -5,13 +5,16 @@
 #include "utils.h"
 #include "command.h"
 #include "timer.h"
+#include "mmu.h"
 #include "thread.h"
 
 #define AUX_IRQ (1 << 29)
 #define IRQ_PENDING_1			((volatile unsigned int*)(MMIO_BASE+0x0000b204))
 #define CORE0_TIMER_IRQ_CTRL 	((volatile unsigned int*)(KVA+0x40000040))
 #define CORE0_INTERRUPT_SOURCE	((volatile unsigned int *)(KVA+0x40000060))
-
+#define ESR_ELx_EC_SHIFT		26
+#define ESR_ELx_EC_SVC64		0x15
+#define ESR_ELx_EC_DABT_LOW		0x24
 
 void enable_current_interrupt() {
 	asm volatile("msr DAIFClr, 0xf");
@@ -62,6 +65,14 @@ void dump() {
 	printf("\n");
 }
 
+void invalid_entry() {
+	dump();
+	printf("No such exception\n");
+	exec_reboot();
+	while (1)
+        ;
+}
+
 void set_time(unsigned int duration) {
 	unsigned long cntfrq_el0;
 	asm volatile("mrs %0, cntfrq_el0	\n": "=r"(cntfrq_el0):);
@@ -92,22 +103,13 @@ void handle_timer1_irq() {
 	handle_timer_list();
 }
 
-void lower_sync_entry(Trap_Frame *tpf)
-{
-
+void lower_svc(Trap_Frame *tpf) {
     unsigned long long syscall_svc = tpf->x8;
 
 	#ifdef ASYNC_UART
 	enable_current_interrupt();
 	#endif
 
-	// printf("--%x--\n", syscall_svc);
-	// unsigned long esr;
-	// asm volatile("mrs %0, esr_el1	\n":"=r"(esr):);
-	// printf("--%x--\n", esr);
-	// if(((esr>>26)&0x3f)!=0x15){
-
-	// }
     if (syscall_svc == 0) {
         getpid(tpf);
     }
@@ -134,6 +136,21 @@ void lower_sync_entry(Trap_Frame *tpf)
     }
 }
 
+void lower_sync_entry(Trap_Frame *tpf) {
+	unsigned long esr;
+	asm volatile("mrs %0, esr_el1	\n":"=r"(esr):);
+	esr = (esr >> ESR_ELx_EC_SHIFT) & 0x3f;
+
+	if(esr == ESR_ELx_EC_SVC64)
+		lower_svc(tpf);
+	else if(esr == ESR_ELx_EC_DABT_LOW)
+		lower_data_abort_handler();
+	else {
+		printf("lower sync unknown reason\nplease check esr_el1\n");
+		invalid_entry();
+	}
+}
+
 void lower_irq_entry() {
 	// disable_current_interrupt();
 	if (*CORE0_INTERRUPT_SOURCE & 0x2) {
@@ -145,14 +162,6 @@ void lower_irq_entry() {
 		handle_uart_irq();
 	}
 	// enable_current_interrupt();
-}
-
-void invalid_entry() {
-	dump();
-	printf("No such exception\n");
-	exec_reboot();
-	while (1)
-        ;
 }
 
 void current_irq_entry() {

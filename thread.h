@@ -41,6 +41,7 @@ typedef struct Thread{
     char *program;
 	unsigned int program_size;
     unsigned long pgd;
+    unsigned long demand[16];
 	struct Thread* next;
 } Thread;
 
@@ -49,6 +50,8 @@ typedef struct Thread_List{
 	Thread *end;
 	int pid_cnt;
 } Thread_List;
+
+Thread_List thread_list;
 
 void schedule();
 void init_schedule();

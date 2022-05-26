@@ -9,8 +9,6 @@
 #include "mmu.h"
 #include "mbox.h"
 
-Thread_List thread_list;
-
 void schedule(){
 	disable_current_interrupt();
 
@@ -75,7 +73,11 @@ Thread *thread_create(void *program_start) {
     new->parent = new->iszombie = 0;
 
     page_table_alloc((unsigned long)pgd, 0x6000, BOOT_PGD_ATTR, 0);
-    new->user_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_USER_STACK, 0, USER_READ_WRITE);
+    if (new->pid == 0)
+        new->user_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_USER_STACK, 0, USER_READ_WRITE);
+    else
+        demand_log(new->demand, VIRTUAL_USER_STACK);
+
     new->kernel_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_KERNEL_STACK, 0, PD_RAM_ATTR);
 
 	new->context.fp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
@@ -104,7 +106,7 @@ void init_schedule() {
     // enable_timer_interrupt();
 
     // run();
-    // load_cpio("syscall.img");
+    // load_cpio("vm.img");
 
     // for(int i = 0; i < 3; ++i) { // N should > 2
     //     thread_create(foo);
@@ -132,8 +134,7 @@ void exec_thread(char *data, unsigned int filesize) {
     int tmpsize = 0;
     while (tmpsize < filesize) {
         int tmprange = (filesize-tmpsize) > 4096 ? 4096 : (filesize-tmpsize);
-        // printf("-------------\n");
-        user_thread->program = (char*)page_alloc((unsigned long)user_thread->pgd, VIRTUAL_USER_PROGRAM + tmpsize , 0, USER_READ_WRITE);
+        user_thread->program = (char*)page_alloc((unsigned long)user_thread->pgd, VIRTUAL_USER_PROGRAM + tmpsize , 0, USER_READ_ONLY);
         for (int i = 0; i < tmprange; i++) {
             user_thread->program[i] = data[tmpsize+i];
         }
@@ -224,6 +225,7 @@ int fork(Trap_Frame *tpf) {
     child->program = parent->program;
     child->program_size = parent->program_size;
 	child->parent = parent->pid;
+    child->user_stack = (char*)page_alloc(child->pgd + KVA, VIRTUAL_USER_STACK, 0, USER_READ_WRITE);
     int parent_pid = parent->pid;
 
     for (int i = 0; i < (USER_STACK_SIZE); i++) {

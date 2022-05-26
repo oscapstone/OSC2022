@@ -3,6 +3,7 @@
 #include "gpio.h"
 #include "uart.h"
 #include "mem.h"
+#include "thread.h"
 unsigned long get_high_pa(void *ptr) {
     return (unsigned long)ptr - KVA;
 }
@@ -35,11 +36,13 @@ unsigned long* create_page_table() {
 }
 
 void page_table_alloc(unsigned long table, unsigned long next, unsigned long attribute, unsigned int offset) {
-    asm volatile("str %0, [%1]\n"::"r"(next|attribute),"r"(table + offset*8));
+    unsigned long *alloc = (unsigned long*)table;
+    alloc[offset] = next | attribute;
 }
 
 void block_alloc(unsigned long table, unsigned long address, unsigned long attribute, unsigned int offset) {
-    asm volatile("str %0, [%1]\n"::"r"(address|attribute),"r"(table + offset*8));
+    unsigned long *alloc = (unsigned long*)table;
+    alloc[offset] = address | attribute;
 }
 
 void* page_alloc(unsigned long pgd, unsigned long virtual_addr, unsigned long physical_addr, unsigned long attribute) {
@@ -86,6 +89,19 @@ void page_free(unsigned long pgd, unsigned long virtual_addr) {
     }
 }
 
+void change_attribute(unsigned long virtual_addr, unsigned long attribute) {
+    unsigned long *table = (unsigned long*)(store_pgd() + KVA);
+    for (int i=3; i>0; i--) {
+        unsigned long offset = (virtual_addr >> (12 + i*9)) & 0x1FF;
+        if ((table[offset] & 3) == 3)
+            table = (unsigned long *)((table[offset] & PD_ADDRESS_MASK) + KVA);
+        else
+            printf("Invalid entry\n");
+    }
+    unsigned long offset = (virtual_addr >> 12) & 0x1FF;
+    table[offset] = (table[offset] & PD_ADDRESS_MASK) | attribute | PD_PAGE;
+}
+
 void video_paging(unsigned long pgd, unsigned long pud, unsigned long pmd) {
     // paging 0x3C000000 ~ 0x3CFFFFFF
     page_table_init((unsigned long*)(pgd+KVA));
@@ -101,4 +117,40 @@ void video_paging(unsigned long pgd, unsigned long pud, unsigned long pmd) {
 void user_default_paging() {
     video_paging(0x5000, 0x6000, 0x7000);
     // block_alloc(0x7000+KVA, PHYSICAL_USER_PROGRAM, USER_READ_WRITE, 0);
+}
+
+void lower_data_abort_handler() {
+	unsigned long far;
+	asm volatile("mrs %0, FAR_EL1	\n":"=r"(far):);
+	far = far & ~0xFFF;
+    if (demand_find(thread_list.beg->demand, far)) {
+	    printf("[Translation fault]: %x\n", far);
+        thread_list.beg->user_stack = (char*)page_alloc(thread_list.beg->pgd + KVA, far, 0, USER_READ_WRITE);
+    }
+    else {
+        printf("[Segmentation fault]: Kill Process\n");
+	    // printf("data abort--%x\n", far);
+        exit(0,0);
+    }
+}
+
+unsigned long demand_log(unsigned long* list, unsigned long virtual_addr) {
+    for (int i=0; i<16; i++) {
+        if (list[i] == 0) {
+            list[i] = virtual_addr;
+            return i;
+        }
+    }
+    printf("demand out of memory\n");
+    while(1){}
+    return 0;
+}
+
+int demand_find(unsigned long* list, unsigned long virtual_addr) {
+    for (int i=0; i<16; i++) {
+        if (list[i] == virtual_addr) {
+            return 1;
+        }
+    }
+    return 0;
 }

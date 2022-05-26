@@ -61,7 +61,7 @@ void exec_cat() {
 }
 
 void exec_load() {
-    load_cpio("syscall.img");
+    load_cpio("vm.img");
 }
 
 void exec_lsfdt() {
