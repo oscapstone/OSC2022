@@ -8,10 +8,10 @@ inline void delay_cycles(uint64_t n){
 }
 
 inline void enable_mini_uart_irq(uint32_t tx){
-    /*uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
+    uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
 
     if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b10 | old_ier);
-    else IO_MMIO_write32(AUX_MU_IER_REG, 0b01 | old_ier);*/
+    else IO_MMIO_write32(AUX_MU_IER_REG, 0b01 | old_ier);
 }
 
 inline void enable_mini_uart_tx_irq(){
@@ -25,10 +25,10 @@ inline void enable_mini_uart_rx_irq(){
 }
 
 inline void disable_mini_uart_irq(uint32_t tx){
-/*    uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
+    uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
 
     if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b01 & old_ier);
-    else IO_MMIO_write32(AUX_MU_IER_REG, 0b10 & old_ier);*/
+    else IO_MMIO_write32(AUX_MU_IER_REG, 0b10 & old_ier);
 }
 
 inline void disable_mini_uart_tx_irq(){
@@ -87,6 +87,9 @@ void mini_uart_init(){
 
     // Set Baud rate to 115200
     IO_MMIO_write32(AUX_MU_BAUD_REG, BAUD_RATE_REG);
+
+    // No FIFO
+    IO_MMIO_write32(AUX_MU_IIR_REG, 6);
     
     // Start UART
     IO_MMIO_write32(AUX_MU_CNTL_REG, 3);
