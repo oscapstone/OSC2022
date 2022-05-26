@@ -80,9 +80,9 @@ void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , 
 
 void irq_handler(){
     uint32_t irq_pending_1 = IO_MMIO_read32(IRQ_PENDING_1);
+    uint32_t core0_irq_source = IO_MMIO_read32(CORE0_IRQ_SOURCE);
     uint32_t irq_pending_2 = IO_MMIO_read32(IRQ_PENDING_2);
     uint32_t irq_basic_pending = IO_MMIO_read32(IRQ_BASIC_PENDING);
-    uint32_t core0_irq_source = IO_MMIO_read32(CORE0_IRQ_SOURCE);
     uint32_t core1_irq_source = IO_MMIO_read32(CORE1_IRQ_SOURCE);
     uint32_t core2_irq_source = IO_MMIO_read32(CORE2_IRQ_SOURCE);
     uint32_t core3_irq_source = IO_MMIO_read32(CORE3_IRQ_SOURCE);
