@@ -86,7 +86,7 @@ void mini_uart_init(){
     IO_MMIO_write32(AUX_MU_MCR_REG, 0);
 
     // Set Baud rate to 115200
-    IO_MMIO_write32(AUX_MU_BAUD_REG, BAUD_RATE_REG);
+    IO_MMIO_write32(AUX_MU_BAUD_REG, 270);//BAUD_RATE_REG);
 
     IO_MMIO_write32(AUX_MU_IIR_REG, 6);
 
