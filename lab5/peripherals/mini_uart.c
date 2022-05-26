@@ -146,7 +146,7 @@ void mini_uart_rx_softirq_callback(){
 }
 
 void mini_uart_irq_read(){
-    if(IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1){
+    while((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
         uint8_t b[1];
         b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
         ring_buf_write(rx_rbuf, b, 1);
