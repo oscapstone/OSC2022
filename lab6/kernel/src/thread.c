@@ -192,27 +192,26 @@ void exec(const char *program_name, const char **argv) {
   for (uint64_t size = 0; size < cur->user_program_size; size += PAGE_SIZE) {
     uint64_t virtual_addr = USER_PROGRAM_BASE + size;
     uint64_t physical_addr = VA2PA(cur->user_program_base + size);
-    if(size==0)
-      printf("[first_map]va:%p map to pa:%p\n",virtual_addr,physical_addr);
-    update_page_table(cur, virtual_addr, physical_addr, 0b101);
+    update_page_table(cur, virtual_addr, physical_addr, PD_USER_RW);
   }
   
   // map vc memory
   for (uint64_t size = 0; size < PERIPHERAL_END - PERIPHERAL_START; size += PAGE_SIZE) {
     uint64_t identity_page = PERIPHERAL_START + size; 
     // printf("identity_page=%p\n",identity_page);
-    update_page_table(cur, identity_page , identity_page, 0b101);
+    update_page_table(cur, identity_page , identity_page, PD_USER_RW);
   }
-  el0_VA2PA(cur,USER_PROGRAM_BASE);
-  el0_VA2PA(cur,0x3f000000);
-  el0_VA2PA(cur,0x3f000000-1);
-  el0_VA2PA(cur,0x3c25e76c);
-  el0_VA2PA(cur,0x3c100000);
-  el0_VA2PA(cur,0x3c000000);
-  el0_VA2PA(cur,0x3c000000-1);
   uint64_t virtual_addr = USER_STACK_BASE;
   uint64_t physical_addr = VA2PA(cur->user_stack_base);
-  update_page_table(cur, virtual_addr, physical_addr, 0b110);
+  update_page_table(cur, virtual_addr, physical_addr, PD_USER_RW );
+
+  // el0_VA2PA(cur,USER_PROGRAM_BASE);
+  // el0_VA2PA(cur,0x3f000000);
+  // el0_VA2PA(cur,0x3f000000-1);
+  // el0_VA2PA(cur,0x3c25e76c);
+  // el0_VA2PA(cur,0x3c100000);
+  // el0_VA2PA(cur,0x3c000000);
+  // el0_VA2PA(cur,0x3c000000-1);
 
   uint64_t next_pgd = (uint64_t)cur->pgd;
   switch_pgd(next_pgd);
@@ -262,11 +261,25 @@ void create_child(thread_info *parent, thread_info *child) {
   for (uint64_t size = 0; size < child->user_program_size; size += PAGE_SIZE) {
     uint64_t virtual_addr = USER_PROGRAM_BASE + size;
     uint64_t physical_addr = VA2PA(child->user_program_base + size);
-    update_page_table(child, virtual_addr, physical_addr, 0b101);
+    update_page_table(child, virtual_addr, physical_addr, PD_USER_RW);
+  }
+  
+  for (uint64_t size = 0; size < PERIPHERAL_END - PERIPHERAL_START; size += PAGE_SIZE) {
+    uint64_t identity_page = PERIPHERAL_START + size; 
+    // printf("identity_page=%p\n",identity_page);
+    update_page_table(child, identity_page , identity_page, PD_USER_RW);
   }
   uint64_t virtual_addr = USER_STACK_BASE;
   uint64_t physical_addr = VA2PA(child->user_stack_base);
-  update_page_table(child, virtual_addr, physical_addr, 0b110);
+  update_page_table(child, virtual_addr, physical_addr, PD_USER_RW);
+
+  // el0_VA2PA(child,USER_PROGRAM_BASE);
+  // el0_VA2PA(child,0x3f000000);
+  // el0_VA2PA(child,0x3f000000-1);
+  // el0_VA2PA(child,0x3c25e76c);
+  // el0_VA2PA(child,0x3c100000);
+  // el0_VA2PA(child,0x3c000000);
+  // el0_VA2PA(child,0x3c000000-1);
 
   char *src, *dst;
   // copy saved context in thread info

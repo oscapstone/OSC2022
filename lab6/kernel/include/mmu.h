@@ -22,6 +22,11 @@
 #define PD_BLOCK 0b01
 #define PD_PAGE 0b11
 #define PD_ACCESS (1 << 10)
+#define PD_USER_RW (0b01 << 6)
+#define PD_USER_R (0b11 << 6)
+#define PD_UXN (1L << 54)
+#define PD_PXN (1L << 53)
+
 #define BOOT_PGD_ATTR (PD_TABLE)
 #define BOOT_PUD_ATTR (PD_TABLE)
 #define BOOT_PMD_ATTR (PD_TABLE)
@@ -41,6 +46,6 @@
 
 void init_page_table(thread_info *thread, uint64_t **table);
 void update_page_table(thread_info *thread, uint64_t virtual_addr,
-                       uint64_t physical_addr, int permission);
+                       uint64_t physical_addr, uint64_t permission);
 uint64_t el0_VA2PA(thread_info *thread, uint64_t virtual_addr);
                       

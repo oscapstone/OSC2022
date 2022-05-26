@@ -13,12 +13,15 @@ void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
 void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void sync_handler_currentEL_ELx() {
-  // printf("[sync_handler_currentEL_ELx]\n");
+  printf("[sync_handler_currentEL_ELx]\n");
 
   uint64_t spsr_el1, elr_el1, esr_el1;
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
   asm volatile("mrs %0, elr_el1" : "=r"(elr_el1));
   asm volatile("mrs %0, esr_el1" : "=r"(esr_el1));
+  uint32_t ec = (esr_el1 >> 26) & 0x3f;
+  printf("EC: %x\n", ec);
+  while(1){;}
   // printf("SPSR_EL1: 0x%08x\n", spsr_el1);
   // printf("ELR_EL1: 0x%08x\n", elr_el1);
   // printf("ESR_EL1: 0x%08x\n", esr_el1);
@@ -37,6 +40,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
 
   uint32_t ec = (esr_el1 >> 26) & 0x3f;
   // printf("EC: %x\n", ec);
+
   if (ec == 0b010101) {  // SVC instruction
     uint64_t iss;
     asm volatile("mov %0, x8" : "=r"(iss));
@@ -61,8 +65,13 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       const char **argv = (const char **)trap_frame->x[1];
       exec(program_name, argv);
     } else if (iss == 4) {  // fork
-      // printf("[fork]\n");
       fork(sp);
+      // User shell need excute after child mbox_call in qemu
+      // But in real machine can work without below code
+      if(get_current()->pid==1){
+        int magic_sleep = 50000000;
+        while(magic_sleep--){}
+      }
     } else if (iss == 5) {  // exit
       exit();
     } else if (iss == 6) {  // mbox_call

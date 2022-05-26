@@ -17,7 +17,7 @@ void init_page_table(thread_info *thread, uint64_t **table) {
 }
 
 void update_page_table(thread_info *thread, uint64_t virtual_addr,
-                       uint64_t physical_addr, int permission) {
+                       uint64_t physical_addr, uint64_t flags) {
   if (thread->pgd == 0) {
     printf("Invalid PGD!!\n");
     return;
@@ -39,20 +39,15 @@ void update_page_table(thread_info *thread, uint64_t virtual_addr,
   for (int level = 0; level < 3; level++) {
     if (table[index[level]] == 0) {
       // printf("level: %d, index: 0x%llx  ", level, index[level]);
-      init_page_table(thread, (uint64_t **)&(table[index[level]]));      table[index[level]] |= PD_TABLE;
+      init_page_table(thread, (uint64_t **)&(table[index[level]]));
+      table[index[level]] |= PD_ACCESS | (MAIR_IDX_NORMAL_NOCACHE << 2) | PD_TABLE;
     }
     // printf("table PA: 0x%llx\n", (uint64_t)table[index[level]]);
     table = (uint64_t *)PA2VA(table[index[level]] & ~0xfff);
     // printf("table VA: 0x%llx\n", (uint64_t)table);
   }
-  uint64_t BOOT_RWX_ATTR = (1 << 6);
-  if (permission & 0b010)
-    BOOT_RWX_ATTR |= 0;
-  else
-    BOOT_RWX_ATTR |= (1 << 7);
-  // printf("0x%llx\n", BOOT_RWX_ATTR);
   table[index[3]] =
-      physical_addr | BOOT_PTE_NORMAL_NOCACHE_ATTR | BOOT_RWX_ATTR;
+      physical_addr | BOOT_PTE_NORMAL_NOCACHE_ATTR | flags;
   // printf("page PA: 0x%llx\n", (uint64_t)table[index[3]]);
 }
 
