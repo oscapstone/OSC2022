@@ -71,13 +71,16 @@ Thread *thread_create(void *program_start) {
 
     new->pid = thread_list.pid_cnt++;
     new->parent = new->iszombie = 0;
+    for (int i=0; i<16; i++) {
+        new->demand[i] = 0;
+    }
 
     page_table_alloc((unsigned long)pgd, 0x6000, BOOT_PGD_ATTR, 0);
     if (new->pid == 0)
         new->user_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_USER_STACK, 0, USER_READ_WRITE);
     else
         demand_log(new->demand, VIRTUAL_USER_STACK);
-
+    demand_log(new->demand, 0x0000FFFFFFFFC000);
     new->kernel_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_KERNEL_STACK, 0, PD_RAM_ATTR);
 
 	new->context.fp = VIRTUAL_USER_STACK + USER_STACK_SIZE;
