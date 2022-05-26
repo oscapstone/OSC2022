@@ -25,7 +25,7 @@ void simple_shell(){
     printf(miku_ascii);
     printf("\r\n\r\n");
     while(1)
-        printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbbbbbbbbbbbbbbA\r\n");
+        INFO("HI");
     while(1){
         i = 0;
         buf[0] = '\0';
