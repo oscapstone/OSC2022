@@ -87,7 +87,9 @@ void mini_uart_init(){
 
     // Set Baud rate to 115200
     IO_MMIO_write32(AUX_MU_BAUD_REG, BAUD_RATE_REG);
-    
+
+    IO_MMIO_write32(AUX_MU_IIR_REG, 6);
+
     // Start UART
     IO_MMIO_write32(AUX_MU_CNTL_REG, 3);
 
@@ -146,7 +148,7 @@ void mini_uart_rx_softirq_callback(){
 }
 
 void mini_uart_irq_read(){
-    while((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
+    if((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
         uint8_t b[1];
         b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
         ring_buf_write(rx_rbuf, b, 1);
