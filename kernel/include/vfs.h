@@ -51,7 +51,8 @@ typedef struct mount {
 
 typedef struct filesystem {
 	char* name;
-	int (*setup_mount)(struct filesystem* fs, struct mount* mount, struct mount* mount_parent);
+	struct mount* mount;
+	int (*setup_mount)(struct filesystem* fs, struct mount* mount);
 }FileSystem;
 
 struct file_operations {
@@ -91,6 +92,7 @@ int print_childs(Dentry *target);
 int vfs_chdir(const char* pathname);
 int change_global_path(Dentry *target);
 int vfs_mount(const char* pathname, const char* filesystem);
+int vfs_umount(const char *pathname);
 
 
 #endif

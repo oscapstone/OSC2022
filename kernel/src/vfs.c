@@ -7,9 +7,10 @@
 char *global_dir;
 Dentry *global_dentry;
 Mount *rootfs;
-FileSystem *fs_pool[MAX_FS_NUM];
+FileSystem **fs_pool;
 
 void rootfs_init(char *fs_name){
+    fs_pool = (FileSystem **)kmalloc(sizeof(FileSystem *) * MAX_FS_NUM);
     for(unsigned int idx = 0; idx < MAX_FS_NUM; idx++){
         FileSystem *init_fs = (FileSystem *)kmalloc(sizeof(FileSystem));
         init_fs->name = NULL;
@@ -27,7 +28,7 @@ void rootfs_init(char *fs_name){
     if(err) uart_puts("[x] Failed to register filesystem\n");
     
     rootfs = (Mount *)kmalloc(sizeof(Mount));
-    fs_pool[0]->setup_mount(fs_pool[0], rootfs, NULL); // NULL: rootfs no parent
+    fs_pool[0]->setup_mount(fs_pool[0], rootfs); // NULL: rootfs no parent
 
     global_dir = (char *)kmalloc(sizeof(char) * 2046);
     strcpy(global_dir, "/");
@@ -40,6 +41,7 @@ int register_filesystem(FileSystem *fs) {
     // you can also initialize memory pool of the file system here.
     if(fs == NULL) return -1;
     if(fs->name == NULL || fs->setup_mount == NULL) return -1;
+    
     if(strcmp(fs->name, "tmpfs") == 0){
         tmpfs_set_ops();
         uart_puts("[*] Registered tmpfs\n");
@@ -281,15 +283,20 @@ int vfs_mount(const char *pathname, const char *filesystem){
     
     /* target vnode isn't exist, cannot mount it */
     if(target_vnode == NULL) return -2;
+
+    /* target is not a directory, cannot mount it */
+    if(target_vnode->dentry->type != D_DIR) return -3;
         
     /* target vnode is exist, can mount it */
     FileSystem *target_fs = NULL;
+    Mount *new_mount = NULL;
     unsigned int idx = 0;
     /* find the filesystem */
     for(; idx < MAX_FS_NUM; idx++){
-        if(fs_pool[idx] == NULL) break;
+        if(fs_pool[idx]->name == NULL) break;
         if(strcmp(filesystem, fs_pool[idx]->name) == 0){
             target_fs = fs_pool[idx];
+            new_mount = target_fs->mount;
             goto MOUNT_FS;
         }
     }
@@ -300,23 +307,58 @@ int vfs_mount(const char *pathname, const char *filesystem){
     target_fs = fs_pool[idx];
     err = register_filesystem(target_fs);
     if(err) uart_puts("[x] Failed to register another filesystem\n");
-
+    new_mount = (Mount *)kmalloc(sizeof(Mount));
+    target_fs->setup_mount(target_fs, new_mount);
+    
+/* mount the filesystem */
 MOUNT_FS:;
-    /* mount the filesystem */
-    Mount *new_mount = (Mount *)kmalloc(sizeof(Mount));
-    target_fs->setup_mount(target_fs, new_mount, target_path->mount);
+    /* for the chdir find the mount_point name */
+    new_mount->root_dentry->mount_point_dentry = target_vnode->dentry;
+    new_mount->root_dentry->parent = target_vnode->dentry->parent;
+    /* set the mount parent */
+    new_mount->mount_parent = target_path->mount;
+
     /* change the target vnode's mount and type */
     target_vnode->dentry->type = D_MOUNT;
     target_vnode->dentry->mount = new_mount;
 
-    new_mount->root_dentry->parent = target_vnode->dentry->parent;
-    /* for the chdir find the mount_point name */
-    new_mount->root_dentry->mount_point_dentry = target_vnode->dentry;
+    char *mount_fs_name = target_fs->name;
+    uart_puts("[*] Mount: mount \"");
+    uart_puts(mount_fs_name);
+    uart_puts("\" file system success\n");
 
     return 0;
 }
 
-// TODO: umount
+int vfs_umount(const char *pathname){
+    Dentry *target_path = NULL;
+    VNode *target_vnode = NULL;
+    char component_name[MAX_PATHNAME_LEN];
+    int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
+    if(err) return -1; // worng pathname
+
+    /* target vnode isn't exist, cannot umount it */
+    if(target_vnode == NULL) return -2;
+    /* target isn't a mount point */
+    if(target_vnode->dentry->type != D_MOUNT) return -3; 
+
+    /* umount the filesystem */
+    target_vnode->dentry->mount->root_dentry->mount_point_dentry = NULL;
+    target_vnode->dentry->mount->root_dentry->parent = NULL;
+    /* set the mount parent */
+    target_vnode->dentry->mount->mount_parent = NULL;
+
+    // kfree(target_vnode->dentry->mount);
+    target_vnode->dentry->mount = target_vnode->dentry->parent->mount;
+    target_vnode->dentry->type = D_DIR;
+
+    char *umount_fs_name = target_vnode->dentry->mount->fs->name;
+    uart_puts("[*] Umount: umount \"");
+    uart_puts(umount_fs_name);
+    uart_puts("\" file system success\n");
+
+    return 0;
+}
 
 int vfs_close(struct file* file) {
     // 1. release the file handle

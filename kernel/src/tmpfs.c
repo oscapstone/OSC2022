@@ -10,10 +10,10 @@ struct vnode_operations* tmpfs_vnode_ops;
 extern char *global_dir;
 extern Dentry *global_dentry;
 
-int tmpfs_setup_mount(FileSystem *fs, Mount *mount, Mount *mount_parent){
+int tmpfs_setup_mount(FileSystem *fs, Mount *mount){
     mount->fs = fs;
-    mount->mount_parent = mount_parent;
     mount->root_dentry = tmpfs_create_dentry("/", NULL, D_DIR, mount); 
+    fs->mount = mount;
     return 0;
 }
 

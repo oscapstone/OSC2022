@@ -16,7 +16,7 @@ typedef struct tmpfs_inode{
     struct vnode* vnode;
 }TmpfsInode;
 
-int tmpfs_setup_mount(FileSystem *fs, Mount *mount, Mount *mount_parent);
+int tmpfs_setup_mount(FileSystem *fs, Mount *mount);
 Dentry *tmpfs_create_dentry(const char *name, Dentry *parent, enum dentry_type type, Mount* mount);
 VNode *tmpfs_create_vnode(Dentry *dentry);
 void tmpfs_set_ops();

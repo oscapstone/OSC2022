@@ -78,9 +78,21 @@ void fs_test3(){
 
 void fs_test4(){
     uart_puts("---------------------TEST VFS_MOUNT & VFS_UMONT---------------------\n");
-    vfs_chdir("path1");
-    vfs_chdir("path2");
-    vfs_chdir("../../");
-    
+    vfs_chdir(NULL);
+    vfs_mkdir("mnt");
+    vfs_mount("mnt", "abc");
+    vfs_ls(NULL);
+    vfs_chdir("mnt");
+    File *file_a = NULL;
+    vfs_open("mount_file", O_CREAT, &file_a);
+    vfs_ls(NULL);
+    vfs_chdir("../");
+    vfs_ls(NULL);
 
+    vfs_umount("mnt");
+    vfs_ls(NULL);
+
+    vfs_mkdir("/path1/path2/fanfan");
+    vfs_mount("/path1/path2/fanfan", "abc");
+    vfs_ls("/path1/path2/fanfan");
 }
