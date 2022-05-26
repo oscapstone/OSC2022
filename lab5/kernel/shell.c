@@ -24,6 +24,8 @@ void simple_shell(){
     char ch, *token;
     printf(miku_ascii);
     printf("\r\n\r\n");
+    while(1)
+        printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbbbbbbbbbbbbbbA\r\n");
     while(1){
         i = 0;
         buf[0] = '\0';
