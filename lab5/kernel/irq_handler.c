@@ -80,6 +80,8 @@ void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , 
 
 void irq_handler(){
     uint32_t irq_pending_1 = IO_MMIO_read32(IRQ_PENDING_1);
+    uint32_t irq_pending_2 = IO_MMIO_read32(IRQ_PENDING_2);
+    uint32_t irq_basic_pending = IO_MMIO_read32(IRQ_BASIC_PENDING);
     uint32_t core0_irq_source = IO_MMIO_read32(CORE0_INTERRUPT_SOURCE);
     uint32_t auxirq, uart_irq_type;
     if(core0_irq_source & 2){
@@ -103,7 +105,7 @@ void irq_handler(){
         }
     }
     else{
-        LOG("Unkown interrupt, pending_1: %x, core0_irq_source: %x",irq_pending_1, core0_irq_source );
+        LOG("Unkown interrupt, basic_pending: %x pending_1: %x, pending_2: %x, core0_irq_source: %x",irq_basic_pending, irq_pending_1, irq_pending_2, core0_irq_source );
     }
 }
 
