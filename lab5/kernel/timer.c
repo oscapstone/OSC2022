@@ -57,12 +57,12 @@ void add_timer(timer_callback callback, uint8_t* data, uint64_t duration){
 
 void init_core_timer(){
     uint64_t freq;
-/*
+
     init_timer_list();
     set_CNTP_CTL_EL0(1);
     freq = get_CNTFRQ_EL0();
     set_CNTP_TVAL_EL0(freq / HZ);
-    enable_core_timer_irq();*/
+    enable_core_timer_irq();
 }
 void core_timer_irq_handler(){
     uint64_t freq;
