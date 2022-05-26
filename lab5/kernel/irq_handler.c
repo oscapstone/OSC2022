@@ -1,5 +1,5 @@
 #include "kernel/irq_handler.h"
-
+uint32_t test = 0;
 struct softirq_status softirq_s = {
     .pending  = 0,
     .in_softirq = 0
@@ -81,6 +81,8 @@ void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , 
 void irq_handler(){
     uint32_t irq_pending_1 = IO_MMIO_read32(IRQ_PENDING_1);
     uint32_t core0_irq_source = IO_MMIO_read32(CORE0_IRQ_SOURCE);
+    uint32_t auxirq, uart_irq_type;
+    /*
     uint32_t irq_pending_2 = IO_MMIO_read32(IRQ_PENDING_2);
     uint32_t irq_basic_pending = IO_MMIO_read32(IRQ_BASIC_PENDING);
     uint32_t core1_irq_source = IO_MMIO_read32(CORE1_IRQ_SOURCE);
@@ -90,8 +92,9 @@ void irq_handler(){
     uint32_t core1_fiq_source = IO_MMIO_read32(CORE1_FIQ_SOURCE);
     uint32_t core2_fiq_source = IO_MMIO_read32(CORE2_FIQ_SOURCE);
     uint32_t core3_fiq_source = IO_MMIO_read32(CORE3_FIQ_SOURCE);
+    */
+    
 
-    uint32_t auxirq, uart_irq_type;
     if(core0_irq_source & 2){
         //core timer interrupt
         do_irq(CORE0_TIMER, core_timer_irq_handler, enable_core_timer_irq, disable_core_timer_irq);
@@ -113,7 +116,8 @@ void irq_handler(){
         }
     }
     else{
-        LOG("Unkown interrupt, %x %x %x %x %x %x %x %x %x %x %x",irq_basic_pending, irq_pending_1, irq_pending_2, core0_irq_source, core1_irq_source, core2_irq_source, core3_irq_source, core0_fiq_source ,core1_fiq_source, core2_fiq_source, core3_fiq_source);
+        test += 1;
+        //LOG("Unkown interrupt, %x %x %x %x %x %x %x %x %x %x %x %x",irq_basic_pending, irq_pending_1, irq_pending_2, core0_irq_source, core1_irq_source, core2_irq_source, core3_irq_source, core0_fiq_source ,core1_fiq_source, core2_fiq_source, core3_fiq_source, auxirq);
     }
 }
 

@@ -160,6 +160,8 @@ void simple_shell(){
 			printf("Free an object\r\n");
         }else if(strcmp(token, "page_info") == 0){
 			print_buddy_statistics();
-		}
+		}else if(strcmp(token, "test") == 0){
+            printf("test: %l\r\n", test);
+        }
     }
 }
