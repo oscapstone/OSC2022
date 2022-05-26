@@ -1,5 +1,4 @@
 #include "kernel/irq_handler.h"
-uint32_t test = 0;
 struct softirq_status softirq_s = {
     .pending  = 0,
     .in_softirq = 0
@@ -116,7 +115,6 @@ void irq_handler(){
         }
     }
     else{
-        test += 1;
         //LOG("Unkown interrupt, %x %x %x %x %x %x %x %x %x %x %x %x",irq_basic_pending, irq_pending_1, irq_pending_2, core0_irq_source, core1_irq_source, core2_irq_source, core3_irq_source, core0_fiq_source ,core1_fiq_source, core2_fiq_source, core3_fiq_source, auxirq);
     }
 }
