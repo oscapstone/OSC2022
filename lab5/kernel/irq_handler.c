@@ -115,6 +115,7 @@ void irq_handler(){
         }
     }
     else{
+        irq_count[UNKNOWN_IRQ]++;
         LOG("Unkown interrupt");
     }
 }

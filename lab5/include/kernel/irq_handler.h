@@ -12,7 +12,7 @@
 
 #define MAX_SOFTIRQ_TRY 5 
 
-enum {CORE0_TIMER = 0, MINI_UART_RX, MINI_UART_TX, END_OF_LIST};
+enum {CORE0_TIMER = 0, MINI_UART_RX, MINI_UART_TX, UNKNOWN_IRQ, END_OF_LIST};
 typedef void (*irq_funcptr)(void);
 
 struct softirq_status{
