@@ -27,8 +27,8 @@ inline void enable_mini_uart_rx_irq(){
 inline void disable_mini_uart_irq(uint32_t tx){
     uint32_t old_ier = IO_MMIO_read32(AUX_MU_IER_REG);
 
-    if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, 0b01 & old_ier);
-    else IO_MMIO_write32(AUX_MU_IER_REG, 0b10 & old_ier);
+    if(tx == TX) IO_MMIO_write32(AUX_MU_IER_REG, ~(0b10) & old_ier);
+    else IO_MMIO_write32(AUX_MU_IER_REG, ~(0b01) & old_ier);
 }
 
 inline void disable_mini_uart_tx_irq(){
@@ -88,6 +88,9 @@ void mini_uart_init(){
     // Set Baud rate to 115200
     IO_MMIO_write32(AUX_MU_BAUD_REG, BAUD_RATE_REG);
     
+    // disable FIFO
+    IO_MMIO_write32(AUX_MU_IIR_REG, 6);
+
     // Start UART
     IO_MMIO_write32(AUX_MU_CNTL_REG, 3);
 
@@ -146,11 +149,9 @@ void mini_uart_rx_softirq_callback(){
 }
 
 void mini_uart_irq_read(){
-    while((IO_MMIO_read32(AUX_MU_LSR_REG) & 0x1)){
-        uint8_t b[1];
-        b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
-        ring_buf_write(rx_rbuf, b, 1);
-    }
+    uint8_t b[1];
+    b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
+    ring_buf_write(rx_rbuf, b, 1);
 }
 size_t mini_uart_get_rx_len(){
     return ring_buf_get_len(rx_rbuf);
@@ -160,18 +161,16 @@ uint8_t mini_uart_aio_read(void){
     uint8_t b[1];
     while(ring_buf_is_empty(rx_rbuf));
 
-    disable_mini_uart_irq(RX);
+    local_irq_disable();
     ring_buf_read(rx_rbuf, b, 1);
-    enable_mini_uart_irq(RX);
+    local_irq_enable();
     return b[0];
 }
 
 void mini_uart_irq_write(){
     uint8_t b[1];
-    if(IO_MMIO_read32(AUX_MU_LSR_REG) & (0x1 << 5)){
-        if(ring_buf_read(tx_rbuf, b, 1)){
-            IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
-        }
+    if(ring_buf_read(tx_rbuf, b, 1)){
+        IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
     }
 }
 size_t mini_uart_get_tx_len(){
@@ -182,8 +181,11 @@ void mini_uart_aio_write(uint8_t c){
     uint8_t b[1];
     while(ring_buf_is_full(tx_rbuf));
     b[0] = c;
-    disable_mini_uart_irq(TX);
+
+    local_irq_disable();
     ring_buf_write(tx_rbuf, b, 1);
+    local_irq_enable();
+
     enable_mini_uart_irq(TX);
 }
 
