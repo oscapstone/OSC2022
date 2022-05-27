@@ -6,7 +6,7 @@
 #include "sprintf.h"
 #include "registers.h"
 
-#define MAX_BUF_SIZE 0x1000
+#define MAX_BUF_SIZE 0x10000
 
 /* Auxilary mini UART registers */
 #define AUX_ENABLE ((volatile unsigned int *)(MMIO_BASE + 0x00215004))

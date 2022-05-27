@@ -32,7 +32,7 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size; i++)
     {
-        uart_putc(buf[i]);   // TODO : debug -> some unknown bugs occur when uart_async_putc (only in qemu)
+        uart_putc(buf[i]); // TODO : debug -> some unknown bugs occur when uart_async_putc (only in qemu)
     }
     tpf->x0 = i;
     return i;

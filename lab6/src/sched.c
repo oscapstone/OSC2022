@@ -109,6 +109,7 @@ int exec_thread(char *data, unsigned int filesize)
         "msr spsr_el1, xzr\n\t" // enable interrupt in EL0. You can do it by setting spsr_el1 to 0 before returning to EL0.
         "msr sp_el0, %2\n\t"
         "mov sp, %3\n\t"
+        "mov fp, sp\n\t"
         "dsb ish\n\t"        // ensure write has completed
         "msr ttbr0_el1, %4\n\t"
         "tlbi vmalle1is\n\t" // invalidate all TLB entries

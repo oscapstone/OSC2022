@@ -10,10 +10,10 @@ extern volatile unsigned char _end;
 int echoflag = 1;
 
 //implement first in first out buffer with a read index and a write index
-char uart_tx_buffer[MAX_BUF_SIZE] = {};
+static char uart_tx_buffer[MAX_BUF_SIZE] = {};
 unsigned int uart_tx_buffer_widx = 0; //write index
 unsigned int uart_tx_buffer_ridx = 0; //read index
-char uart_rx_buffer[MAX_BUF_SIZE] = {};
+static char uart_rx_buffer[MAX_BUF_SIZE] = {};
 unsigned int uart_rx_buffer_widx = 0;
 unsigned int uart_rx_buffer_ridx = 0;
 
@@ -287,13 +287,15 @@ int uart_async_printf(char *fmt, ...)
 void uart_interrupt_r_handler()
 {
     //read buffer full
+    lock();
     if ((uart_rx_buffer_widx + 1) % MAX_BUF_SIZE == uart_rx_buffer_ridx)
     {
         *AUX_MU_IIR = 0xC2; /* clear the fifos */ // I dont know why need this but it can prevent big input to cause infinite run here (disable_r_interrupt never work)
         disable_mini_uart_r_interrupt(); //disable read interrupt when read buffer full
+        unlock();
         return;
     }
-    lock();
+    //lock();
     uart_rx_buffer[uart_rx_buffer_widx++] = uart_getc();
     if (uart_rx_buffer_widx >= MAX_BUF_SIZE)
         uart_rx_buffer_widx = 0;
@@ -305,13 +307,15 @@ void uart_interrupt_r_handler()
 void uart_interrupt_w_handler() //can write
 {
     // buffer empty
+    lock();
     if (uart_tx_buffer_ridx == uart_tx_buffer_widx)
     {
         *AUX_MU_IIR = 0xC4;
         disable_mini_uart_w_interrupt(); // disable w_interrupt to prevent interruption without any async output
+        unlock();
         return;
     }
-    lock();
+
     uart_putc(uart_tx_buffer[uart_tx_buffer_ridx++]);
     if (uart_tx_buffer_ridx >= MAX_BUF_SIZE)
         uart_tx_buffer_ridx = 0; // cycle pointer
@@ -322,25 +326,25 @@ void uart_interrupt_w_handler() //can write
 
 void uart_async_putc(char c)
 {
+    
     // full buffer wait
+    lock();
     while ((uart_tx_buffer_widx + 1) % MAX_BUF_SIZE == uart_tx_buffer_ridx)
     {
+        unlock();
         // start asynchronous transfer
         enable_mini_uart_w_interrupt();
+        lock();
     }
 
-    
-    // critical section
-    lock();
     uart_tx_buffer[uart_tx_buffer_widx++] = c;
     if (uart_tx_buffer_widx >= MAX_BUF_SIZE)
         uart_tx_buffer_widx = 0; // cycle pointer
 
     // start asynchronous transfer
-    unlock();
-    
     // enable interrupt to transfer
     enable_mini_uart_w_interrupt();
+    unlock();
 }
 
 char uart_async_getc()
@@ -348,11 +352,14 @@ char uart_async_getc()
     enable_mini_uart_r_interrupt();
     // while buffer empty
     // enable read interrupt to get some input into buffer
-    while (uart_rx_buffer_ridx == uart_rx_buffer_widx)
-        enable_mini_uart_r_interrupt();
-
-    // critical section
     lock();
+    while (uart_rx_buffer_ridx == uart_rx_buffer_widx)
+    {
+        unlock();
+        enable_mini_uart_r_interrupt();
+        lock();
+    }
+
     char r = uart_rx_buffer[uart_rx_buffer_ridx++];
 
     if (uart_rx_buffer_ridx >= MAX_BUF_SIZE)
