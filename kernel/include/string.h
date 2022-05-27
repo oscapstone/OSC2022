@@ -3,7 +3,6 @@
 
 #define MAX_SIZE 512
 
-
 enum print_type{
     UITOHEX,
     UITOA,

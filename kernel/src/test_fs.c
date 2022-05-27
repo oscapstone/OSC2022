@@ -85,6 +85,9 @@ void fs_test4(){
     vfs_chdir("mnt");
     File *file_a = NULL;
     vfs_open("mount_file", O_CREAT, &file_a);
+    vfs_write(file_a, "Hello Mount\n", 12);
+    vfs_close(file_a);
+
     vfs_ls(NULL);
     vfs_chdir("../");
     vfs_ls(NULL);
@@ -95,4 +98,17 @@ void fs_test4(){
     vfs_mkdir("/path1/path2/fanfan");
     vfs_mount("/path1/path2/fanfan", "abc");
     vfs_ls("/path1/path2/fanfan");
+
+    vfs_open("/path1/path2/fanfan/mount_file", 0, &file_a);
+    char buf[300];
+    int sz;
+    sz = vfs_read(file_a, buf, 100);
+    buf[sz] = '\0';
+    vfs_close(file_a);
+    uart_puts(buf);
+
+    // vfs_umount("/path1/path2/fanfan");
+
+    // vfs_chdir(NULL);
+
 }

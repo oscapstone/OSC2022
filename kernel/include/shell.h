@@ -33,4 +33,10 @@ void Exec(char [MAX_SIZE]);
 void SetTimeOut(char [MAX_SIZE]);
 void TestTimeOut(char [MAX_SIZE]);
 
+void ls_arg(char *);
+void chdir_arg(char *);
+void mkdir_arg(char *);
+void mount_arg(char *);
+void umount_arg(char *);
+
 #endif

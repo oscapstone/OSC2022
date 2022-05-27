@@ -9,12 +9,16 @@
 #include <malloc.h>
 #include <syscall.h>
 #include <irq.h>
+#include <vfs.h>
+
+extern char *global_dir;
 
 /* print welcome message*/
 void PrintWelcome(){
   uart_puts("******************************************************************\n");
   uart_puts("********************* Welcome to FanFan's OS *********************\n");
   uart_puts("******************************************************************\n");
+  uart_puts(global_dir);
   uart_puts("# ");
 }
 
@@ -26,11 +30,17 @@ void PrintHelp(){
   uart_puts("revision     : print board_revision\n");
   uart_puts("memory       : print memory info\n");
   uart_puts("reboot       : reboot the device\n");
-  uart_puts("ls           : list directory contents\n");
+  uart_puts("cpio_ls      : list cpio directory contents\n");
   uart_puts("exec         : concatenate files and print on the standard output\n");
   uart_puts("setTimeout   : set timeout for read\n");
   uart_puts("test_timeout : test timeout for read\n");
+  uart_puts("ls           : list directory contents\n");
+  uart_puts("cd           : change working directory\n");
+  uart_puts("mkdir        : make directories\n");
+  uart_puts("mount        : mount a filesystem\n");
+  uart_puts("umount       : umount a filesystem\n");
 }
+
 
 /* print unknown command message*/
 void PrintUnknown(char buf[MAX_SIZE]){
@@ -137,6 +147,59 @@ void TestTimeOut(char buf[MAX_SIZE]){
 
 }
 
+void ls_arg(char *buf){
+  char *path = strchr(buf, ' ') + 1;
+  if(strlen(path) == 0){
+    vfs_ls(NULL);
+  }
+  else{
+    vfs_ls(path);
+  }
+}
+
+void chdir_arg(char *buf){
+  char *path = strchr(buf, ' ') + 1;
+  if(strlen(path) == 0){
+    vfs_chdir(NULL);
+  }
+  else{
+    vfs_chdir(path);
+  }
+}
+
+void mkdir_arg(char *buf){
+  char *path = strchr(buf, ' ') + 1;
+  if(strlen(path) == 0){
+    vfs_mkdir(NULL);
+  }
+  else{
+    vfs_mkdir(path);
+  }
+}
+
+void mount_arg(char *buf){
+  char *path_ptr = strchr(buf, ' ') + 1;
+  char *fs_name_ptr = strchr(path_ptr, ' ') + 1;
+  path_ptr[strlen(path_ptr) - strlen(fs_name_ptr) - 1] = '\0';
+
+  char path[MAX_PATHNAME_LEN * 32]; 
+  char fs_name[MAX_PATHNAME_LEN];
+  strcpy(path, path_ptr);
+  strcpy(fs_name, fs_name_ptr);
+
+  vfs_mount(path, fs_name);
+}
+
+void umount_arg(char *buf){
+  char *path = strchr(buf, ' ') + 1;
+  if(strlen(path) == 0){
+    vfs_umount(NULL);
+  }
+  else{
+    vfs_umount(path);
+  }
+}
+
 /* Main Shell */
 void ShellLoop(){
   char buf[MAX_SIZE];
@@ -146,6 +209,7 @@ void ShellLoop(){
     memset(buf, '\0', MAX_SIZE);
     unsigned int size = readline(buf, sizeof(buf));
     if (size == 0){
+      uart_puts(global_dir);
       uart_puts("# ");
       continue;
     } 
@@ -155,13 +219,20 @@ void ShellLoop(){
     else if(strcmp("revision", buf) == 0) PrintRevision(buf);
     else if(strcmp("memory", buf) == 0) PrintMemory(buf);
     else if(strcmp("bootimg", buf) == 0) Bootimg(buf);
-    else if(strcmp("ls", buf) == 0) Ls();
+    else if(strcmp("cpio_ls", buf) == 0) Ls();
     else if(strcmp("cat", buf) == 0) Cat(buf);
     else if(strcmp("exec", buf) == 0) Exec(buf);
     else if(strncmp("setTimeout", buf, strlen("setTimeout")) == 0) SetTimeOut(buf);
     else if(strcmp("test_timeout", buf) == 0) TestTimeOut(buf);
+    else if(strncmp("ls", buf, strlen("ls")) == 0) ls_arg(buf);
+    else if(strncmp("cd", buf, strlen("cd")) == 0) chdir_arg(buf);
+    else if(strncmp("mkdir", buf, strlen("mkdir")) == 0) mkdir_arg(buf);
+    else if(strncmp("mount", buf, strlen("mount")) == 0) mount_arg(buf);
+    else if(strncmp("umount", buf, strlen("umount")) == 0) umount_arg(buf);
     else PrintUnknown(buf);
-
+    
+    
+    uart_puts(global_dir);
     uart_puts("# ");
   }
     

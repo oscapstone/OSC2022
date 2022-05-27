@@ -78,6 +78,7 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
 
     char tmp_buf[MAX_PATHNAME_LEN];
     find_component_name(pathname + idx, component_name, '/');
+    
     while(component_name[0] != '\0'){
         /* 
         * ready_return is 1 beacuse it couldn't find child vnode before
@@ -113,7 +114,6 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
     }
     /* if the last component name is '\0', it is a file name */
     strcpy(component_name, tmp_buf);
-
     return 0;
 }
 
@@ -232,8 +232,8 @@ int change_global_path(Dentry *target){
         strcat(global_dir, path_arr[i]);
         strcat(global_dir, "/");
     }
-    uart_puts(global_dir);
-    uart_puts("\n");
+    // uart_puts(global_dir);
+    // uart_puts("\n");
     return 0;
 }
 
@@ -246,18 +246,21 @@ int vfs_chdir(const char *pathname){
     if(pathname == NULL){
         global_dentry = rootfs->root_dentry;
         strcpy(global_dir, "/");
-        uart_puts(global_dir);
-        uart_puts("\n");
+        // uart_puts(global_dir);
+        // uart_puts("\n");
         return 0;
     }
     else{
         int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
         if(err) return -1; // worng pathname
-        if(target_vnode->dentry->type == D_FILE) return -2; // cannot change to a file
     }
 
     /* file/folder not exist */
     if(target_vnode == NULL) return -2;
+    
+    /* cannot change to a file */
+    if(target_vnode->dentry->type == D_FILE) return -3; 
+
 
     /* change the global_dentry and global_dir */
     return change_global_path(target_vnode->dentry);
@@ -268,19 +271,15 @@ int vfs_chdir(const char *pathname){
 
 int vfs_mount(const char *pathname, const char *filesystem){
     if(filesystem == NULL) return -1;
+    // print_string(UITOA, "path_len: ", strlen(pathname), 0);
+    // print_string(UITOA, " | filefs_len: ", strlen(filesystem), 1);
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
-    int err;
-    if(pathname == NULL){
-        target_path = global_dentry;
-        target_vnode = global_dentry->vnode;
-    }
-    else{
-        err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
-        if(err) return -1; // worng pathname
-    }
+    int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
+    if(err) return -1; // worng pathname
     
+    // uart_puts(target_vnode->dentry->name);
     /* target vnode isn't exist, cannot mount it */
     if(target_vnode == NULL) return -2;
 
@@ -325,7 +324,7 @@ MOUNT_FS:;
     char *mount_fs_name = target_fs->name;
     uart_puts("[*] Mount: mount \"");
     uart_puts(mount_fs_name);
-    uart_puts("\" file system success\n");
+    uart_puts("\" filesystem success\n");
 
     return 0;
 }
@@ -348,14 +347,15 @@ int vfs_umount(const char *pathname){
     /* set the mount parent */
     target_vnode->dentry->mount->mount_parent = NULL;
 
+    char *umount_fs_name = target_vnode->dentry->mount->fs->name;
+    uart_puts("[*] Umount: umount \"");
+    uart_puts(umount_fs_name);
+    uart_puts("\" filesystem success\n");
+
     // kfree(target_vnode->dentry->mount);
     target_vnode->dentry->mount = target_vnode->dentry->parent->mount;
     target_vnode->dentry->type = D_DIR;
 
-    char *umount_fs_name = target_vnode->dentry->mount->fs->name;
-    uart_puts("[*] Umount: umount \"");
-    uart_puts(umount_fs_name);
-    uart_puts("\" file system success\n");
 
     return 0;
 }
