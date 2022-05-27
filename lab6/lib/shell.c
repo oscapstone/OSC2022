@@ -15,34 +15,6 @@ void test(){
   printf("test\n\r");
 }
 
-// void printf_pt(uint64_t *page_table){
-//   for(int i=0; i<512; i++){
-//     page_table = PA2VA(page_table);
-//     if((page_table[i]) != 0){
-//       printf("%d: 0x%llx\n\r", i, page_table[i]);
-//       page_table = page_table[i] - 3;
-//       for(int j=0; j<512; j++){
-//         if(page_table[j] != 0){
-//           printf("  %d: 0x%llx\n\r", j, page_table[j]);
-//           page_table = page_table[j] - 3;
-//           for(int k=0; k<512; k++){
-//             if(page_table[k] != 0){
-//               printf("    %d: 0x%llx\n\r", k, page_table[k]);
-//               page_table = page_table[k] - 3;
-//               for(int l=0; l<512; l++){
-//                 if(page_table[l] != 0){
-//                   printf("      %d: 0x%llx\n\r", l, page_table[l]);
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
-
-
 void shell(){
   char *input = malloc(sizeof(char) * BUF_MAX_SIZE);
   char **args = malloc(sizeof(char*) * BUF_ARG_SIZE);
@@ -76,7 +48,14 @@ void shell(){
           cpio_ls();
         }else if(!strcmp(args[0], "run")){
           task *cur = task_create((thread_func)USER_PROGRAM_ADDR, USER);
+          // load_program(args[1], cur->page_table);
           load_program("syscall.img", cur->page_table);
+          // printf_pt(cur->page_table);
+          // uint64_t *dup;
+          // init_PT(&dup);
+          // printf("-----------\n\r");
+          // duplicate_PT(cur->page_table, dup);
+          // printf_pt(dup);
           idle_thread();
         }else if(!strcmp(input, "T")){
           add_timer(test, "Test", atoi(args[1])*get_timer_freq());

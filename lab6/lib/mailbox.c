@@ -1,7 +1,8 @@
 #include "mailbox.h"
 #include "stdint.h"
+#include "printf.h"
 
-int mbox_call(unsigned char ch, unsigned int *mbox){
+int mbox_call(unsigned char ch, unsigned int *mbox, unsigned int *mbox_va){
   unsigned int r = (((uint32_t)((uint64_t)mbox)&(~0xF)) | (ch&0xf));
   do{
     asm volatile("nop");
@@ -11,8 +12,9 @@ int mbox_call(unsigned char ch, unsigned int *mbox){
     do{
       asm volatile("nop");
     }while(*MAILBOX_STATUS & MAILBOX_EMPTY);
-    if(r == *MAILBOX_READ)
-      return mbox[1]==MAILBOX_RESPONSE;    
+    if(r == *MAILBOX_READ){
+      return mbox_va[1]==MAILBOX_RESPONSE;    
+    }
   }
   return 0;
 }

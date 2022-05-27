@@ -26,3 +26,5 @@
 void mmu_init();
 void init_PT(uint64_t** page_table);
 void map_pages(uint64_t* page_table, uint64_t va, uint64_t alloc);
+void duplicate_PT(void *page_table_src, void *page_table_dst);
+void printf_pt(uint64_t *page_table);

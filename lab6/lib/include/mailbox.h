@@ -19,4 +19,4 @@
 #define MAILBOX_EMPTY      0x40000000
 
 // volatile unsigned int  __attribute__((aligned(16))) mbox[8];
-int mbox_call(unsigned char ch, unsigned int *mbox);
+int mbox_call(unsigned char ch, unsigned int *mbox, unsigned int *mbox_va);

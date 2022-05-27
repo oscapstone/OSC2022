@@ -15,7 +15,7 @@ void map_pages(uint64_t* page_table, uint64_t va, uint64_t alloc){
   uint64_t* table = (uint64_t *)PA2VA(page_table);
   for (int i = 0; i < 3; i++) {
     if (table[index[i]] == 0) {
-      init_PT((uint64_t**)&table[index[i]]);
+      init_PT((uint64_t **)&table[index[i]]);
       table[index[i]] |= PD_TABLE;
     }
     uint64_t entry = table[index[i]];
@@ -32,6 +32,44 @@ void init_PT(uint64_t** page_table){
   for (int i = 0; i < 4096; ++i)
 		table[i] = 0;
   *page_table = (void*)VA2PA(table);
+}
+
+void duplicate_PT(void *page_table_src, void *page_table_dst){
+  if (page_table_src == 0 || page_table_dst == 0)
+		printf("[ERROR][dupPT] invalid table!\n\r");
+  uint64_t *PGD_src = (uint64_t *)PA2VA(page_table_src);
+	uint64_t *PGD_dst = (uint64_t *)PA2VA(page_table_dst);
+  for(int i=0; i<512; i++){
+    if(PGD_src[i] != 0){
+      if(i != 511){
+        init_PT((uint64_t **)&PGD_dst[i]);  // alloc PUD
+        PGD_dst[i] |= PGD_src[i] & 0xfff;
+        uint64_t *PUD_src = (uint64_t *)PA2VA(PGD_src[i]-(PGD_src[i]&0xfff));
+        uint64_t *PUD_dst = (uint64_t *)PA2VA(PGD_dst[i]-(PGD_dst[i]&0xfff));
+        for(int j=0; j<512; j++){
+          if(PUD_src[j] != 0){
+            init_PT((uint64_t **)&PUD_dst[j]);      // alloc PMD
+            PUD_dst[j] |= PUD_src[j] & 0xfff;
+            uint64_t *PMD_src = (uint64_t *)PA2VA(PUD_src[j]-(PUD_src[j]&0xfff));
+            uint64_t *PMD_dst = (uint64_t *)PA2VA(PUD_dst[j]-(PUD_dst[j]&0xfff));
+            for(int k=0; k<512; k++){
+              if(PMD_src[k] != 0){
+                init_PT((uint64_t **)&PMD_dst[k]); // alloc pte
+                PMD_dst[k] |= PMD_src[k] & 0xfff;
+                uint64_t *PTE_src = (uint64_t *)PA2VA(PMD_src[k]-(PMD_src[k]&0xfff));
+                uint64_t *PTE_dst = (uint64_t *)PA2VA(PMD_dst[k]-(PMD_dst[k]&0xfff));
+                for(int l=0; l<512; l++){
+                  if(PTE_src[l] != 0){
+                    PTE_dst[l] = PTE_src[l];
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 void mmu_init(){
@@ -92,4 +130,37 @@ void mmu_init(){
   asm volatile("mrs x2, sctlr_el1\n");
   asm volatile("orr x2 , x2, 1\n");
   asm volatile("msr sctlr_el1, x2\n");
+}
+
+
+// for debug
+
+void printf_pt(uint64_t *page_table){
+  for(int i=0; i<512; i++){
+    page_table = (uint64_t *)PA2VA(page_table);
+    if((page_table[i]) != 0){
+      printf("PGD[%03d]: 0x%llx\n\r", i, page_table[i]);
+      uint64_t *PUD = (uint64_t *)PA2VA(page_table[i] - (page_table[i]&0xfff));
+      for(int j=0; j<512; j++){
+        if(PUD[j] != 0){
+          printf("  PUD[%03d]: 0x%llx\n\r", j, PUD[j]);
+          uint64_t *PMD = (uint64_t *)PA2VA(PUD[j] - (PUD[j]&0xfff));
+          for(int k=0; k<512; k++){
+            if(PMD[k] != 0){
+              printf("    PMD[%03d]: 0x%llx\n\r", k, PMD[k]);
+              uint64_t *PTE = (uint64_t *)PA2VA(PMD[k] - (PMD[k]&0xfff));
+              for(int l=0; l<512; l++){
+                if(PTE[l] != 0){
+                  printf("      PTE[%03d]: 0x%llx", l, PTE[l]);
+                  if(l %4 == 0)
+                    printf("\n\r");
+                }
+                
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

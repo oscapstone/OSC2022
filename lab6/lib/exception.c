@@ -9,6 +9,12 @@
 #include "mmu.h"
 #include "malloc.h"
 
+#define read_sysreg(r) ({                       \
+    unsigned long __val;                        \
+    asm volatile("mrs %0, " #r : "=r" (__val)); \
+    __val;                                      \
+})
+
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
 static uint64_t _pid = 0;
@@ -61,14 +67,13 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = frame->x1;
     interrupt_disable();
   }else if(frame->x8 == 3){         // exec
-    printf("exec\n\r");
     char *name = (char *)frame->x0;
     task *cur = get_current();
     init_PT(&(cur->page_table));
     load_program(name, cur->page_table);
     for (int i = 0; i < 4; i++)
       map_pages(cur->page_table, 0xffffffffb000 + i*0x1000, VA2PA(page_allocate_addr(0x1000)));
-    frame->sp_el0 = cur->user_sp;
+    frame->sp_el0 = 0xfffffffff000 - 0x10;
     frame->elr_el1 = (uint64_t)USER_PROGRAM_ADDR;
     // char *argv = (char *)frame->x1;
     asm volatile("mov x0, %0 			\n"::"r"(cur->page_table));
@@ -79,8 +84,15 @@ void sync_router(uint64_t x0, uint64_t x1){
     asm volatile("isb 	\n");                 // clear pipeline
     frame->x0 = 0;
   }else if(frame->x8 == 4){        // fork
+    // printf("fork\n\r");
     task *parent = get_current();
     task *child = task_create(NULL, USER);
+    duplicate_PT(parent->page_table, child->page_table);
+    char *src1 = (char *)(parent->user_sp);
+    char *dst1 = (char *)(child->user_sp);
+    for(int i=0; i<0x4000; i++){
+      dst1[i] = src1[i];
+    }
     /* copy the task context & kernel stack (including trap frame) of parent to child */
     child->x19 = frame->x19;
     child->x20 = frame->x20;
@@ -97,39 +109,36 @@ void sync_router(uint64_t x0, uint64_t x1){
     child->sp = (uint64_t)frame;
     child->target_func = parent->target_func;
     child->handler = parent->handler;
-    // copy the stack
-    char *src1 = (char *)parent->user_sp;
-    char *dst1 = (char *)child->user_sp;
+
+    // copy the stack in el1
     char *src2 = (char *)parent->sp_addr;
     char *dst2 = (char *)child->sp_addr;
-    for(int i=0; i<THREAD_SP_SIZE; i++){
-      *(dst1+i) = *(src1+i);
-      *(dst2+i) = *(src2+i); 
+    for(int i=0; i<0x1000; i++){
+      dst2[i] = src2[i];
     }
+    // shift the sp_el1
     if((uint64_t)child->sp_addr > (uint64_t)parent->sp_addr){
       child->sp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
-      child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);      // fp is the chain this only move the fist element
     }else if((uint64_t)child->sp_addr < (uint64_t)parent->sp_addr){
       child->sp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
-      child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
     }
+
     trap_frame *child_frame = (trap_frame *)child->sp;
     child_frame->x0 = 0;
-    child_frame->x29 = child->fp;
-    if((uint64_t)child->user_sp > (uint64_t)parent->user_sp){
-      child_frame->sp_el0 += ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
-    }else if((uint64_t)child->user_sp < (uint64_t)parent->user_sp){
-      child_frame->sp_el0 -= ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
-    }
     frame->x0 = child->pid;
   }else if(frame->x8 == 5){        // exit
     task *cur = get_current();
     cur->state = EXIT;
     schedule();
   }else if(frame->x8 == 6){        // mbox call
+    // printf("mailbox\n\r");
     unsigned char ch = (unsigned char)frame->x0;
     uint32_t *mbox = (uint32_t *)frame->x1;
-    frame->x0 = mbox_call(ch, mbox);
+    asm volatile("mov x0, %0    \n"::"r"(mbox));
+    asm volatile("at s1e0r, x0  \n");
+    uint64_t frame_addr = (uint64_t)read_sysreg(par_el1) & (0xFFFFFFFFF << 12);
+    uint64_t pa = frame_addr | ((uint64_t)mbox & 0xFFF);
+    frame->x0 = mbox_call(ch, (unsigned int *)pa, mbox);
   }else if(frame->x8 == 7){        // kill
     kill_thread(frame->x0);
   }else if(frame->x8 == 8){        // register
@@ -150,4 +159,11 @@ void signal_handler_wrapper(){
   }
   sys_kill(_pid);
   sys_exit();
+}
+
+void ppp(uint64_t x0){
+  trap_frame *child = (trap_frame *)x0;
+  printf("child->sp_el0: 0x%llx\n\r", child->sp_el0);
+  printf("child->elr_el1: 0x%llx\n\r", child->elr_el1);
+  printf("child->spsr_el1: 0x%llx\n\r", child->spsr_el1);
 }

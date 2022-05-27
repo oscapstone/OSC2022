@@ -28,16 +28,20 @@ void idle_thread(void){
 
 void *task_create(thread_func func, enum mode mode){
   task *new_task = malloc(sizeof(task));
-  init_PT(&(new_task->page_table));     // init the PGD table
   new_task->mode = mode;
   new_task->next = NULL;
   new_task->pid = pid++;
   new_task->handler = NULL;
   new_task->state = RUNNING;
+  new_task->page_table = NULL;
   if(mode == USER){
+    init_PT(&(new_task->page_table));     // init the PGD table
+    char *user_sp_addr = page_allocate_addr(0x4000);
     for (int i = 0; i < 4; i++)
-      map_pages(new_task->page_table, 0xffffffffb000 + i*0x1000, VA2PA(page_allocate_addr(0x1000)));
-    new_task->user_sp = 0xfffffffff000;
+      map_pages(new_task->page_table, 0xffffffffb000 + i*0x1000, VA2PA(user_sp_addr + i*0x1000));
+    for (uint64_t va = 0x3c000000; va < 0x3f000000; va += 4096)
+      map_pages(new_task->page_table, va, va);
+    new_task->user_sp = (uint64_t)user_sp_addr;
     new_task->lr = (uint64_t)switch_to_user_space;
     new_task->target_func = (uint64_t)func;
   }else{
@@ -135,6 +139,6 @@ void switch_to_user_space() {
   asm volatile("mov x0, 0   \n"::);
   asm volatile("msr spsr_el1, x0   \n"::);
   asm volatile("msr elr_el1,  %[output]   \n"::[output]"r"(cur->target_func));
-  asm volatile("msr sp_el0,   %[output]   \n"::[output]"r"(cur->user_sp - 0x10));
+  asm volatile("msr sp_el0,   %[output]   \n"::[output]"r"(0xfffffffff000 - 0x10));
   asm volatile("eret  \n"::);
 }
