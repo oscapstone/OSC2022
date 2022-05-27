@@ -182,10 +182,9 @@ void mini_uart_aio_write(uint8_t c){
     while(ring_buf_is_full(tx_rbuf));
     b[0] = c;
 
-//    local_irq_disable();
-    disable_mini_uart_irq(TX);
+    local_irq_disable();
     ring_buf_write(tx_rbuf, b, 1);
-//    local_irq_enable();
+    local_irq_enable();
 
     enable_mini_uart_irq(TX);
 }
