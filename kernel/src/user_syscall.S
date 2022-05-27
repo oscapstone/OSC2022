@@ -61,3 +61,51 @@ signal_kill:
     mov x8, SIGKILL
     svc #0
     ret
+
+.global sigreturn
+sigreturn:
+    mov x8, SIGRETURN
+    svc #0
+    ret
+
+.global open
+open:
+    mov x8, OPEN
+    svc #0
+    ret
+
+.global close
+close:
+    mov x8, CLOSE
+    svc #0
+    ret
+
+.global write
+write:
+    mov x8, WRITE
+    svc #0
+    ret
+
+.global read
+read:
+    mov x8, READ
+    svc #0
+    ret
+
+.global mkdir
+mkdir:
+    mov x8, MKDIR
+    svc #0
+    ret
+
+.global mount
+mount:
+    mov x8, MOUNT
+    svc #0
+    ret
+
+.global chdir
+chdir:
+    mov x8, CHDIR
+    svc #0
+    ret

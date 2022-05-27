@@ -30,7 +30,7 @@ void rootfs_init(char *fs_name){
     rootfs = (Mount *)kmalloc(sizeof(Mount));
     fs_pool[0]->setup_mount(fs_pool[0], rootfs); // NULL: rootfs no parent
 
-    global_dir = (char *)kmalloc(sizeof(char) * 2046);
+    global_dir = (char *)kmalloc(sizeof(char) * 1024);
     strcpy(global_dir, "/");
     global_dentry = rootfs->root_dentry;
 }
@@ -381,43 +381,4 @@ int vfs_read(struct file* file, void* buf, size_t len) {
     if(file == NULL) return -1;
     return file->f_ops->read(file, buf, len);
 }
-
-
-
-// int traversal_path(const char *pathname, Dentry *target_path, char *target_name){
-//     find_target_name(pathname, target_name, '/');
-//     if(*target_name == '\0'){
-//         /* if the target name is empty, it is end of the directory */
-//         return 0;
-//     } 
-//     else if(strcmp(target_name, ".")){
-//         /* if the target name is ".", it is the same directory */
-//         return traversal_path(pathname + strlen(target_name) + 1, target_path, target_name);
-//     }
-//     else if(strcmp(target_name, "..")){
-//         /* if dentry is root path, return it */
-//         if(target_path->parent == NULL) return 0;
-//         /* if dentry is not root path, find its parent */
-//         return traversal_path(pathname + strlen(target_name) + 1, target_path->parent, target_name);
-//     }
-//     else{
-//         /* need to find the child dentry */
-//         struct list_head *pos;
-//         list_for_each(pos, &target_path->childs){
-//             Dentry *tmp = (Dentry *)pos;
-//             if(strcmp(tmp->name, target_name) == 0){
-//                 // TODO: need to check the dir is other filesystem
-
-//                 if(target_path->type == D_DIR){
-//                     return traversal_path(pathname + strlen(target_name) + 1, tmp, target_name);
-//                 }
-
-//                 /* if the target is a file, break and return it */
-//                 return 0; 
-//             }
-//         }
-//     }
-//     /* if the target is not found, return error code */
-//     return -1;
-// } 
 

@@ -11,7 +11,14 @@
 #define KILL 7
 #define SIGNAL_ 8
 #define SIGKILL 9
-#define SIGRETURN 20
+#define SIGRETURN 10
+#define OPEN 11
+#define CLOSE 12
+#define WRITE 13
+#define READ 14
+#define MKDIR 15
+#define MOUNT 16
+#define CHDIR 17
 
 #endif
 
@@ -27,5 +34,13 @@ extern int mbox_call(unsigned char ch, unsigned int *mbox);
 extern void kill(int pid);
 extern void singal(int SIGNAL, void (*handler)());
 extern void signal_kill(int pid, int SIGNAL);
+extern int open(const char *pathname, int flags);
+extern int close(int fd);
+extern long write(int fd, const void *buf, unsigned long count);
+extern long read(int fd, void *buf, unsigned long count);
+extern int mkdir(const char *pathname, unsigned mode);
+extern int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
+extern int chdir(const char *path);
+
 
 #endif  

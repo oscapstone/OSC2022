@@ -2,10 +2,12 @@
 #define SCHED_H_
 #include <stddef.h>
 #include <list.h>
+#include <vfs.h>
 
 #define MAX_THREAD 0x100
 #define MAX_SIG_HANDLER 0x20
 #define STACK_SIZE 0x1000
+
 
 
 enum thread_state{
@@ -52,6 +54,10 @@ typedef struct _Thread{
     SignalInfo sig_queue_head; // ready queue
     void *sig_stack_addr;
     void *old_tp;
+
+    /* vfs */
+    char dir[MAX_PATHNAME_LEN * 16];
+    File *fd_table[MAX_FD_NUM]; // max 16 fd
 }Thread;
 
 extern Thread* get_current();

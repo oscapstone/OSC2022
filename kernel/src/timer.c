@@ -112,3 +112,10 @@ void sched_timeout(void *args){
     asm volatile("mrs %0, cntfrq_el0\n\t" :"=r"(frq));
     add_timer(sched_timeout, frq>>5 , "omg", 1);
 }
+
+void enable_el0_get_timer(){
+    unsigned long long tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
+}

@@ -22,6 +22,13 @@ void sys_kill(TrapFrame *);
 void sys_signal_register(TrapFrame *);
 void sys_signal_kill(TrapFrame *);
 void sys_sigreturn(TrapFrame *);
+void sys_open(TrapFrame *);
+void sys_close(TrapFrame *);
+void sys_write(TrapFrame *);
+void sys_read(TrapFrame *);
+void sys_mkdir(TrapFrame *);
+void sys_mount(TrapFrame *);
+void sys_chdir(TrapFrame *);
 
 int do_getpid();
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);

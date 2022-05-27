@@ -182,8 +182,8 @@ void mount_arg(char *buf){
   char *fs_name_ptr = strchr(path_ptr, ' ') + 1;
   path_ptr[strlen(path_ptr) - strlen(fs_name_ptr) - 1] = '\0';
 
-  char path[MAX_PATHNAME_LEN * 32]; 
-  char fs_name[MAX_PATHNAME_LEN];
+  char path[MAX_PATHNAME_LEN * 16 + 1]; 
+  char fs_name[MAX_PATHNAME_LEN + 1];
   strcpy(path, path_ptr);
   strcpy(fs_name, fs_name_ptr);
 

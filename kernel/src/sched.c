@@ -8,9 +8,11 @@
 #include <uart.h>
 #include <syscall.h>
 #include <signal.h>
+#include <vfs.h>
 
 Thread *thread_pool;
 Thread *run_thread_head;
+extern char *global_dir;
 
 void init_thread_pool_and_head(){
     thread_pool = (Thread*)kmalloc(sizeof(Thread) * MAX_THREAD);
@@ -63,6 +65,8 @@ Thread *thread_create(void(*func)()){
         new_thread->sig_info_pool[i].handler = sig_default_handler;
         INIT_LIST_HEAD(&new_thread->sig_info_pool[i].list);
     }
+
+    strcpy(new_thread->dir, global_dir);
 
     print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
     uart_puts(" | ");
@@ -130,6 +134,10 @@ void schedule(){
     do{
         next_thread = (Thread *)next_thread->list.next;
     }while(list_is_head(&next_thread->list, &run_thread_head->list) || next_thread->state == EXIT);
+
+    strcpy(global_dir, next_thread->dir);
+    // uart_puts(global_dir);
+    // uart_puts("\n");
 
     // print_string(UITOHEX, "curr: ", curr_thread->id, 0);
     // uart_puts(" | ");

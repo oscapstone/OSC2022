@@ -65,6 +65,27 @@ void syscall_handler(unsigned int syscall_id, TrapFrame *trapFrame){
     case SIGRETURN:
         sys_sigreturn(trapFrame);
         break;
+    case OPEN:
+        sys_open(trapFrame);
+        break;
+    case CLOSE:
+        sys_close(trapFrame);
+        break;
+    case WRITE:
+        sys_write(trapFrame);
+        break;
+    case READ:
+        sys_read(trapFrame);
+        break;
+    case MKDIR:
+        sys_mkdir(trapFrame);
+        break;
+    case MOUNT:
+        sys_mount(trapFrame);
+        break;
+    case CHDIR:
+        sys_chdir(trapFrame);
+        break;
 
     default:
         break;

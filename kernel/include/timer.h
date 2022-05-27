@@ -34,5 +34,6 @@ void timeout_print(void *);
 void sched_timeout(void *);
 void timer_interrupt_handler();
 void timer_interrupt_handler_el0();
+void enable_el0_get_timer();
 
 #endif

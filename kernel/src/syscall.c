@@ -11,6 +11,8 @@
 #include <mailbox.h>
 #include <sched.h>
 #include <signal.h>
+#include <vfs.h>
+#include <tmpfs.h>
 
 extern Thread *thread_pool;
 extern Thread *run_thread_head;
@@ -321,5 +323,109 @@ void sys_sigreturn(TrapFrame *trapFrame){
     current->sig_stack_addr = NULL;
     current->old_tp = NULL;
 
+    enable_irq();
+}
+
+void sys_open(TrapFrame *trapFrame){
+    disable_irq();
+    char *path = (char *)trapFrame->x[0];
+    int flags = trapFrame->x[1];
+    Thread *curr_thread = get_current();
+    File *file = NULL;
+    int status = vfs_open(path, flags, &file);
+    unsigned int fd_idx = 0;
+    if(status == 0){
+        for(;fd_idx < MAX_FD_NUM; fd_idx++){
+            if(curr_thread->fd_table[fd_idx] == NULL){
+                curr_thread->fd_table[fd_idx] = file;
+                trapFrame->x[0] = fd_idx;
+                return;
+            }
+        }
+        kfree(file);
+        file = NULL;
+        trapFrame->x[0] = -1;
+    }
+    else 
+        trapFrame->x[0] = status;
+    enable_irq();
+}
+
+void sys_close(TrapFrame *trapFrame){
+    disable_irq();
+    int fd = trapFrame->x[0];
+
+    Thread *curr_thread = get_current();
+    if(fd < 0 || fd >= MAX_FD_NUM)
+        trapFrame->x[0] = -1;
+    else if(curr_thread->fd_table[fd] == NULL)
+        trapFrame->x[0] = -1;
+    else{
+        int status = vfs_close(curr_thread->fd_table[fd]);
+        if(status == 0) curr_thread->fd_table[fd] = NULL;
+        trapFrame->x[0] = status;
+    }
+    enable_irq();
+}
+
+void sys_write(TrapFrame *trapFrame){
+    disable_irq();
+    int fd = trapFrame->x[0];
+    char *buf = (char *)trapFrame->x[1];
+    int count = trapFrame->x[2];
+
+    Thread *curr_thread = get_current();
+    if(fd < 0 || fd >= MAX_FD_NUM)
+        trapFrame->x[0] = -1;
+    else if(curr_thread->fd_table[fd] == NULL)
+        trapFrame->x[0] = -1;
+    else{
+        int status = vfs_write(curr_thread->fd_table[fd], buf, count);
+        trapFrame->x[0] = status;
+    }
+    enable_irq();
+}
+
+void sys_read(TrapFrame *trapFrame){
+    disable_irq();
+    int fd = trapFrame->x[0];
+    char *buf = (char *)trapFrame->x[1];
+    int count = trapFrame->x[2];
+
+    Thread *curr_thread = get_current();
+    if(fd < 0 || fd >= MAX_FD_NUM)
+        trapFrame->x[0] = -1;
+    else if(curr_thread->fd_table[fd] == NULL)
+        trapFrame->x[0] = -1;
+    else{
+        int status = vfs_read(curr_thread->fd_table[fd], buf, count);
+        trapFrame->x[0] = status;
+    }
+    enable_irq();
+}
+
+void sys_mkdir(TrapFrame *trapFrame){
+    disable_irq();
+    char *path = (char *)trapFrame->x[0];
+    // int mode = trapFrame->x[1];
+    int status = vfs_mkdir(path);
+    trapFrame->x[0] = status;
+    enable_irq();
+}
+
+void sys_mount(TrapFrame *trapFrame){
+    disable_irq();
+    char *path = (char *)trapFrame->x[1];
+    char *fsname = (char *)trapFrame->x[2];
+    int status = vfs_mount(path, fsname);
+    trapFrame->x[0] = status;
+    enable_irq();
+}
+
+void sys_chdir(TrapFrame *trapFrame){
+    disable_irq();
+    char *path = (char *)trapFrame->x[0];
+    int status = vfs_chdir(path);
+    trapFrame->x[0] = status;
     enable_irq();
 }
