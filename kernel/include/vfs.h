@@ -9,7 +9,7 @@ enum dentry_type {
     D_FILE,
 	D_MOUNT
 };
-#define O_CREAT 1
+#define O_CREAT 0b100
 #define MAX_PATHNAME_LEN 64
 #define MAX_DATA_LEN 512
 #define MAX_FS_NUM 32
