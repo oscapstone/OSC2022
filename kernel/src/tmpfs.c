@@ -75,15 +75,17 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
         while(1){
             /* f_pos is in the block of some offset */
             size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
-            if(block->data[offset] == (char)EOF) return -1;
-
+            // if(block->data[offset] == (char)EOF) return -1;
             if(write_len <= MAX_DATA_LEN - offset){
                 memcpy(block->data + offset, src + write_idx, write_len);
                 file->f_pos += write_len;
                 write_idx += write_len;
                 block->data[write_idx] = EOF;
 
+                // uart_puts(block->data);
+
                 block->size += write_len;
+                // print_string(UITOA, "f_pos: ", file->f_pos, 1);
                 goto DONE;
             }
             else if(write_len > MAX_DATA_LEN - offset){

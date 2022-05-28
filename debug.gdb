@@ -1,3 +1,3 @@
 file kernel8.elf
-b *vfs_lookup
+b *vfs_chdir
 target remote :1234

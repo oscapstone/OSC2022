@@ -43,7 +43,24 @@ void rootfs_init(char *fs_name){
 }
 
 void vfs_initramfs_init(){
-    
+    vfs_mkdir("./initramfs");
+    vfs_mount("/initramfs", "initramfs");
+    vfs_chdir("initramfs");
+    for(int i = 0; cpio_file_info_list[i] != NULL; i++){
+        file_info *info = cpio_file_info_list[i]; 
+        if(info->filename_size == 0) continue;
+        char name[MAX_PATHNAME_LEN+1];
+        memcpy(name, info->filename, info->filename_size);
+        if(info->datasize == 0){
+            vfs_mkdir(name);
+        }
+        else{
+            File *file = NULL;
+            vfs_open(name, O_CREAT, &file);
+            vfs_write(file, info->data, info->datasize);
+            vfs_close(file);
+        }
+    }
 }
 
 int register_filesystem(FileSystem *fs) {

@@ -143,13 +143,13 @@ void schedule(){
     global_dentry = next_thread->dentry;
     global_fd_table = next_thread->fd_table; 
     
-    print_string(UITOA, "[*] next_thread->id: ", next_thread->id, 0);
-    uart_puts(" | ");
-    uart_puts(global_dir);
-    uart_puts(" | ");
-    uart_puts(global_dentry->name);
-    uart_puts(" | ");
-    print_string(UITOHEX, "global_fd_table: ", (unsigned long long )global_fd_table, 1);
+    // print_string(UITOA, "[*] next_thread->id: ", next_thread->id, 0);
+    // uart_puts(" | ");
+    // uart_puts(global_dir);
+    // uart_puts(" | ");
+    // uart_puts(global_dentry->name);
+    // uart_puts(" | ");
+    // print_string(UITOHEX, "global_fd_table: ", (unsigned long long )global_fd_table, 1);
 
     // print_string(UITOHEX, "curr: ", curr_thread->id, 0);
     // uart_puts(" | ");
