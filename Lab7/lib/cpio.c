@@ -105,3 +105,72 @@ void load_program(char *name, void *page_table) {
         uart_send_string("File not found!\n");
     }
 }
+
+
+/* VFS */
+void* fbase_get() {
+	return (void*)CPIO_ADDR;
+}
+
+char* fdata_get(void* _addr, unsigned long* size) {
+	cpio_header* addr = (cpio_header*)_addr;
+	unsigned long psize = getHexFromString8(addr->namesize), dsize = getHexFromString8(addr->filesize);
+	*size = dsize;
+	if ((sizeof(cpio_header) + psize) & 3)
+        psize += 4- ((sizeof(cpio_header) + psize) & 3);
+	if (dsize & 3)
+        dsize += 4 - (dsize & 3);
+
+	char* path = (char*)(addr + 1);
+	char* data = path + psize;
+
+	return data;
+}
+
+int fmode_get(void* _addr) {
+	cpio_header* addr = (cpio_header*)_addr;
+	unsigned long tmp = VA2PA(getHexFromString8(addr->mode)) >> 12;
+	if (tmp == 4)
+		return 1;  //dir
+	else if (tmp == 8)
+		return 2;  //file
+	return -1;
+}
+
+char* fname_get(void* _addr, unsigned long* size) {
+	cpio_header* addr = (cpio_header*)_addr;
+	unsigned long psize = getHexFromString8(addr->namesize), dsize = getHexFromString8(addr->filesize);
+	*size = psize;
+	if ((sizeof(cpio_header) + psize) & 3)
+        psize += 4 - ((sizeof(cpio_header) + psize) & 3);
+	if (dsize & 3)
+        dsize += 4 - (dsize & 3);
+	return (char*)(addr + 1);
+}
+
+void* next_fget(void* _addr) {
+	cpio_header* addr = (cpio_header*)_addr;
+	unsigned long psize = getHexFromString8(addr->namesize), dsize = getHexFromString8(addr->filesize);
+	if ((sizeof(cpio_header) + psize) & 3)
+        psize += 4 - ((sizeof(cpio_header) + psize) & 3);
+	if (dsize & 3)
+        dsize += 4 - (dsize & 3);
+
+	char* path = (char*)(addr + 1);
+	char* data = path + psize;
+
+	if (compare_string(path,"TRAILER!!!") == 0)
+        return 0;
+	addr = (cpio_header*)(data + dsize);
+	return addr;
+}
+
+void fdump() {
+	void* addr = CPIO_ADDR;
+	while(addr) {
+		unsigned long tmp;
+		char* str = fname_get(addr, &tmp);
+		uart_printf("%d, %s\n", tmp, str);
+		addr = next_fget(addr);
+	}
+}

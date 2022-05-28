@@ -11,6 +11,7 @@
 #include "printf.h"
 #include "task.h"
 #include "exception.h"
+#include "vfs.h"
 
 
 int debug_mode = 0;
@@ -138,6 +139,34 @@ void parse_command() {
     }
     else if (compare_string(buffer, "test_vm") == 0) {
         run_user_program("vm.img", NULL);
+    }
+    else if (compare_string(buffer, "test_fs") == 0) {
+        char buffer1[17] = "This is fs_test!\n";
+        char buffer2[30];
+        file* f;
+
+        vfs_open("/dir1/dummy1.txt", O_CREAT, &f);
+        vfs_read(f, buffer2, 30);
+        uart_printf("%s", buffer2);
+        vfs_close(f);
+        vfs_open("/dir1/dummy1.txt", O_CREAT, &f);
+        vfs_write(f, buffer1, 17);
+        vfs_close(f);
+        vfs_open("/dir1/dummy1.txt", O_CREAT, &f);
+        vfs_read(f, buffer2, 30);
+        buffer2[17] = '\0';
+        uart_printf("%s", buffer2);
+        vfs_close(f);
+
+        char buffer_n[16] = "test new file!\n";
+        vfs_open("/new_file.txt", O_CREAT, &f);
+        vfs_write(f, buffer_n, 16);
+        vfs_close(f);
+        vfs_open("/new_file.txt", O_CREAT, &f);
+        vfs_read(f, buffer2, 30);
+        buffer2[16] = '\0';
+        uart_printf("%s", buffer2);
+        vfs_close(f);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");

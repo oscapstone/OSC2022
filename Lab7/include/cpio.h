@@ -40,4 +40,12 @@ void cpio_cat(char *filename);
 char * findFile(char *name);
 void load_program(char *name, void *page_table);
 
+/* VFS */
+void* fbase_get();
+int fmode_get(void* _addr);
+char* fdata_get(void* _addr, unsigned long* size);
+char* fname_get(void* _addr, unsigned long* size);
+void* next_fget(void* _addr);
+void fdump();
+
 #endif

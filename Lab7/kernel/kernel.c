@@ -5,6 +5,8 @@
 #include "memory.h"
 #include "allocator.h"
 #include "task.h"
+#include "vfs.h"
+#include "tmpfs.h"
 
 
 void kernel_main(void) {
@@ -14,5 +16,12 @@ void kernel_main(void) {
 	init_timer();
 	enable_interrupt();
 	create_root_thread();
+
+	// setup tmpfs
+	filesystem* fs = kmalloc(sizeof(filesystem));
+	register_filesystem(fs, "tmpfs");
+	fs->setup_mount(fs, rootfs);
+    //tmpfs_dump(rootfs->root, 0);
+	
 	shell();
 }

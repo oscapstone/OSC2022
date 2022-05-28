@@ -75,6 +75,19 @@ unsigned long getHexFromString(const char *str) {
     return value;
 }
 
+unsigned long getHexFromString8(const char *str) {
+    unsigned long ret = 0;
+	for (int i = 0; i < 8; ++i) {
+		if (str[i] >= '0' && str[i] <= '9')
+			ret = ret * 16 + str[i] - '0';
+		else if (str[i] >= 'a' && str[i] <= 'f')
+			ret = ret * 16 + str[i] - 'a' + 10;
+		else if (str[i] >= 'A' && str[i] <= 'F')
+			ret = ret * 16 + str[i] - 'A' + 10;
+	}
+	return ret;
+}
+
 // convert hexadecimal string into decimal
 unsigned long hexToDec(char *s) {
     unsigned long r = 0;
@@ -93,4 +106,20 @@ void align_4(void* size) {
     if((*x)&3){
         (*x) += 4-((*x)&3);
     }
+}
+
+/* extract the substring starts from the beginning of the src 
+   and ends with the first '/' and put it into dst */
+const char* slashIgnore(const char* src, char* dst, int size) {
+	for (int i = 0; i < size; ++i) {
+		if (src[i] == 0) {
+			dst[i] = 0;
+			return 0;
+		} else if (src[i] == '/') {
+			dst[i] = 0;
+			return src + i + 1;
+		} else
+			dst[i] = src[i];
+	}
+	return 0;
 }
