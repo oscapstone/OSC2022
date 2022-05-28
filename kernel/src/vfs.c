@@ -3,12 +3,15 @@
 #include <string.h>
 #include <tmpfs.h>
 #include <uart.h>
+#include <cpio.h>
 
 char *global_dir;
 Dentry *global_dentry;
 File **global_fd_table;
 Mount *rootfs;
 FileSystem **fs_pool;
+
+extern file_info **cpio_file_info_list;
 
 void rootfs_init(char *fs_name){
     fs_pool = (FileSystem **)kmalloc(sizeof(FileSystem *) * MAX_FS_NUM);
@@ -35,8 +38,13 @@ void rootfs_init(char *fs_name){
     strcpy(global_dir, "/");
     global_dentry = rootfs->root_dentry;
     global_fd_table = (File **)kmalloc(sizeof(File *) * MAX_FD_NUM);
+
+    vfs_initramfs_init();
 }
 
+void vfs_initramfs_init(){
+    
+}
 
 int register_filesystem(FileSystem *fs) {
     // register the file system to the kernel.

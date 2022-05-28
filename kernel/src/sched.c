@@ -107,7 +107,6 @@ void kill_zombie(){
             //     kfree(tmp->code_addr);
             // }
            
-
             /* init signal */
             for(unsigned int i = 0; i < MAX_SIG_HANDLER; i++){
                 tmp->sig_info_pool[i].ready = 0;
@@ -137,18 +136,20 @@ void schedule(){
         next_thread = (Thread *)next_thread->list.next;
     }while(list_is_head(&next_thread->list, &run_thread_head->list) || next_thread->state == EXIT);
 
+    strcpy(curr_thread->dir, global_dir);
+    curr_thread->dentry = global_dentry;
 
     strcpy(global_dir, next_thread->dir);
     global_dentry = next_thread->dentry;
     global_fd_table = next_thread->fd_table; 
     
-    // print_string(UITOA, "[*] next_thread->id: ", next_thread->id, 0);
-    // uart_puts(" | ");
-    // uart_puts(global_dir);
-    // uart_puts(" | ");
-    // uart_puts(global_dentry->name);
-    // uart_puts(" | ");
-    // print_string(UITOHEX, "global_fd_table: ", (unsigned long long )global_fd_table, 1);
+    print_string(UITOA, "[*] next_thread->id: ", next_thread->id, 0);
+    uart_puts(" | ");
+    uart_puts(global_dir);
+    uart_puts(" | ");
+    uart_puts(global_dentry->name);
+    uart_puts(" | ");
+    print_string(UITOHEX, "global_fd_table: ", (unsigned long long )global_fd_table, 1);
 
     // print_string(UITOHEX, "curr: ", curr_thread->id, 0);
     // uart_puts(" | ");

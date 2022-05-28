@@ -1,3 +1,4 @@
+*.cpio
 *.elf
 *.img
 src/*.elf

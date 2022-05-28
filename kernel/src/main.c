@@ -23,6 +23,7 @@ int main(unsigned long dtb_base){
     print_string(UITOHEX, "[*] DTB_BASE: 0x", dtb_base, 1);
     fdt_traverse((fdt_header *)dtb_base, initramfs_callback);
     all_allocator_init();    
+    init_cpio_file_info();
     rootfs_init("tmpfs");
     init_thread_pool_and_head();
     init_task_head();

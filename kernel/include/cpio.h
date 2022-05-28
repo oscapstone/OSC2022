@@ -10,6 +10,7 @@ unsigned long long CPIO_BASE_END;
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
 #define CPIO_ALIGNMENT 4
+#define MAX_CPIO_FILE_NUM 1024
 
 
 typedef struct _cpio_newc_header{
@@ -38,7 +39,7 @@ typedef struct _file_info{
     unsigned int datasize;
 }file_info;
 
-void testprint();
+void init_cpio_file_info();
 unsigned int padding(unsigned int);
 void ls();
 void cat(char [MAX_SIZE]);
