@@ -181,6 +181,9 @@ void sys_fork(trap_frame *tf) {
 
     initPT(&(child->page_table));
     dupPT(parent->page_table, child->page_table, 0);
+    //vc_identity_mapping(new_task->page_table);  //for video program
+    for (uint64_t va = 0x3c000000; va <= 0x3f000000; va += 4096)
+        map_pages(child->page_table, va, 1, va);
     
     /* set up the correct value for registers */
     parent->context.sp = (unsigned long)tf;
