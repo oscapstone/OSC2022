@@ -16,6 +16,9 @@
 
 extern Thread *thread_pool;
 extern Thread *run_thread_head;
+extern File **global_fd_table;
+extern char *global_dir;
+extern Dentry *global_dentry;
 
 /* 
  * Return value is x0
@@ -122,7 +125,11 @@ int kernel_exec(char *name){
     new_thread->code_size = fileInfo.datasize;
     print_string(UITOHEX, "[*] kernel_exec: new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
-    // set_period_timer_irq();
+    /* copy the golbal dir / dentry in the new_thread*/
+    strcpy(new_thread->dir, global_dir);
+    new_thread->dentry = global_dentry;
+
+    set_period_timer_irq();
     sched_timeout("omg");
     enable_irq();
     asm volatile(
@@ -188,6 +195,10 @@ int do_fork(TrapFrame *trapFrame){
             list_add_tail(&new_thread->sig_info_pool[i].list, &new_thread->sig_queue_head.list);
         }
     }
+
+    /* copy the golbal dir / dentry in the new_thread*/
+    strcpy(new_thread->dir, global_dir);
+    new_thread->dentry = global_dentry;
 
     // print_string(UITOHEX, "(child)new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
@@ -330,14 +341,14 @@ void sys_open(TrapFrame *trapFrame){
     disable_irq();
     char *path = (char *)trapFrame->x[0];
     int flags = trapFrame->x[1];
-    Thread *curr_thread = get_current();
+
     File *file = NULL;
     int status = vfs_open(path, flags, &file);
     unsigned int fd_idx = 0;
     if(status == 0){
         for(;fd_idx < MAX_FD_NUM; fd_idx++){
-            if(curr_thread->fd_table[fd_idx] == NULL){
-                curr_thread->fd_table[fd_idx] = file;
+            if(global_fd_table[fd_idx] == NULL){
+                global_fd_table[fd_idx] = file;
                 trapFrame->x[0] = fd_idx;
                 return;
             }
@@ -355,14 +366,13 @@ void sys_close(TrapFrame *trapFrame){
     disable_irq();
     int fd = trapFrame->x[0];
 
-    Thread *curr_thread = get_current();
     if(fd < 0 || fd >= MAX_FD_NUM)
         trapFrame->x[0] = -1;
-    else if(curr_thread->fd_table[fd] == NULL)
+    else if(global_fd_table[fd] == NULL)
         trapFrame->x[0] = -1;
     else{
-        int status = vfs_close(curr_thread->fd_table[fd]);
-        if(status == 0) curr_thread->fd_table[fd] = NULL;
+        int status = vfs_close(global_fd_table[fd]);
+        if(status == 0) global_fd_table[fd] = NULL;
         trapFrame->x[0] = status;
     }
     enable_irq();
@@ -374,13 +384,12 @@ void sys_write(TrapFrame *trapFrame){
     char *buf = (char *)trapFrame->x[1];
     int count = trapFrame->x[2];
 
-    Thread *curr_thread = get_current();
     if(fd < 0 || fd >= MAX_FD_NUM)
         trapFrame->x[0] = -1;
-    else if(curr_thread->fd_table[fd] == NULL)
+    else if(global_fd_table[fd] == NULL)
         trapFrame->x[0] = -1;
     else{
-        int status = vfs_write(curr_thread->fd_table[fd], buf, count);
+        int status = vfs_write(global_fd_table[fd], buf, count);
         trapFrame->x[0] = status;
     }
     enable_irq();
@@ -392,13 +401,12 @@ void sys_read(TrapFrame *trapFrame){
     char *buf = (char *)trapFrame->x[1];
     int count = trapFrame->x[2];
 
-    Thread *curr_thread = get_current();
     if(fd < 0 || fd >= MAX_FD_NUM)
         trapFrame->x[0] = -1;
-    else if(curr_thread->fd_table[fd] == NULL)
+    else if(global_fd_table[fd] == NULL)
         trapFrame->x[0] = -1;
     else{
-        int status = vfs_read(curr_thread->fd_table[fd], buf, count);
+        int status = vfs_read(global_fd_table[fd], buf, count);
         trapFrame->x[0] = status;
     }
     enable_irq();

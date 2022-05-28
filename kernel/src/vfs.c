@@ -6,6 +6,7 @@
 
 char *global_dir;
 Dentry *global_dentry;
+File **global_fd_table;
 Mount *rootfs;
 FileSystem **fs_pool;
 
@@ -33,6 +34,7 @@ void rootfs_init(char *fs_name){
     global_dir = (char *)kmalloc(sizeof(char) * 1024);
     strcpy(global_dir, "/");
     global_dentry = rootfs->root_dentry;
+    global_fd_table = (File **)kmalloc(sizeof(File *) * MAX_FD_NUM);
 }
 
 

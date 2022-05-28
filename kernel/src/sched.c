@@ -13,6 +13,8 @@
 Thread *thread_pool;
 Thread *run_thread_head;
 extern char *global_dir;
+extern Dentry *global_dentry;
+extern File **global_fd_table;
 
 void init_thread_pool_and_head(){
     thread_pool = (Thread*)kmalloc(sizeof(Thread) * MAX_THREAD);
@@ -35,6 +37,7 @@ void init_thread_pool_and_head(){
         INIT_LIST_HEAD(&thread_pool[i].sig_queue_head.list);
         thread_pool[i].sig_stack_addr = NULL;
         thread_pool[i].old_tp = NULL;
+
     }
 
     run_thread_head = (Thread *)kmalloc(sizeof(Thread));
@@ -66,7 +69,6 @@ Thread *thread_create(void(*func)()){
         INIT_LIST_HEAD(&new_thread->sig_info_pool[i].list);
     }
 
-    strcpy(new_thread->dir, global_dir);
 
     print_string(UITOHEX, "[*] new_thread->ustack: ", (unsigned long long )new_thread->ustack_addr, 0);
     uart_puts(" | ");
@@ -135,9 +137,18 @@ void schedule(){
         next_thread = (Thread *)next_thread->list.next;
     }while(list_is_head(&next_thread->list, &run_thread_head->list) || next_thread->state == EXIT);
 
+
     strcpy(global_dir, next_thread->dir);
+    global_dentry = next_thread->dentry;
+    global_fd_table = next_thread->fd_table; 
+    
+    // print_string(UITOA, "[*] next_thread->id: ", next_thread->id, 0);
+    // uart_puts(" | ");
     // uart_puts(global_dir);
-    // uart_puts("\n");
+    // uart_puts(" | ");
+    // uart_puts(global_dentry->name);
+    // uart_puts(" | ");
+    // print_string(UITOHEX, "global_fd_table: ", (unsigned long long )global_fd_table, 1);
 
     // print_string(UITOHEX, "curr: ", curr_thread->id, 0);
     // uart_puts(" | ");

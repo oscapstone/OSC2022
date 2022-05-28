@@ -57,6 +57,7 @@ typedef struct _Thread{
 
     /* vfs */
     char dir[MAX_PATHNAME_LEN * 16];
+    Dentry *dentry;
     File *fd_table[MAX_FD_NUM]; // max 16 fd
 }Thread;
 
