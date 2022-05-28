@@ -43,3 +43,6 @@ void schedule();
 void kill_zombies();
 void kill_thread(int pid);
 void switch_to_user_space();
+void add_to_queue();
+void remove_task(uint64_t pid);
+void *find_task(uint64_t pid);

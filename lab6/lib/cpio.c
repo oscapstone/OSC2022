@@ -102,6 +102,7 @@ void load_program(char *name, uint64_t *page_table){
 
     if(!strcmp(header+110, name) && filesize != 0){
       data = header+110+namesize;
+      // load the user program to the virtual memory 0
       int sz = filesize / 0x1000 + (filesize % 0x1000 != 0);
       for (int i = 0; i < sz; i++) {
         char *addr = (char *)page_allocate_addr(0x1000);

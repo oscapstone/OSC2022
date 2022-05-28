@@ -3,15 +3,14 @@
 #include "mmu.h"
 
 // https://github.com/Tekki/raspberrypi-documentation/blob/master/hardware/raspberrypi/bcm2836/QA7_rev3.4.pdf p16
-#define CORE0_INTERRUPT_SOURCE ((volatile uint64_t *)(KVA | 0x40000060))
-#define IRQS1_PENDING   ((volatile uint64_t *)(MMIO_BASE+0x0000b204))
+#define CORE0_INTERRUPT_SOURCE  ((volatile uint64_t *)(KVA | 0x40000060))
+#define IRQS1_PENDING           ((volatile uint64_t *)(MMIO_BASE+0x0000b204))
 #define INTERRUPT_SOURCE_CNTPNSIRQ (1<<1)
 
 void invalid_exception_router(uint64_t x0);
 void irq_router(uint64_t x0);
 void sync_router(uint64_t x0, uint64_t x1);
 void child_return_from_fork();
-void ppp(uint64_t x0);
 
 typedef struct trap_frame{
   uint64_t x0;        uint64_t x1;

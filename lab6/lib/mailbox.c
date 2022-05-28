@@ -13,7 +13,7 @@ int mbox_call(unsigned char ch, unsigned int *mbox, unsigned int *mbox_va){
       asm volatile("nop");
     }while(*MAILBOX_STATUS & MAILBOX_EMPTY);
     if(r == *MAILBOX_READ){
-      return mbox_va[1]==MAILBOX_RESPONSE;    
+      return mbox_va[1]==MAILBOX_RESPONSE;    // user ttbr1 to read the value
     }
   }
   return 0;

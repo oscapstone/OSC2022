@@ -46,23 +46,18 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = cur->pid;
   }else if(frame->x8 == 1){         // uart read
     interrupt_enable();
-    int read = 0;
     char *buf = (char *)frame->x0;
-    while (read < frame->x1){
-      *(buf+read) = uart_getc();
-      read++;
+    for(int i=0; i < frame->x1; i++){
+      buf[i] = uart_getc();
     }
-    frame->x0 = read;
+    frame->x0 = frame->x1;
     interrupt_disable();
   }else if(frame->x8 == 2){         // uart write
     interrupt_enable();
-    int sent = 0;
     char *buf = (char *)frame->x0;
-    while (sent < frame->x1){
-      uart_send(*buf++);
-      sent++;
-    }
-    frame->x0 = sent;
+    for(int i=0; i<frame->x1; i++)
+      uart_send(buf[i]);
+    frame->x0 = frame->x1;
     interrupt_disable();
   }else if(frame->x8 == 3){         // exec
     char *name = (char *)frame->x0;

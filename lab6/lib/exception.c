@@ -17,7 +17,8 @@
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
-static uint64_t _pid = 0;
+static uint32_t signal_exit = 0;
+static uint64_t signal_pid = 0;
 
 void invalid_exception_router(uint64_t x0){
   uint64_t elr_el1, esr_el1, spsr_el1;
@@ -70,9 +71,14 @@ void sync_router(uint64_t x0, uint64_t x1){
     char *name = (char *)frame->x0;
     task *cur = get_current();
     init_PT(&(cur->page_table));
+    char *user_sp_addr = page_allocate_addr(0x4000);
+    for (int i = 0; i < 4; i++)           // init the stack point
+      map_pages(cur->page_table, 0xffffffffb000 + i*0x1000, VA2PA(user_sp_addr + i*0x1000));
+    // build-up the video core page table
+    for (uint64_t va = 0x3c000000; va < 0x3f000000; va += 4096)
+      map_pages(cur->page_table, va, va);
+    cur->user_sp = (uint64_t)user_sp_addr;
     load_program(name, cur->page_table);
-    for (int i = 0; i < 4; i++)
-      map_pages(cur->page_table, 0xffffffffb000 + i*0x1000, VA2PA(page_allocate_addr(0x1000)));
     frame->sp_el0 = 0xfffffffff000 - 0x10;
     frame->elr_el1 = (uint64_t)USER_PROGRAM_ADDR;
     // char *argv = (char *)frame->x1;
@@ -84,7 +90,6 @@ void sync_router(uint64_t x0, uint64_t x1){
     asm volatile("isb 	\n");                 // clear pipeline
     frame->x0 = 0;
   }else if(frame->x8 == 4){        // fork
-    // printf("fork\n\r");
     task *parent = get_current();
     task *child = task_create(NULL, USER);
     duplicate_PT(parent->page_table, child->page_table);
@@ -128,10 +133,13 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = child->pid;
   }else if(frame->x8 == 5){        // exit
     task *cur = get_current();
+    if(signal_exit){
+      signal_exit = 0;
+      sys_kill(signal_pid);
+    }
     cur->state = EXIT;
     schedule();
   }else if(frame->x8 == 6){        // mbox call
-    // printf("mailbox\n\r");
     unsigned char ch = (unsigned char)frame->x0;
     uint32_t *mbox = (uint32_t *)frame->x1;
     asm volatile("mov x0, %0    \n"::"r"(mbox));
@@ -145,9 +153,12 @@ void sync_router(uint64_t x0, uint64_t x1){
     task *cur = get_current();
     cur->handler = (void (*)())frame->x1;
   }else if(frame->x8 == 9){       // signal kill
-    task *cur = get_current();
-    _handler = (handler_func)cur->handler;
-    _pid = frame->x0;
+    signal_pid = frame->x0;
+    task *target = find_task(signal_pid);
+    _handler = (handler_func)target->handler;
+    signal_exit = 1;
+    remove_task(signal_pid);
+    /* to-do move the signal_handler_wrapper to the user virtual memory */
     task *handler_task = task_create(NULL, USER);
     handler_task->target_func = (uint64_t)signal_handler_wrapper;
   }
@@ -155,15 +166,14 @@ void sync_router(uint64_t x0, uint64_t x1){
 
 void signal_handler_wrapper(){
   if (_handler){
+    printf("do handler\n\r");
     _handler();
+    add_to_queue();
+  }else{
+    printf("kill: %d\n\r", signal_pid);
+    sys_kill(signal_pid);  // no register kill thread
   }
-  sys_kill(_pid);
+  signal_exit = 0;
   sys_exit();
 }
 
-void ppp(uint64_t x0){
-  trap_frame *child = (trap_frame *)x0;
-  printf("child->sp_el0: 0x%llx\n\r", child->sp_el0);
-  printf("child->elr_el1: 0x%llx\n\r", child->elr_el1);
-  printf("child->spsr_el1: 0x%llx\n\r", child->spsr_el1);
-}
