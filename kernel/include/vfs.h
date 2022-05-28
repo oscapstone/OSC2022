@@ -11,7 +11,7 @@ enum dentry_type {
 };
 #define O_CREAT 0b100
 #define MAX_PATHNAME_LEN 64
-#define MAX_DATA_LEN 0x2000
+#define MAX_DATA_LEN 512
 #define MAX_FS_NUM 32
 #define MAX_FD_NUM 16
 #define EOF (-1)

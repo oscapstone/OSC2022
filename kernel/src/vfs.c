@@ -59,6 +59,14 @@ void vfs_initramfs_init(){
             vfs_open(name, O_CREAT, &file);
             vfs_write(file, info->data, info->datasize);
             vfs_close(file);
+            
+            // char buf[40];
+            // memset(buf, 0, 40);
+            // vfs_open(name, O_CREAT, &file);
+            // vfs_read(file, buf, 39);
+            // vfs_close(file);
+            // uart_puts(buf);
+            // uart_puts("\n");
         }
     }
 }

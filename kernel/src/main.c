@@ -19,7 +19,7 @@ int main(unsigned long dtb_base){
 
     uart_init();
     enable_el0_get_timer();
-    uart_getc();
+    // uart_getc();
     print_string(UITOHEX, "[*] DTB_BASE: 0x", dtb_base, 1);
     fdt_traverse((fdt_header *)dtb_base, initramfs_callback);
     all_allocator_init();    

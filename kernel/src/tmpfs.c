@@ -76,19 +76,16 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
             /* f_pos is in the block of some offset */
             size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
             // if(block->data[offset] == (char)EOF) return -1;
-            if(write_len <= MAX_DATA_LEN - offset){
+            if(write_len < MAX_DATA_LEN - offset){
                 memcpy(block->data + offset, src + write_idx, write_len);
                 file->f_pos += write_len;
                 write_idx += write_len;
                 block->data[write_idx] = EOF;
 
-                // uart_puts(block->data);
-
                 block->size += write_len;
-                // print_string(UITOA, "f_pos: ", file->f_pos, 1);
                 goto DONE;
             }
-            else if(write_len > MAX_DATA_LEN - offset){
+            else if(write_len >= MAX_DATA_LEN - offset){
                 memcpy(block->data + offset, src + write_idx, MAX_DATA_LEN - offset);
                 file->f_pos += MAX_DATA_LEN - offset;
                 write_idx += MAX_DATA_LEN - offset;
@@ -97,7 +94,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
 
                 /* add a new block */
                 TmpfsInode *new_block = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
-                new_block->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
+                // new_block->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
                 new_block->idx = block->idx + 1;
                 new_block->size = 0;
                 new_block->vnode = inode_head->vnode;
@@ -226,7 +223,7 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
     inode_head->vnode = new_dentry->vnode;
     /* create the real data block */
     TmpfsInode *inode = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
-    inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
+    // inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
     inode->idx = 1;
     inode->size = 0;
     inode->vnode = new_dentry->vnode;
