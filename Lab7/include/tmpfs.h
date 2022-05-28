@@ -22,8 +22,7 @@ void cache_init(Content* content);
 // vops
 int tmpfs_lookup(vnode* dir_node, vnode** target, const char* component_name);
 int tmpfs_creat(vnode* dir_node, vnode** target, const char* component_name);
-/* TODO */
-int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* component_name);
+int tmpfs_mkdir(vnode* dir_node, vnode** target, const char* component_name);
 
 // fops
 int tmpfs_read(file* f, void* buf, size_t len);

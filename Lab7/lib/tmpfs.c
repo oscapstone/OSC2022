@@ -117,7 +117,7 @@ void tmpfs_dump(vnode* cur, int level){
 int tmpfs_lookup(vnode* dir_node, vnode** target, const char* component_name) {
 	Content* content = (Content*)(dir_node->internal);
 	if (content->type != DIR_TYPE){
-		uart_printf("[ERROR][tmpfs_lookup] Should be a directory!\n");
+		uart_printf("[ERROR][tmpfs_lookup] %s should be a directory!\n", content->name);
 		while (1) {}
 	}
 	vnode** childs = (vnode**)(content->data);
@@ -141,7 +141,7 @@ int tmpfs_creat(vnode* dir_node, vnode** target, const char* component_name) {
 		while (1) {}
 	}
 	vnode** childs = (vnode**)content->data;
-	
+
 	int idx =- 1;
 	if (content->capacity > content->size)
 		idx = content->size++;
@@ -170,8 +170,39 @@ int tmpfs_creat(vnode* dir_node, vnode** target, const char* component_name) {
 	return idx;
 }
 
-int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target, const char* component_name) {
-	return 0;
+int tmpfs_mkdir(vnode* dir_node, vnode** target, const char* component_name) {
+	Content* content = (Content*)(dir_node->internal);
+	if (content->type != DIR_TYPE) {
+		uart_printf("[ERROR][tmpfs_mkdir] Parent should be a directory!\n");
+		while (1) {}
+	}
+	vnode** childs = (vnode**)content->data;
+	
+	int idx = -1;
+	if (content->capacity > content->size)
+		idx = content->size++;
+	else {
+		uart_printf("[ERROR][tmpfs_mkdir] Not enough space!\n");
+		while (1) {}
+	}
+	
+	vnode* new_node = (vnode*)kmalloc(sizeof(vnode));
+	new_node->mnt = dir_node->mnt;
+	new_node->v_ops = dir_node->v_ops;
+	new_node->f_ops = dir_node->f_ops;
+	new_node->internal = (Content*)kmalloc(sizeof(Content));
+
+	content = (Content*)new_node->internal;
+	content->name = (char*)kmalloc(PREFIX_LEN);
+	slashIgnore(component_name, content->name, PREFIX_LEN);
+	content->type = DIR_TYPE;
+	content->capacity = DIR_CAP;
+	content->size = 0;
+	content->data = (void*)kmalloc(DIR_CAP * 8);
+	childs[idx] = new_node;
+	if (target)
+		*target = new_node;
+	return idx;
 }
 
 /* fops */
@@ -232,6 +263,5 @@ int tmpfs_close(file* file) {
         uart_printf("[ERROR][tmpfs_close] Already freed!\n");
         return FAIL;
     }
-	//kfree((void*)file);
 	return SUCCESS;
 }

@@ -140,11 +140,11 @@ void parse_command() {
     else if (compare_string(buffer, "test_vm") == 0) {
         run_user_program("vm.img", NULL);
     }
-    else if (compare_string(buffer, "test_fs") == 0) {
+    else if (compare_string(buffer, "test_fs") == 0) {  
+        file* f;
+        /* basic 1 */
         char buffer1[17] = "This is fs_test!\n";
         char buffer2[30];
-        file* f;
-
         vfs_open("/dir1/dummy1.txt", O_CREAT, &f);
         vfs_read(f, buffer2, 30);
         uart_printf("%s", buffer2);
@@ -167,6 +167,17 @@ void parse_command() {
         buffer2[16] = '\0';
         uart_printf("%s", buffer2);
         vfs_close(f);
+        
+        /* basic 2 */
+        char buffer_mkdir[13] = "test mkdir!\n";
+        vfs_open("/dir3/test.txt", O_CREAT, &f);
+        vfs_write(f, buffer_mkdir, 13);
+        vfs_close(f);
+        vfs_open("/dir3/test.txt", O_CREAT, &f);
+        vfs_read(f, buffer2, 13);
+        buffer2[17] = '\0';
+        vfs_close(f);
+        uart_printf("%s\n", buffer2);
     }
     else if (compare_string(buffer, "help") == 0) {
         uart_send_string("help               : print this help menu\n");

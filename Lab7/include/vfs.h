@@ -68,6 +68,7 @@ int vfs_open(const char* pathname, int flags, file** target);
 int vfs_close(file* f);
 int vfs_read(file* f, void* buf, size_t len);
 int vfs_write(file* f, const void* buf, size_t len);
+int vfs_create(vnode* dir_node, vnode** target, const char* component_name);
 int vfs_mkdir(const char* pathname);
 int vfs_mount(const char* target, const char* filesystem);
 int vfs_lookup(const char* pathname, vnode** target);

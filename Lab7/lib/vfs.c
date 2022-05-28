@@ -23,20 +23,33 @@ int register_filesystem(filesystem* fs, const char* fs_name) {
 
 int vfs_open(const char* pathname, int flags, file** target) {
     *target = kmalloc(sizeof(file));
-	vnode* dir = rootfs->root;
-	vnode* file_node;
-    int ret = vfs_lookup(pathname, &file_node);
-    if (ret == FAIL)
-        return FAIL;
-    else if (ret == FILE_NOT_EXIST && !(flags & O_CREAT))
-        return FAIL;
-    else if (ret == FILE_NOT_EXIST) 
-		dir->v_ops->create(dir, &file_node, buffer);
-	(*target)->node = file_node;
+    vnode* dir = rootfs->root;
+    vnode* file_node;
+    char prefix[PREFIX_LEN];
+    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '\n'
+    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
+    while (1) {
+        int idx = dir->v_ops->lookup(dir, &file_node, prefix);
+        if (!pathname) {  // file
+            if (idx == -1) {
+                if (!(flags & O_CREAT))
+                return FAIL;
+                dir->v_ops->create(dir, &file_node, prefix);
+            }
+            break;
+        }
+        else {  // dir
+            if (idx == -1)   
+                dir->v_ops->mkdir(dir, &file_node, prefix);
+        }
+        dir = file_node;
+        pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
+    }
+    (*target)->node = file_node;
 	(*target)->f_pos = 0;
 	(*target)->flags = flags;
     (*target)->f_ops = dir->f_ops;
-	return (*target)->f_ops->open(file_node, target);
+    return (*target)->f_ops->open(file_node, target);
 }
 
 int vfs_close(file* f) {
@@ -56,7 +69,35 @@ int vfs_write(file* f, const void* buf, size_t len) {
 	return f->f_ops->write(f, buf, len);
 }
 
-int vfs_mkdir(const char* pathname);
+int vfs_create(vnode* dir_node, vnode** target, const char* component_name) {
+    return dir_node->v_ops->create(dir_node, target, component_name);
+}
+
+int vfs_mkdir(const char* pathname) {
+    vnode* dir = rootfs->root;
+    vnode* target;
+    int flag = 0;
+    char prefix[PREFIX_LEN];
+    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '\n'
+    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
+    while (1) {
+        int idx = dir->v_ops->lookup(dir, &target, prefix);
+        if (idx == -1) {  // dir not exists
+            flag = 1;
+            dir->v_ops->mkdir(dir, &target, prefix);
+        }
+        dir = target;
+        pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
+        if (compare_string(pathname, prefix) == 0)
+            break;
+    }
+    if (!flag) {
+        uart_printf("[ERROR][vfs_mkdir] Dir already exists!\n");
+        return FAIL;
+    }
+    return SUCCESS;
+}
+
 int vfs_mount(const char* target, const char* filesystem);
 
 int vfs_lookup(const char* pathname, vnode** target) {
