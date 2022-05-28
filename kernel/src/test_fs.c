@@ -3,6 +3,7 @@
 #include <tmpfs.h>
 #include <uart.h>
 #include <string.h>
+#include <user_syscall.h>
 
 void fs_test1(){
     uart_puts("----------------------------TEST VFS_OPEN---------------------------\n");
@@ -111,4 +112,97 @@ void fs_test4(){
 
     // vfs_chdir(NULL);
 
+}
+
+void fs_test5(){
+    int a = open("hello", O_CREAT);
+    int b = open("world", O_CREAT);
+    write(a, "Hello ", 6);
+    write(b, "World!", 6);
+    close(a);
+    close(b);
+    b = open("hello", 0);
+    a = open("world", 0);
+    print_string(ITOA, "b_fd = ", b, 0);
+    print_string(ITOA, " | a_fd = ", a, 1);
+
+    char buf[300];
+    int sz;
+    sz = read(b, buf, 100);
+    sz += read(a, buf + sz, 100);
+    buf[sz] = '\0';
+    uart_puts(buf); // should be Hello World!
+}
+
+void fs_test6(){
+    char buf[8];
+    mkdir("mnt", 0);
+    int fd = open("/mnt/a.txt", O_CREAT);
+    write(fd, "Hi", 2);
+    close(fd);
+    chdir("mnt");
+    fd = open("./a.txt", 0);
+    // assert(fd >= 0);
+    read(fd, buf, 2);
+    uart_puts(buf);
+    uart_puts("\n");
+    // assert(strncmp(buf, "Hi", 2) == 0);
+
+    chdir("..");
+    mount(NULL, "mnt", "abc", 0, NULL);
+    fd = open("mnt/a.txt", 0);
+    // assert(fd < 0);
+    if(fd < 0) uart_puts("[x] fd fail!!\n");
+
+    vfs_umount("/mnt");
+    fd = open("/mnt/a.txt", 0);
+    if(fd < 0) uart_puts("[x] fd fail!!\n");
+
+    char buf2[8];
+    // assert(fd >= 0);
+    read(fd, buf2, 2);
+    uart_puts(buf2);
+    uart_puts("\n");
+    // assert(strncmp(buf, "Hi", 2) == 0);
+}
+
+void fs_test7(){
+    char buf[16];
+    mkdir("proc", 0);
+    mount(NULL, "proc", "procfs", 0, NULL);
+    int fd = open("/proc/switch", 0);
+    write(fd, "0", 1);
+    close(fd);
+
+    fd = open("/proc/hello", 0);
+    int sz = read(fd, buf, 16);
+    buf[sz] = '\0';
+    uart_puts(buf);
+    uart_puts("\n");
+    // printf("%s\n", buf); // should be hello
+    close(fd);
+
+    fd = open("/proc/switch", 0);
+    write(fd, "1", 1);
+    close(fd);
+
+    fd = open("/proc/hello", 0);
+    sz = read(fd, buf, 16);
+    buf[sz] = '\0';
+    uart_puts(buf);
+    uart_puts("\n");
+    // printf("%s\n", buf); //should be HELLO
+    close(fd);
+
+    fd = open("/proc/1/status", 0); // choose a created task's id here
+    sz = read(fd, buf, 16);
+    buf[sz] = '\0';
+    uart_puts(buf);
+    uart_puts("\n");
+    // printf("%s\n", buf); // status of the task.
+    close(fd);
+
+    fd = open("/proc/999/status", 0); // choose a non-existed task's id here
+    if(fd < 0) uart_puts("[x] fd fail!");
+    // assert(fd < 0);
 }

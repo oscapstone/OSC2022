@@ -54,18 +54,21 @@ int register_filesystem(FileSystem *fs) {
     return 0;
 }
 
-void find_component_name(const char *pathname, char *component_name, char delimiter){
+int find_component_name(const char *pathname, char *component_name, char delimiter){
     int i = 0;
-    while(pathname[i] != delimiter && pathname[i] != '\0'){
+    while(pathname[i] != delimiter &&  pathname[i] != '\0'){
         component_name[i] = pathname[i];
         i++;
     }
     component_name[i] = '\0';
+    if(pathname[i] == '\0') return 1;
+    else return 0;
 }
 
 int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode, char *component_name) {
     int ready_return = 0;
     int idx;
+    int idx_null = 0;
     // 1. Lookup pathname
     if(pathname[0] == '/'){
         idx = 1;
@@ -77,7 +80,7 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
     }
 
     char tmp_buf[MAX_PATHNAME_LEN];
-    find_component_name(pathname + idx, component_name, '/');
+    idx_null = find_component_name(pathname + idx, component_name, '/');
     
     while(component_name[0] != '\0'){
         /* 
@@ -86,6 +89,7 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
         * Therefore, it is a wrong pathname, even if the flag is O_CREAT, it also cannot create a new file
         */
         if(ready_return) return -1;
+        
         
         /* Try to find the child vnode */
         int err = rootfs->root_dentry->vnode->v_ops->lookup((*target_path)->vnode, target_vnode, component_name);
@@ -96,9 +100,12 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
         strcpy(tmp_buf, component_name);
 
         /* find next component name*/
-        idx += strlen(component_name) + 1;
-        find_component_name(pathname + idx, component_name, '/');
-
+        if(idx_null)
+            idx += strlen(component_name);
+        else
+            idx += strlen(component_name) + 1;
+        idx_null = find_component_name(pathname + idx, component_name, '/');
+        
         /* find the next vnode */
         if(*target_vnode != NULL){
             /* check the dir is mountpoint or not */
@@ -111,6 +118,7 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
             }
             
         } 
+
     }
     /* if the last component name is '\0', it is a file name */
     strcpy(component_name, tmp_buf);
@@ -126,6 +134,7 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     if(err) return -1; // worng pathname
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
+        // uart_puts(target_vnode->dentry->name);
         if(target_vnode->dentry->type == D_DIR || 
             target_vnode->dentry->type == D_MOUNT) return -2; // cannot open a directory
         err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
@@ -146,7 +155,6 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
             return 0;
         }
     }
-
     // 4. Return error code if fails
     return -1;
 }

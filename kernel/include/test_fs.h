@@ -5,5 +5,8 @@ void fs_test1();
 void fs_test2();
 void fs_test3();
 void fs_test4();
+void fs_test5();
+void fs_test6();
+void fs_test7();
 
 #endif

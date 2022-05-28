@@ -31,10 +31,13 @@ int main(unsigned long dtb_base){
     enable_irq(); // DAIF set to 0b0000
 
 
-    fs_test1();
-    fs_test2();
-    fs_test3();
-    fs_test4();
+    // fs_test1();
+    // fs_test2();
+    // fs_test3();
+    // fs_test4();
+    // fs_test5();
+    fs_test6();
+    // fs_test7();
 
     PrintWelcome();
     ShellLoop();

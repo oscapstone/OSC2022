@@ -1,3 +1,3 @@
 file kernel8.elf
-b *sys_sigreturn
+b *vfs_lookup
 target remote :1234
