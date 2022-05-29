@@ -7,6 +7,7 @@ struct vnode {
 	struct mount* mnt;
 	struct vnode_operations* v_ops;
 	struct file_operations* f_ops;
+	struct vnode* parent;
 	void* internal;
 };
 
@@ -64,17 +65,20 @@ typedef struct mode_t mode_t;
 #define FILE_NOT_EXIST 2
 
 extern struct mount* rootfs;
+extern struct vnode* home_dir;
 
 // register the file system to the kernel.
 // you can also initialize memory pool of the file system here.
 int register_filesystem(filesystem* fs, const char* fs_name);
-int vfs_open(const char* pathname, int flags, file** target);
+int vfs_open(const char* pathname, int flags, file** target, vnode* root);
 int vfs_close(file* f);
 int vfs_read(file* f, void* buf, size_t len);
 int vfs_write(file* f, const void* buf, size_t len);
 int vfs_create(vnode* dir_node, vnode** target, const char* component_name);
-int vfs_mkdir(const char* pathname);
-int vfs_mount(const char* target, const char* file_system);
-int vfs_lookup(const char* pathname, vnode** target);
+int vfs_mkdir(const char* pathname, vnode* root);
+int vfs_mount(const char* target, const char* file_system, vnode* root);
+int vfs_lookup(const char* pathname, vnode** target, vnode* root);
+
+vnode* find_root(const char* pathname, vnode* cur_dir, char** new_pathname);
 
 #endif

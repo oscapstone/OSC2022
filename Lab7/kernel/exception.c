@@ -292,8 +292,11 @@ void sys_signal_kill(int pid, int SIGNAL) {
 
 int sys_open(const char *pathname, int flags) {
     task_struct* cur = get_current();
+    char* new_path;
+    vnode* new_root;
+    new_root = find_root(pathname, cur->cur_dir, &new_path);
     for (int i = 0; i < FD_TABLE_SIZE; ++i) {
-		if (cur->fd_table[i] == 0 && (vfs_open(pathname, flags, &(cur->fd_table)[i]) == SUCCESS))
+		if (cur->fd_table[i] == 0 && (vfs_open(pathname, flags, &(cur->fd_table)[i], new_root) == SUCCESS))
 			return i;
 	}
     return -1;
@@ -332,14 +335,20 @@ int sys_read(int fd, void *buf, int count) {
 }
 
 int sys_mkdir(const char *pathname) {
-    if (vfs_mkdir(pathname) == SUCCESS)
+    char* new_path;
+    vnode* new_root;
+    new_root = find_root(pathname, get_current()->cur_dir, &new_path);
+    if (vfs_mkdir(pathname, new_root) == SUCCESS)
         return 0;
     return -1;
 }
 
 // you can ignore arguments other than target and filesystem
 int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data) {
-    if (vfs_mount(target, filesystem) == SUCCESS)
+    char* new_path;
+    vnode* new_root;
+    new_root = find_root(target, get_current()->cur_dir, &new_path);
+    if (vfs_mount(new_path, filesystem, new_root) == SUCCESS)
         return 0;
     return -1;
 }

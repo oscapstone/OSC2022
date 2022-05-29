@@ -42,6 +42,7 @@ typedef struct task_struct {
     struct task_struct *prev;
     struct task_struct *next;
     file* fd_table[FD_TABLE_SIZE];
+    vnode* cur_dir;
 } task_struct;
 
 typedef struct task_queue {

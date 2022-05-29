@@ -21,6 +21,7 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 	root->f_ops->open = tmpfs_open;
 	root->f_ops->close = tmpfs_close;
 	root->internal = (void*)kmalloc(sizeof(Content));
+	root->parent = root;
 
 	Content* content = (Content*)(root->internal);
 	content->name = 0;
@@ -61,8 +62,11 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 				}
 				idx = tmpfs_creat(dir_node, 0, prefix);
 				vnode* new_node = target[idx];
+				new_node->parent = dir_node;
 				content = (Content*)(new_node->internal);
 				if (fmode == 1) {
+					if (compare_string(content->name, "home") == 0)
+						home_dir = new_node;
 					content->type = DIR_TYPE;
 					content->capacity = DIR_CAP;
 					content->size = 0;
@@ -83,6 +87,10 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 			}
 		}
 		f = next_fget(f);
+	}
+	if (!home_dir) {
+		uart_printf("[ERROR][tmpfs_nodeInit] Can't find home dir!\n");
+		//while (1) {}
 	}
 	return 0;
 }
@@ -168,6 +176,7 @@ int tmpfs_creat(vnode* dir_node, vnode** target, const char* component_name) {
 	content->size = 0;
 	content->data = 0;
 	content->cache = 0;
+	new_node->parent = dir_node;
 	childs[idx] = new_node;
 	if (target)
 		*target = new_node;

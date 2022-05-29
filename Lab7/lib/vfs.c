@@ -5,10 +5,11 @@
 #include "allocator.h"
 
 char buffer[16];
+struct vnode* home_dir = 0;
 
 int register_filesystem(filesystem* fs, const char* fs_name) {
     if (compare_string(fs_name, "tmpfs") == 0) {
-        char* name = (char*)kmalloc(6);
+        char* name = (char*)kmalloc(PREFIX_LEN);
         for (int i = 0; i < 6; ++i)
             name[i] = fs_name[i];
         fs->name = name;
@@ -21,9 +22,9 @@ int register_filesystem(filesystem* fs, const char* fs_name) {
     return 0;
 }
 
-int vfs_open(const char* pathname, int flags, file** target) {
+int vfs_open(const char* pathname, int flags, file** target, vnode* root) {
     *target = kmalloc(sizeof(file));
-    vnode* dir = rootfs->root;
+    vnode* dir = root;
     vnode* file_node;
     char prefix[PREFIX_LEN];
     pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '\n'
@@ -73,8 +74,8 @@ int vfs_create(vnode* dir_node, vnode** target, const char* component_name) {
     return dir_node->v_ops->create(dir_node, target, component_name);
 }
 
-int vfs_mkdir(const char* pathname) {
-    vnode* dir = rootfs->root;
+int vfs_mkdir(const char* pathname, vnode* root) {
+    vnode* dir = root;
     vnode* target;
     int flag = 0;
     char prefix[PREFIX_LEN];
@@ -98,10 +99,10 @@ int vfs_mkdir(const char* pathname) {
     return SUCCESS;
 }
 
-int vfs_mount(const char* target, const char* file_system) {
+int vfs_mount(const char* target, const char* file_system, vnode* root) {
     if (compare_string(file_system, "tmpfs") == 0) {
         vnode* node;
-        int ret = vfs_lookup(target, &node);
+        int ret = vfs_lookup(target, &node, root);
         if (ret != SUCCESS)
             return ret;
         mount* mnt = kmalloc(sizeof(mount));
@@ -116,8 +117,8 @@ int vfs_mount(const char* target, const char* file_system) {
     return SUCCESS;
 }
 
-int vfs_lookup(const char* pathname, vnode** target) {
-    vnode* dir = rootfs->root;
+int vfs_lookup(const char* pathname, vnode** target, vnode* root) {
+    vnode* dir = root;
     char prefix[PREFIX_LEN];
     pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
 	while (1) {
@@ -142,4 +143,31 @@ int vfs_lookup(const char* pathname, vnode** target) {
 	}
 	uart_printf("[ERROR][vfs_lookup] Should not reach here!\n");
     return FAIL;
+}
+
+vnode* find_root(const char* pathname, vnode* cur_dir, char** new_pathname) {
+    int idx_src = 0;
+    vnode* ret;
+    if (pathname[0] == '/') {
+        ret = rootfs->root;
+        idx_src = 1;
+    }
+    else if (pathname[0] == '.') {
+        if (pathname[1] == '.') {
+            ret = cur_dir->parent;
+            idx_src = 3;
+        }
+        else {
+            ret = cur_dir;
+            idx_src = 2;
+        }
+    }
+    
+    *new_pathname = kmalloc(PREFIX_LEN);
+    (*new_pathname)[0] = '/';
+    int idx_dst = 1;
+    while (idx_src < PREFIX_LEN && idx_dst < PREFIX_LEN)
+        (*new_pathname)[idx_dst++] = pathname[idx_src++];
+
+    return ret;
 }

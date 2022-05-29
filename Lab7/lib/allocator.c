@@ -8,7 +8,7 @@
 /* record the usage of each slot */
 const int slot_size = 4;
 const int slot[] = {32, 64, 128, 256};
-const uint64_t slot_max[] = {UINT32_MAX, UINT16_MAX - 1, UINT8_MAX, 15};
+const uint64_t slot_max[] = {UINT32_MAX, UINT16_MAX - (1 << 15), UINT8_MAX, 15};
 const int slot_record_bits[] = {32, 15, 8, 4};
 const uint64_t slot_masks[] = {UINT32_MAX, UINT16_MAX, UINT8_MAX, UINT8_MAX};
 const int slot_shift_amout[] = {32, 16, 8, 0};
