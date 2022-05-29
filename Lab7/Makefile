@@ -6,7 +6,7 @@ FLAGS = -O0 -Wall -nostartfiles -ffreestanding -mgeneral-regs-only -g -fPIC
 INC = include
 LIB = lib
 CPIO = archive/initramfs.cpio
-USER_PROG = timer_test
+USER_PROG = fs_test
 
 all: kernel8.img $(CPIO) $(USER_PROG).img
 

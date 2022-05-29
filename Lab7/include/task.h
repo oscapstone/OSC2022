@@ -2,6 +2,7 @@
 #define _TASK_H
 
 #include <stddef.h>
+#include "vfs.h"
 
 #define TERMINATED 0
 #define RUNNING 1
@@ -40,6 +41,7 @@ typedef struct task_struct {
     void *page_table;
     struct task_struct *prev;
     struct task_struct *next;
+    file* fd_table[FD_TABLE_SIZE];
 } task_struct;
 
 typedef struct task_queue {

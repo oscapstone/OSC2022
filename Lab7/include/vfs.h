@@ -42,18 +42,22 @@ struct vnode_operations {
     int (*mkdir)(struct vnode* dir_node, struct vnode** target, const char* component_name);
 };
 
+struct mode_t {};
+
 typedef struct mount mount;
 typedef struct filesystem filesystem;
 typedef struct vnode vnode;
 typedef struct vnode_operations vnode_operations;
 typedef struct file file;
-typedef struct file_operations file_operations; 
+typedef struct file_operations file_operations;
+typedef struct mode_t mode_t;
 
 #define DIR_TYPE 1
 #define FILE_TYPE 2
 #define DIR_CAP 16
 #define PREFIX_LEN 16
 #define O_CREAT 2
+#define FD_TABLE_SIZE 5
 
 #define SUCCESS 0
 #define FAIL 1

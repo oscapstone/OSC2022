@@ -67,6 +67,24 @@ void lower_sync_handler(trap_frame *tf) {
                     sys_signal_kill((int)regs[0], (int)regs[1]);
                     thread_schedule();
                     break;
+                case 11:
+                    regs[0] = sys_open((const char*)regs[0], (int)regs[1]);
+                    break;
+                case 12:
+                    regs[0] = sys_close((int)regs[0]);
+                    break;
+                case 13:
+                    regs[0] = sys_write((int)regs[0], (const void*)regs[1], (int)regs[2]);
+                    break;
+                case 14:
+                    regs[0] = sys_read((int)regs[0], (void*)regs[1], (int)regs[2]);
+                    break;
+                case 15:
+                    regs[0] = sys_mkdir((const char*)regs[0]);
+                    break;
+                case 16:
+                    regs[0] = sys_mount((const char*)regs[0], (const char*)regs[1], (const char*)regs[2], (unsigned long)regs[3], (const void*)regs[4]);
+                    break;
                 default:
                     uart_printf("[ERROR][lower_sync_handler] unknown svc!\n");
             }
@@ -270,6 +288,60 @@ void sys_signal_kill(int pid, int SIGNAL) {
     task_struct *handler_task = thread_create(switch_to_user_space);
     user_addr = (unsigned long)signal_handler_wrapper;
     user_sp = handler_task->user_fp;
+}
+
+int sys_open(const char *pathname, int flags) {
+    task_struct* cur = get_current();
+    for (int i = 0; i < FD_TABLE_SIZE; ++i) {
+		if (cur->fd_table[i] == 0 && (vfs_open(pathname, flags, &(cur->fd_table)[i]) == SUCCESS))
+			return i;
+	}
+    return -1;
+}
+
+int sys_close(int fd) {
+    if (fd < 0 || fd >= FD_TABLE_SIZE) {
+        uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
+    }
+	task_struct* cur = get_current();
+	if (cur->fd_table[fd] && (vfs_close(cur->fd_table[fd]) == SUCCESS)) {
+		cur->fd_table[fd] = 0;
+        return 0;
+	}
+    return -1;
+}
+
+int sys_write(int fd, const void *buf, int count) {
+    if (fd < 0 || fd >= FD_TABLE_SIZE) {
+        uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
+    }
+	task_struct* cur = get_current();
+    if (cur->fd_table[fd] && (vfs_write(cur->fd_table[fd], buf, count) == SUCCESS))
+		return 0;
+	return -1;
+}
+
+int sys_read(int fd, void *buf, int count) {
+    if (fd < 0 || fd >= FD_TABLE_SIZE) {
+        uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
+    }
+	task_struct* cur = get_current();
+    if (cur->fd_table[fd] && (vfs_read(cur->fd_table[fd], buf, count) == SUCCESS))
+		return 0;
+    return -1;
+}
+
+int sys_mkdir(const char *pathname) {
+    if (vfs_mkdir(pathname) == SUCCESS)
+        return 0;
+    return -1;
+}
+
+// you can ignore arguments other than target and filesystem
+int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data) {
+    if (vfs_mount(target, filesystem) == SUCCESS)
+        return 0;
+    return -1;
 }
 
 /* helper functions */

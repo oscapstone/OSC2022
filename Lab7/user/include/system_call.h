@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#define O_CREAT 2
+
 /* helper functions for user programs, not the real system calls */
 int get_pid();
 size_t uart_read(char buf[], size_t size);
@@ -12,6 +14,14 @@ int fork();
 void exit();
 int mbox_call(unsigned char ch, unsigned int *mbox);
 void kill(int pid);
+
+int open(const char *pathname, int flags);
+int close(int fd);
+int write(int fd, const void *buf, int count);
+int read(int fd, void *buf, int count);
+int mkdir(const char *pathname);
+// you can ignore arguments other than target and filesystem
+int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
 
 /* utility functions */
 unsigned int printf(char* fmt,...);

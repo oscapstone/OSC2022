@@ -61,6 +61,8 @@ task_struct* thread_create(void *func) {
     new_task->state = RUNNING;
     new_task->id = task_cnt++;
     new_task->handler = NULL;
+    for (int i = 0; i < FD_TABLE_SIZE; ++i)
+        new_task->fd_table[i] = 0;
 
     debug_printf("[DEBUG][thread_create] id: %d\n", new_task->id);
 

@@ -60,6 +60,55 @@ void kill(int pid) {
     asm volatile("svc 0\n");
 }
 
+int open(const char *pathname, int flags) {
+    unsigned long ret;
+    asm volatile("mov x8, 11\n");
+	asm volatile("svc 0\n");
+    asm volatile("mov %0, x0\n":"=r"(ret):);
+	return ret;
+}
+
+int close(int fd) {
+    unsigned long ret;
+    asm volatile("mov x8, 12\n");
+	asm volatile("svc 0\n");
+    asm volatile("mov %0, x0\n":"=r"(ret):);
+	return ret;
+}
+
+int write(int fd, const void *buf, int count) {
+    unsigned long ret;
+    asm volatile("mov x8, 13\n");
+	asm volatile("svc 0\n");
+    asm volatile("mov %0, x0\n":"=r"(ret):);
+	return ret;
+}
+
+int read(int fd, void *buf, int count) {
+    unsigned long ret;
+    asm volatile("mov x8, 14\n");
+	asm volatile("svc 0\n");
+    asm volatile("mov %0, x0\n":"=r"(ret):);
+	return ret;
+}
+
+int mkdir(const char *pathname) {
+    unsigned long ret;
+    asm volatile("mov x8, 15\n");
+	asm volatile("svc 0\n");
+    asm volatile("mov %0, x0\n":"=r"(ret):);
+	return ret;
+}
+
+// you can ignore arguments other than target and filesystem
+int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data) {
+    unsigned long ret;
+    asm volatile("mov x8, 16\n");
+	asm volatile("svc 0\n");
+    asm volatile("mov %0, x0\n":"=r"(ret):);
+	return ret;
+}
+
 /* utility functions */
 unsigned int printf(char* fmt,...) {
     char dst[100];

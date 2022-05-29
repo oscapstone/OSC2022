@@ -2,6 +2,7 @@
 #define _EXCEPTION_H
 
 #include "task.h"
+#include "vfs.h"
 #include <stddef.h>
 
 void enable_interrupt();
@@ -25,6 +26,14 @@ int sys_mbox_call(unsigned char ch, volatile unsigned int *mbox);
 void sys_kill(int pid);
 void sys_signal(int SIGNAL, void (*handler)());
 void sys_signal_kill(int pid, int SIGNAL);
+
+int sys_open(const char *pathname, int flags);
+int sys_close(int fd);
+int sys_write(int fd, const void *buf, int count);
+int sys_read(int fd, void *buf, int count);
+int sys_mkdir(const char *pathname);
+// you can ignore arguments other than target and filesystem
+int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
 
 /* helper functions */
 extern void (*_handler)();
