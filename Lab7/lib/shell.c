@@ -170,10 +170,13 @@ void parse_command() {
         
         /* basic 2 */
         char buffer_mkdir[13] = "test mkdir!\n";
-        vfs_open("/dir3/test.txt", O_CREAT, &f);
+        vfs_mkdir("/dir3-1/dir3-2");
+        if (vfs_mount("/dir3-1/dir3-2", "tmpfs") == SUCCESS)
+            uart_printf("--- vfs_mount success ---\n");
+        vfs_open("/dir3-1/dir3-2/test.txt", O_CREAT, &f);
         vfs_write(f, buffer_mkdir, 13);
         vfs_close(f);
-        vfs_open("/dir3/test.txt", O_CREAT, &f);
+        vfs_open("/dir3-1/dir3-2/test.txt", O_CREAT, &f);
         vfs_read(f, buffer2, 13);
         buffer2[17] = '\0';
         vfs_close(f);

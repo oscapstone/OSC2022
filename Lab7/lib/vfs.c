@@ -98,7 +98,23 @@ int vfs_mkdir(const char* pathname) {
     return SUCCESS;
 }
 
-int vfs_mount(const char* target, const char* filesystem);
+int vfs_mount(const char* target, const char* file_system) {
+    if (compare_string(file_system, "tmpfs") == 0) {
+        vnode* node;
+        int ret = vfs_lookup(target, &node);
+        if (ret != SUCCESS)
+            return ret;
+        mount* mnt = kmalloc(sizeof(mount));
+        filesystem* fs = kmalloc(sizeof(filesystem));
+        register_filesystem(fs, "tmpfs");
+        fs->setup_mount(fs, mnt);
+    }
+    else {
+        uart_printf("[ERROR][vfs_mount] Unsupported filesystem!\n");
+        return FAIL;
+    }
+    return SUCCESS;
+}
 
 int vfs_lookup(const char* pathname, vnode** target) {
     vnode* dir = rootfs->root;

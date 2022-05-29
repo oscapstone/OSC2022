@@ -7,6 +7,7 @@
 
 struct mount _root_fs;
 struct mount* rootfs = &_root_fs;
+static int initialized = 0;
 
 int tmpfs_nodeInit(mount* mnt, vnode* root) {
 	root->mnt = mnt;
@@ -28,6 +29,9 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 	content->size = 0;
 	content->data = (void*)kmalloc(DIR_CAP * 8);
 
+	if (initialized)
+		return 0;
+	initialized = 1;
 	void* f = fbase_get();
 	unsigned long size;
 	while (1) {  //build tree
