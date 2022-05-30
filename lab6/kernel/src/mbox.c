@@ -46,8 +46,6 @@ unsigned int  __attribute__((aligned(16))) mbox[8];
  */
 int mbox_call(unsigned char ch, unsigned int *user_mbox)
 {
-    // printf("[1]user_mbox[1]=%p\n",user_mbox[1]);
-    // printf("[1]user_mbox[28]=%p\n",user_mbox[28]);
     unsigned int r = (((unsigned int)((unsigned long)VA2PA(user_mbox))&~0xF) | (ch&0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);

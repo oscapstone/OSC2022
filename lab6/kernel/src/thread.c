@@ -201,6 +201,7 @@ void exec(const char *program_name, const char **argv) {
     // printf("identity_page=%p\n",identity_page);
     update_page_table(cur, identity_page , identity_page, PD_USER_RW);
   }
+  
   uint64_t virtual_addr = USER_STACK_BASE;
   uint64_t physical_addr = VA2PA(cur->user_stack_base);
   update_page_table(cur, virtual_addr, physical_addr, PD_USER_RW );
