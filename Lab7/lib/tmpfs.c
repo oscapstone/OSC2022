@@ -63,10 +63,20 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 				idx = tmpfs_creat(dir_node, 0, prefix);
 				vnode* new_node = target[idx];
 				new_node->parent = dir_node;
+				new_node->mnt = dir_node->mnt;
 				content = (Content*)(new_node->internal);
 				if (fmode == 1) {
 					if (compare_string(content->name, "home") == 0)
 						home_dir = new_node;
+					if (compare_string(content->name, "initramfs") == 0) {
+						mount* mnt = kmalloc(sizeof(mount));
+						filesystem* fs = kmalloc(sizeof(filesystem));
+						mnt->root = new_node;
+       					new_node->mnt = mnt;
+						register_filesystem(fs, "tmpfs");
+						fs->setup_mount(fs, mnt);
+						initramfs = mnt;
+					}
 					content->type = DIR_TYPE;
 					content->capacity = DIR_CAP;
 					content->size = 0;

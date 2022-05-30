@@ -6,6 +6,7 @@
 
 char buffer[16];
 struct vnode* home_dir = 0;
+struct mount* initramfs = 0;
 
 int register_filesystem(filesystem* fs, const char* fs_name) {
     if (compare_string(fs_name, "tmpfs") == 0) {
@@ -67,14 +68,21 @@ int vfs_read(file* f, void* buf, size_t len) {
 }
 
 int vfs_write(file* f, const void* buf, size_t len) {
+    if (isReadOnly(f->node)) {
+        return FAIL;
+    }
 	return f->f_ops->write(f, buf, len);
 }
 
 int vfs_create(vnode* dir_node, vnode** target, const char* component_name) {
+    if (isReadOnly(dir_node))
+        return FAIL;
     return dir_node->v_ops->create(dir_node, target, component_name);
 }
 
 int vfs_mkdir(const char* pathname, vnode* root) {
+    if (isReadOnly(root))
+        return FAIL;
     vnode* dir = root;
     vnode* target;
     int flag = 0;
@@ -106,6 +114,8 @@ int vfs_mount(const char* target, const char* file_system, vnode* root) {
         if (ret != SUCCESS)
             return ret;
         mount* mnt = kmalloc(sizeof(mount));
+        mnt->root = node;
+        node->mnt = mnt;
         filesystem* fs = kmalloc(sizeof(filesystem));
         register_filesystem(fs, "tmpfs");
         fs->setup_mount(fs, mnt);
@@ -170,4 +180,10 @@ vnode* find_root(const char* pathname, vnode* cur_dir, char** new_pathname) {
         (*new_pathname)[idx_dst++] = pathname[idx_src++];
 
     return ret;
+}
+
+int isReadOnly(vnode* node) {
+    if (node->mnt == initramfs)
+        return 1;
+    return 0;
 }

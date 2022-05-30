@@ -66,6 +66,7 @@ typedef struct mode_t mode_t;
 
 extern struct mount* rootfs;
 extern struct vnode* home_dir;
+extern struct mount* initramfs;
 
 // register the file system to the kernel.
 // you can also initialize memory pool of the file system here.
@@ -80,5 +81,6 @@ int vfs_mount(const char* target, const char* file_system, vnode* root);
 int vfs_lookup(const char* pathname, vnode** target, vnode* root);
 
 vnode* find_root(const char* pathname, vnode* cur_dir, char** new_pathname);
+int isReadOnly(vnode* node);
 
 #endif

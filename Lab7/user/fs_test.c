@@ -15,5 +15,9 @@ void fs_test() {
     close(fd);
     printf("%s\n", buffer_mkdir);
 
+    fd = open("/initramfs/t.txt", O_CREAT);
+    if (write(fd, buffer_mkdir, 10) != -1)
+        printf("[ERROR] Should fail!\n");
+
     exit();
 }
