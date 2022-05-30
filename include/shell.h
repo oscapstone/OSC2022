@@ -17,6 +17,7 @@ enum Action{
     mlistc,
     mlistf,
     mtest,
+    fstest,
     unknown
 };
 

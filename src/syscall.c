@@ -7,6 +7,8 @@
 #include "exception.h"
 #include "mailbox.h"
 #include "timer.h"
+#include "vfs.h"
+#include "tmpfs.h"
 extern Thread_struct* get_current();
 int sys_getpid(trap_frame* tf){
     disable_interrupt();
@@ -151,3 +153,62 @@ void signal_kill(int pid,int signal)
     raise_signal( pid, signal);
     enable_interrupt();
 }
+
+void sys_ls(trap_frame* tf){
+    disable_interrupt();
+    vfs_ls();
+    enable_interrupt();
+}
+// syscall number : 11
+int sys_open(trap_frame* tf,const char *pathname, int flags)
+{
+    disable_interrupt();
+    struct file* target;
+    int res = vfs_open(pathname,flags,&target);
+    int i;
+    for(i=0;i<10;i++){
+        if(get_current()->fd_table[i]==nullptr){
+            get_current()->fd_table[i] = target;
+        }
+    }
+    enable_interrupt();
+    tf->x0 = i;
+    return i;
+}
+// syscall number : 12
+int sys_close(trap_frame* tf,int fd)
+{
+
+}
+// syscall number : 13
+// remember to return read size or error code
+long sys_write(trap_frame* tf,int fd, const void *buf, unsigned long count)
+{
+
+}
+// syscall number : 14
+// remember to return read size or error code
+long sys_read(trap_frame* tf,int fd, void *buf, unsigned long count)
+{
+
+}
+// syscall number : 15
+// you can ignore mode, since there is no access control
+int sys_mkdir(trap_frame* tf,const char *pathname, unsigned mode)
+{
+    disable_interrupt();
+    int res = vfs_mkdir(pathname);
+    enable_interrupt();
+    return res;
+}
+// // syscall number : 16
+// // you can ignore arguments other than target (where to mount) and filesystem (fs name)
+// int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data)
+// {
+    
+// }
+// // syscall number : 17
+// int chdir(const char *path)
+// {
+
+// }

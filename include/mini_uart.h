@@ -1,3 +1,5 @@
+#ifndef _UART_HEADER_
+#define _UART_HEADER
 #include "utils.h"
 #define MMIO_BASE   0x3F000000
 
@@ -63,14 +65,21 @@ void busy_wait_writehex(unsigned long long h,bool newline);
 int is_empty_write();
 int is_empty_read();
 
-#ifdef __DEBUG_LOG
-    static inline void writes_uart_debug(char* s, bool newline){
-         while(*s){
-            if(*s=='\n')
-                writec_uart('\r');
-            writec_uart(*s++);
-        }
-        if(newline)
-            writes_uart("\r\n");
+
+#ifndef _DEBUG_UART_
+#define _DEBUG_UART_
+static inline void writes_uart_debug(char* s, bool newline){
+        while(*s){
+        if(*s=='\n')
+            busy_wait_writec('\r');
+        busy_wait_writec(*s++);
     }
+    if(newline)
+        busy_wait_writes("\r\n",FALSE);
+}
 #endif
+
+#endif
+
+
+

@@ -2,9 +2,7 @@
 #include "stdlib.h"
 #include "mini_uart.h"
 #include "cpio.h"
-#ifndef __DEBUG_LOG
-#define __DEBUG_LOG
-#endif
+
 int chunk_size_arr[] = {
                         // 0x1, //2^0
                         // 0x2, //2^1

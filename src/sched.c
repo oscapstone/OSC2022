@@ -36,6 +36,11 @@ int thread_create(void (*f)()){
     }
     thread_pool[i].signal_ustack = nullptr;
     thread_pool[i].run_handler = nullptr;
+
+    for(int j=0;j<10;j++){
+        thread_pool[i].fd_table[j]=nullptr;
+    }
+
     writes_uart("Create Thread ");
     write_int_uart(i,TRUE);
     push_thread(&thread_pool[i]);
@@ -157,8 +162,9 @@ void thread_exec()
     unsigned long *filesize = my_malloc(sizeof(unsigned long));
     // cpio_get_addr(file_start,&filesize);
     cpio_get_addr(file_start,filesize);
-
-    char *new_start = my_malloc(*filesize);
+    char *new_start;
+    
+    new_start = my_malloc(*filesize);
     memcpy(new_start,*file_start,*filesize);
     Thread_struct* cur_thread = get_current();
     asm volatile(

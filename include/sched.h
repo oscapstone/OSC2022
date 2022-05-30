@@ -2,6 +2,8 @@
 #define _SCHEDULE_HEADER_
 #define THREAD_STACK_SIZE 4096//4096
 #include "signal.h"
+#include "vfs.h"
+#include "tmpfs.h"
 enum task_state
 {
     EMPTY,
@@ -41,6 +43,9 @@ typedef struct Thread_struct
     void* signal_ustack;
     void (*run_handler)();
     cpu_context saved_context;
+
+    struct file* fd_table[10];
+    struct vnode* pwd;
 
 }Thread_struct;
 typedef struct task_queue

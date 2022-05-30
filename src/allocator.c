@@ -2,9 +2,7 @@
 #include "stdlib.h"
 #include "mini_uart.h"
 #include "cpio.h"
-#ifndef __DEBUG_LOG
-#define __DEBUG_LOG
-#endif
+
 int chunk_size_arr[] = {
                         // 0x1, //2^0
                         // 0x2, //2^1
@@ -418,6 +416,10 @@ void* my_malloc(unsigned int size){
     else{
         malloc_addr = get_freeframe_addr(size);
     }
+    if(malloc_addr == nullptr){
+        writes_uart("Memory allocate full.\r\n");
+    }
+    my_memset(malloc_addr,0,size);
     return malloc_addr;
 }
 

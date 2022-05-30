@@ -172,11 +172,11 @@ unsigned long cpio_get_addr(char** filedata,unsigned long* filesize){
 
 void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop){
     if(strncmp(name,"linux,initrd-start",18)==0){ // start address of initrd
-        writes_uart("Found target: \"");
-        writes_n_uart(name,18);
-        writes_uart("\" at target_cpio_addraddress ");
+        // writes_uart("Found target: \"");
+        // writes_n_uart(name,18);
+        // writes_uart("\" at target_cpio_addraddress ");
         cpio_addr = (unsigned int*)((unsigned long)big2little(*((uint32_t*)(prop+1))));
-        writehex_uart((unsigned long)cpio_addr,TRUE);
+        // writehex_uart((unsigned long)cpio_addr,TRUE);
         return (void*)cpio_addr;
     }
     return nullptr;
@@ -184,11 +184,11 @@ void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop){
 void* initramfs_end_callback(fdt_prop* prop,char * name,uint32_t len_prop){
     if(strncmp(name,"linux,initrd-end",16)==0)
     {
-        writes_uart("Found target: \"");
-        writes_n_uart(name,18);
-        writes_uart("\" at address ");
+        // writes_uart("Found target: \"");
+        // writes_n_uart(name,18);
+        // writes_uart("\" at address ");
         void* target_cpio_addr = (void*)((unsigned long)big2little(*((uint32_t*)(prop+1))));
-        writehex_uart((unsigned long)target_cpio_addr,TRUE);
+        // writehex_uart((unsigned long)target_cpio_addr,TRUE);
         return (void*)target_cpio_addr;
     }
     return nullptr;

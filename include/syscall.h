@@ -27,4 +27,26 @@ int sys_mbox_call(trap_frame*,unsigned char ch, unsigned int *mbox);
 void sys_kill(trap_frame*,int pid);
 void signal_register(int signal,void (*handler)());
 void signal_kill(int pid,int signal);
+
+
+void sys_ls(trap_frame* tf);
+// syscall number : 11
+int sys_open(trap_frame* tf,const char *pathname, int flags);
+// syscall number : 12
+int sys_close(trap_frame* tf,int fd);
+// syscall number : 13
+// remember to return read size or error code
+long sys_write(trap_frame* tf,int fd, const void *buf, unsigned long count);
+// syscall number : 14
+// remember to return read size or error code
+long sys_read(trap_frame* tf,int fd, void *buf, unsigned long count);
+// syscall number : 15
+// you can ignore mode, since there is no access control
+int sys_mkdir(trap_frame* tf,const char *pathname, unsigned mode);
+// syscall number : 16
+// you can ignore arguments other than target (where to mount) and filesystem (fs name)
+int sys_mount(trap_frame* tf,const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
+// syscall number : 17
+int sys_chdir(trap_frame* tf,const char *path);
+
 #endif

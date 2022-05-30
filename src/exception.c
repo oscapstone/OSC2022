@@ -69,8 +69,18 @@ void exception_entry(trap_frame* tf){
         case 9:
             signal_kill(tf->x0,tf->x1);
             break;
+        case 10:
+            sys_ls(tf);
+            break;
+        case 11:
+            sys_open(tf,(const char*)(tf->x0),tf->x1);
+            break;
+        case 15:
+            sys_mkdir(tf,(const char*)(tf->x0),0);
+            break;
         case 21:
             sigreturn();
+            break;
         default:
             break;
         }

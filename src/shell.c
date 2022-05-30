@@ -7,6 +7,7 @@
 #include "timer.h"
 #include "allocator.h"
 #include "sched.h"
+#include "vfs.h"
 int match_command(char *buffer){
     
     if(strcmp(buffer,"help")==0){
@@ -54,6 +55,9 @@ int match_command(char *buffer){
     }
     else if(strncmp(buffer,"mtest",strlen("mtest"))==0){
         return mtest;
+    }
+    else if(strncmp(buffer,"fstest",strlen("fstest"))==0){
+        return fstest;
     }
     else{
         return unknown;
@@ -410,6 +414,12 @@ void handle_command(enum Action action, char *buffer){
         }
         case mtest:
         {
+            break;
+        }
+        case fstest:
+        {
+            thread_create(testfs_exec);
+            idle();
             break;
         }
         default:

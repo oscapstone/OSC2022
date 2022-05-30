@@ -9,6 +9,7 @@
 #include "task.h"
 #include "allocator.h"
 #include "sched.h"
+#include "vfs.h"
 extern unsigned long _head_start_brk;
 extern Thread_struct* get_current();
 void foo()
@@ -52,9 +53,10 @@ int main(){
     init_memory();
     init_timer();
     init_sched();
-    
     *AUX_MU_IER_REG = 1; // 3 for RX, TX interrupt enable
     *IRQ_ENABLE1 = 1<<29;
+    // rootfs_init("tmpfs");
+    
 
     writes_uart("\r\n");
     // writes_uart("██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗\r\n");
@@ -65,7 +67,9 @@ int main(){
     // writes_uart("╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
     
     writes_uart("Hello World!\r\n");
-    
+    thread_create(testfs_exec);
+    idle();
+
     // for (int i = 0; i < 10; i++)
     // {
     //     thread_create(foo);

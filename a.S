@@ -257,3 +257,81 @@ load_cpu_context:
     ldr x9, [x0, 16 * 6]
     mov sp,  x9
     ret
+
+.global get_pid
+get_pid:
+    mov x8,0
+    svc #0
+    ret
+
+.global uart_read
+uart_read:
+    mov x8,1
+    svc #0
+    ret
+
+.global uart_write
+uart_write:
+    mov x8,2
+    svc #0
+    ret
+
+.global exec
+exec:
+    mov x8,3
+    svc #0
+    ret
+
+.global fork
+fork:
+    mov x8,4
+    svc #0
+    ret
+
+.global exit
+exit:
+    mov x8,5
+    svc #0
+    ret
+
+.global mbox_call
+mbox_call:
+    mov x8,6
+    svc #0
+    ret
+
+.global kill
+kill:
+    mov x8,7
+    svc #0
+    ret
+.global ls
+ls:
+    mov x8,10
+    svc #0
+    ret
+.global open
+open:
+    mov x8,11
+    svc #0
+    ret
+.global close
+close:
+    mov x8,12
+    svc #0
+    ret
+.global write
+write:
+    mov x8,13
+    svc #0
+    ret
+.global read
+read:
+    mov x8,14
+    svc #0
+    ret
+.global mkdir
+mkdir:
+    mov x8,15
+    svc #0
+    ret
