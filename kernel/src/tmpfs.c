@@ -75,6 +75,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
         while(1){
             /* f_pos is in the block of some offset */
             size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
+
             // if(block->data[offset] == (char)EOF) return -1;
             if(write_len < MAX_DATA_LEN - offset){
                 memcpy(block->data + offset, src + write_idx, write_len);
@@ -86,7 +87,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
                 goto DONE;
             }
             else if(write_len >= MAX_DATA_LEN - offset){
-                memcpy(block->data + offset, src + write_idx, MAX_DATA_LEN - offset);
+                memcpy(block->data + offset, src + write_idx, MAX_DATA_LEN);
                 file->f_pos += MAX_DATA_LEN - offset;
                 write_idx += MAX_DATA_LEN - offset;
                 write_len -= MAX_DATA_LEN - offset;
@@ -94,11 +95,15 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
 
                 /* add a new block */
                 TmpfsInode *new_block = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
+                INIT_LIST_HEAD(&new_block->list);
                 // new_block->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
                 new_block->idx = block->idx + 1;
                 new_block->size = 0;
                 new_block->vnode = inode_head->vnode;
                 list_add_tail(&new_block->list, &inode_head->list);
+
+                // uart_puts(block->vnode->dentry->name);
+                // uart_puts("\n");
 
                 uart_puts("[*] Tmpfs Write: Create new block\n");
                 /* next round will write the data into the new block */
@@ -110,6 +115,8 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
 DONE:
     return write_idx;
 }
+
+// TODO: read fail in user program because of EOF byte
 int tmpfs_read(struct file* file, void* buf, size_t len){
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
     char *dest = (char *)buf;
@@ -126,24 +133,31 @@ int tmpfs_read(struct file* file, void* buf, size_t len){
         }
         /* f_pos is in the block of the offset */
         size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
+        // print_string(UITOA, "offset: ", offset, 1);
         if(block->data[offset] == (char)EOF) return -1;
+        if(block->size <= offset) return 0;
+        size_t quota = block->size - offset;
 
-        if(read_len <= block->size - offset){
-            /* len < block size, read len is ok */
-            for(size_t i = 0; i < read_len && block->data[offset + i] != (char)EOF; i++){
+        if(read_len <= quota){
+            /* len < quota, read len is ok */
+            size_t i = 0;
+            for(i = 0; i < read_len && block->data[offset + i] != (char)EOF; i++){
                 dest[read_idx + i] = block->data[offset + i];
             }
-            file->f_pos += read_len;
+            read_idx += i;
+            file->f_pos += i;
             goto DONE;
         }
-        else if(read_len > block->size - offset){
-            /* len >= block size, read MAX_DATA_LEN is ok */
-            for(size_t i = 0; (i < (block->size - offset)) && (block->data[offset + i] != (char)EOF); i++){
+        else if(read_len > quota){
+            /* len > quota, read quota*/
+            size_t i = 0;
+            for(i = 0; (i < quota) && (block->data[offset + i] != (char)EOF); i++){
                 dest[read_idx + i] = block->data[offset + i];
             }
-            file->f_pos += block->size - offset;
-            read_idx += block->size - offset;
-            read_len -= block->size - offset;
+            file->f_pos += i;
+            read_idx += i;
+            read_len -= i;
+       
         }
     }
 
@@ -218,15 +232,19 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
     Dentry *new_dentry = tmpfs_create_dentry(component_name, dir_node->dentry, D_FILE, dir_node->dentry->mount);
     /* create the inode list head */
     TmpfsInode *inode_head = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
+    INIT_LIST_HEAD(&inode_head->list);
+    // inode_head->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
     inode_head->idx = 0;
     inode_head->size = 0;
     inode_head->vnode = new_dentry->vnode;
     /* create the real data block */
     TmpfsInode *inode = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
-    // inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
+    INIT_LIST_HEAD(&inode->list);
+    // inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
     inode->idx = 1;
     inode->size = 0;
     inode->vnode = new_dentry->vnode;
+
 
     new_dentry->vnode->internal = inode_head;
 

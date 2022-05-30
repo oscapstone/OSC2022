@@ -1,3 +1,3 @@
 file kernel8.elf
-b *vfs_chdir
+b *tmpfs_read
 target remote :1234

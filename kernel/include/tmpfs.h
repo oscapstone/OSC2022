@@ -6,6 +6,7 @@
 
 typedef struct tmpfs_inode{
     struct list_head list;
+    struct vnode* vnode;
     /* 
      * inode head: means the num of blocks
      * data inode: means the idx 
@@ -14,7 +15,6 @@ typedef struct tmpfs_inode{
     unsigned long size;
     // char *data;
     char data[MAX_DATA_LEN]; // data block size = MAX_DATA_LEN(512 * 8 = 4096)
-    struct vnode* vnode;
 }TmpfsInode;
 
 int tmpfs_setup_mount(FileSystem *fs, Mount *mount);

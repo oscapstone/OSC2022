@@ -59,14 +59,21 @@ void vfs_initramfs_init(){
             vfs_open(name, O_CREAT, &file);
             vfs_write(file, info->data, info->datasize);
             vfs_close(file);
-            
-            // char buf[40];
-            // memset(buf, 0, 40);
-            // vfs_open(name, O_CREAT, &file);
-            // vfs_read(file, buf, 39);
-            // vfs_close(file);
-            // uart_puts(buf);
-            // uart_puts("\n");
+
+            file = NULL;
+            vfs_open(name, 0, &file);
+            char buf[500];
+            while(1){
+                memset(buf, 0, 500);
+                int read_size = vfs_read(file, buf, 499);
+                    // print_string(ITOA, "read_size: ", read_size, 1);
+                if(read_size <= 0){
+                    break;
+                } 
+                uart_puts(buf);
+            }
+            // vfs_write(file, info->data, info->datasize);
+            vfs_close(file);
         }
     }
 }
