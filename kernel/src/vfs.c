@@ -62,6 +62,7 @@ void vfs_initramfs_init(){
 
             file = NULL;
             vfs_open(name, 0, &file);
+            size_t thesize = 0;
             char buf[500];
             while(1){
                 memset(buf, 0, 500);
@@ -70,6 +71,7 @@ void vfs_initramfs_init(){
                 if(read_size <= 0){
                     break;
                 } 
+                thesize += read_size;
                 uart_puts(buf);
             }
             // vfs_write(file, info->data, info->datasize);

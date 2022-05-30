@@ -75,22 +75,23 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
         while(1){
             /* f_pos is in the block of some offset */
             size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
+            size_t quota = MAX_DATA_LEN - offset;
 
             // if(block->data[offset] == (char)EOF) return -1;
-            if(write_len < MAX_DATA_LEN - offset){
+            if(write_len <= quota){
                 memcpy(block->data + offset, src + write_idx, write_len);
                 file->f_pos += write_len;
                 write_idx += write_len;
-                block->data[write_idx] = EOF;
+                // block->data[write_idx] = EOF;
 
                 block->size += write_len;
                 goto DONE;
             }
-            else if(write_len >= MAX_DATA_LEN - offset){
-                memcpy(block->data + offset, src + write_idx, MAX_DATA_LEN);
-                file->f_pos += MAX_DATA_LEN - offset;
-                write_idx += MAX_DATA_LEN - offset;
-                write_len -= MAX_DATA_LEN - offset;
+            else if(write_len > quota){
+                memcpy(block->data + offset, src + write_idx, quota);
+                file->f_pos += quota;
+                write_idx += quota;
+                write_len -= quota;
                 block->size = MAX_DATA_LEN;
 
                 /* add a new block */
@@ -134,30 +135,25 @@ int tmpfs_read(struct file* file, void* buf, size_t len){
         /* f_pos is in the block of the offset */
         size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
         // print_string(UITOA, "offset: ", offset, 1);
-        if(block->data[offset] == (char)EOF) return -1;
+        // if(block->data[offset] == (char)EOF) return -1; // no need EOF?
+
+        /* if the offset is the end, it means end of the file */
         if(block->size <= offset) return 0;
         size_t quota = block->size - offset;
 
         if(read_len <= quota){
             /* len < quota, read len is ok */
-            size_t i = 0;
-            for(i = 0; i < read_len && block->data[offset + i] != (char)EOF; i++){
-                dest[read_idx + i] = block->data[offset + i];
-            }
-            read_idx += i;
-            file->f_pos += i;
+            memcpy(dest + read_idx, block->data + offset, read_len);
+            read_idx += read_len;
+            file->f_pos += read_len;
             goto DONE;
         }
         else if(read_len > quota){
-            /* len > quota, read quota*/
-            size_t i = 0;
-            for(i = 0; (i < quota) && (block->data[offset + i] != (char)EOF); i++){
-                dest[read_idx + i] = block->data[offset + i];
-            }
-            file->f_pos += i;
-            read_idx += i;
-            read_len -= i;
-       
+            /* len >= quota, read quota*/
+            memcpy(dest + read_idx, block->data + offset, quota);
+            file->f_pos += quota;
+            read_idx += quota;
+            read_len -= quota;
         }
     }
 
