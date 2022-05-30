@@ -6,7 +6,6 @@
 #include "stdlib.h"
 #include "timer.h"
 #include "allocator.h"
-#include "sched.h"
 int match_command(char *buffer){
     
     if(strcmp(buffer,"help")==0){
@@ -210,7 +209,7 @@ void handle_command(enum Action action, char *buffer){
             writes_uart("ccreboot   : cancel reboot the device\r\n");
             writes_uart("ls         : print the files in rootfs.\r\n");
             writes_uart("cat        : print the file information\r\n");
-            writes_uart("prog       : load user program and run it\r\n");
+            writes_uart("usrprog    : load user program and run it\r\n");
             writes_uart("timeout    : set timer timeout events\r\n");
             writes_uart("mmalloc    : test the malloc function\r\n");
             writes_uart("mfree      : free testing malloc address\r\n");
@@ -245,36 +244,33 @@ void handle_command(enum Action action, char *buffer){
             break;
         case prog:
         {
-            // // origin
-            // char *filedata = nullptr;
-            // unsigned long filesize;
-            
-            // unsigned long long prog_addr = cpio_get_addr(filedata,&filesize);
-
-            // // unsigned long long prog_addr = (unsigned long long)filedata;
-            // unsigned long *e0_stack = (unsigned long*)simple_malloc(2000);
-            // writehex_uart(prog_addr,1);
-            // // writehex_uart(e0_stack);
-            // // writes_uart("\r\n");
-            // // asm volatile(
-            // //     "bl core_timer_enable\n\t"
-            // //     // "bl core_timer_handler\n\t"
-            // // );
+            char *filedata = nullptr;
+            unsigned long filesize;
+            cpio_get_addr(filedata,&filesize);
+            if(filesize == 0){
+                break;
+            }
+            unsigned long long prog_addr = (unsigned long long)filedata;
+            unsigned long *e0_stack = (unsigned long*)simple_malloc(2000);
+            writehex_uart(prog_addr,1);
+            // writehex_uart(e0_stack);
+            // writes_uart("\r\n");
             // asm volatile(
-            //     "mov x0, 0\n\t" // 
-            //     "msr spsr_el1, x0\n\t"
-            //     "msr elr_el1, %0\n\t"
-            //     "msr sp_el0,%1\n\t"
-                
-            //     "eret\n\t" // 
-            //     ::"r" (prog_addr),
-            //     "r" (e0_stack)
-            //     : "x0"
+            //     "bl core_timer_enable\n\t"
+            //     // "bl core_timer_handler\n\t"
             // );
-            // writes_nl_uart("Run userprogram done");
-
-            thread_create(&thread_exec);
-            idle();
+            asm volatile(
+                "mov x0, 0\n\t" // 
+                "msr spsr_el1, x0\n\t"
+                "msr elr_el1, %0\n\t"
+                "msr sp_el0,%1\n\t"
+                
+                "eret\n\t" // 
+                ::"r" (prog_addr),
+                "r" (e0_stack)
+                : "x0"
+            );
+            writes_nl_uart("Run userprogram done");
             break;
         }
         case timeout:

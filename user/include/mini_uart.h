@@ -22,7 +22,7 @@ void writes_n_uart(char *s, unsigned int size);
 void writes_nl_uart(char *s);
 void writehex_uart(unsigned int h,int newline);
 void write_int_uart(unsigned int,bool newline);
-
+void busy_wait_writehex(unsigned long long h,bool newline);
 //void writeaddr_uart(unsigned int*);
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
 #define GPFSEL1         ((volatile unsigned int*)(MMIO_BASE+0x00200004))
@@ -59,7 +59,6 @@ char uart_buf_write_pop();
 void busy_wait_writes(char *s,bool newline);
 void busy_wait_writec(char s);
 void busy_wait_writeint(int i,bool newline);
-void busy_wait_writehex(unsigned long long h,bool newline);
 int is_empty_write();
 int is_empty_read();
 

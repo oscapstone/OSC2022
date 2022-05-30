@@ -5,7 +5,7 @@
 extern uint32_t* cpio_addr;
 void cpio_ls();
 void cpio_cat();
-unsigned long cpio_get_addr(char** filedata,unsigned long* filesize);
+void cpio_get_addr(char* filedata,unsigned long* filesize);
 //void* initramfs_callback(fdt_prop* prop,char * name,uint32_t len_prop);
 void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop);
 void* initramfs_end_callback(fdt_prop* prop,char * name,uint32_t len_prop);
