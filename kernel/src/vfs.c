@@ -17,6 +17,8 @@ void rootfs_init(char *fs_name){
     fs_pool = (FileSystem **)kmalloc(sizeof(FileSystem *) * MAX_FS_NUM);
     for(unsigned int idx = 0; idx < MAX_FS_NUM; idx++){
         FileSystem *init_fs = (FileSystem *)kmalloc(sizeof(FileSystem));
+        init_fs->mount = NULL;
+        init_fs->read_only = 0;
         init_fs->name = NULL;
         init_fs->setup_mount = NULL;
         fs_pool[idx] = init_fs;
@@ -60,24 +62,27 @@ void vfs_initramfs_init(){
             vfs_write(file, info->data, info->datasize);
             vfs_close(file);
 
-            file = NULL;
-            vfs_open(name, 0, &file);
-            size_t thesize = 0;
-            char buf[500];
-            while(1){
-                memset(buf, 0, 500);
-                int read_size = vfs_read(file, buf, 499);
-                    // print_string(ITOA, "read_size: ", read_size, 1);
-                if(read_size <= 0){
-                    break;
-                } 
-                thesize += read_size;
-                uart_puts(buf);
-            }
-            // vfs_write(file, info->data, info->datasize);
-            vfs_close(file);
+            // file = NULL;
+            // vfs_open(name, 0, &file);
+            // size_t thesize = 0;
+            // char buf[500];
+            // while(1){
+            //     memset(buf, 0, 500);
+            //     int read_size = vfs_read(file, buf, 499);
+            //         // print_string(ITOA, "read_size: ", read_size, 1);
+            //     if(read_size <= 0){
+            //         break;
+            //     } 
+            //     thesize += read_size;
+            //     uart_puts(buf);
+            // }
+            // // vfs_write(file, info->data, info->datasize);
+            // vfs_close(file);
         }
     }
+    vfs_chdir("/initramfs");
+    /* set the filesystem to read only */
+    global_dentry->mount->fs->read_only = 1;
 }
 
 int register_filesystem(FileSystem *fs) {
@@ -179,8 +184,12 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
         // uart_puts(target_vnode->dentry->name);
+        // cannot open a directory
         if(target_vnode->dentry->type == D_DIR || 
-            target_vnode->dentry->type == D_MOUNT) return -2; // cannot open a directory
+            target_vnode->dentry->type == D_MOUNT){
+                uart_puts("[*] Open: Cannot open a directory\n");
+                return -2; 
+            } 
         err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
         if(err == -1) return err;
         return 0;
@@ -189,6 +198,7 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     // // lookup error code shows if file exist or not or other error occurs
     else{
         if(flags & O_CREAT){
+            if(target_path->mount->fs->read_only) return -3; // cannot create a file in read only filesystem
             err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
             if(err) return err;
             err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
@@ -206,13 +216,24 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
 
 int vfs_mkdir(const char *pathname){
     if(pathname == NULL) return -1;
+
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
     int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
     if(err) return -1; // worng pathname
 
-    if(target_vnode != NULL) return -2; // folder already exist
+    // folder already exist
+    if(target_vnode != NULL){
+        uart_puts("[*] Mkdir: folder already exist\n");
+        return -2;
+    } 
+
+    // cannot create a file in read only filesystem
+    if(target_path->mount->fs->read_only){
+        uart_puts("[*] Mkdir: cannot create a folder in read-only filesystem\n");
+        return -3;
+    }  
 
     err = rootfs->root_dentry->vnode->v_ops->mkdir(target_path->vnode, &target_vnode, component_name);
     if(err) return -1;
@@ -308,10 +329,16 @@ int vfs_chdir(const char *pathname){
     }
 
     /* file/folder not exist */
-    if(target_vnode == NULL) return -2;
+    if(target_vnode == NULL){
+        uart_puts("[*] Chdir: No such file or directory\n");
+        return -2;
+    } 
     
     /* cannot change to a file */
-    if(target_vnode->dentry->type == D_FILE) return -3; 
+    if(target_vnode->dentry->type == D_FILE){
+        uart_puts("[*] Chdir: Cannot change to a file\n");
+        return -3;
+    }  
 
 
     /* change the global_dentry and global_dir */
@@ -333,10 +360,22 @@ int vfs_mount(const char *pathname, const char *filesystem){
     
     // uart_puts(target_vnode->dentry->name);
     /* target vnode isn't exist, cannot mount it */
-    if(target_vnode == NULL) return -2;
+    if(target_vnode == NULL){
+        uart_puts("[*] Mount: No such file or directory\n");
+        return -2;
+    } 
 
     /* target is not a directory, cannot mount it */
-    if(target_vnode->dentry->type != D_DIR) return -3;
+    if(target_vnode->dentry->type != D_DIR){
+        uart_puts("[*] Mount: Target is not a directory, connot mount it\n");
+        return -3;
+    } 
+
+    /* cannot mount in read only filesystem */
+    if(target_path->mount->fs->read_only){
+        uart_puts("[*] Mount: Cannot mount in a read-only filesystem\n");
+        return -3;
+    } 
         
     /* target vnode is exist, can mount it */
     FileSystem *target_fs = NULL;
@@ -354,12 +393,14 @@ int vfs_mount(const char *pathname, const char *filesystem){
     /* cannot find the filesystem , use the empty fs and register it*/
     fs_pool[idx]->name = (char *)kmalloc(sizeof(char) * (strlen(filesystem)+1)); 
     strcpy(fs_pool[idx]->name, filesystem);
+    fs_pool[idx]->read_only = 0;
     fs_pool[idx]->setup_mount = tmpfs_setup_mount;
     target_fs = fs_pool[idx];
     err = register_filesystem(target_fs);
     if(err) uart_puts("[x] Failed to register another filesystem\n");
     new_mount = (Mount *)kmalloc(sizeof(Mount));
     target_fs->setup_mount(target_fs, new_mount);
+
     
 /* mount the filesystem */
 MOUNT_FS:;
@@ -389,9 +430,15 @@ int vfs_umount(const char *pathname){
     if(err) return -1; // worng pathname
 
     /* target vnode isn't exist, cannot umount it */
-    if(target_vnode == NULL) return -2;
+    if(target_vnode == NULL){
+        uart_puts("[*] Umount: No such file or directory\n");
+        return -2;
+    } 
     /* target isn't a mount point */
-    if(target_vnode->dentry->type != D_MOUNT) return -3; 
+    if(target_vnode->dentry->type != D_MOUNT){
+        uart_puts("[*] Umount: Target is not a mount point, connot umount it\n");
+        return -3;
+    }  
 
     /* umount the filesystem */
     target_vnode->dentry->mount->root_dentry->mount_point_dentry = NULL;
@@ -423,6 +470,10 @@ int vfs_write(struct file* file, const void* buf, size_t len) {
     // 1. write len byte from buf to the opened file.
     // 2. return written size or error code if an error occurs.
     if(file == NULL) return -1;
+    if(file->vnode->dentry->mount->fs->read_only == 1){
+        uart_puts("[*] Write: Cannot write to a read-only filesystem\n");
+        return -2;
+    } 
     return file->f_ops->write(file, buf, len);
 }
 

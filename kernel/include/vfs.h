@@ -15,6 +15,7 @@ enum dentry_type {
 // #define MAX_DATA_LEN 100
 #define MAX_FS_NUM 32
 #define MAX_FD_NUM 16
+#define READ_ONLY 1
 #define EOF (-1)
 
 // file handle
@@ -53,6 +54,7 @@ typedef struct mount {
 
 typedef struct filesystem {
 	char* name;
+	int read_only;
 	struct mount* mount;
 	int (*setup_mount)(struct filesystem* fs, struct mount* mount);
 }FileSystem;
