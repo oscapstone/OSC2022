@@ -206,3 +206,29 @@ void fs_test7(){
     if(fd < 0) uart_puts("[x] fd fail!");
     // assert(fd < 0);
 }
+
+void user_basic1(){
+    mkdir("/tmp", 0);
+    int fd = open("/tmp/tmpfile", O_CREAT);
+    write(fd, "Hello World!", 12);
+    close(fd);
+    fd = open("/tmp/tmpfile", 0);
+    char buf[100];
+    int sz = read(fd, buf, 100);
+    buf[sz] = '\0';
+    uart_puts(buf);
+    uart_puts("\n");
+    close(fd);
+
+    mount(NULL, "/tmp", "tmpfs", 0, NULL);
+    fd = open("/tmp/tmpfile", O_CREAT);
+    write(fd, "Hello World!", 12);
+    close(fd);
+    fd = open("/tmp/tmpfile", 0);
+    sz = read(fd, buf, 100);
+    buf[sz] = '\0';
+    uart_puts(buf);
+    uart_puts("\n");
+    close(fd);
+    
+}

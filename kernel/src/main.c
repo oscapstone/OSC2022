@@ -24,14 +24,14 @@ int main(unsigned long dtb_base){
     fdt_traverse((fdt_header *)dtb_base, initramfs_callback);
     all_allocator_init();    
     init_cpio_file_info();
-    rootfs_init("tmpfs");
+    rootfs_init("rootfs");
     init_thread_pool_and_head();
     init_task_head();
 
     enable_timer_irq();
     enable_irq(); // DAIF set to 0b0000
 
-
+    // kernel_exec("vfs1.img");
     // fs_test1();
     // fs_test2();
     // fs_test3();
@@ -39,6 +39,7 @@ int main(unsigned long dtb_base){
     // fs_test5();
     // fs_test6();
     // fs_test7();
+    // user_basic1();
 
     PrintWelcome();
     ShellLoop();

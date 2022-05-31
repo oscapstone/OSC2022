@@ -8,5 +8,6 @@ void fs_test4();
 void fs_test5();
 void fs_test6();
 void fs_test7();
+void user_basic1();
 
 #endif

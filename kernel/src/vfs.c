@@ -24,9 +24,9 @@ void rootfs_init(char *fs_name){
         fs_pool[idx] = init_fs;
     }
 
-    if(strcmp(fs_name, "tmpfs") == 0){
+    if(strcmp(fs_name, "rootfs") == 0){
         fs_pool[0]->name = (char *)kmalloc(sizeof(char) * 6); // 6 is the length of "tmpfs"  
-        strcpy(fs_pool[0]->name, "tmpfs");
+        strcpy(fs_pool[0]->name, "rootfs");
         fs_pool[0]->setup_mount = tmpfs_setup_mount;
     }
 
@@ -175,15 +175,22 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
 }
 
 int vfs_open(const char* pathname, int flags, struct file** target_file) {
+    uart_puts("[*] vfs_open: ");
+    uart_puts((char *)pathname);
+    print_string(ITOA, " | flag: ", flags, 1);
+
     if(pathname == NULL) return -1;
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
     int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
-    if(err) return -1; // worng pathname
+    if(err){
+        uart_puts("[*] Open: cannot find the pathname\n");
+        return -1; // worng pathname  
+    } 
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
-        // uart_puts(target_vnode->dentry->name);
+        uart_puts(target_vnode->dentry->name);
         // cannot open a directory
         if(target_vnode->dentry->type == D_DIR || 
             target_vnode->dentry->type == D_MOUNT){
@@ -191,30 +198,46 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
                 return -2; 
             } 
         err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
-        if(err == -1) return err;
+        if(err == -1){
+            uart_puts("[*] Open: Cannot open a file\n");
+            return -1;
+        } 
         return 0;
     } 
     // // 3. Create a new file if O_CREAT is specified in flags and vnode not found
     // // lookup error code shows if file exist or not or other error occurs
     else{
         if(flags & O_CREAT){
-            if(target_path->mount->fs->read_only) return -3; // cannot create a file in read only filesystem
+            if(target_path->mount->fs->read_only){
+                uart_puts("[*] Open: Cannot create a file in read only filesystem\n");
+                return -3;
+            } 
             err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
-            if(err) return err;
+            if(err){
+                uart_puts("[*] Open: Cannot create a file\n");
+                return err;
+            } 
             err = rootfs->root_dentry->vnode->f_ops->open(target_vnode, target_file);
-            if(err) return err;
+            if(err){
+                uart_puts("[*] Open: Cannot open a file\n");
+                return err;
+            } 
             uart_puts("[*] Created file: ");
             uart_puts((*target_file)->vnode->dentry->name);
             uart_puts("\n");
             return 0;
         }
     }
+    uart_puts("[*] Open: Cannot open a file\n");
     // 4. Return error code if fails
     return -1;
 }
 
 
 int vfs_mkdir(const char *pathname){
+    uart_puts("[*] vfs_mkdir: ");
+    uart_puts((char *)pathname);
+    uart_puts("\n");
     if(pathname == NULL) return -1;
 
     Dentry *target_path = NULL;
@@ -314,6 +337,9 @@ int vfs_chdir(const char *pathname){
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
+    uart_puts("[*] vfs_chdir: ");
+    uart_puts((char *)pathname);
+    uart_puts("\n");
 
     /* just cd is goto root path */
     if(pathname == NULL){
@@ -321,6 +347,11 @@ int vfs_chdir(const char *pathname){
         strcpy(global_dir, "/");
         // uart_puts(global_dir);
         // uart_puts("\n");
+        return 0;
+    }
+    else if(strcmp(pathname, "/") == 0){
+        global_dentry = rootfs->root_dentry;
+        strcpy(global_dir, "/");
         return 0;
     }
     else{
@@ -350,6 +381,9 @@ int vfs_chdir(const char *pathname){
 
 int vfs_mount(const char *pathname, const char *filesystem){
     if(filesystem == NULL) return -1;
+    uart_puts("[*] vfs_mount: ");
+    uart_puts((char *)pathname);
+    uart_puts("\n");
     // print_string(UITOA, "path_len: ", strlen(pathname), 0);
     // print_string(UITOA, " | filefs_len: ", strlen(filesystem), 1);
     Dentry *target_path = NULL;
@@ -474,6 +508,9 @@ int vfs_write(struct file* file, const void* buf, size_t len) {
         uart_puts("[*] Write: Cannot write to a read-only filesystem\n");
         return -2;
     } 
+    uart_puts("[*] vfs_write \"");
+    uart_puts((char *)buf);
+    uart_puts("\"\n");
     return file->f_ops->write(file, buf, len);
 }
 
@@ -482,6 +519,8 @@ int vfs_read(struct file* file, void* buf, size_t len) {
     // 2. block if nothing to read for FIFO type
     // 2. return read size or error code if an error occurs.
     if(file == NULL) return -1;
+    uart_puts("[*] vfs_read | ");
+    print_string(UITOA, "len : ", len, 1);
     return file->f_ops->read(file, buf, len);
 }
 
