@@ -134,7 +134,7 @@ void handle_abort(esr_el1_t* esr_el1)
 
         size_t addr_offset = (far_el1 - the_area_ptr->virt_addr);
         addr_offset = (addr_offset % 0x1000) == 0 ? addr_offset : addr_offset - (addr_offset % 0x1000);
-        map_one_page_rwx(PHYS_TO_VIRT(curr_thread->context.ttbr0_el1), the_area_ptr->virt_addr + addr_offset, the_area_ptr->phys_addr + +addr_offset, the_area_ptr->rwx);
+        map_one_page_rwx(PHYS_TO_VIRT(curr_thread->context.ttbr0_el1), the_area_ptr->virt_addr + addr_offset, the_area_ptr->phys_addr + addr_offset, the_area_ptr->rwx);
     }else
     {
         // For other Fault (permisson ...etc)
