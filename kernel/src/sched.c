@@ -121,6 +121,16 @@ void kill_zombie(){
             tmp->sig_stack_addr = NULL;
             tmp->old_tp = NULL;
 
+            /* init vfs */
+            tmp->dentry = NULL;
+            memset(tmp->dir, 0, MAX_PATHNAME_LEN * 16);
+            for(int i = 0; i < MAX_FD_NUM; i++){
+                if(tmp->fd_table[i] != NULL){
+                    vfs_close(tmp->fd_table[i]);
+                    tmp->fd_table[i] = NULL;
+                }
+            }
+
             /* remove from run_thread_head */
             list_del_entry(&tmp->list);
         }
