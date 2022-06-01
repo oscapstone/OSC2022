@@ -37,6 +37,7 @@ typedef struct _file_info{
     char *data;
     unsigned int filename_size;
     unsigned int datasize;
+    char *c_nlink;
 }file_info;
 
 void init_cpio_file_info();

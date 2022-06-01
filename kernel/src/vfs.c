@@ -69,7 +69,7 @@ void vfs_initramfs_init(){
         if(info->filename_size == 0) continue;
         char name[MAX_PATHNAME_LEN+1];
         memcpy(name, info->filename, info->filename_size);
-        if(info->datasize == 0){
+        if(strncmp(info->c_nlink, "00000001", 8) != 0){
             vfs_mkdir(name);
         }
         else{

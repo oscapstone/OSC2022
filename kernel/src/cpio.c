@@ -26,6 +26,7 @@ void parse_cpio_header(cpio_newc_header *header, file_info *info){
     info->filename_size = hextoui(header->c_namesize, 8);
     info->datasize = hextoui(header->c_filesize, 8);
     info->data = (char *)header + padding(sizeof(cpio_newc_header)+info->filename_size);
+    info->c_nlink = header->c_nlink;
 }
 
 void init_cpio_file_info(){
@@ -44,8 +45,10 @@ void init_cpio_file_info(){
 void ls() {
     for(int i = 0; cpio_file_info_list[i] != NULL; i++){
         uart_puts(cpio_file_info_list[i]->filename);
-        print_string(UITOA, " | datasize = ", cpio_file_info_list[i]->datasize, 1);
-        // uart_puts("\n");
+        print_string(UITOA, " | datasize = ", cpio_file_info_list[i]->datasize, 0);
+        uart_puts(" | ");
+        uart_nbyte(cpio_file_info_list[i]->c_nlink, 8);
+        uart_puts("\n");
     }
     // cpio_newc_header *header = (cpio_newc_header *)CPIO_BASE_START;
     // while(1){
