@@ -248,7 +248,7 @@ int do_fork(TrapFrame *trapFrame){
     strcpy(new_thread->dir, global_dir);
     new_thread->dentry = global_dentry;
 
-    //TODO: mabye wrong? need to check
+
     /* copy fd table */
     for(int i = 0; i < MAX_FD_NUM; i++){
         File *tmp = global_fd_table[i];
@@ -467,7 +467,7 @@ void sys_write(TrapFrame *trapFrame){
             goto DONE;
         }
         /* reset the pos */
-        global_fd_table[fd]->f_pos = 0; 
+        vfs_lseek64(global_fd_table[fd], 0, SEEK_SET);
 
         /* stdin, read the data to the terminal */
         size_t thesize = 0;
@@ -482,7 +482,7 @@ void sys_write(TrapFrame *trapFrame){
             thesize += read_size;
             uart_puts(buf);
         }
-        global_fd_table[0]->f_pos = 0;
+        vfs_lseek64(global_fd_table[0], 0, SEEK_SET);
         trapFrame->x[0] = thesize;
         goto DONE;
     }
@@ -544,5 +544,22 @@ void sys_chdir(TrapFrame *trapFrame){
     char *path = (char *)trapFrame->x[0];
     int status = vfs_chdir(path);
     trapFrame->x[0] = status;
+    enable_irq();
+}
+
+void sys_lseek64(TrapFrame *trapFrame){
+    disable_irq();
+    int fd = trapFrame->x[0];
+    int offset = trapFrame->x[1];
+    int whence = trapFrame->x[2];
+    // uart_puts("lseek64\n");
+    int status = vfs_lseek64(global_fd_table[fd], offset, whence);
+    trapFrame->x[0] = status;
+    enable_irq();
+}
+
+void sys_ioctl(TrapFrame *trapFrame){
+    disable_irq();
+
     enable_irq();
 }

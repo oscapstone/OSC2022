@@ -86,6 +86,12 @@ void syscall_handler(unsigned int syscall_id, TrapFrame *trapFrame){
     case CHDIR:
         sys_chdir(trapFrame);
         break;
+    case LSEEK64:
+        sys_lseek64(trapFrame);
+        break;
+    case IOCTL:
+        sys_ioctl(trapFrame);
+        break;
 
     default:
         break;

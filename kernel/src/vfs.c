@@ -51,9 +51,9 @@ void vfs_dev_init(){
     File *uart_stdin = kmalloc(sizeof(File));
     File *uart_stdout = kmalloc(sizeof(File));
     File *uart_stderr = kmalloc(sizeof(File));
-    int stdin = vfs_open("/dev/uart", 0, &uart_stdin);
-    int stdout = vfs_open("/dev/uart", 0, &uart_stdout);
-    int stderr = vfs_open("/dev/uart", 0, &uart_stderr);
+    vfs_open("/dev/uart", 0, &uart_stdin);
+    vfs_open("/dev/uart", 0, &uart_stdout);
+    vfs_open("/dev/uart", 0, &uart_stderr);
     global_fd_table[0] = uart_stdin;
     global_fd_table[1] = uart_stdout;
     global_fd_table[2] = uart_stderr;
@@ -550,8 +550,8 @@ int vfs_write(struct file* file, const void* buf, size_t len) {
         uart_puts("[*] Write: Cannot write to a read-only filesystem\n");
         return -2;
     } 
-    uart_puts("[*] vfs_write | ");
-    print_string(UITOA, "len : ", len, 1);
+    // uart_puts("[*] vfs_write | ");
+    // print_string(UITOA, "len : ", len, 1);
     return file->f_ops->write(file, buf, len);
 }
 
@@ -560,8 +560,14 @@ int vfs_read(struct file* file, void* buf, size_t len) {
     // 2. block if nothing to read for FIFO type
     // 2. return read size or error code if an error occurs.
     if(file == NULL) return -1;
-    uart_puts("[*] vfs_read | ");
-    print_string(UITOA, "len : ", len, 1);
+    // uart_puts("[*] vfs_read | ");
+    // print_string(UITOA, "len : ", len, 1);
     return file->f_ops->read(file, buf, len);
 }
 
+int vfs_lseek64(struct file* file, long offset, int whence) {
+    // 1. change the file offset according to whence
+    // 2. return the new offset or error code if an error occurs.
+    if(file == NULL) return -1;
+    return file->f_ops->lseek64(file, offset, whence);
+}

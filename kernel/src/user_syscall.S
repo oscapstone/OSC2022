@@ -109,3 +109,14 @@ chdir:
     mov x8, CHDIR
     svc #0
     ret
+
+.global lseek64
+lseek64:
+    mov x8, LSEEK64
+    svc #0
+    ret
+
+.global ioctl
+    mov x8, IOCTL
+    svc #0
+    ret

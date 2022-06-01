@@ -29,6 +29,8 @@ void sys_read(TrapFrame *);
 void sys_mkdir(TrapFrame *);
 void sys_mount(TrapFrame *);
 void sys_chdir(TrapFrame *);
+void sys_lseek64(TrapFrame *);
+void sys_ioctl(TrapFrame *);
 
 int do_getpid();
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);

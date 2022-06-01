@@ -17,6 +17,7 @@ enum dentry_type {
 #define MAX_FD_NUM 16
 #define READ_ONLY 1
 #define EOF (-1)
+#define SEEK_SET 0
 
 // file handle
 typedef struct file {
@@ -99,8 +100,7 @@ int vfs_chdir(const char* pathname);
 int change_global_path(Dentry *target);
 int vfs_mount(const char* pathname, const char* filesystem);
 int vfs_umount(const char *pathname);
-
 int vfs_mknod(const char* pathname);
-
+int vfs_lseek64(struct file* file, long offset, int whence);
 
 #endif

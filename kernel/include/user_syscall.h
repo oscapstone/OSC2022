@@ -19,6 +19,8 @@
 #define MKDIR 15
 #define MOUNT 16
 #define CHDIR 17
+#define LSEEK64 18
+#define IOCTL 19
 
 #endif
 
@@ -41,6 +43,7 @@ extern long read(int fd, void *buf, unsigned long count);
 extern int mkdir(const char *pathname, unsigned mode);
 extern int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
 extern int chdir(const char *path);
-
+extern long lseek64(int fd, long offset, int whence);
+extern int ioctl(int fd, unsigned long request, ...);
 
 #endif  

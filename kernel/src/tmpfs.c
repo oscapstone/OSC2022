@@ -185,7 +185,20 @@ int tmpfs_close(struct file* file){
     return 0;
 }
 long tmpfs_lseek64(struct file* file, long offset, int whence){
-
+    switch(whence){
+        case SEEK_SET:
+            if(offset < 0) return -1;
+            file->f_pos = offset;
+            break;
+        // case SEEK_CUR:
+        //     file->f_pos += offset;
+        //     break;
+        // case SEEK_END:
+        //     file->f_pos = file->vnode->internal->size + offset;
+        //     break;
+        default:
+            return -1;
+    }
     return 0;
 }
 
