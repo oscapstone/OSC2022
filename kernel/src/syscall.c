@@ -72,20 +72,23 @@ void sys_exec(TrapFrame *trapFrame){
     trapFrame->x[0] = success;
     enable_irq();
 }
+
+
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
     disable_irq();
     /* check if the file info exist */
-    file_info fileInfo = cpio_find_file_info(name);
-    if(fileInfo.filename == NULL) return -1;
+    // file_info fileInfo = cpio_find_file_info(name);
+    // if(fileInfo.filename == NULL) return -1;
 
     /* check if the file can create in new memory */
-    void *thread_code_addr = load_program(&fileInfo); 
+    unsigned long file_size = 0;
+    void *thread_code_addr = vfs_load_program(name, &file_size);
     if(thread_code_addr == NULL) return -1;
     
     /* current thread will change the pc to new code addr */
     Thread *curr_thread = get_current();
     curr_thread->code_addr = thread_code_addr;
-    curr_thread->code_size = fileInfo.datasize;
+    curr_thread->code_size = file_size;
 
     /* set current trapFrame elr_el1(begin of code) and sp_el0(begin of user stack)*/
     trapFrame->elr_el1 = (unsigned long)curr_thread->code_addr;
@@ -106,6 +109,14 @@ int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
     curr_thread->sig_stack_addr = NULL;
     curr_thread->old_tp = NULL;
 
+    /* reset the vfs info, except stdin, stdout, stderr */
+    for(int i = 3; i < MAX_FD_NUM; i++){
+        if(curr_thread->fd_table[i] != NULL){
+            vfs_close(curr_thread->fd_table[i]);
+            curr_thread->fd_table[i] = NULL;
+        }
+    }
+
     enable_irq();
     return 0;
 }
@@ -113,16 +124,17 @@ int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]){
 int kernel_exec(char *name){
     disable_irq();
     /* check if the file info exist */
-    file_info fileInfo = cpio_find_file_info(name);
-    if(fileInfo.filename == NULL) return -1;
+    // file_info fileInfo = cpio_find_file_info(name);
+    // if(fileInfo.filename == NULL) return -1;
 
     /* check if the file can create in new memory */
-    void *thread_code_addr = load_program(&fileInfo); 
+    unsigned long file_size;
+    void *thread_code_addr = vfs_load_program(name, &file_size); 
     if(thread_code_addr == NULL) return -1;
 
     Thread *new_thread = thread_create(thread_code_addr);
     new_thread->code_addr = thread_code_addr;
-    new_thread->code_size = fileInfo.datasize;
+    new_thread->code_size = file_size;
     print_string(UITOHEX, "[*] kernel_exec: new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
     /* copy the golbal dir / dentry in the new_thread*/
@@ -153,10 +165,42 @@ int kernel_exec(char *name){
     return 0; 
 }
 
-void *load_program(file_info *fileInfo){
+void *cpio_load_program(file_info *fileInfo){
     void *thread_code_addr = kmalloc(fileInfo->datasize);
     if(thread_code_addr == NULL) return NULL;
     memcpy(thread_code_addr, fileInfo->data, fileInfo->datasize);
+    return thread_code_addr;
+}
+
+void *vfs_load_program(const char *pathname, unsigned long *size){
+    File *file;
+    int err = vfs_open(pathname, 0, &file);
+    if(err < 0) return NULL;
+    TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
+    void *thread_code_addr = kmalloc(inode_head->size);
+    if(thread_code_addr == NULL) return NULL;
+    
+    /* read the inode data */
+    size_t offset = 0;
+    char buf[MAX_SIZE];
+    int read_size;
+    while(1){
+        read_size = vfs_read(file, buf, MAX_SIZE);
+        if(read_size <= 0){
+            break;
+        } 
+        memcpy(thread_code_addr + offset, buf, read_size);
+        offset += read_size;
+    }
+    if(read_size < 0){
+        kfree(thread_code_addr);
+        thread_code_addr = NULL;
+        uart_puts("[x] vfs_load_program: load program error\n");
+        return NULL;
+    } 
+    print_string(UITOA, "[*] exec file size: ", inode_head->size, 1);
+    *size = inode_head->size;
+    vfs_close(file);
     return thread_code_addr;
 }
 
@@ -427,11 +471,11 @@ void sys_write(TrapFrame *trapFrame){
 
         /* stdin, read the data to the terminal */
         size_t thesize = 0;
-        char buf[501];
+        char buf[MAX_SIZE];
         int read_size;
         while(1){
-            memset(buf, 0, 501);
-            read_size = vfs_read(global_fd_table[0], buf, 500);
+            memset(buf, 0, MAX_SIZE);
+            read_size = vfs_read(global_fd_table[0], buf, MAX_SIZE - 1);
             if(read_size <= 0){
                 break;
             } 

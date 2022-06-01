@@ -32,7 +32,8 @@ void sys_chdir(TrapFrame *);
 
 int do_getpid();
 int do_exec(TrapFrame *trapFrame, const char *name, char *const argv[]);
-void *load_program(file_info *fileInfo);
+void *cpio_load_program(file_info *fileInfo);
+void *vfs_load_program(const char *pathname, unsigned long *size);
 int do_fork(TrapFrame *trapFrame);
 void do_exit(int status);
 int do_kill(int pid);

@@ -550,9 +550,8 @@ int vfs_write(struct file* file, const void* buf, size_t len) {
         uart_puts("[*] Write: Cannot write to a read-only filesystem\n");
         return -2;
     } 
-    uart_puts("[*] vfs_write \"");
-    uart_puts((char *)buf);
-    uart_puts("\"\n");
+    uart_puts("[*] vfs_write | ");
+    print_string(UITOA, "len : ", len, 1);
     return file->f_ops->write(file, buf, len);
 }
 

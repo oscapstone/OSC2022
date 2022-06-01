@@ -7,12 +7,8 @@
 typedef struct tmpfs_inode{
     struct list_head list;
     struct vnode* vnode;
-    /* 
-     * inode head: means the num of blocks
-     * data inode: means the idx 
-     */
     unsigned long idx; 
-    unsigned long size;
+    unsigned long size; // incode head save the all size
     // char *data;
     char data[MAX_DATA_LEN]; // data block size = MAX_DATA_LEN(512 * 8 = 4096)
 }TmpfsInode;

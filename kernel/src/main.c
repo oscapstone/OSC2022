@@ -32,6 +32,7 @@ int main(unsigned long dtb_base){
     enable_irq(); // DAIF set to 0b0000
 
     // kernel_exec("vfs1.img");
+    // vfs_load_program("vfs1.img");
     // fs_test1();
     // fs_test2();
     // fs_test3();

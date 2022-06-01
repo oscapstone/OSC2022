@@ -31,7 +31,8 @@ void PrintHelp(){
   uart_puts("memory       : print memory info\n");
   uart_puts("reboot       : reboot the device\n");
   uart_puts("cpio_ls      : list cpio directory contents\n");
-  uart_puts("exec         : concatenate files and print on the standard output\n");
+  uart_puts("cpio_cat     : print cpio file's data\n");
+  uart_puts("cpio_exec    : exec file in cpio\n");
   uart_puts("setTimeout   : set timeout for read\n");
   uart_puts("test_timeout : test timeout for read\n");
   uart_puts("ls           : list directory contents\n");
@@ -39,6 +40,7 @@ void PrintHelp(){
   uart_puts("mkdir        : make directories\n");
   uart_puts("mount        : mount a filesystem\n");
   uart_puts("umount       : umount a filesystem\n");
+  uart_puts("exec         : exec a file in filesystem\n");
 }
 
 
@@ -94,11 +96,11 @@ void Bootimg(char buf[MAX_SIZE]){
   uart_puts("done\n");
 }
 
-void Ls(){
+void cpio_ls(){
   ls();
 }
 
-void Cat(char buf[MAX_SIZE]){
+void cpio_cat(char buf[MAX_SIZE]){
   uart_puts("Filename: ");
   unsigned int size = readline(buf, MAX_SIZE);
   if (size == 0){
@@ -107,7 +109,7 @@ void Cat(char buf[MAX_SIZE]){
   cat(buf);
 }
 
-void Exec(char buf[MAX_SIZE]){
+void cpio_exec(char buf[MAX_SIZE]){
   uart_puts("Filename: ");
   unsigned int size = readline(buf, MAX_SIZE);
   if (size == 0){
@@ -200,6 +202,17 @@ void umount_arg(char *buf){
   }
 }
 
+void exec_arg(char *buf){
+  char *path = strchr(buf, ' ') + 1;
+  int state = kernel_exec(path);
+  enable_irq();
+
+  if(state < 0){
+    uart_puts("[x] Failed to exec the file\n");
+    return;
+  }
+}
+
 /* Main Shell */
 void ShellLoop(){
   char buf[MAX_SIZE];
@@ -219,9 +232,9 @@ void ShellLoop(){
     else if(strcmp("revision", buf) == 0) PrintRevision(buf);
     else if(strcmp("memory", buf) == 0) PrintMemory(buf);
     else if(strcmp("bootimg", buf) == 0) Bootimg(buf);
-    else if(strcmp("cpio_ls", buf) == 0) Ls();
-    else if(strcmp("cat", buf) == 0) Cat(buf);
-    else if(strcmp("exec", buf) == 0) Exec(buf);
+    else if(strcmp("cpio_ls", buf) == 0) cpio_ls();
+    else if(strcmp("cpio_cat", buf) == 0) cpio_cat(buf);
+    else if(strcmp("cpio_exec", buf) == 0) cpio_exec(buf);
     else if(strncmp("setTimeout", buf, strlen("setTimeout")) == 0) SetTimeOut(buf);
     else if(strcmp("test_timeout", buf) == 0) TestTimeOut(buf);
     else if(strncmp("ls", buf, strlen("ls")) == 0) ls_arg(buf);
@@ -229,6 +242,7 @@ void ShellLoop(){
     else if(strncmp("mkdir", buf, strlen("mkdir")) == 0) mkdir_arg(buf);
     else if(strncmp("mount", buf, strlen("mount")) == 0) mount_arg(buf);
     else if(strncmp("umount", buf, strlen("umount")) == 0) umount_arg(buf);
+    else if(strncmp("exec", buf, strlen("exec")) == 0) exec_arg(buf);
     else PrintUnknown(buf);
     
     

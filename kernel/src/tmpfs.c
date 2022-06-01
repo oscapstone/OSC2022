@@ -77,14 +77,15 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
             size_t offset = MAX_DATA_LEN - (block->idx * MAX_DATA_LEN - file->f_pos);
             size_t quota = MAX_DATA_LEN - offset;
 
-            // if(block->data[offset] == (char)EOF) return -1;
             if(write_len <= quota){
                 memcpy(block->data + offset, src + write_idx, write_len);
                 file->f_pos += write_len;
                 write_idx += write_len;
-                // block->data[write_idx] = EOF;
-
                 block->size = offset + write_len;
+
+                /* if offset != 0, it may not work */
+                inode_head->size += write_len;
+                print_string(UITOA, "[*] File size: ", inode_head->size, 1);
                 goto DONE;
             }
             else if(write_len > quota){
@@ -93,6 +94,9 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
                 write_idx += quota;
                 write_len -= quota;
                 block->size = MAX_DATA_LEN;
+
+                /* if offset != 0, it may not work */
+                inode_head->size += quota;
 
                 /* add a new block */
                 TmpfsInode *new_block = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
