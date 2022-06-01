@@ -7,10 +7,15 @@
 #include "sched.h"
 #include "syscall.h"
 struct mount* rootfs;
+struct filesystem fs_pool[20];
 extern Thread_struct* get_current();
 extern int open(char *pathname,int flags);
 extern void ls();
 extern int mkdir(char* pathname);
+extern int mount(char* target, char* filesystem);
+extern int chdir(char* path);
+extern int write(int fd, const void *buf, unsigned long count);
+extern int read(int fd, const void *buf, unsigned long count);
 void testfs_exec(){
   rootfs_init("tmpfs");
   Thread_struct* cur_thread = get_current();
@@ -34,13 +39,26 @@ void testfs_exec(){
 }
 void test_fs()
 {
-  open("/abc",0);
-  open("/a",O_CREAT);
-  open("/b",O_CREAT);
-  open("/c",O_CREAT);
-  ls();
-  mkdir("/abc");
-  ls();
+  int res = open("/tmpfs",O_CREAT);
+  // ls();
+  // res = open("/tmpfs",0);
+  // ls();
+  res = write(res,"tmpfile test",12);
+
+  // open("/abc",0);
+  // open("/a",O_CREAT);
+  // open("/b",O_CREAT);
+  // open("/c",O_CREAT);
+  // ls();
+  // mkdir("/abc");
+  // ls();
+  // mount("/abc","abcfs");
+  // ls();
+  // open("/abc/a",O_CREAT);
+  // chdir("abc");
+  // ls();
+  // chdir("");
+  // ls();
   while(1){};
   return;
 }
@@ -58,7 +76,7 @@ void rootfs_init(char* name)
     busy_wait_writes("[*]No file system mounted, got ",FALSE);
     busy_wait_writes(name,TRUE);
   }
-  
+  my_memset(fs_pool,0,sizeof(fs_pool));
   if(register_filesystem(rfs)==-1)
   {
     busy_wait_writes("[*] Register file system failed.",TRUE);
@@ -99,8 +117,8 @@ int vfs_open(const char* pathname, int flags, struct file** target) {
     target_file->f_ops = v_node->f_ops;
     target_file->vnode = v_node;
     target_file->flags = flags;
-    writes_uart_debug("[*]Opening file",FALSE);
-    writes_uart_debug((char*)pathname,TRUE);
+    writes_uart_debug("[*]Opening file: ",FALSE);
+    writes_uart_debug(((struct tmpfs_inode*)(v_node->internal))->name,TRUE);
   }
   else if(flags == O_CREAT && ret == lastCompNotFound){
     
@@ -120,7 +138,9 @@ int vfs_open(const char* pathname, int flags, struct file** target) {
     writes_uart_debug("[*]Start create file in dir: ",FALSE);
     writes_uart_debug(((struct tmpfs_inode*)(v_node->internal))->name,TRUE);
     struct vnode *new_vnode;
-    
+    if(((struct tmpfs_inode*)(v_node->internal))->type==mount_fs){
+      v_node = v_node->mount->root;
+    }
     v_node->v_ops->create(v_node,&new_vnode,buf);
     target_file->f_pos = 0;
     target_file->f_ops = new_vnode->f_ops;
@@ -138,26 +158,40 @@ int vfs_open(const char* pathname, int flags, struct file** target) {
     return errMsg;
   }
   *target = target_file;
-  return 0;
+  return ret;
 }
 
 int vfs_close(int fid) {
   // 1. release the file handle
   // 2. Return error code if fails
   struct file* f = get_current()->fd_table[fid];
-  return f->f_ops->close(f);
+  if(f!=nullptr){
+    writes_uart_debug("[*]File ",FALSE);
+    writes_uart_debug(((struct tmpfs_inode*)(f->vnode->internal))->name,FALSE);
+    writes_uart_debug(" has been closed",TRUE);
+
+    get_current()->fd_table[fid] = nullptr;
+    f->f_ops->close(f);
+    return 0;
+  }
+  else{
+    return errMsg;
+  }
+  
 }
 
-int vfs_write(struct file* file, const void* buf, size_t len) {
+int vfs_write(int fid, const void* buf, size_t len) {
   // 1. write len byte from buf to the opened file.
   // 2. return written size or error code if an error occurs.
+  struct file* file = get_current()->fd_table[fid];
   return file->f_ops->write(file,buf,len);
 }
 
-int vfs_read(struct file* file, void* buf, size_t len) {
+int vfs_read(int fid, void* buf, size_t len) {
   // 1. read min(len, readable size) byte to buf from the opened file.
   // 2. block if nothing to read for FIFO type
   // 2. return read size or error code if an error occurs.
+  struct file* file = get_current()->fd_table[fid];
   return file->f_ops->read(file,buf,len);
 }
 
@@ -204,7 +238,7 @@ int vfs_mkdir(const char* pathname)
     target_file->f_ops = new_vnode->f_ops;
     target_file->vnode = new_vnode;
     writes_uart_debug("[*]Dir: ",FALSE);
-    writes_uart_debug(buf,FALSE);
+    writes_uart_debug(((struct tmpfs_inode*)(new_vnode->internal))->name,FALSE);
     writes_uart_debug(" has been created",TRUE);
   }
   else{
@@ -219,8 +253,18 @@ int vfs_mkdir(const char* pathname)
 }
 
 int vfs_lookup(const char* pathname, struct vnode** target) {
-  struct vnode* vnode_itr = rootfs->root;
-  
+  if(strlen((char*)pathname)==0){
+    *target = rootfs->root;
+    return sucessMsg;
+  }
+  struct vnode* vnode_itr;
+  if(pathname[0]=='/')
+    vnode_itr = rootfs->root;//rootfs->root;
+  else if(strlen(pathname)>=2 && strncmp(pathname,"..",2)==0){
+    vnode_itr = ((struct tmpfs_inode*)(get_current()->pwd->internal))->parent->vnode;
+  }
+  else
+    vnode_itr = get_current()->pwd;
   char comp_name[COMP_NAME_LEN];
   int i=0,j=0;
   while(pathname[i]=='/')
@@ -237,7 +281,10 @@ int vfs_lookup(const char* pathname, struct vnode** target) {
       comp_name[i-j+1]='\0';
       writes_uart_debug("[*]Look up component: ",FALSE);
       writes_uart_debug(comp_name,FALSE);
-      writes_uart_debug(" in directory ",FALSE);
+      if(((struct tmpfs_inode*)(vnode_itr->internal))->type==mount_fs)
+        writes_uart_debug(" in mount ",FALSE);
+      else
+        writes_uart_debug(" in directory ",FALSE);
       writes_uart_debug(((struct tmpfs_inode*)(vnode_itr->internal))->name,TRUE);
       int ret = rootfs->root->v_ops->lookup(vnode_itr,&next_vnode,comp_name);
       if(ret != 0)
@@ -246,23 +293,17 @@ int vfs_lookup(const char* pathname, struct vnode** target) {
           *target = vnode_itr;
           return lastCompNotFound;
         }
-        else return ret;
+        else{ 
+          return ret;
+        }
       }
       j = i + 1;
       vnode_itr = next_vnode;
     }
   }
+  
   *target = vnode_itr;
-  // for (component_name : pathname) {
-  //   struct node* next_vnode;
-  //   int ret = vnode_itr->v_ops->lookup(vnode_itr, next_vnode, component_name);
-  //   if(ret != 0) {
-  //     return ret;
-  //   }
-  //   vnode_itr = next_vnode;
-  // }
-  // *target = vnode_itr;
-  return 0;
+  return sucessMsg;
 }
 
 struct vnode* vnode_create(struct vnode* dir_vnode,struct mount* mount_point,struct vnode_operations* v_ops,struct file_operations* f_ops,int n_type)
@@ -271,26 +312,27 @@ struct vnode* vnode_create(struct vnode* dir_vnode,struct mount* mount_point,str
   v_node->mount = mount_point;
   v_node->v_ops = v_ops;
   v_node->f_ops = f_ops;
-  if(strcmp(mount_point->fs->name,"tmpfs")==0) // if the mounted fs is tmpfs.
+  // if(strcmp(mount_point->fs->name,"tmpfs")==0) // if the mounted fs is tmpfs.
+  // {
+  struct tmpfs_inode* inode = my_malloc(sizeof(struct tmpfs_inode));
+  inode->type = n_type;
+  inode->next_sibling = nullptr;
+  inode->child = nullptr;
+  if(dir_vnode!=nullptr) inode->parent = dir_vnode->internal;
+  else inode->parent = nullptr;
+  strcpy(inode->name,"/");
+  if(n_type == file_n)
   {
-    struct tmpfs_inode* inode = my_malloc(sizeof(struct tmpfs_inode));
-    inode->type = n_type;
-    inode->next_sibling = nullptr;
-    inode->child = nullptr;
-    if(dir_vnode!=nullptr) inode->parent = dir_vnode->internal;
-    else inode->parent = nullptr;
-    strcpy(inode->name,"/");
-    if(n_type == file_n)
-    {
-      inode->data = my_malloc(sizeof(struct tmpfs_block));
-      strcpy(inode->data->content,"\0");
-      inode->data->next = nullptr;
-    }
-    v_node->internal = inode;
+    inode->data = my_malloc(sizeof(struct tmpfs_block));
+    strcpy(inode->data->content,"\0");
+    inode->data->next = nullptr;
   }
-  else{
-    writes_uart_debug("[*]Unidentified file system.",TRUE);
-  }
+  v_node->internal = inode;
+  inode->vnode = v_node;
+  // }
+  // else{
+  //   writes_uart_debug("[*]Unidentified file system.",TRUE);
+  // }
   return v_node;
 }
 
@@ -302,20 +344,49 @@ void vfs_ls()
 
 int vfs_mount(const char* target, const char* filesystem)
 {
+  writes_uart_debug("[*]Mount ",FALSE);
+  writes_uart_debug(filesystem,FALSE);
+  writes_uart_debug(" to target ",FALSE);
+  writes_uart_debug(target,TRUE);
   struct vnode* mount_vnode;
   struct mount* mount_point;
   int res = vfs_lookup(target,&mount_vnode);
-  if(res == errMsg || ((struct tmpfs_inode*)(mount_vnode->internal))->type!=dir_n) return -1; // return err code
+  if(res == errMsg || ((struct tmpfs_inode*)(mount_vnode->internal))->type==file_n) return errMsg; // return err code
   if(res == compNotFound) return -2; // not found
-
+  
   struct filesystem *fs = my_malloc(sizeof(struct filesystem));
   register_filesystem(fs);
   strcpy(fs->name,filesystem);
   fs->setup_mount = tmpfs_setup_mount;
   mount_point = my_malloc(sizeof(struct mount));
   res = fs->setup_mount(fs,mount_point);
-  
   mount_vnode->mount = mount_point;
+  
+  
+  ((struct tmpfs_inode*)(mount_vnode->internal))->type = mount_fs;
+  ((struct tmpfs_inode*)(mount_point->root->internal))->type = dir_n;
+  ((struct tmpfs_inode*)(mount_point->root->internal))->parent =((struct tmpfs_inode*)(mount_vnode->internal))->parent;
 
   return -1;
+}
+
+int vfs_chdir(const char* path)
+{
+  // 1. Lookup pathname
+  struct vnode *v_node;
+  int ret = vfs_lookup(path,&v_node);
+  // 2. Create a new file handle for this vnode if found.
+  if(ret == sucessMsg)
+  {
+    writes_uart_debug("[*]Cd to directory: ",FALSE);
+    writes_uart_debug((char*)path,TRUE);
+    get_current()->pwd = v_node;
+  }
+  else{
+    // lookup error code shows if file exist or not or other error occurs
+    // 4. Return error code if fails
+    writes_uart_debug("[*]Chdir: No such directory exist!",TRUE);
+    return errMsg;
+  }
+  return 0;
 }

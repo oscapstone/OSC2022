@@ -73,10 +73,30 @@ void exception_entry(trap_frame* tf){
             sys_ls(tf);
             break;
         case 11:
+        {
             sys_open(tf,(const char*)(tf->x0),tf->x1);
+            break;
+        }
+        case 12:
+            // writes_uart_debug("sys close",TRUE);
+            sys_close(tf,(int)(tf->x0));
+            break;
+        case 13:
+            // writes_uart_debug("sys write",TRUE);
+            sys_write(tf,tf->x0,tf->x1,tf->x2);
+            break;
+        case 14:
+            // writes_uart_debug("sys read",TRUE);
+            sys_read(tf,tf->x0,tf->x1,tf->x2);
             break;
         case 15:
             sys_mkdir(tf,(const char*)(tf->x0),0);
+            break;
+        case 16:
+            sys_mount(tf);
+            break;
+        case 17:
+            sys_chdir(tf);
             break;
         case 21:
             sigreturn();

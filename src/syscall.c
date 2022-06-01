@@ -165,32 +165,53 @@ int sys_open(trap_frame* tf,const char *pathname, int flags)
     disable_interrupt();
     struct file* target;
     int res = vfs_open(pathname,flags,&target);
-    int i;
-    for(i=0;i<10;i++){
-        if(get_current()->fd_table[i]==nullptr){
-            get_current()->fd_table[i] = target;
+    int i=0;
+    if(res == lastCompNotFound && flags==O_CREAT || res==sucessMsg)
+    {
+        for(i=0;i<10;i++){
+            if(get_current()->fd_table[i]==nullptr){
+                get_current()->fd_table[i] = target;
+                break;
+            }
         }
     }
+    
     enable_interrupt();
-    tf->x0 = i;
-    return i;
+    if(res == sucessMsg){ 
+        tf->x0 = i;
+        return i;
+    }
+    else if(res == lastCompNotFound && flags==O_CREAT) {tf->x0 = i; return i;}
+    else {tf->x0 = errMsg; return errMsg; }
 }
 // syscall number : 12
 int sys_close(trap_frame* tf,int fd)
 {
-
+    disable_interrupt();
+    int res = vfs_close(fd);
+    enable_interrupt();
+    tf->x0 = res;
+    return res;
 }
 // syscall number : 13
 // remember to return read size or error code
 long sys_write(trap_frame* tf,int fd, const void *buf, unsigned long count)
 {
-
+    disable_interrupt();
+    long res = vfs_write(fd,buf,count);
+    enable_interrupt();
+    tf->x0 = res;
+    return res;
 }
 // syscall number : 14
 // remember to return read size or error code
 long sys_read(trap_frame* tf,int fd, void *buf, unsigned long count)
 {
-
+    disable_interrupt();
+    long res = vfs_read(fd,buf,count);
+    enable_interrupt();
+    tf->x0 = res;
+    return res;
 }
 // syscall number : 15
 // you can ignore mode, since there is no access control
@@ -199,16 +220,25 @@ int sys_mkdir(trap_frame* tf,const char *pathname, unsigned mode)
     disable_interrupt();
     int res = vfs_mkdir(pathname);
     enable_interrupt();
+    tf->x0 = res;
     return res;
 }
-// // syscall number : 16
-// // you can ignore arguments other than target (where to mount) and filesystem (fs name)
-// int mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data)
-// {
-    
-// }
-// // syscall number : 17
-// int chdir(const char *path)
-// {
-
-// }
+// syscall number : 16
+// you can ignore arguments other than target (where to mount) and filesystem (fs name)
+int sys_mount(trap_frame* tf)
+{
+    disable_interrupt();
+    int res = vfs_mount((const char*)(tf->x1),(const char*)(tf->x2));
+    enable_interrupt();
+    tf->x0 = res;
+    return res;
+}
+// syscall number : 17
+int sys_chdir(trap_frame* tf)
+{
+    disable_interrupt();
+    int res = vfs_chdir((char*)(tf->x0));
+    enable_interrupt();
+    tf->x0 = res;
+    return res;
+}

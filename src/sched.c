@@ -7,6 +7,8 @@
 #include "timer.h"
 #include "syscall.h"
 #include "signal.h"
+#include "vfs.h"
+#include "tmpfs.h"
 #define TASK_POOL_SIZE 20
 
 extern void switch_to(Thread_struct* prev, Thread_struct* next);
@@ -157,7 +159,7 @@ Thread_struct* pop_thread()
 }
 void thread_exec()
 {
-    
+    rootfs_init("tmpfs");
     char **file_start = my_malloc(sizeof(char*));
     unsigned long *filesize = my_malloc(sizeof(unsigned long));
     // cpio_get_addr(file_start,&filesize);

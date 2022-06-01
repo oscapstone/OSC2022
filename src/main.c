@@ -67,8 +67,8 @@ int main(){
     // writes_uart("╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝\r\n");
     
     writes_uart("Hello World!\r\n");
-    thread_create(testfs_exec);
-    idle();
+    // thread_create(testfs_exec);
+    // idle();
 
     // for (int i = 0; i < 10; i++)
     // {

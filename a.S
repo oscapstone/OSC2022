@@ -335,3 +335,13 @@ mkdir:
     mov x8,15
     svc #0
     ret
+.global mount
+mount:
+    mov x8,16
+    svc #0
+    ret
+.global chdir
+chdir:
+    mov x8,17
+    svc #0
+    ret

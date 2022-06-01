@@ -45,8 +45,8 @@ long sys_read(trap_frame* tf,int fd, void *buf, unsigned long count);
 int sys_mkdir(trap_frame* tf,const char *pathname, unsigned mode);
 // syscall number : 16
 // you can ignore arguments other than target (where to mount) and filesystem (fs name)
-int sys_mount(trap_frame* tf,const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
+int sys_mount(trap_frame* tf);
 // syscall number : 17
-int sys_chdir(trap_frame* tf,const char *path);
+int sys_chdir(trap_frame* tf);
 
 #endif

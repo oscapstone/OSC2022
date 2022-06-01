@@ -34,6 +34,12 @@ char* get_pos_block_addr(int pos,struct tmpfs_inode* inode)
     struct tmpfs_block* block = inode->data;
     int block_idx = pos/FILE_BLOCK_SIZE; // i_th block
     int block_off = pos%FILE_BLOCK_SIZE; //block offset
+    // writes_uart_debug("[*]pos: ",FALSE);
+    // busy_wait_writeint(pos,FALSE);
+    // writes_uart_debug(", idx:",FALSE);
+    // busy_wait_writeint(block_idx,FALSE);
+    // writes_uart_debug(", offset:",FALSE);
+    // busy_wait_writeint(block_off,TRUE);
     for (int i = 0; i < block_idx; i++)
     {
         if(block->next==nullptr) writes_uart_debug("[*]No next data block",TRUE);
@@ -47,14 +53,21 @@ int tmpfs_read(struct file* file, void* buf, size_t len)
     if(inode->type==dir_n){
         writes_uart_debug("[*]read file failed",TRUE);
         ((char*)buf)[0]='\0';
-        return 0;
+        return errMsg;
     }
     int i,pos;
-    for(pos = file->f_pos,i=0;pos<inode->size && pos<pos+len;pos++,i++){
+    writes_uart_debug("[*]Reading len ",FALSE);
+    busy_wait_writeint(len,FALSE);
+    writes_uart_debug(" in pos ",FALSE);
+    busy_wait_writeint(file->f_pos,TRUE);
+    for(pos = file->f_pos,i=0;pos<inode->size && pos<file->f_pos+len;pos++,i++){
+        
         strcpy(((char*)buf)+i,get_pos_block_addr(pos,inode));
     }
+    writes_uart_debug("[*]Read data: ",FALSE);
+    writes_uart_debug(buf,TRUE);
     file->f_pos = pos;
-    return 0;
+    return strlen(buf);
 }
 int tmpfs_write(struct file* file, const void* buf, size_t len)
 {
@@ -62,26 +75,35 @@ int tmpfs_write(struct file* file, const void* buf, size_t len)
     if(inode->type==dir_n){
         writes_uart_debug("[*]write file failed",TRUE);
         ((char*)buf)[0]='\0';
-        return 0;
+        return errMsg;
     }
     int i,pos;
-    for(pos = file->f_pos,i=0; pos<pos+len;pos++,i++){
-        strcpy(get_pos_block_addr(pos,inode),((const char*)buf)+i);
+    writes_uart_debug("[*]Write data: ",FALSE);
+    writes_uart_debug(buf,FALSE);
+    writes_uart_debug(", len:",FALSE);
+    busy_wait_writeint(len,TRUE);
+    for(pos = file->f_pos,i=0; pos<file->f_pos+len;pos++,i++){
+        char* block_addr = get_pos_block_addr(pos,inode);
+        strcpy(block_addr,((const char*)buf)+i);
     }
+    
+    inode->size+=len;
     file->f_pos = pos;
-    return 0;
+    return strlen(buf);
 }
 int tmpfs_lookup(struct vnode* dir_node, struct vnode** target,
                 const char* component_name)
 {
     struct tmpfs_inode* inode = (struct tmpfs_inode*)dir_node->internal;
+    if(inode->type == mount_fs)
+        inode = dir_node->mount->root->internal;
     inode = inode->child;
     while(inode!=nullptr)
     {
         if(strcmp(component_name,inode->name)==0)
         {
             writes_uart_debug("[*]File look up found ",FALSE);
-            writes_uart_debug((char*)component_name,TRUE);
+            writes_uart_debug(inode->name,TRUE);
             *target = inode->vnode;
             return sucessMsg;
         }
@@ -102,7 +124,7 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target,
                 const char* component_name)
 {
     struct tmpfs_inode* inode = (struct tmpfs_inode*)(dir_node->internal);
-    if(inode->type == dir_n){
+    if(inode->type == dir_n || inode->type == mount_fs){
         if(inode->child==nullptr){
             struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,file_n);
             strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
@@ -128,6 +150,7 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target,
 
 int tmpfs_close(struct file* file)
 {
+
     free(file);
     return 0;
 }
@@ -137,15 +160,32 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target,
 {
     struct tmpfs_inode* inode = (struct tmpfs_inode*)(dir_node->internal);
     if(inode->type == dir_n){
-        struct tmpfs_inode* itr = inode->child;
-        while(itr->next_sibling!=null){
-            itr = itr->next_sibling;
+        // struct tmpfs_inode* itr = inode->child;
+        // while(itr->next_sibling!=null){
+        //     itr = itr->next_sibling;
+        // }
+        // struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,dir_n);
+        // strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
+        // itr->next_sibling = (struct tmpfs_inode*)(v_node->internal);
+        // // itr->parent = inode;
+        // *target = v_node;
+
+        if(inode->child==nullptr){
+            struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,dir_n);
+            strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
+            inode->child = v_node->internal;
+            *target = v_node;
         }
-        struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,dir_n);
-        strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
-        itr->next_sibling = (struct tmpfs_inode*)(v_node->internal);
-        // itr->parent = inode;
-        *target = v_node;
+        else{
+            struct tmpfs_inode* itr = inode->child;
+            while(itr->next_sibling!=null){
+                itr = itr->next_sibling;
+            }
+            struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,dir_n);
+            strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
+            itr->next_sibling = (struct tmpfs_inode*)(v_node->internal);
+            *target = v_node;
+        }
     }
     else{
         writes_uart_debug("[*]mkdir failed",TRUE);
