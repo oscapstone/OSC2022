@@ -207,7 +207,7 @@ void fs_test7(){
     // assert(fd < 0);
 }
 
-void user_basic1(){
+void user_basic2(){
     mkdir("/tmp", 0);
     int fd = open("/tmp/tmpfile", O_CREAT);
     write(fd, "Hello World!", 12);
@@ -231,4 +231,10 @@ void user_basic1(){
     uart_puts("\n");
     close(fd);
     
+}
+
+void user_advance1(){
+    write(1, "Hello World!\n", 13);
+    write(1, "JJ\n", 3);
+
 }

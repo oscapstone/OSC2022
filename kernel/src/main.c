@@ -40,6 +40,7 @@ int main(unsigned long dtb_base){
     // fs_test6();
     // fs_test7();
     // user_basic1();
+    // user_advance1();
 
     PrintWelcome();
     ShellLoop();

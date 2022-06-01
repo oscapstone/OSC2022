@@ -25,7 +25,7 @@ void rootfs_init(char *fs_name){
     }
 
     if(strcmp(fs_name, "rootfs") == 0){
-        fs_pool[0]->name = (char *)kmalloc(sizeof(char) * 6); // 6 is the length of "tmpfs"  
+        fs_pool[0]->name = (char *)kmalloc(sizeof(char) * 7); // 7 is the length of "rootfs"  
         strcpy(fs_pool[0]->name, "rootfs");
         fs_pool[0]->setup_mount = tmpfs_setup_mount;
     }
@@ -42,6 +42,22 @@ void rootfs_init(char *fs_name){
     global_fd_table = (File **)kmalloc(sizeof(File *) * MAX_FD_NUM);
 
     vfs_initramfs_init();
+    vfs_dev_init();
+}
+
+void vfs_dev_init(){
+    vfs_mkdir("/dev");
+    vfs_mknod("/dev/uart");
+    File *uart_stdin = kmalloc(sizeof(File));
+    File *uart_stdout = kmalloc(sizeof(File));
+    File *uart_stderr = kmalloc(sizeof(File));
+    int stdin = vfs_open("/dev/uart", 0, &uart_stdin);
+    int stdout = vfs_open("/dev/uart", 0, &uart_stdout);
+    int stderr = vfs_open("/dev/uart", 0, &uart_stderr);
+    global_fd_table[0] = uart_stdin;
+    global_fd_table[1] = uart_stdout;
+    global_fd_table[2] = uart_stderr;
+    vfs_mknod("/dev/framebuffer");
 }
 
 void vfs_initramfs_init(){
@@ -80,7 +96,6 @@ void vfs_initramfs_init(){
             // vfs_close(file);
         }
     }
-    vfs_chdir("/initramfs");
     /* set the filesystem to read only */
     global_dentry->mount->fs->read_only = 1;
 }
@@ -175,11 +190,10 @@ int vfs_lookup(const char* pathname, Dentry **target_path, VNode **target_vnode,
 }
 
 int vfs_open(const char* pathname, int flags, struct file** target_file) {
+    if(pathname == NULL) return -1;
     uart_puts("[*] vfs_open: ");
     uart_puts((char *)pathname);
     print_string(ITOA, " | flag: ", flags, 1);
-
-    if(pathname == NULL) return -1;
     Dentry *target_path = NULL;
     VNode *target_vnode = NULL;
     char component_name[MAX_PATHNAME_LEN];
@@ -190,7 +204,6 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     } 
     // 2. Create a new file handle for this vnode if found.
     if(target_vnode != NULL){
-        uart_puts(target_vnode->dentry->name);
         // cannot open a directory
         if(target_vnode->dentry->type == D_DIR || 
             target_vnode->dentry->type == D_MOUNT){
@@ -233,6 +246,35 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     return -1;
 }
 
+int vfs_mknod(const char *pathname){
+    if(pathname == NULL) return -1;
+    uart_puts("[*] vfs_mknod: ");
+    uart_puts((char *)pathname);
+    uart_puts("\n");
+    Dentry *target_path = NULL;
+    VNode *target_vnode = NULL;
+    char component_name[MAX_PATHNAME_LEN];
+    int err = vfs_lookup(pathname, &target_path, &target_vnode, component_name);
+    if(err) return -1; // worng pathname
+
+    /* target vnode is exist, cannot create it */
+    if(target_vnode != NULL){
+        uart_puts("[*] Mknod: Target is already exist\n");
+        return -2;
+    } 
+
+    /* create the special file */
+    err = rootfs->root_dentry->vnode->v_ops->create(target_path->vnode, &target_vnode, component_name);
+    if(err){
+        uart_puts("[*] Open: Cannot create a file\n");
+        return err;
+    }
+    uart_puts("[*] Created file: ");
+    uart_puts(target_vnode->dentry->name);
+    uart_puts("\n");
+
+    return 0;
+}
 
 int vfs_mkdir(const char *pathname){
     uart_puts("[*] vfs_mkdir: ");

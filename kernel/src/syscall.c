@@ -128,6 +128,10 @@ int kernel_exec(char *name){
     /* copy the golbal dir / dentry in the new_thread*/
     strcpy(new_thread->dir, global_dir);
     new_thread->dentry = global_dentry;
+    /* copy fd table */
+    for(int i = 0; i < MAX_FD_NUM; i++){
+        new_thread->fd_table[i] = global_fd_table[i];
+    }
 
     set_period_timer_irq();
     sched_timeout("omg");
@@ -199,6 +203,21 @@ int do_fork(TrapFrame *trapFrame){
     /* copy the golbal dir / dentry in the new_thread*/
     strcpy(new_thread->dir, global_dir);
     new_thread->dentry = global_dentry;
+
+    //TODO: mabye wrong? need to check
+    /* copy fd table */
+    for(int i = 0; i < MAX_FD_NUM; i++){
+        File *tmp = global_fd_table[i];
+        if(tmp != NULL){
+            File *new_file = kmalloc(sizeof(File));
+            new_file->f_ops = tmp->f_ops;
+            new_file->f_pos = tmp->f_pos;
+            new_file->vnode = tmp->vnode;
+            new_file->flags = tmp->flags;
+            new_thread->fd_table[i] = new_file;
+        }
+    }
+
 
     // print_string(UITOHEX, "(child)new_thread->code_addr: 0x", (unsigned long long)new_thread->code_addr, 1);
 
@@ -383,15 +402,52 @@ void sys_write(TrapFrame *trapFrame){
     int fd = trapFrame->x[0];
     char *buf = (char *)trapFrame->x[1];
     int count = trapFrame->x[2];
+    int status;
 
-    if(fd < 0 || fd >= MAX_FD_NUM)
+    if(fd < 0 || fd >= MAX_FD_NUM){
         trapFrame->x[0] = -1;
-    else if(global_fd_table[fd] == NULL)
+        goto DONE;
+    }   
+        
+    if(global_fd_table[fd] == NULL){
         trapFrame->x[0] = -1;
-    else{
-        int status = vfs_write(global_fd_table[fd], buf, count);
-        trapFrame->x[0] = status;
+        goto DONE;
+    }   
+
+    /* FIFO: uart file */
+    if(fd == 1 || fd == 2){
+        /* stdout, write the data in uart file */
+        status = vfs_write(global_fd_table[fd], buf, count);
+        if(status < 0){
+            trapFrame->x[0] = status;
+            goto DONE;
+        }
+        /* reset the pos */
+        global_fd_table[fd]->f_pos = 0; 
+
+        /* stdin, read the data to the terminal */
+        size_t thesize = 0;
+        char buf[501];
+        int read_size;
+        while(1){
+            memset(buf, 0, 501);
+            read_size = vfs_read(global_fd_table[0], buf, 500);
+            if(read_size <= 0){
+                break;
+            } 
+            thesize += read_size;
+            uart_puts(buf);
+        }
+        global_fd_table[0]->f_pos = 0;
+        trapFrame->x[0] = thesize;
+        goto DONE;
     }
+
+    /* normal file */
+    status = vfs_write(global_fd_table[fd], buf, count);
+    trapFrame->x[0] = status;
+
+DONE:
     enable_irq();
 }
 
@@ -406,9 +462,18 @@ void sys_read(TrapFrame *trapFrame){
     else if(global_fd_table[fd] == NULL)
         trapFrame->x[0] = -1;
     else{
+        /* stdin */
+        if(fd == 0){
+            enable_irq();
+            int idx = async_readnbyte(buf, count);
+            disable_irq();
+            trapFrame->x[0] = idx;
+            goto DONE;
+        }
         int status = vfs_read(global_fd_table[fd], buf, count);
         trapFrame->x[0] = status;
     }
+DONE:
     enable_irq();
 }
 

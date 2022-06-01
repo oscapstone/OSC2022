@@ -82,6 +82,7 @@ struct vnode_operations {
 
 void rootfs_init();
 void vfs_initramfs_init();
+void vfs_dev_init(); 
 int register_filesystem(FileSystem* fs);
 int vfs_open(const char* pathname, int flags, struct file** target);
 int vfs_lookup(const char* pathname, Dentry **target_dentry, VNode **target_vnode, char *component_name);
@@ -98,6 +99,8 @@ int vfs_chdir(const char* pathname);
 int change_global_path(Dentry *target);
 int vfs_mount(const char* pathname, const char* filesystem);
 int vfs_umount(const char *pathname);
+
+int vfs_mknod(const char* pathname);
 
 
 #endif

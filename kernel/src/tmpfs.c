@@ -84,7 +84,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
                 write_idx += write_len;
                 // block->data[write_idx] = EOF;
 
-                block->size += write_len;
+                block->size = offset + write_len;
                 goto DONE;
             }
             else if(write_len > quota){
@@ -117,7 +117,6 @@ DONE:
     return write_idx;
 }
 
-// TODO: read fail in user program because of EOF byte
 int tmpfs_read(struct file* file, void* buf, size_t len){
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
     char *dest = (char *)buf;
