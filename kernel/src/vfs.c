@@ -550,8 +550,8 @@ int vfs_write(struct file* file, const void* buf, size_t len) {
         uart_puts("[*] Write: Cannot write to a read-only filesystem\n");
         return -2;
     } 
-    // uart_puts("[*] vfs_write | ");
-    // print_string(UITOA, "len : ", len, 1);
+    uart_puts("[*] vfs_write | ");
+    print_string(UITOA, "len : ", len, 1);
     return file->f_ops->write(file, buf, len);
 }
 
@@ -560,8 +560,8 @@ int vfs_read(struct file* file, void* buf, size_t len) {
     // 2. block if nothing to read for FIFO type
     // 2. return read size or error code if an error occurs.
     if(file == NULL) return -1;
-    // uart_puts("[*] vfs_read | ");
-    // print_string(UITOA, "len : ", len, 1);
+    uart_puts("[*] vfs_read | ");
+    print_string(UITOA, "len : ", len, 1);
     return file->f_ops->read(file, buf, len);
 }
 

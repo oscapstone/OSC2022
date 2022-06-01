@@ -63,7 +63,8 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
     char *src = (char *)buf;
     size_t write_len = len;
     size_t write_idx = 0;
-
+    /* if offset != 0, it may not work */
+    inode_head->size = 0;
 
     struct list_head *pos;
     list_for_each(pos, &inode_head->list){
