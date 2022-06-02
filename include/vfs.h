@@ -69,6 +69,8 @@ int vfs_lookup(const char* pathname, struct vnode** target);
 void vfs_ls();
 int vfs_chdir(const char* path);
 void vfs_initramfs();
+void vfs_uart();
+void vfs_framebuffer();
 struct vnode* vnode_create(struct vnode*,struct mount*,struct vnode_operations*,struct file_operations*,int);
 void testfs_exec();
 void test_fs();

@@ -91,6 +91,7 @@ void rootfs_init(char* name)
   get_current()->pwd = rootfs->root;
   
   vfs_initramfs();
+  vfs_uart();
   return;
 }
 
@@ -235,7 +236,9 @@ int vfs_mkdir(const char* pathname)
     writes_uart_debug("[*]Start create dir in dir: ",FALSE);
     writes_uart_debug(((struct tmpfs_inode*)(v_node->internal))->name,TRUE);
     struct vnode *new_vnode;
-    
+    if(((struct tmpfs_inode*)(v_node->internal))->type==mount_fs){
+      v_node = v_node->mount->root;
+    }
     v_node->v_ops->mkdir(v_node,&new_vnode,buf);
     // ((struct tmpfs_inode*)(new_vnode->internal))->type = dir_n;
     target_file->f_pos = 0;
@@ -335,15 +338,16 @@ struct vnode* vnode_create(struct vnode* dir_vnode,struct mount* mount_point,str
   inode->type = n_type;
   inode->next_sibling = nullptr;
   inode->child = nullptr;
+  
   if(dir_vnode!=nullptr) inode->parent = dir_vnode->internal;
   else inode->parent = nullptr;
   strcpy(inode->name,"/");
-  if(n_type == file_n)
-  {
-    inode->data = my_malloc(sizeof(struct tmpfs_block));
-    strcpy(inode->data->content,"\0");
-    inode->data->next = nullptr;
-  }
+  // if(n_type == file_n)
+  // {
+  //   inode->data = my_malloc(sizeof(struct tmpfs_block));
+  //   strcpy(inode->data->content,"\0");
+  //   inode->data->next = nullptr;
+  // }
   v_node->internal = inode;
   inode->vnode = v_node;
   // }
@@ -445,17 +449,32 @@ void vfs_initramfs()
     if(c_nlink == 1) // FILE
     {
       struct file* f;
-      res = vfs_open(filename,O_CREAT,f);
+      res = vfs_open(filename,O_CREAT,&f);
+      f->f_ops->write(f,filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
       free(f);
       // new_node = vnode_create(vnode_itr,vnode_itr->mount,vnode_itr->v_ops,vnode_itr->f_ops,file_n);
     }
     else // folder
     {
-
+      res = vfs_mkdir(filename);
       // new_node = vnode_create(vnode_itr,vnode_itr->mount,vnode_itr->v_ops,vnode_itr->f_ops,dir_n);
     }
     cnh = next_header;
   }
   vfs_ls();
-  vfs_chdir("..");
+  vfs_chdir("/");
+  vfs_ls();
+}
+void vfs_uart()
+{
+  struct file* target_file[2];
+  vfs_mkdir("/dev");
+  vfs_open("/dev/uart",O_CREAT,&(target_file[0]));
+  vfs_open("/dev/uart",0,&(target_file[1]));
+  vfs_open("/dev/uart",0,&(target_file[2]));
+  get_current()->fd_table[0] = target_file[0];
+  get_current()->fd_table[1] = target_file[1];
+  get_current()->fd_table[2] = target_file[2];
+
+  return;
 }

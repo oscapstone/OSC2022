@@ -25,7 +25,7 @@ struct tmpfs_inode{
 };
 
 struct tmpfs_block{
-    char content[FILE_BLOCK_SIZE];
+    char* content;
     struct tmpfs_block* next;
 };
 

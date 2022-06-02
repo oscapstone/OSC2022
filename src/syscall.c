@@ -73,16 +73,27 @@ int kernel_exec(trap_frame* tf,const char* name, char *const argv[])
 }
 int sys_exec(trap_frame* tf,const char* name, char *const argv[])
 {
-    char **file_start = my_malloc(sizeof(char*));
-    unsigned long* filesize = my_malloc(sizeof(unsigned long));
-    cpio_get_addr(file_start,filesize);
-    char *new_start = my_malloc(*filesize);
-    memcpy(new_start,*file_start,*filesize);
-    if(filesize!=0){ // file not found if filesize == 0
-        tf->sp_el0 = (unsigned long)(get_current()->user_stack + THREAD_STACK_SIZE);
-        tf->elr_el1 = (unsigned long)new_start;
-        tf->spsr_el1 = 0;
+    // char **file_start = my_malloc(sizeof(char*));
+    // unsigned long* filesize = my_malloc(sizeof(unsigned long));
+    // cpio_get_addr(file_start,filesize);
+    // char *new_start = my_malloc(*filesize);
+    // memcpy(new_start,*file_start,*filesize);
+    struct file* target;
+    int res = vfs_open("/initramfs/vfs1.img",0,&target);
+    int fd;
+    char *new_start = my_malloc(((struct tmpfs_inode*)(target->vnode->internal))->size);
+    for(fd=3;fd<10;fd++){
+        if(get_current()->fd_table[fd]==nullptr){
+            get_current()->fd_table[fd] = target;
+            break;
+        }
     }
+    res = vfs_read(fd,new_start,((struct tmpfs_inode*)(target->vnode->internal))->size);
+    //if(filesize!=0){ // file not found if filesize == 0
+    tf->sp_el0 = (unsigned long)(get_current()->user_stack + THREAD_STACK_SIZE);
+    tf->elr_el1 = (unsigned long)new_start;
+    tf->spsr_el1 = 0;
+    // }
     return 0;
 }
 extern void load_eret();
@@ -168,7 +179,7 @@ int sys_open(trap_frame* tf,const char *pathname, int flags)
     int i=0;
     if(res == lastCompNotFound && flags==O_CREAT || res==sucessMsg)
     {
-        for(i=0;i<10;i++){
+        for(i=3;i<10;i++){
             if(get_current()->fd_table[i]==nullptr){
                 get_current()->fd_table[i] = target;
                 break;
@@ -208,7 +219,21 @@ long sys_write(trap_frame* tf,int fd, const void *buf, unsigned long count)
 long sys_read(trap_frame* tf,int fd, void *buf, unsigned long count)
 {
     disable_interrupt();
-    long res = vfs_read(fd,buf,count);
+    long res;
+    if(fd==0){
+
+        for (int i = 0; i < count; i++)
+        {
+            while(!(*AUX_MU_LSR_REG & 0x01)){
+                asm volatile("nop");
+            }
+            ((char*)buf)[i] = (char)(*AUX_MU_IO_REG);
+        }
+        res = vfs_write(1,buf,count);
+    }else{
+        res = vfs_read(fd,buf,count);
+    }
+    
     enable_interrupt();
     tf->x0 = res;
     return res;

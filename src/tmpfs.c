@@ -31,18 +31,33 @@ int tmpfs_setup_mount(struct filesystem* fs, struct mount* mount)
 }
 char* get_pos_block_addr(int pos,struct tmpfs_inode* inode)
 {
-    struct tmpfs_block* block = inode->data;
+    struct tmpfs_block* block;
     int block_idx = pos/FILE_BLOCK_SIZE; // i_th block
     int block_off = pos%FILE_BLOCK_SIZE; //block offset
-    // writes_uart_debug("[*]pos: ",FALSE);
-    // busy_wait_writeint(pos,FALSE);
-    // writes_uart_debug(", idx:",FALSE);
-    // busy_wait_writeint(block_idx,FALSE);
-    // writes_uart_debug(", offset:",FALSE);
-    // busy_wait_writeint(block_off,TRUE);
+    // if(pos % FILE_BLOCK_SIZE == 0){
+    //     writes_uart_debug("[*]pos: ",FALSE);
+    //     busy_wait_writeint(pos,FALSE);
+    //     writes_uart_debug(", idx:",FALSE);
+    //     busy_wait_writeint(block_idx,FALSE);
+    //     writes_uart_debug(", offset:",FALSE);
+    //     busy_wait_writeint(block_off,TRUE);
+    // }
+    
+    if(inode->data == nullptr){
+        inode->data = my_malloc(sizeof(struct tmpfs_block));
+        inode->data->content = my_malloc(FILE_BLOCK_SIZE*sizeof(char));
+        inode->data->next = nullptr;
+    }
+    block = inode->data;
     for (int i = 0; i < block_idx; i++)
     {
-        if(block->next==nullptr) writes_uart_debug("[*]No next data block",TRUE);
+        if(block->next==nullptr){ 
+            // writes_uart_debug("[*]No next data block",TRUE);
+            struct tmpfs_block* new_block = my_malloc(sizeof(struct tmpfs_block));
+            new_block->content = my_malloc(FILE_BLOCK_SIZE*sizeof(char));
+            new_block->next = nullptr;
+            block->next = new_block;
+        }
         block = block->next;
     }
     return block->content+block_off;
@@ -56,18 +71,22 @@ int tmpfs_read(struct file* file, void* buf, size_t len)
         return errMsg;
     }
     int i,pos;
-    writes_uart_debug("[*]Reading len ",FALSE);
+    writes_uart_debug("[*]Reading ",FALSE);
+    writes_uart_debug(inode->name,FALSE);
+    writes_uart_debug(" ,len ",FALSE);
     busy_wait_writeint(len,FALSE);
     writes_uart_debug(" in pos ",FALSE);
     busy_wait_writeint(file->f_pos,TRUE);
+    
     for(pos = file->f_pos,i=0;pos<inode->size && pos<file->f_pos+len;pos++,i++){
-        
-        strcpy(((char*)buf)+i,get_pos_block_addr(pos,inode));
+        memcpy((char*)(buf+i),get_pos_block_addr(pos,inode),1);
+        // strcpy(((char*)buf)+i,get_pos_block_addr(pos,inode));
     }
+    // *((char*)(buf+i)) = '\0';
     writes_uart_debug("[*]Read data: ",FALSE);
     writes_uart_debug(buf,TRUE);
     file->f_pos = pos;
-    return strlen(buf);
+    return i;
 }
 int tmpfs_write(struct file* file, const void* buf, size_t len)
 {
@@ -78,18 +97,23 @@ int tmpfs_write(struct file* file, const void* buf, size_t len)
         return errMsg;
     }
     int i,pos;
-    writes_uart_debug("[*]Write data: ",FALSE);
-    writes_uart_debug(buf,FALSE);
+    writes_uart_debug("[*]Write data to ",FALSE);
+    writes_uart_debug(inode->name,FALSE);
+    // writes_uart_debug(buf,FALSE);
     writes_uart_debug(", len:",FALSE);
     busy_wait_writeint(len,TRUE);
-    for(pos = file->f_pos,i=0; pos<file->f_pos+len;pos++,i++){
-        char* block_addr = get_pos_block_addr(pos,inode);
-        strcpy(block_addr,((const char*)buf)+i);
+    if(strcmp(inode->name,"uart")==0 && strcmp(inode->parent->name,"dev")==0){
+        writes_n_uart((char*)buf,len);
     }
-    
+    for(pos = file->f_pos,i=0; pos<file->f_pos+len;pos++,i++){
+        // busy_wait_writeint(pos,TRUE);
+        memcpy(get_pos_block_addr(pos,inode),((const char*)buf)+i,1);
+        // strcpy(get_pos_block_addr(pos,inode),((const char*)buf)+i);
+    }
+    // *((char*)(get_pos_block_addr(pos,inode))) = '\0';
     inode->size+=len;
     file->f_pos = pos;
-    return strlen(buf);
+    return i;
 }
 int tmpfs_lookup(struct vnode* dir_node, struct vnode** target,
                 const char* component_name)
@@ -138,6 +162,7 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target,
             }
             struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,file_n);
             strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
+            // ((struct tmpfs_inode*)(v_node->internal))->parent = inode;
             itr->next_sibling = (struct tmpfs_inode*)(v_node->internal);
             *target = v_node;
         }
@@ -159,7 +184,7 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target,
               const char* component_name)
 {
     struct tmpfs_inode* inode = (struct tmpfs_inode*)(dir_node->internal);
-    if(inode->type == dir_n){
+    if(inode->type == dir_n || inode->type == mount_fs){
         // struct tmpfs_inode* itr = inode->child;
         // while(itr->next_sibling!=null){
         //     itr = itr->next_sibling;
@@ -183,6 +208,7 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target,
             }
             struct vnode* v_node = vnode_create(dir_node,dir_node->mount,dir_node->v_ops,dir_node->f_ops,dir_n);
             strcpy(((struct tmpfs_inode*)(v_node->internal))->name,component_name);
+            // ((struct tmpfs_inode*)(v_node->internal))->parent = inode;
             itr->next_sibling = (struct tmpfs_inode*)(v_node->internal);
             *target = v_node;
         }
@@ -195,7 +221,11 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target,
 
 void tmpfs_ls(struct vnode* dir_node)
 {
-    struct tmpfs_inode* itr = (struct tmpfs_inode*)(dir_node->internal);
+    struct tmpfs_inode* itr;
+    if(itr->type == dir_n)
+        itr = (struct tmpfs_inode*)(dir_node->internal);
+    else
+        itr = (struct tmpfs_inode*)(dir_node->mount->root->internal);
     writes_uart_debug("[*]Listing files in directory: ",FALSE);
     writes_uart_debug(itr->name,TRUE);
     itr = itr->child;
