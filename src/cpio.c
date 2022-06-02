@@ -10,25 +10,10 @@
 #define CPIO_ALIGNMENT 4
 uint32_t* cpio_addr;
  //((volatile unsigned int*)(0x8000000))
-typedef struct {
-    char c_magic[6];      /* Magic header '070701'. */
-    char c_ino[8];        /* "i-node" number. */
-    char c_mode[8];       /* Permisions. */
-    char c_uid[8];        /* User ID. */
-    char c_gid[8];        /* Group ID. */
-    char c_nlink[8];      /* Number of hard links. */
-    char c_mtime[8];      /* Modification time. */
-    char c_filesize[8];   /* File size. */
-    char c_devmajor[8];   /* Major dev number. */
-    char c_devminor[8];   /* Minor dev number. */
-    char c_rdevmajor[8];
-    char c_rdevminor[8];
-    char c_namesize[8];   /* Length of filename in bytes. */
-    char c_check[8];      /* Checksum. */
-}cpio_newc_header;
+
 
 /* Transform the string type hex to unsigned long.  */
-static unsigned long parse_hex_str(char *s, unsigned int max_len)
+unsigned long parse_hex_str(char *s, unsigned int max_len)
 {
     unsigned long r = 0;
     unsigned long i;
@@ -91,11 +76,19 @@ void cpio_ls(){
         if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0)
             break;
         writes_n_uart(filename,parse_hex_str(cnh->c_namesize,sizeof(cnh->c_namesize)));
+        writes_uart("[");
+        // c_nlink: file: 1, dir: at least 2, .: 3
+        // https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
+        long c_nlink = parse_hex_str(cnh->c_nlink,sizeof(cnh->c_nlink));
+        if(c_nlink == 1)
+            writes_uart("FILE");
+        else
+            writes_uart("DIR");
+        writes_uart("]");
         writes_uart("\r\n");
         //writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
         //writes_uart("\r\n");
         cnh = next_header;
-        
     }
     
 }

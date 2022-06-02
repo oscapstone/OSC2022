@@ -6,6 +6,8 @@
 #include "mini_uart.h"
 #include "sched.h"
 #include "syscall.h"
+#include "cpio.h"
+// extern uint32_t* cpio_addr;
 struct mount* rootfs;
 struct filesystem fs_pool[20];
 extern Thread_struct* get_current();
@@ -87,6 +89,8 @@ void rootfs_init(char* name)
   rootfs = (struct mount*)my_malloc(sizeof(struct mount));
   rfs->setup_mount(rfs,rootfs);
   get_current()->pwd = rootfs->root;
+  
+  vfs_initramfs();
   return;
 }
 
@@ -258,16 +262,29 @@ int vfs_lookup(const char* pathname, struct vnode** target) {
     return sucessMsg;
   }
   struct vnode* vnode_itr;
+  int i=0,j=0;
   if(pathname[0]=='/')
+  {
     vnode_itr = rootfs->root;//rootfs->root;
+    if(strlen(pathname)==1){
+      *target = vnode_itr;
+      return sucessMsg;
+    }
+  }
   else if(strlen(pathname)>=2 && strncmp(pathname,"..",2)==0){
     vnode_itr = ((struct tmpfs_inode*)(get_current()->pwd->internal))->parent->vnode;
   }
   else
+  {
     vnode_itr = get_current()->pwd;
+    if(strlen(pathname)==1 && pathname[0]=='.'){
+      *target = vnode_itr;
+      return sucessMsg;
+    }
+  }
   char comp_name[COMP_NAME_LEN];
-  int i=0,j=0;
-  while(pathname[i]=='/')
+  
+  while(pathname[i]=='/' || pathname[i]=='.')
   {
     i++;
     j++;
@@ -389,4 +406,56 @@ int vfs_chdir(const char* path)
     return errMsg;
   }
   return 0;
+}
+
+void vfs_initramfs()
+{
+  vfs_mkdir("initramfs");
+  struct vnode* vnode_itr;
+  int res = vfs_lookup("initramfs",&vnode_itr);
+  if(res != sucessMsg) writes_uart_debug("[*]Initramfs not found, failed",TRUE);
+  res = vfs_mount("initramfs","initramfs");
+
+  cpio_newc_header* cnh = (cpio_newc_header*)cpio_addr;
+  cpio_newc_header* next_header;
+  char *filename;
+  char *filedata;
+  unsigned long filesize;
+  vfs_chdir("/initramfs");
+  while(1){
+    struct vnode* new_node;
+    if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0)
+        break;
+    writes_n_uart(filename,parse_hex_str(cnh->c_namesize,sizeof(cnh->c_namesize)));
+    writes_uart("[");
+    // c_nlink: file: 1, dir: at least 2, .: 3
+    // https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
+    long c_nlink = parse_hex_str(cnh->c_nlink,sizeof(cnh->c_nlink));
+    if(c_nlink == 1)
+        writes_uart("FILE");
+    else
+        writes_uart("DIR");
+    writes_uart("]");
+    writes_uart("\r\n");
+    // long c_nlink = parse_hex_str(cnh->c_nlink,sizeof(cnh->c_nlink));
+    if(strncmp(filename,".",1)==0){ // skip . dir
+      cnh = next_header;
+      continue;
+    }
+    if(c_nlink == 1) // FILE
+    {
+      struct file* f;
+      res = vfs_open(filename,O_CREAT,f);
+      free(f);
+      // new_node = vnode_create(vnode_itr,vnode_itr->mount,vnode_itr->v_ops,vnode_itr->f_ops,file_n);
+    }
+    else // folder
+    {
+
+      // new_node = vnode_create(vnode_itr,vnode_itr->mount,vnode_itr->v_ops,vnode_itr->f_ops,dir_n);
+    }
+    cnh = next_header;
+  }
+  vfs_ls();
+  vfs_chdir("..");
 }
