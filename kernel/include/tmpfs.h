@@ -10,7 +10,7 @@ typedef struct tmpfs_inode{
     unsigned long idx; 
     unsigned long size; // incode head save the all size
     // char *data;
-    char data[MAX_DATA_LEN]; // data block size = MAX_DATA_LEN(512 * 8 = 4096)
+    char data[MAX_DATA_LEN]; // data block size = MAX_DATA_LEN
 }TmpfsInode;
 
 int tmpfs_setup_mount(FileSystem *fs, Mount *mount);

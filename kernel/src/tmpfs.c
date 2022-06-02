@@ -102,7 +102,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
                 /* add a new block */
                 TmpfsInode *new_block = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
                 INIT_LIST_HEAD(&new_block->list);
-                // new_block->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
+                // new_block->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
                 new_block->idx = block->idx + 1;
                 new_block->size = 0;
                 new_block->vnode = inode_head->vnode;
@@ -246,14 +246,14 @@ int tmpfs_create(struct vnode* dir_node, struct vnode** target, const char* comp
     /* create the inode list head */
     TmpfsInode *inode_head = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
     INIT_LIST_HEAD(&inode_head->list);
-    // inode_head->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
+    // inode_head->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
     inode_head->idx = 0;
     inode_head->size = 0;
     inode_head->vnode = new_dentry->vnode;
     /* create the real data block */
     TmpfsInode *inode = (TmpfsInode *)kmalloc(sizeof(TmpfsInode));
     INIT_LIST_HEAD(&inode->list);
-    // inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN); // 512 * 8 = 4096
+    // inode->data = (char *)kmalloc(sizeof(char) * MAX_DATA_LEN);
     inode->idx = 1;
     inode->size = 0;
     inode->vnode = new_dentry->vnode;
