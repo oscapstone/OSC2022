@@ -471,18 +471,18 @@ void sys_write(TrapFrame *trapFrame){
 
         /* stdin, read the data to the terminal */
         size_t thesize = 0;
-        char buf[MAX_SIZE];
+        char buf2[MAX_SIZE];
         int read_size;
         while(1){
-            memset(buf, 0, MAX_SIZE);
-            read_size = vfs_read(global_fd_table[0], buf, MAX_SIZE - 1);
+            memset(buf2, 0, MAX_SIZE);
+            read_size = vfs_read(global_fd_table[fd], buf2, MAX_SIZE - 1);
             if(read_size <= 0){
                 break;
             } 
             thesize += read_size;
-            uart_puts(buf);
+            uart_puts(buf2);
         }
-        vfs_lseek64(global_fd_table[0], 0, SEEK_SET);
+        vfs_lseek64(global_fd_table[fd], 0, SEEK_SET);
         trapFrame->x[0] = thesize;
         goto DONE;
     }
@@ -511,8 +511,13 @@ void sys_read(TrapFrame *trapFrame){
             enable_irq();
             int idx = async_readnbyte(buf, count);
             disable_irq();
-            trapFrame->x[0] = idx;
+            int status = vfs_write(global_fd_table[0], buf, idx);
+            vfs_lseek64(global_fd_table[0], 0, SEEK_SET);
+            trapFrame->x[0] = status;
             goto DONE;
+            
+            // trapFrame->x[0] = idx;
+            // goto DONE;
         }
         int status = vfs_read(global_fd_table[fd], buf, count);
         trapFrame->x[0] = status;
