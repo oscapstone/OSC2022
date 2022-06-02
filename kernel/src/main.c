@@ -12,6 +12,7 @@
 #include <vfs.h>
 #include <test_fs.h>
 #include <timer.h>
+#include <mailbox.h>
 
 extern Thread *run_thread_head;
 
@@ -22,6 +23,7 @@ int main(unsigned long dtb_base){
     // uart_getc();
     print_string(UITOHEX, "[*] DTB_BASE: 0x", dtb_base, 1);
     fdt_traverse((fdt_header *)dtb_base, initramfs_callback);
+    framebuffer_init();
     all_allocator_init();    
     init_cpio_file_info();
     rootfs_init("rootfs");

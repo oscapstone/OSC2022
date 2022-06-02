@@ -528,7 +528,7 @@ void sys_read(TrapFrame *trapFrame){
         int status = vfs_read(global_fd_table[fd], buf, count);
         trapFrame->x[0] = status;
     }
-DONE:
+    
     enable_irq();
 }
 

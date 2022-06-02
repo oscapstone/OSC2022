@@ -53,7 +53,7 @@ void PrintUnknown(char buf[MAX_SIZE]){
 
 /* print board revision*/
 void PrintRevision(char buf[MAX_SIZE]){
-  unsigned int mbox[36];
+  unsigned int __attribute__((aligned(16))) mbox[36];
   unsigned int success = get_board_revision(mbox);
   if (success){
     print_string(UITOHEX, "Board Revision: 0x", mbox[5], 1);
@@ -64,7 +64,7 @@ void PrintRevision(char buf[MAX_SIZE]){
 
 /* print memory info*/
 void PrintMemory(char buf[MAX_SIZE]){
-  unsigned int mbox[36];
+  unsigned int __attribute__((aligned(16))) mbox[36];
   unsigned int success = get_arm_memory(mbox);
   if (success){
     print_string(UITOHEX, "ARM Memory Base Address: 0x", mbox[5], 1);

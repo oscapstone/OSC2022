@@ -4,6 +4,11 @@
 #include <stddef.h>
 #include <list.h>
 
+enum file_type {
+	UART,
+	FRAME_BUFFER
+};
+
 enum dentry_type {
     D_DIR,
     D_FILE,
@@ -100,7 +105,7 @@ int vfs_chdir(const char* pathname);
 int change_global_path(Dentry *target);
 int vfs_mount(const char* pathname, const char* filesystem);
 int vfs_umount(const char *pathname);
-int vfs_mknod(const char* pathname);
+int vfs_mknod(const char* pathname, enum file_type type);
 int vfs_lseek64(struct file* file, long offset, int whence);
 
 #endif

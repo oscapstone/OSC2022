@@ -4,7 +4,7 @@
 #include <tmpfs.h>
 #include <uart.h>
 #include <cpio.h>
-#include <uartfs.h>
+#include <dev_ops.h>
 
 char *global_dir;
 Dentry *global_dentry;
@@ -13,6 +13,8 @@ Mount *rootfs;
 FileSystem **fs_pool;
 
 extern file_info **cpio_file_info_list;
+extern struct file_operations* uart_file_ops;
+extern struct file_operations* framebuffer_file_ops;
 
 void rootfs_init(char *fs_name){
     fs_pool = (FileSystem **)kmalloc(sizeof(FileSystem *) * MAX_FS_NUM);
@@ -47,8 +49,9 @@ void rootfs_init(char *fs_name){
 }
 
 void vfs_dev_init(){
+    dev_ops_init();
     vfs_mkdir("/dev");
-    vfs_mknod("/dev/uart");
+    vfs_mknod("/dev/uart", UART);
     File *uart_stdin = kmalloc(sizeof(File));
     File *uart_stdout = kmalloc(sizeof(File));
     File *uart_stderr = kmalloc(sizeof(File));
@@ -59,14 +62,7 @@ void vfs_dev_init(){
     global_fd_table[1] = uart_stdout;
     global_fd_table[2] = uart_stderr;
 
-    struct file_operations* uartfs_file_ops = (struct file_operations *)kmalloc(sizeof(struct file_operations));
-    uartfs_file_ops->read = uartfs_read;
-    uartfs_file_ops->write = uartfs_write;
-
-    global_fd_table[0]->f_ops = uartfs_file_ops;
-    global_fd_table[1]->f_ops = uartfs_file_ops;
-    global_fd_table[2]->f_ops = uartfs_file_ops;
-    vfs_mknod("/dev/framebuffer");
+    vfs_mknod("/dev/framebuffer", FRAME_BUFFER);
 }
 
 void vfs_initramfs_init(){
@@ -86,23 +82,6 @@ void vfs_initramfs_init(){
             vfs_open(name, O_CREAT, &file);
             vfs_write(file, info->data, info->datasize);
             vfs_close(file);
-
-            // file = NULL;
-            // vfs_open(name, 0, &file);
-            // size_t thesize = 0;
-            // char buf[500];
-            // while(1){
-            //     memset(buf, 0, 500);
-            //     int read_size = vfs_read(file, buf, 499);
-            //         // print_string(ITOA, "read_size: ", read_size, 1);
-            //     if(read_size <= 0){
-            //         break;
-            //     } 
-            //     thesize += read_size;
-            //     uart_puts(buf);
-            // }
-            // // vfs_write(file, info->data, info->datasize);
-            // vfs_close(file);
         }
     }
     /* set the filesystem to read only */
@@ -255,7 +234,7 @@ int vfs_open(const char* pathname, int flags, struct file** target_file) {
     return -1;
 }
 
-int vfs_mknod(const char *pathname){
+int vfs_mknod(const char *pathname, enum file_type filetype){
     if(pathname == NULL) return -1;
     uart_puts("[*] vfs_mknod: ");
     uart_puts((char *)pathname);
@@ -281,6 +260,19 @@ int vfs_mknod(const char *pathname){
     uart_puts("[*] Created file: ");
     uart_puts(target_vnode->dentry->name);
     uart_puts("\n");
+
+    /* set the file type */
+    switch (filetype)
+    {
+    case UART:
+        target_vnode->f_ops = uart_file_ops;
+        break;
+    case FRAME_BUFFER:
+        target_vnode->f_ops = framebuffer_file_ops;
+        break;
+    default:
+        break;
+    }
 
     return 0;
 }
@@ -559,8 +551,8 @@ int vfs_write(struct file* file, const void* buf, size_t len) {
         uart_puts("[*] Write: Cannot write to a read-only filesystem\n");
         return -2;
     } 
-    uart_puts("[*] vfs_write | ");
-    print_string(UITOA, "len : ", len, 1);
+    // uart_puts("[*] vfs_write | ");
+    // print_string(UITOA, "len : ", len, 1);
     return file->f_ops->write(file, buf, len);
 }
 
@@ -569,8 +561,8 @@ int vfs_read(struct file* file, void* buf, size_t len) {
     // 2. block if nothing to read for FIFO type
     // 2. return read size or error code if an error occurs.
     if(file == NULL) return -1;
-    uart_puts("[*] vfs_read | ");
-    print_string(UITOA, "len : ", len, 1);
+    // uart_puts("[*] vfs_read | ");
+    // print_string(UITOA, "len : ", len, 1);
     return file->f_ops->read(file, buf, len);
 }
 

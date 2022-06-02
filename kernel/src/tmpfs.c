@@ -59,6 +59,8 @@ void tmpfs_set_ops(){
 }
 
 int tmpfs_write(struct file* file, const void* buf, size_t len){
+    uart_puts("[*] tmpfs_write | ");
+    print_string(UITOA, "len : ", len, 1);
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
     char *src = (char *)buf;
     size_t write_len = len;
@@ -124,6 +126,8 @@ DONE:
 }
 
 int tmpfs_read(struct file* file, void* buf, size_t len){
+    uart_puts("[*] tmpfs_read | ");
+    print_string(UITOA, "len : ", len, 1);
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
     char *dest = (char *)buf;
     size_t read_len = len;
