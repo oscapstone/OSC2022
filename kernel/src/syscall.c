@@ -179,26 +179,32 @@ void *vfs_load_program(const char *pathname, unsigned long *size){
     TmpfsInode *inode_head = (TmpfsInode *)file->vnode->internal;
     void *thread_code_addr = kmalloc(inode_head->size);
     if(thread_code_addr == NULL) return NULL;
-    
-    /* read the inode data */
-    size_t offset = 0;
-    char buf[MAX_SIZE];
-    int read_size;
-    while(1){
-        read_size = vfs_read(file, buf, MAX_SIZE);
-        if(read_size <= 0){
-            break;
-        } 
-        memcpy(thread_code_addr + offset, buf, read_size);
-        offset += read_size;
-    }
+    int read_size = vfs_read(file, thread_code_addr, inode_head->size);
     if(read_size < 0){
         kfree(thread_code_addr);
         thread_code_addr = NULL;
         uart_puts("[x] vfs_load_program: load program error\n");
         return NULL;
-    } 
-    print_string(UITOA, "[*] exec file size: ", inode_head->size, 1);
+    }
+    
+    /* read the inode data */
+    // size_t offset = 0;
+    // char buf[MAX_SIZE];
+    // int read_size;
+    // while(1){
+    //     read_size = vfs_read(file, buf, MAX_SIZE);
+    //     if(read_size <= 0){
+    //         break;
+    //     } 
+    //     memcpy(thread_code_addr + offset, buf, read_size);
+    //     offset += read_size;
+    // }
+    // if(read_size < 0){
+    //     kfree(thread_code_addr);
+    //     thread_code_addr = NULL;
+    //     uart_puts("[x] vfs_load_program: load program error\n");
+    //     return NULL;
+    // } 
     *size = inode_head->size;
     vfs_close(file);
     return thread_code_addr;

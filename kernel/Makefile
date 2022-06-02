@@ -17,7 +17,7 @@ ALLOFILES = $(OFILES) $(BOOTOFILES) $(OFILES_ASM)
 
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 
-all: clean kernel8.img run-display
+all: clean kernel8.img run
 
 $(BUILD_DIR)/%.o: $(BOOT_DIR)/%.S
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -g 

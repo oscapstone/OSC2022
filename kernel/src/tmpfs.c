@@ -70,6 +70,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len){
     list_for_each(pos, &inode_head->list){
         TmpfsInode *block = (TmpfsInode *)pos;
         if(file->f_pos >= block->idx * MAX_DATA_LEN){
+            inode_head->size += MAX_DATA_LEN;
             continue;
         }
 
