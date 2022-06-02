@@ -4,6 +4,7 @@
 #include <tmpfs.h>
 #include <uart.h>
 #include <cpio.h>
+#include <uartfs.h>
 
 char *global_dir;
 Dentry *global_dentry;
@@ -57,6 +58,14 @@ void vfs_dev_init(){
     global_fd_table[0] = uart_stdin;
     global_fd_table[1] = uart_stdout;
     global_fd_table[2] = uart_stderr;
+
+    struct file_operations* uartfs_file_ops = (struct file_operations *)kmalloc(sizeof(struct file_operations));
+    uartfs_file_ops->read = uartfs_read;
+    uartfs_file_ops->write = uartfs_write;
+
+    global_fd_table[0]->f_ops = uartfs_file_ops;
+    global_fd_table[1]->f_ops = uartfs_file_ops;
+    global_fd_table[2]->f_ops = uartfs_file_ops;
     vfs_mknod("/dev/framebuffer");
 }
 
