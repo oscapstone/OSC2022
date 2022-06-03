@@ -74,9 +74,9 @@ int tmpfs_read(struct file* file, void* buf, size_t len)
     writes_uart_debug("[*]Reading ",FALSE);
     writes_uart_debug(inode->name,FALSE);
     writes_uart_debug(" ,len ",FALSE);
-    busy_wait_writeint(len,FALSE);
+    // busy_wait_writeint(len,FALSE);
     writes_uart_debug(" in pos ",FALSE);
-    busy_wait_writeint(file->f_pos,TRUE);
+    // busy_wait_writeint(file->f_pos,TRUE);
     
     for(pos = file->f_pos,i=0;pos<inode->size && pos<file->f_pos+len;pos++,i++){
         memcpy((char*)(buf+i),get_pos_block_addr(pos,inode),1);
@@ -101,7 +101,7 @@ int tmpfs_write(struct file* file, const void* buf, size_t len)
     writes_uart_debug(inode->name,FALSE);
     // writes_uart_debug(buf,FALSE);
     writes_uart_debug(", len:",FALSE);
-    busy_wait_writeint(len,TRUE);
+    // busy_wait_writeint(len,TRUE);
     if(strcmp(inode->name,"uart")==0 && strcmp(inode->parent->name,"dev")==0){
         writes_n_uart((char*)buf,len);
     }

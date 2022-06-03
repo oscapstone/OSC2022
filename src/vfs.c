@@ -461,9 +461,9 @@ void vfs_initramfs()
     }
     cnh = next_header;
   }
-  vfs_ls();
+  // vfs_ls();
   vfs_chdir("/");
-  vfs_ls();
+  // vfs_ls();
 }
 int vfs_stdin(struct file* file, void* buf, size_t len){
   int i;

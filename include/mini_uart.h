@@ -69,13 +69,13 @@ int is_empty_read();
 #ifndef _DEBUG_UART_
 #define _DEBUG_UART_
 static inline void writes_uart_debug(char* s, bool newline){
-        while(*s){
-        if(*s=='\n')
-            busy_wait_writec('\r');
-        busy_wait_writec(*s++);
-    }
-    if(newline)
-        busy_wait_writes("\r\n",FALSE);
+    //     while(*s){
+    //     if(*s=='\n')
+    //         busy_wait_writec('\r');
+    //     busy_wait_writec(*s++);
+    // }
+    // if(newline)
+    //     busy_wait_writes("\r\n",FALSE);
 }
 #endif
 
