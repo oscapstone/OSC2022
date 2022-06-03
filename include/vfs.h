@@ -72,7 +72,7 @@ void vfs_initramfs();
 void vfs_uart();
 void vfs_framebuffer();
 int vfs_stdin(struct file* file, void* buf, size_t len);
-int vfs_stdout(struct file* file, void* buf, size_t len);
+int vfs_stdout(struct file* file,const void* buf, size_t len);
 int open_framebuf(struct vnode* file_node, struct file** target);
 int write_framebuf(struct file* file, const void* buf, size_t len);
 

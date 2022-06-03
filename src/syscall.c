@@ -188,7 +188,7 @@ int sys_open(trap_frame* tf,const char *pathname, int flags)
     int res = vfs_open(pathname,flags,&target);
     
     int i=0;
-    if(res == lastCompNotFound && flags==O_CREAT || res==sucessMsg)
+    if((res == lastCompNotFound && flags==O_CREAT) || res==sucessMsg)
     {
         for(i=3;i<20;i++){
             if(get_current()->fd_table[i]==nullptr){

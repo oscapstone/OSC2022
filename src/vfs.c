@@ -272,18 +272,18 @@ int vfs_lookup(const char* pathname, struct vnode** target) {
   if(pathname[0]=='/')
   {
     vnode_itr = rootfs->root;//rootfs->root;
-    if(strlen(pathname)==1){
+    if(strlen((char*)pathname)==1){
       *target = vnode_itr;
       return sucessMsg;
     }
   }
-  else if(strlen(pathname)>=2 && strncmp(pathname,"..",2)==0){
+  else if(strlen((char*)pathname)>=2 && strncmp((char*)pathname,"..",2)==0){
     vnode_itr = ((struct tmpfs_inode*)(get_current()->pwd->internal))->parent->vnode;
   }
   else
   {
     vnode_itr = get_current()->pwd;
-    if(strlen(pathname)==1 && pathname[0]=='.'){
+    if(strlen((char*)pathname)==1 && pathname[0]=='.'){
       *target = vnode_itr;
       return sucessMsg;
     }
@@ -369,9 +369,9 @@ void vfs_ls()
 int vfs_mount(const char* target, const char* filesystem)
 {
   writes_uart_debug("[*]Mount ",FALSE);
-  writes_uart_debug(filesystem,FALSE);
+  writes_uart_debug((char*)filesystem,FALSE);
   writes_uart_debug(" to target ",FALSE);
-  writes_uart_debug(target,TRUE);
+  writes_uart_debug((char*)target,TRUE);
   struct vnode* mount_vnode;
   struct mount* mount_point;
   int res = vfs_lookup(target,&mount_vnode);
@@ -430,7 +430,6 @@ void vfs_initramfs()
   unsigned long filesize;
   vfs_chdir("/initramfs");
   while(1){
-    struct vnode* new_node;
     if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0)
         break;
     writes_n_uart(filename,parse_hex_str(cnh->c_namesize,sizeof(cnh->c_namesize)));
@@ -455,12 +454,10 @@ void vfs_initramfs()
       res = vfs_open(filename,O_CREAT,&f);
       f->f_ops->write(f,filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
       free(f);
-      // new_node = vnode_create(vnode_itr,vnode_itr->mount,vnode_itr->v_ops,vnode_itr->f_ops,file_n);
     }
     else // folder
     {
       res = vfs_mkdir(filename);
-      // new_node = vnode_create(vnode_itr,vnode_itr->mount,vnode_itr->v_ops,vnode_itr->f_ops,dir_n);
     }
     cnh = next_header;
   }
@@ -479,14 +476,14 @@ int vfs_stdin(struct file* file, void* buf, size_t len){
   }
   return i;
 }
-int vfs_stdout(struct file* file, void* buf, size_t len)
+int vfs_stdout(struct file* file, const void* buf, size_t len)
 {
   writes_n_uart((char*)buf,len);
   return len;
 }
 void vfs_uart()
 {
-  struct file* target_file[2];
+  struct file* target_file[3];
   vfs_mkdir("/dev");
   vfs_open("/dev/uart",O_CREAT,&(target_file[0]));
   vfs_open("/dev/uart",0,&(target_file[1]));
@@ -530,7 +527,7 @@ void vfs_framebuffer()
   struct file_operations* new_fops = my_malloc(sizeof(struct file_operations));
 
   unsigned int __attribute__((aligned(16))) mbox[36];
-  unsigned int width, height, pitch, isrgb; /* dimensions and channel order */
+  // unsigned int width, height, pitch, isrgb; /* dimensions and channel order */
                        /* raw frame buffer address */
 
   mbox[0] = 35 * 4;
@@ -581,10 +578,10 @@ void vfs_framebuffer()
   // the closest supported resolution instead
   if(mailbox_call(mbox,MBOX_CH_PROP) && mbox[20] == 32 && mbox[28] != 0) {
     mbox[28] &= 0x3FFFFFFF; // convert GPU address to ARM address
-    width = mbox[5];        // get actual physical width
-    height = mbox[6];       // get actual physical height
-    pitch = mbox[33];       // get number of bytes per line
-    isrgb = mbox[24];       // get the actual channel order
+    // width = mbox[5];        // get actual physical width
+    // height = mbox[6];       // get actual physical height
+    // pitch = mbox[33];       // get number of bytes per line
+    // isrgb = mbox[24];       // get the actual channel order
     lfb = (void *)((unsigned long)mbox[28]);
     // ((struct tmpfs_inode*)(target_file->vnode->internal))->data->content = lfb;
   } else {
