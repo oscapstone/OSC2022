@@ -49,4 +49,8 @@ int sys_mount(trap_frame* tf);
 // syscall number : 17
 int sys_chdir(trap_frame* tf);
 
+long sys_lseek64(trap_frame* tf,int fd, long offset, int whence);
+
+// syscall number : 19
+int sys_ioctl(trap_frame* tf);
 #endif

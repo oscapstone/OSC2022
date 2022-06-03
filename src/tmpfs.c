@@ -222,7 +222,7 @@ int tmpfs_mkdir(struct vnode* dir_node, struct vnode** target,
 void tmpfs_ls(struct vnode* dir_node)
 {
     struct tmpfs_inode* itr;
-    if(itr->type == dir_n)
+    if(((struct tmpfs_inode*)(dir_node->internal))->type == dir_n)
         itr = (struct tmpfs_inode*)(dir_node->internal);
     else
         itr = (struct tmpfs_inode*)(dir_node->mount->root->internal);

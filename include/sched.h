@@ -44,7 +44,7 @@ typedef struct Thread_struct
     void (*run_handler)();
     cpu_context saved_context;
 
-    struct file* fd_table[10];
+    struct file* fd_table[20];
     struct vnode* pwd;
 
 }Thread_struct;

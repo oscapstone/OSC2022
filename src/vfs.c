@@ -7,6 +7,7 @@
 #include "sched.h"
 #include "syscall.h"
 #include "cpio.h"
+#include "mailbox.h"
 // extern uint32_t* cpio_addr;
 struct mount* rootfs;
 struct filesystem fs_pool[20];
@@ -92,6 +93,7 @@ void rootfs_init(char* name)
   
   vfs_initramfs();
   vfs_uart();
+  vfs_framebuffer();
   return;
 }
 
@@ -114,6 +116,7 @@ int vfs_open(const char* pathname, int flags, struct file** target) {
   // v_dir = rootfs->root;
   // int ret = rootfs->root->v_ops->lookup(v_dir,&v_node,pathname);
   int ret = vfs_lookup(pathname,&v_node);
+  
   // v_node = target_file->vnode;
   // 2. Create a new file handle for this vnode if found.
   if(ret == sucessMsg)
@@ -465,6 +468,22 @@ void vfs_initramfs()
   vfs_chdir("/");
   vfs_ls();
 }
+int vfs_stdin(struct file* file, void* buf, size_t len){
+  int i;
+  for (i = 0; i < len; i++)
+  {
+      while(!(*AUX_MU_LSR_REG & 0x01)){
+          asm volatile("nop");
+      }
+      ((char*)buf)[i] = (char)(*AUX_MU_IO_REG);
+  }
+  return i;
+}
+int vfs_stdout(struct file* file, void* buf, size_t len)
+{
+  writes_n_uart((char*)buf,len);
+  return len;
+}
 void vfs_uart()
 {
   struct file* target_file[2];
@@ -472,9 +491,109 @@ void vfs_uart()
   vfs_open("/dev/uart",O_CREAT,&(target_file[0]));
   vfs_open("/dev/uart",0,&(target_file[1]));
   vfs_open("/dev/uart",0,&(target_file[2]));
-  get_current()->fd_table[0] = target_file[0];
-  get_current()->fd_table[1] = target_file[1];
-  get_current()->fd_table[2] = target_file[2];
+  struct file_operations* new_fops = my_malloc(sizeof(struct file_operations));
+  new_fops->read = vfs_stdin;
+  new_fops->write = vfs_stdout;
+  target_file[0]->f_ops = new_fops;
+  target_file[1]->f_ops = new_fops;
+  target_file[2]->f_ops = new_fops;
+  get_current()->fd_table[0] = target_file[0]; // stdin
+  get_current()->fd_table[1] = target_file[1]; // stdout
+  get_current()->fd_table[2] = target_file[2]; // stderr
+  
+  return;
+}
+unsigned char *lfb;  
+int open_framebuf(struct vnode* file_node, struct file** target){
 
+  return 3;
+}
+int write_framebuf(struct file* file, const void* buf, size_t len)
+{
+  // writes_uart_debug("WR",TRUE);
+  // char *lfb = ((struct tmpfs_inode*)(file->vnode->internal))->data->content;
+  memcpy((char*)(lfb + file->f_pos),(char*)buf,4);
+  file->f_pos += len;
+  return len;
+}
+
+
+#define MBOX_REQUEST 0
+#define MBOX_CH_PROP 8
+#define MBOX_TAG_LAST 0
+
+void vfs_framebuffer()
+{
+  struct file* target_file;
+  vfs_mkdir("/dev");
+  vfs_open("/dev/framebuffer",O_CREAT,&target_file);
+  struct file_operations* new_fops = my_malloc(sizeof(struct file_operations));
+
+  unsigned int __attribute__((aligned(16))) mbox[36];
+  unsigned int width, height, pitch, isrgb; /* dimensions and channel order */
+                       /* raw frame buffer address */
+
+  mbox[0] = 35 * 4;
+  mbox[1] = MBOX_REQUEST;
+
+  mbox[2] = 0x48003; // set phy wh
+  mbox[3] = 8;
+  mbox[4] = 8;
+  mbox[5] = 1024; // FrameBufferInfo.width
+  mbox[6] = 768;  // FrameBufferInfo.height
+
+  mbox[7] = 0x48004; // set virt wh
+  mbox[8] = 8;
+  mbox[9] = 8;
+  mbox[10] = 1024; // FrameBufferInfo.virtual_width
+  mbox[11] = 768;  // FrameBufferInfo.virtual_height
+
+  mbox[12] = 0x48009; // set virt offset
+  mbox[13] = 8;
+  mbox[14] = 8;
+  mbox[15] = 0; // FrameBufferInfo.x_offset
+  mbox[16] = 0; // FrameBufferInfo.y.offset
+
+  mbox[17] = 0x48005; // set depth
+  mbox[18] = 4;
+  mbox[19] = 4;
+  mbox[20] = 32; // FrameBufferInfo.depth
+
+  mbox[21] = 0x48006; // set pixel order
+  mbox[22] = 4;
+  mbox[23] = 4;
+  mbox[24] = 1; // RGB, not BGR preferably
+
+  mbox[25] = 0x40001; // get framebuffer, gets alignment on request
+  mbox[26] = 8;
+  mbox[27] = 8;
+  mbox[28] = 4096; // FrameBufferInfo.pointer
+  mbox[29] = 0;    // FrameBufferInfo.size
+
+  mbox[30] = 0x40008; // get pitch
+  mbox[31] = 4;
+  mbox[32] = 4;
+  mbox[33] = 0; // FrameBufferInfo.pitch
+
+  mbox[34] = MBOX_TAG_LAST;
+
+  // this might not return exactly what we asked for, could be
+  // the closest supported resolution instead
+  if(mailbox_call(mbox,MBOX_CH_PROP) && mbox[20] == 32 && mbox[28] != 0) {
+    mbox[28] &= 0x3FFFFFFF; // convert GPU address to ARM address
+    width = mbox[5];        // get actual physical width
+    height = mbox[6];       // get actual physical height
+    pitch = mbox[33];       // get number of bytes per line
+    isrgb = mbox[24];       // get the actual channel order
+    lfb = (void *)((unsigned long)mbox[28]);
+    // ((struct tmpfs_inode*)(target_file->vnode->internal))->data->content = lfb;
+  } else {
+    writes_uart_debug("Unable to set screen resolution to 1024x768x32",TRUE);
+  }
+  new_fops->open = open_framebuf;
+  new_fops->write = write_framebuf;
+  target_file->f_ops = new_fops;
+  get_current()->fd_table[3] = target_file; // stderr
+  // free(target_file);
   return;
 }

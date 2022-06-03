@@ -39,7 +39,7 @@ int thread_create(void (*f)()){
     thread_pool[i].signal_ustack = nullptr;
     thread_pool[i].run_handler = nullptr;
 
-    for(int j=0;j<10;j++){
+    for(int j=0;j<20;j++){
         thread_pool[i].fd_table[j]=nullptr;
     }
 

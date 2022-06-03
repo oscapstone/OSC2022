@@ -83,11 +83,11 @@ void exception_entry(trap_frame* tf){
             break;
         case 13:
             // writes_uart_debug("sys write",TRUE);
-            sys_write(tf,tf->x0,tf->x1,tf->x2);
+            sys_write(tf,(int)(tf->x0),(const void*)(tf->x1),(unsigned long)(tf->x2));
             break;
         case 14:
             // writes_uart_debug("sys read",TRUE);
-            sys_read(tf,tf->x0,tf->x1,tf->x2);
+            sys_read(tf,(int)(tf->x0),(void*)(tf->x1),(unsigned long)(tf->x2));
             break;
         case 15:
             sys_mkdir(tf,(const char*)(tf->x0),0);
@@ -97,6 +97,12 @@ void exception_entry(trap_frame* tf){
             break;
         case 17:
             sys_chdir(tf);
+            break;
+        case 18:
+            sys_lseek64(tf,(int)(tf->x0),(int)(tf->x1),(int)(tf->x2));
+            break;
+        case 19:
+            sys_ioctl(tf);
             break;
         case 21:
             sigreturn();
