@@ -6,6 +6,7 @@
 #include "timer.h"
 #include "scheduler.h"
 #include "cpio.h"
+#include "vfs.h"
 
 void main(char * arg){
   dtb_place = arg;
@@ -15,5 +16,6 @@ void main(char * arg){
   fdt_traverse(initramfs_callback);
   page_init();
   thread_init();
+  vfs_mount("/", "tmpfs");
   shell();
 }

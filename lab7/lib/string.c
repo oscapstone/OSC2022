@@ -1,6 +1,15 @@
 #include "printf.h"
 #include "string.h"
 
+
+void memcpy(void* dest, const void* src, size_t len){
+  char* dest_ = (char*)dest;
+  char* src_ = (char*)src;
+  for(size_t i=0; i<len; i++)
+    *(dest_++) = *(src_++);
+    // dest_[i] = src_[i];
+}
+
 int strlen(char *s){
   int i = 0;
   while(s[i] != '\0'){
@@ -25,6 +34,14 @@ void append_str(char *s, char ch){
 void pop_str(char *s){
   int i = strlen(s);
   s[i-1] = 0;
+}
+
+char* strcpy(char* dest, const char* src){
+  char *tmp = dest;
+  while(*src)
+    *dest++ = *src++;
+  *dest='\0';
+  return tmp;
 }
 
 int strcmp(const char *X, const char *Y){

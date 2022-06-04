@@ -6,6 +6,8 @@
 #include "cpio.h"
 #include "mailbox.h"
 #include "system.h"
+#include "vfs.h"
+#include "malloc.h"
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
@@ -136,6 +138,27 @@ void sync_router(uint64_t x0, uint64_t x1){
     remove_task(frame->x0);
     task *handler_task = task_create(NULL, USER);
     handler_task->target_func = (uint64_t)signal_handler_wrapper;
+  }else if(frame->x8 == 11){
+    printf("[INFO][syscall] open(pathname: %s, flags: %d)\n\r", frame->x0, frame->x1);
+    file *open_file = malloc(sizeof(file));
+    vfs_open((const char *)frame->x0, frame->x1, &open_file);
+  }else if(frame->x8 == 12){
+    printf("[INFO][syscall] close(fd: %d)\n\r", frame->x0);
+    vfs_close((file *)frame->x0);
+  }else if(frame->x8 == 13){
+    printf("[INFO][syscall] write(fd: %d, *buf: %s, count: %d)\n\r", frame->x0, frame->x1, frame->x2);
+    vfs_write((file *)frame->x0, (const void *)frame->x1, frame->x2);
+  }else if(frame->x8 == 14){
+    printf("[INFO][syscall] read(fd: %d, *buf: %s, count: %d)\n\r", frame->x0, frame->x1, frame->x2);
+    vfs_read((file *)frame->x0, (void *)frame->x1, frame->x2);
+  }else if(frame->x8 == 15){
+    printf("[INFO][syscall] mkdir(*pathname: %s, mode)\n\r", frame->x0, frame->x1);
+    vfs_mkdir((const char *)frame->x0);
+  }else if(frame->x8 == 16){
+    printf("[INFO][syscall] mount(*src: %s, *target: %s, *filesystem: %s, flags: %d, *data: %s)\n\r", frame->x0, frame->x1, frame->x2, frame->x3, frame->x4);
+    vfs_mount((const char *)frame->x1, (const char *)frame->x2);
+  }else if(frame->x8 == 17){
+    printf("[INFO][syscall] chdir(*path: %d)\n\r", frame->x0);
   }
 }
 
