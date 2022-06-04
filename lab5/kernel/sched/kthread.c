@@ -3,7 +3,7 @@
 LIST_HEAD(kthread_zombies);
 
 void kthread_destroy(struct task_struct* task){
-    LOG("kthread_destroy %l", task->thread_info.pid);
+//    LOG("kthread_destroy %l", task->thread_info.pid);
     free_pages(task->stack, 1);
     kfree(task);
 }
