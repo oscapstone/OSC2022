@@ -19,8 +19,8 @@ struct task_struct* pick_next_task_from_rq(){
 void schedule(){
     struct task_struct* current, *next;
     // prevent running scheduler in softirq
-    local_irq_disable();
     if(!in_softirq() && need_sched){
+        local_irq_disable();
         need_sched = 0;
        
         // add current task to schdule list
@@ -33,8 +33,8 @@ void schedule(){
         next = pick_next_task_from_rq();
         list_del(&next->sched_info.sched_list);
         switch_to(current, next);
+        local_irq_enable();
     }
-    local_irq_enable();
 }
 
 void update_sched_info(struct task_struct* task){
