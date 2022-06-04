@@ -6,6 +6,11 @@
 #include "kernel/sched/sched.h"
 #include "kernel/sched/kthread.h"
 
+void kthread_simple_shell(){
+    local_irq_enable();
+    simple_shell();
+}
+
 void kernel_main_thread(void){
     INFO("create kthread kthread_idle");
     kthread_create(kthread_idle);
@@ -14,9 +19,10 @@ void kernel_main_thread(void){
         kthread_create(kthread_test);
     }
     INFO("create kthread simple_shell");
-    kthread_create(simple_shell);
+    kthread_create(kthread_simple_shell);
     kthread_exit();
 }
+
 void kernel_main(void *dtb){
     kernel_init(dtb);
     DEBUG_KERNEL_START();

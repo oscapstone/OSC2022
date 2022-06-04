@@ -179,12 +179,16 @@ size_t mini_uart_get_tx_len(){
 
 void mini_uart_aio_write(uint8_t c){
     uint8_t b[1];
+    uint64_t daif;
+    
+    daif = local_irq_disable_save();
+    //write_hex(daif);
+    //write_str("\r\n");
     while(ring_buf_is_full(tx_rbuf));
     b[0] = c;
 
-    local_irq_disable();
     ring_buf_write(tx_rbuf, b, 1);
-    local_irq_enable();
+    local_irq_restore(daif);
 
     enable_mini_uart_irq(TX);
 }

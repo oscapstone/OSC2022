@@ -25,6 +25,7 @@ void local_irq_restore(uint64_t daif) {
         ::"r"(daif)
     );
 }
+
 uint32_t get_currentEL(){
     uint64_t curEL = 0;
     asm volatile("mrs %0, CurrentEL"

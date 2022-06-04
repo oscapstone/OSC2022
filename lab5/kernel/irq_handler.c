@@ -121,4 +121,6 @@ void irq_handler(){
     }
 }
 
-
+void err_handler(void){
+    write_str("In err_handler\r\n");
+}

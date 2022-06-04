@@ -1,9 +1,8 @@
 #include "kernel/sched/sched.h"
 
+uint64_t pid_count = 0;
+int need_sched = 0;
 LIST_HEAD(rq);
-int need_sched = 0; 
-static pid_t pid_count = 0;
-
 void add_task_to_rq(struct task_struct *task){
     task->thread_info.state = TASK_RUNNING;
 
@@ -18,9 +17,12 @@ struct task_struct* pick_next_task_from_rq(){
 
 void schedule(){
     struct task_struct* current, *next;
+    uint64_t daif;
     // prevent running scheduler in softirq
-    if(!in_softirq() && need_sched){
-        local_irq_disable();
+    if(in_softirq()) return;
+
+    if(need_sched){
+        daif = local_irq_disable_save();
         need_sched = 0;
        
         // add current task to schdule list
@@ -32,8 +34,9 @@ void schedule(){
         // context switch
         next = pick_next_task_from_rq();
         list_del(&next->sched_info.sched_list);
+
         switch_to(current, next);
-        local_irq_enable();
+        local_irq_restore(daif);
     }
 }
 

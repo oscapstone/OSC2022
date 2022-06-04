@@ -87,7 +87,7 @@ el0_irq_handler:
 invalid_handler:
 el1_sync_handler:
     save_all
-    nop
+    bl err_handler
     load_all
     eret
 
