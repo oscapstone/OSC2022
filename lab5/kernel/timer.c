@@ -72,7 +72,7 @@ void core_timer_irq_handler(){
     set_CNTP_TVAL_EL0(freq / HZ);
 
     jiffies += 1;
-    if(current) update_sched_info(current);
+//    if(current) update_sched_info(current);
 }
 
 uint64_t inline get_jiffies(){
