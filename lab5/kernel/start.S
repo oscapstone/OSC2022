@@ -29,11 +29,18 @@ end:
 // modify vbar_el1 before changing exception level to 1
     adr x0, EL1_exception_vector_table
     msr vbar_el1, x0
+
 // from el2 to el1
     bl from_el2_to_el1
 
+// set tpidr_el1 to NULL
+    mov x1, 0
+    msr tpidr_el1, x1
+
+// kernel_main(_dtb)
     adr     x1, _dtb
     ldr     x0, [x1]
+
 // jump to kernel_main
     bl      kernel_main
     b       proc_hang
