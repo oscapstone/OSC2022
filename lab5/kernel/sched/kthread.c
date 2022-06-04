@@ -32,7 +32,7 @@ void kthread_test(){
     cur = get_current();
     for(uint32_t i = 0 ; i < 10 ; i++){
         printf("%u: pid: %l\r\n",i , cur->thread_info.pid);
-        for(uint32_t j = 0 ; j < 10000000 ; j ++){
+        for(uint32_t j = 0 ; j < 100000 ; j ++){
             asm volatile("nop");
         }
     }
