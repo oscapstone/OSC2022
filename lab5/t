@@ -1,0 +1,161 @@
+sudo qemu-system-aarch64 -M raspi3b -kernel /home/xiaobye/Documents/OSDI/osc2022/lab5/build/kernel8.img -display none -serial null -serial stdio  -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
+0: [kernel_init] kernel start initialization...
+0: [mm_init] Init mm subsystem..
+0: [_create_memory_unusedmap] unused map: start = 0xedfe0dd0, end = 0x48000000
+0: [_create_memory_unusedmap] unused map: start = 0x1000, end = 0x7c000
+0: [_create_memory_unusedmap] unused map: start = 0x1000, end = 0x7c000
+0: [_create_memory_unusedmap] unused map: start = 0x1000, end = 0x7c000
+0: [_create_memory_unusedmap] unused map: start = 0x847000, end = 0x8000000
+0: [_create_memory_unusedmap] unused map: start = 0x8001000, end = 0x8200000
+0: [mm_init] Memory node: memory@0, size: 0x3c000000
+0: [mm_init] Memory reserved size: 0x7e2000
+0: [mm_init] Memory unused size  : 0x3b81e000
+0: [buddy_init] Initialize buddy system...
+6: [print_buddy_statistics] free page's count of order 0 = 4
+6: [print_buddy_statistics] free page's count of order 1 = 3
+6: [print_buddy_statistics] free page's count of order 2 = 3
+6: [print_buddy_statistics] free page's count of order 3 = 5
+6: [print_buddy_statistics] free page's count of order 4 = 4
+6: [print_buddy_statistics] free page's count of order 5 = 5
+6: [print_buddy_statistics] free page's count of order 6 = 3804
+6: [print_buddy_statistics] Total free page #: 243742
+6: [initrdfs_init] Initrd filesystem start address: 0x8000000
+6: [kernel_main] create kernel main thread
+7: [kernel_main_thread] create kthread kthread_idle
+7: [kernel_main_thread] create kthread kthread_test
+70: pid: 2
+: [kernel_main_thread] create kthread kthread_test
+80: pid: 3
+: [kernel_main_thread] create kthread kthread_test
+10: pid: 4
+0: [kernel_main_thread] create kthread kthread_test
+11: pid: 2
+1: pid: 3
+0: pid: 5
+3: [kernel_main_thread] create kthread kthread_test
+11: pid: 4
+0: pid: 6
+7: [kernel_main_thread] create kthread kthread_test
+20: pid: 7
+2: [kernel_main_thread] create kthread kthread_test
+22: pid: 2
+1: pid: 5
+0: pid: 8
+8: [kernel_main_thread] create kthread kthread_test
+32: pid: 3
+2: pid: 4
+1: pid: 6
+1: pid: 7
+0: pid: 9
+5: [kernel_main_thread] create kthread kthread_test
+420: pid: 10
+3: [kernel_main_thread] create kthread kthread_test
+53: pid: 3
+: pid: 5
+1: pid: 8
+0: pid: 11
+2: [kernel_main_thread] create kthread simple_shell
+3: pid: 2
+3: pid: 4
+2: pid: 6
+1: pid: 9
+⠀⠀⠀⠀⠀⠀⢀⡤⣢⠟⢁⣴⣾⡿⠋⢉⠱⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠑⠒⠦⢄⣀⣴⠟⢡⣠⣼⣿⡿⢳⣄⡀⠀⠀
+⠀⠀⠀⠀⠀⢀⣾⡿⠃⣠⣿⣿⠿⠂⠀⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢲⡿⠋⢰⣾⣿⣿⡟⠀⠀⠈⠙⢆⠀
+⠀⠀⠀⠀⠀⡜⠻⣷⣾⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣁⣰⢸⣿⢻⠟⢀⠀⠀⠀⠀⠀⠁
+⠀⠀⠀⠀⠰⠀⠀⢙⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣯⡀⠀⢃⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢠⠎⠀⠀⠀⠀⠀⠀⣼⠀⢀⠀⠀⠀⠀⠀⢠⣷⡀⠀⠀⠀⠀⡀⠄⠀⠀⠀⠀⢻⣿⣿⣿⣧⠑⠀⣢⡄⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⡰⠃⢀⠄⠀⠀⠀⠀⣼⡿⡆⢸⠀⠀⠀⠀⠀⠈⣿⢷⡄⠀⠀⠀⠱⡀⠰⡀⠀⠀⠈⢿⣿⣿⣿⣧⠀⢸⣧⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠡⢢⠋⠀⠀⠀⠀⣼⡟⠀⣇⢸⡆⠀⠀⠀⡄⠀⢿⠀⢳⡄⠀⠀⠀⢳⠀⢳⠀⠀⠀⠈⣿⣿⣿⣿⣷⣘⡟⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⢀⠇⠀⠀⠀⠀⣸⡿⢤⠤⠸⡸⣷⠀⠀⠀⢱⠀⣾⡤⠤⢿⡤⢀⡀⠀⢧⠘⡆⠀⠀⠀⢸⡟⠻⢿⠟⣿⣷⡄⠀⠀⠀
+⠀⠀⠀⠀⠀⡞⠀⠀⠀⠀⢰⡿⢠⠇⠀⠀⢳⣿⢇⠀⠀⠈⡇⣿⡇⠀⠀⠻⣄⠀⠀⠘⡆⡇⠀⠀⠀⠀⣇⢀⡏⠀⣿⡿⣄⠀⠀⠀
+⠀⠀⠀⠀⢰⠁⠀⠀⠀⠀⣿⠁⣄⣀⣀⡀⠈⢿⡜⡄⠀⠀⢹⣿⡇⠐⢄⣀⠘⢧⡀⠀⠹⣿⠀⠀⠀⠀⢸⣿⣷⣶⣿⡇⢹⡇⠀⠀
+⠀⠀⠀⠀⠾⠀⠀⠀⠀⢸⣧⣾⠟⢉⣽⣿⣦⠈⢷⡘⣆⠀⠸⡟⣷⣶⠟⠛⢻⣷⣦⣀⠀⢻⠀⠀⠀⠀⢸⣏⣩⣼⣿⡇⠈⣷⠀⠀
+⠀⠀⠀⠃⠀⠀⠀⠀⠀⣿⡿⠁⠀⣠⣾⣿⣿⠀⠈⢿⠺⡆⠀⣧⢸⠀⠀⢀⣹⣿⣿⣿⣷⣼⣤⠀⠀⠀⢸⣿⣿⣿⣿⠀⠀⣿⠀⠀
+⠀⠀⣠⠄⣀⠀⠀⠀⢠⣿⡇⠀⠀⢻⢻⣟⢿⠀⠀⠈⠣⠈⠓⠾⠀⠀⠀⣿⣿⢿⣿⣿⠘⡇⡞⠀⠀⢠⣾⣿⣿⣿⡏⠀⠀⢹⠀⠀
+⠀⠀⠛⠀⣿⠀⠀⠀⢸⣿⣿⡀⠀⠈⠃⠐⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣄⣐⣠⠏⢠⣿⠁⠀⠀⢸⣿⣿⣿⣿⠀⠀⠀⢸⠀⠀
+⠀⠀⠀⠀⢹⡆⠰⡀⢸⡟⠩⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⠃⠀⠀⠀⢸⣿⣿⣿⠟⠀⠀⠀⠘⠀⠀
+⠀⠀⠀⠀⢎⣿⡀⢱⢞⣁⣀⡿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠞⡏⡼⠀⠀⠀⣾⣿⠋⠁⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠈⠿⠻⡇⠀⠀⠒⠢⢵⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀3: pid: 5
+2: pid: 7
+1: pid: 10
+1: pid: 11
+⠀⠀⠀⢰⣽⠁⠀⠀⢠⡿⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⡀⠀⠀⠀⠀⠀⠀⡟⣦⡀⠀⠀⠀⠈⠓⢄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⢿⡇⠀⠀⡄⣸⣇⣼⣀⣀⣀⠀⠀⠀⠀⠀⠀
+⡀⠀⠀⠀⠀⠀⢰⠇⣿⢸⣦⡀⠀⠀⠀⠀⠈⠲⣄⡀⠀⠀⠀⠀⠀⣀⡤⠒⢉⡴⠃⣸⠀⠀⢰⣿⣿⣿⠃⡤⠊⠁⠉⠑⢄⠀⠀⠀
+⡇⠀⠀⠀⠀⠀⢸⠀⣿⣾⣿⢿⠲⣄⠀⠀⠀⠀⠘⠟⣦⣤⣴⡒⠉⢀⡠⠖⠉⠀⣠⠃⠀⣠⣿⣿⡿⠁⠊⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢸⠀⣿⠛⢿⠈⢢⠏⠀⠀⠀⠀⠀⣰⣏⣀⣿⠗⠊⠁⠀⠀⣠⣾⠃⢀⡴⠿⠛⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢸⢀⠇⠀⠈⢠⠃⠀⠀⠀⠀⠀⢰⠟⠁⠀⢹⢇⠀⣀⠴⠊⡱⠥⠔⠋⠀⠀⢰⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢸⡟⠀⢀⡴⠁⠀⠀⠀⠀⠀⢠⡟⠀⠀⣰⢿⡘⣾⡅⠀⠀⠀⠀⢀⠄⠀⢠⠏⢀⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢸⠀⣰⣿⠀⠀⠀⠀⠀⠀⢠⣿⠃⢀⡾⡇⠘⠻⡿⢷⡀⠀⠀⠒⠁⠀⢠⠏⢀⠏⣸⠃⢻⠏⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣧⣾⣹⣿⠀⠀⠀⠀⠀⢠⠏⢉⠀⡞⣰⡇⠀⣴⣥⠞⢷⠀⠀⠀⠀⣠⠎⠀⠸⣶⠋⣠⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
+# 4: pid: 2
+4: pid: 3
+4: pid: 4
+3: pid: 6
+2: pid: 8
+4: pid: 5
+3: pid: 2: pid: 9
+2: pid: 10
+2: pid: 11
+5: pid: 2
+7
+5: pid: 3
+5: pid: 4
+4: pid: 6
+3: pid: 10
+5: pid: 5
+3: pid: 8
+3: pid: 9
+3: pid: 11
+6: pid: 2
+4: pid: 7
+6: pid: 4
+5: pid: 6
+4: pid: 9
+4: pid: 10
+6: pid: 3
+6: pid: 5
+4: pid: 8
+7: pid: 2
+5: pid: 7
+4: pid: 11
+7: pid: 4
+5: pid: 9
+7: pid: 3
+7: pid: 5
+6: pid: 6
+5: pid: 8
+5: pid: 10
+8: pid: 2
+5: pid: 11
+6: pid: 9
+8: pid: 3
+8: pid: 4
+7: pid: 6
+6: pid: 7
+9: pid: 2
+8: pid: 5
+6: pid: 8
+6: pid: 10
+6: pid: 11
+7: pid: 7
+9: pid: 3
+9: pid: 4
+7: pid: 9
+9: pid: 5
+8: pid: 6
+7: pid: 8
+7: pid: 10
+7: pid: 11
+8: pid: 7
+8: pid: 9
+9: pid: 6
+8: pid: 8
+8: pid: 10
+8: pid: 11
+9: pid: 7
+9: pid: 9
+9: pid: 8
+9: pid: 10
+9: pid: 11

@@ -177,16 +177,21 @@ size_t mini_uart_get_tx_len(){
     return ring_buf_get_len(tx_rbuf);
 }
 
-void mini_uart_aio_write(uint8_t c){
+uint8_t mini_uart_aio_write(uint8_t c){
     uint8_t b[1];
-    while(ring_buf_is_full(tx_rbuf));
+    volatile uint64_t daif;
+    local_irq_disable();
+    if(ring_buf_is_full(tx_rbuf)) {
+        local_irq_enable();
+        return 0;
+    }
     b[0] = c;
 
-    local_irq_disable();
     ring_buf_write(tx_rbuf, b, 1);
     local_irq_enable();
 
     enable_mini_uart_irq(TX);
+    return 1;
 }
 
 ssize_t aio_write_bytes(uint8_t* buf, size_t n){

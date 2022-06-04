@@ -54,6 +54,8 @@ KOBJECTS = \
 		 $(OUTPUT)/page_alloc.o \
 		 $(OUTPUT)/mm.o \
 		 $(OUTPUT)/slab.o \
+		 $(OUTPUT)/sched.o \
+		 $(OUTPUT)/kthread.o \
 		 $(LIBS)
 
 

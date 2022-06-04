@@ -6,6 +6,7 @@
 #include "peripherals/iomapping.h"
 #include "debug/debug.h"
 #include "asm.h"
+#include "kernel/sched/sched.h"
 
 
 #define HZ 100

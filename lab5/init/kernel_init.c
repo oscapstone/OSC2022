@@ -9,7 +9,10 @@ void kernel_init(void *dtb){
     local_irq_enable();
 
     INFO("kernel start initialization...");
+
+    // memory management initialization
     mm_init(dtb); 
+
     fdt_parser(dtb, fdt_initrdfs_callback); 
     return; 
 }

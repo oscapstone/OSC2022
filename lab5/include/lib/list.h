@@ -6,7 +6,7 @@ struct list_head{
    struct list_head* next, *prev; 
 }__attribute__((packed));
 
-#define LIST_HEAD(head) struct list_header head = { &(head), &(head) }
+#define LIST_HEAD(head) struct list_head head = { &(head), &(head) }
 #define list_entry(node, type, member) container_of(node, type, member)
 #define list_first_entry(head, type, member) list_entry((head)->next, type, member)
 #define list_last_entry(head, type, member) list_entry((head)->prev, type, member)

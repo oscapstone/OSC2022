@@ -8,6 +8,8 @@
 #include "lib/simple_malloc.h"
 #include "mm/mm.h"
 #include "asm.h"
+#include "kernel/sched/sched.h"
+#include "kernel/sched/kthread.h"
 
 extern void kernel_init(void *);
 

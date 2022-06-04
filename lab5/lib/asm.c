@@ -7,6 +7,24 @@ void local_irq_disable(){
     asm volatile("msr DAIFSet, 0xf");
 }
 
+uint64_t local_irq_disable_save() {
+    uint64_t daif;
+    asm volatile(
+        "mrs %0, DAIF\t\n"
+        "msr DAIFSet, 0xf"
+        :"=&r"(daif)
+        :
+    );
+
+    return daif;
+}
+
+void local_irq_restore(uint64_t daif) {
+    asm volatile(
+        "msr DAIF, %0"
+        ::"r"(daif)
+    );
+}
 uint32_t get_currentEL(){
     uint64_t curEL = 0;
     asm volatile("mrs %0, CurrentEL"

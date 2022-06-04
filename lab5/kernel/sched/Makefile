@@ -10,23 +10,13 @@ CFLAGS ?= \
 CXXFLAGS =
 
 OUTPUT ?= .
-HEADERS ?= ../include
+HEADERS ?= ../../include
 OBJECTS = \
-		shell.o \
-		reboot.o \
-	    main.o \
-		start.o \
-		entry.o \
-		syscall_test.o \
-		syscall_table.o \
-		timer.o \
-		irq_handler.o \
+		sched.o \
+		kthread.o
 
-.PHONY: all sched
-all: $(OBJECTS) sched
-
-sched:
-	$(MAKE) -C sched OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
+.PHONY: all 
+all: $(OBJECTS)
 
 %.o : %.c 
 	$(CC) -c $^ -o $(OUTPUT)/$@ -I$(HEADERS) $(CFLAGS)

@@ -20,4 +20,5 @@ struct softirq_status{
     uint8_t in_softirq;
 };
 extern uint64_t irq_count[END_OF_LIST];
+extern uint8_t in_softirq();
 #endif
