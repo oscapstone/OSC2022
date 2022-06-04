@@ -1,6 +1,5 @@
 #ifndef _SCHED_H_
 #define _SCHED_H_
-
 #include "lib/list.h"
 #include "kernel/irq_handler.h"
 
@@ -71,4 +70,5 @@ extern void schedule();
 extern void switch_to(struct task_struct*, struct task_struct*);
 extern struct task_struct* get_current();
 extern pid_t get_pid_counter(void);
+extern void print_rq(void);
 #endif

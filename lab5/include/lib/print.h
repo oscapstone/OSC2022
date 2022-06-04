@@ -14,9 +14,7 @@ extern int32_t getchar();
 
 #define INFO(fmt, ...) \
         do{ \
-            local_irq_disable(); \
             printf("%l: [%s] " fmt "\r\n" , (int64_t)get_jiffies(), __FUNCTION__, ##__VA_ARGS__); \
-            local_irq_enable(); \
         }while(0)
         
 

@@ -10,6 +10,7 @@
 #include "kernel/timer.h"
 #include "kernel/irq_handler.h"
 #include "mm/slab.h"
+#include "kernel/sched/sched.h"
 
 void simple_shell(void);
 

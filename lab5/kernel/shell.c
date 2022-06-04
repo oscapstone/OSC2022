@@ -51,7 +51,7 @@ void simple_shell(){
                    "info        : print hardware infomation\r\n" \
                    "ls          : list files\r\n" \
                    "cat         : cat files\r\n" \
-                   "laod        : load user program\r\n" \
+                   "load        : load user program\r\n" \
                    "time        : print time after booting\r\n" \
                    "reboot      : reboot the device\r\n" \
                    "setTimeout  : set a N seconds timer task\r\n" \
@@ -67,6 +67,7 @@ void simple_shell(){
                    "              kfree <addr>\r\n" \
 
 				   "page_info   : get buddy system's statistics\r\n" \
+				   "print_rq    : print run queue\r\n" \
 
             );
 
@@ -160,6 +161,8 @@ void simple_shell(){
 			printf("Free an object\r\n");
         }else if(strcmp(token, "page_info") == 0){
 			print_buddy_statistics();
+        }else if(strcmp(token, "print_rq") == 0){
+            print_rq();
         }
     }
 }

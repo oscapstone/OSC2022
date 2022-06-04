@@ -63,12 +63,12 @@ uint64_t get_SP_ELx(uint32_t x){
     return sp;
 }
 uint64_t get_DAIF(){
-    uint64_t daif = 0;
+    uint64_t daif;
     asm volatile("mrs %0, DAIF"
                  : "=&r" (daif)
                  :
     );
-    return daif >> 6;
+    return daif;
 }
 void set_DAIF(uint64_t n){
     asm volatile("mov x0, %[n]\n\t"
