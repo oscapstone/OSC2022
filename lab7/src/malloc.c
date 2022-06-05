@@ -24,7 +24,7 @@ void *simple_malloc(unsigned int size)
 //https://oscapstone.github.io/labs/lab4.
 // use val(size) and isused with freelist is enough
 //page size = 4K
-/* For val (-2 ~ 6)
+/* For val (-2 ~ 7)
 >=0 -> There is an allocable, contiguous memory that starts from the idx’th frame with size = 2**val * 4kb.
 -1  -> allocated (deprecated)
 -2  -> free, but it belongs to a larger contiguous memory block (deprecated)
@@ -46,7 +46,7 @@ void init_allocator()
         if (i % (1 << MAXORDER) == 0)
         {
             framearray[i].isused = 0;
-            framearray[i].val = 6;
+            framearray[i].val = MAXORDER;
         }
     }
 

@@ -8,6 +8,7 @@
 #include "exception.h"
 #include "irqtask.h"
 #include "mmu.h"
+#include "fs/vfs.h"
 
 void init_cpio_default_place();
 
@@ -20,7 +21,8 @@ void main(char* dtb)
 
     init_cpio_default_place(); //store cpio pointer to global (file system)
     init_allocator();
-    alloctest();
+    //alloctest();
+    init_rootfs();
 
     //cannot use original input series after interrupt start (input is going to the buffer), use async input instead.
     //output series are not affected. (order is affected)

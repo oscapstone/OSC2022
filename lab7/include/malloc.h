@@ -6,7 +6,7 @@
 #include "exception.h"
 #include "dtb.h"
 
-#define MAXORDER 6
+#define MAXORDER 7
 #define MAXCACHEORDER 4 // 32, 64, 128, 256, 512  (for every 32bytes)
 
 // simple_malloc
