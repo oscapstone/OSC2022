@@ -57,8 +57,8 @@ typedef struct mode_t mode_t;
 #define FILE_TYPE 2
 #define DIR_CAP 16
 #define PREFIX_LEN 16
-#define O_CREAT 2
-#define FD_TABLE_SIZE 5
+#define O_CREAT 00000100
+#define FD_TABLE_SIZE 16
 
 #define SUCCESS 0
 #define FAIL 1

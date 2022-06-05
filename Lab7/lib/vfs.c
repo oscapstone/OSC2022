@@ -28,14 +28,14 @@ int vfs_open(const char* pathname, int flags, file** target, vnode* root) {
     vnode* dir = root;
     vnode* file_node;
     char prefix[PREFIX_LEN];
-    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '\n'
+    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '/'
     pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
     while (1) {
         int idx = dir->v_ops->lookup(dir, &file_node, prefix);
         if (!pathname) {  // file
             if (idx == -1) {
                 if (!(flags & O_CREAT))
-                return FAIL;
+                    return FAIL;
                 dir->v_ops->create(dir, &file_node, prefix);
             }
             break;
@@ -69,9 +69,9 @@ int vfs_read(file* f, void* buf, size_t len) {
 
 int vfs_write(file* f, const void* buf, size_t len) {
     if (isReadOnly(f->node)) {
-        return FAIL;
+        return 0;
     }
-	return f->f_ops->write(f, buf, len);
+    return f->f_ops->write(f, buf, len);
 }
 
 int vfs_create(vnode* dir_node, vnode** target, const char* component_name) {
@@ -87,7 +87,7 @@ int vfs_mkdir(const char* pathname, vnode* root) {
     vnode* target;
     int flag = 0;
     char prefix[PREFIX_LEN];
-    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '\n'
+    pathname = slashIgnore(pathname, prefix, PREFIX_LEN);  // rip off the leading '/'
     pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
     while (1) {
         int idx = dir->v_ops->lookup(dir, &target, prefix);

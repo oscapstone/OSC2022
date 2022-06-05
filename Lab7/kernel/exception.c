@@ -11,6 +11,7 @@
 #include "shell.h"
 #include "mail_box.h"
 #include "vm.h"
+#include "allocator.h"
 
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
@@ -167,10 +168,12 @@ size_t sys_uartwrite(const char buf[], size_t size) {
 }
 
 int sys_exec(trap_frame *tf, const char *name, char *const argv[]) {
+    char prefix[PREFIX_LEN];
+    char* pruned_name = (char*)slashIgnore(name, prefix, PREFIX_LEN);  // rip off the leading '/'
     task_struct *cur_task = get_current();
     freePT(&(cur_task->page_table));
     initPT(&(cur_task->page_table));
-    load_program((char*)name, cur_task->page_table);
+    load_program(pruned_name, cur_task->page_table);
     for (int i = 0; i < 4; ++i)
         map_pages(cur_task->page_table, 0xffffffffb000 + i * 0x1000, 1, VA2PA(page_malloc(0)));
     _argv = (char**)argv;
@@ -202,6 +205,17 @@ void sys_fork(trap_frame *tf) {
     //vc_identity_mapping for video program
     for (uint64_t va = 0x3c000000; va <= 0x3f000000 - 4096; va += 4096)
         map_pages(child->page_table, va, 1, va);
+
+    for (int i = 0; i < FD_TABLE_SIZE; ++i) {
+		if (parent->fd_table[i] != 0) {
+            file* src_file = parent->fd_table[i];
+            file* dst_file = kmalloc(sizeof(file));
+            dst_file->node = src_file->node;
+            dst_file->f_pos = src_file->f_pos;
+            dst_file->f_ops = src_file->f_ops;
+            dst_file->flags = src_file->flags;
+        }
+	}
     
     /* set up the correct value for registers */
     parent->context.sp = (unsigned long)tf;
@@ -296,9 +310,10 @@ int sys_open(const char *pathname, int flags) {
     vnode* new_root;
     new_root = find_root(pathname, cur->cur_dir, &new_path);
     for (int i = 0; i < FD_TABLE_SIZE; ++i) {
-		if (cur->fd_table[i] == 0 && (vfs_open(pathname, flags, &(cur->fd_table)[i], new_root) == SUCCESS))
-			return i;
+		if ((cur->fd_table)[i] == 0 && (vfs_open(pathname, flags, &(cur->fd_table)[i], new_root) == SUCCESS))
+            return i;
 	}
+    uart_printf("[sys_open fail]\n");
     return -1;
 }
 
@@ -307,10 +322,11 @@ int sys_close(int fd) {
         uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
     }
 	task_struct* cur = get_current();
-	if (cur->fd_table[fd] && (vfs_close(cur->fd_table[fd]) == SUCCESS)) {
-		cur->fd_table[fd] = 0;
+	if ((cur->fd_table)[fd] && (vfs_close((cur->fd_table)[fd]) == SUCCESS)) {
+		(cur->fd_table)[fd] = 0;
         return 0;
 	}
+    uart_printf("[sys_close fail]\n");
     return -1;
 }
 
@@ -319,8 +335,9 @@ int sys_write(int fd, const void *buf, int count) {
         uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
     }
 	task_struct* cur = get_current();
-    if (cur->fd_table[fd] && (vfs_write(cur->fd_table[fd], buf, count) == SUCCESS))
-		return 0;
+    if ((cur->fd_table)[fd])
+		return vfs_write((cur->fd_table)[fd], buf, count);
+    uart_printf("[sys_write fail]\n");
 	return -1;
 }
 
@@ -329,8 +346,9 @@ int sys_read(int fd, void *buf, int count) {
         uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
     }
 	task_struct* cur = get_current();
-    if (cur->fd_table[fd] && (vfs_read(cur->fd_table[fd], buf, count) == SUCCESS))
-		return 0;
+    if ((cur->fd_table)[fd])
+		return vfs_read((cur->fd_table)[fd], buf, count);
+    uart_printf("[sys_read fail]\n");
     return -1;
 }
 
@@ -340,6 +358,7 @@ int sys_mkdir(const char *pathname) {
     new_root = find_root(pathname, get_current()->cur_dir, &new_path);
     if (vfs_mkdir(pathname, new_root) == SUCCESS)
         return 0;
+    uart_printf("[sys_mkdir fail]\n");
     return -1;
 }
 
@@ -350,6 +369,7 @@ int sys_mount(const char *src, const char *target, const char *filesystem, unsig
     new_root = find_root(target, get_current()->cur_dir, &new_path);
     if (vfs_mount(new_path, filesystem, new_root) == SUCCESS)
         return 0;
+    uart_printf("[sys_mount fail]\n");
     return -1;
 }
 

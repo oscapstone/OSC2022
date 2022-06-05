@@ -249,7 +249,7 @@ int tmpfs_read(file* f, void* buf, size_t len) {
 		return ret;
 	} else if (content->type == DIR_TYPE) {
 		uart_printf("[ERROR][tmpfs_read] This is a directory!\n");
-		return -1;
+		return 0;
 	} else
 		return 0;
 }

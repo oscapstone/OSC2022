@@ -67,9 +67,8 @@ void cpio_cat(char *filename) {
         }
         uart_send_string("\r\n");
     }
-    else {
-        uart_send_string("File not found!\n");
-    }
+    else
+        uart_printf("File: %s not found!\n", filename);
 }
 
 void load_program(char *name, void *page_table) {
@@ -101,9 +100,8 @@ void load_program(char *name, void *page_table) {
 
         debug_printf("[DEBUG][load_program] load program: %s\n", name);
     }
-    else {
-        uart_send_string("File not found!\n");
-    }
+    else
+        uart_printf("File: %s not found!\n", name);
 }
 
 

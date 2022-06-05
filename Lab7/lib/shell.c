@@ -141,7 +141,10 @@ void parse_command() {
         run_user_program("vm.img", NULL);
     }
     else if (compare_string(buffer, "test_fs") == 0) {
-        run_user_program("fs_test.img", NULL);
+        run_user_program("initramfs/vfs1.img", NULL);
+
+        // run_user_program("fs_test.img", NULL);
+        
         // file* f;
         // /* basic 1 */
         // char buffer1[17] = "This is fs_test!\n";
