@@ -63,7 +63,7 @@ void cpio_exec(char *str){
     }
     if(!strcmp(header+110, str) && filesize != 0){
       data = header+110+namesize;
-      char * sp = malloc(0x20);
+      char * sp = malloc_(0x20);
       asm volatile("mov x1        , 0x3c0     \n");
       asm volatile("msr spsr_el1  , x1        \n");
       asm volatile("msr elr_el1   , %[input0] \n"::[input0]"r"(data));

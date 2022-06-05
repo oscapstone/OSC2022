@@ -35,5 +35,5 @@ void page_free(int index);
 void show_frame();
 void show_page_list();
 
-void *malloc(uint64_t size);
+void *malloc_(uint64_t size);
 void free(void *addr);

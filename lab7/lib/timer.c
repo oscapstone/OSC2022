@@ -63,7 +63,7 @@ void set_core_timer_interrupt(uint64_t expired_time){
 }
 
 void add_timer(callback_typ callback, char *msg, int time) {
-  timer_list *timer = (timer_list*)malloc(sizeof(timer_list));
+  timer_list *timer = (timer_list*)malloc_(sizeof(timer_list));
   timer->expired_time = (unsigned long long)time + get_timer_tick();
   timer->call_back = callback;
   for(int i=0; i<=strlen(msg); i++)

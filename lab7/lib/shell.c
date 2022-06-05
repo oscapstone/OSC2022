@@ -9,8 +9,8 @@
 #include "vfs.h"
 
 void shell(){
-  char *input = malloc(sizeof(char) * BUF_MAX_SIZE);
-  char **args = malloc(sizeof(char*) * BUF_ARG_SIZE);
+  char *input = malloc_(sizeof(char) * BUF_MAX_SIZE);
+  char **args = malloc_(sizeof(char*) * BUF_ARG_SIZE);
   *input = 0;
   int args_num = 0;
   char read = 0;
@@ -47,7 +47,7 @@ void shell(){
         }else if(!strcmp(args[0], "mk")){
           vfs_mkdir(args[1]);
         }else if(!strcmp(args[0], "op")){
-          file *open_file = malloc(sizeof(file));
+          file *open_file = NULL;
           vfs_open(args[1], 0100, &open_file);
         }else if(!strcmp(args[0], "mount")){
           vfs_mount(args[1], "tmpfs");

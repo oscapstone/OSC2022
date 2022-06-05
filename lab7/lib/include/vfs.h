@@ -9,6 +9,7 @@
 #define VFS_MAX_DEPTH 64
 #define O_CREAT 00000100
 #define TMPFS_MAX_PATH_LEN 255
+#define VFS_PROCESS_MAX_OPEN_FILE 16
 
 typedef uint64_t size_t;
 

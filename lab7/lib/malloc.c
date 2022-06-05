@@ -4,7 +4,7 @@
 #include "cpio.h"
 #include "dtb.h"
 
-static void* simple_malloc(size_t size);
+static void* simple_malloc_(size_t size);
 static void add_page_item(int index);
 static void delete_page_item(int index);
 static void page_divide(int level);
@@ -22,7 +22,7 @@ static frame_info *frame;
 static page_item *page_list[PAGE_MAX_ORDER+1] = {0};
 static pool_header *pool = NULL;
 
-void* simple_malloc(size_t size) {
+void* simple_malloc_(size_t size) {
   size = 0x10 + size - size%0x10;  // ALIGN 16
   char *return_ptr = heap_top;
   heap_top += size;
@@ -32,7 +32,7 @@ void* simple_malloc(size_t size) {
 void page_init(){
   char *sim_alloc_start = 0;
   char *sim_alloc_end = 0;
-  char *addr = simple_malloc(PAGE_MAX_ENTRY * sizeof(frame_info));
+  char *addr = simple_malloc_(PAGE_MAX_ENTRY * sizeof(frame_info));
   frame = (frame_info *)addr;
   sim_alloc_start = addr;
   sim_alloc_end = addr + PAGE_MAX_ENTRY * sizeof(frame_info);
@@ -216,7 +216,7 @@ void page_divide(int level){
   }
 }
 
-void *malloc(uint64_t size){
+void *malloc_(uint64_t size){
   if(size < 8)
     size = 8;
   int sizeLevel = log2(size-1)+1;

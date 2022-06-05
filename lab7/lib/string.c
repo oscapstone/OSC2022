@@ -1,8 +1,14 @@
 #include "printf.h"
 #include "string.h"
 
+void *memset_(void *str, int c, size_t len){
+  char* ptr = (void*) str;
+  for(int i=0; i<len; i++)
+    *ptr++ = c;
+  return str;
+}
 
-void memcpy(void* dest, const void* src, size_t len){
+void memcpy_(void* dest, const void* src, size_t len){
   char* dest_ = (char*)dest;
   char* src_ = (char*)src;
   for(size_t i=0; i<len; i++)

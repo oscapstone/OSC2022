@@ -2,7 +2,8 @@
 
 typedef uint64_t size_t;
 
-void memcpy(void* dest, const void* src, size_t len);
+void *memset_(void *str, int c, size_t len);
+void memcpy_(void* dest, const void* src, size_t len);
 int strlen(char *s);
 int atoi(char* str);
 void append_str(char *s, char ch);

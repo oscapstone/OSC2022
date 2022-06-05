@@ -5,6 +5,7 @@
 #include "timer.h"
 #include "delay.h"
 #include "system.h"
+#include "string.h"
 
 static task *run_queue = NULL;
 static task *zombies_queue = NULL;
@@ -27,14 +28,14 @@ void idle_thread(void){
 }
 
 void *task_create(thread_func func, enum mode mode){
-  task *new_task = malloc(sizeof(task));
+  task *new_task = malloc_(sizeof(task));
   new_task->mode = mode;
   new_task->next = NULL;
   new_task->pid = pid++;
   new_task->handler = NULL;
   new_task->state = RUNNING;
   if(mode == USER){
-    char *addr = malloc(THREAD_SP_SIZE);
+    char *addr = malloc_(THREAD_SP_SIZE);
     new_task->user_sp = (uint64_t)addr;
     addr += THREAD_SP_SIZE - 1;
     addr -= (uint64_t)addr%0x10;
@@ -43,12 +44,14 @@ void *task_create(thread_func func, enum mode mode){
   }else{
     new_task->lr = (uint64_t)func;
   }
-  char *addr = malloc(THREAD_SP_SIZE);
+  char *addr = malloc_(THREAD_SP_SIZE);
   new_task->sp_addr = (uint64_t)addr;
   addr += THREAD_SP_SIZE - 1;
   addr -= (uint64_t)addr%0x10;
   new_task->fp = (uint64_t)addr;
   new_task->sp = (uint64_t)addr;
+  strcpy(new_task->cwd, "/");
+  memset_(new_task->fd_table, 0, sizeof(new_task->fd_table)); // init file table
   enqueue(&run_queue, new_task);  
   return new_task;
 }
@@ -134,42 +137,6 @@ void switch_to_user_space() {
   asm volatile("eret  \n"::);
 }
 
-
-void fork_test(){
-  printf("\n\rFork Test, pid %d\n\r", sys_getpid());
-  int cnt = 1;
-  int ret = 0;
-  if ((ret = sys_fork()) == 0) { // child
-    long long cur_sp;
-    asm volatile("mov %0, sp" : "=r"(cur_sp));
-    printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n\r", sys_getpid(), cnt, &cnt, cur_sp);
-    ++cnt;
-    if ((ret = sys_fork()) != 0){
-      asm volatile("mov %0, sp" : "=r"(cur_sp));
-      printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n\r", sys_getpid(), cnt, &cnt, cur_sp);
-    }else{
-      while (cnt < 5) {
-        asm volatile("mov %0, sp" : "=r"(cur_sp));
-        printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n\r", sys_getpid(), cnt, &cnt, cur_sp);
-        delay_tick(1000000);
-        ++cnt;
-      }
-    }
-    sys_exit();
-  }else {
-    printf("parent here, pid %d, child %d\n", sys_getpid(), ret);
-  }
-  sys_exit();
-}
-
-void foo(){
-  for(int i = 0; i < 5; ++i) {
-    printf("pid: %d, %d\n\r", sys_getpid(), i);
-    delay_tick(10000000);
-  }
-  sys_exit();
-}
-
 void remove_task(uint64_t pid){
   task *cur = run_queue;
   task *pre = NULL;
@@ -205,4 +172,12 @@ void *find_task(uint64_t pid){
     cur = cur->next;
   }
   return 0;
+}
+
+int get_task_idle_fd(task *thread){
+  for(int i=0; i<VFS_PROCESS_MAX_OPEN_FILE; i++){
+    if(thread->fd_table[i] == NULL)
+      return i;
+  }
+  return -1;
 }

@@ -1,4 +1,5 @@
 #include "stdint.h"
+#include "vfs.h"
 
 #define THREAD_SP_SIZE 2048
 
@@ -26,6 +27,8 @@ typedef struct task{
   enum mode mode;
   void (*handler)();
   enum state state;
+  file *fd_table[VFS_PROCESS_MAX_OPEN_FILE];  // should be zeroed out on thread_create
+  char cwd[TMPFS_MAX_PATH_LEN];               // current working directory, should initialized on thread_create
   struct task *next;
 } task;
 
@@ -42,8 +45,7 @@ void schedule();
 void kill_zombies();
 void kill_thread(int pid);
 void switch_to_user_space();
-void fork_test();
-void foo();
 void remove_task(uint64_t pid);
 void add_to_queue();
 void *find_task(uint64_t pid);
+int get_task_idle_fd(task *thread);

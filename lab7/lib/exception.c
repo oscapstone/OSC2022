@@ -139,23 +139,33 @@ void sync_router(uint64_t x0, uint64_t x1){
     task *handler_task = task_create(NULL, USER);
     handler_task->target_func = (uint64_t)signal_handler_wrapper;
   }else if(frame->x8 == 11){
-    printf("[INFO][syscall] open(pathname: %s, flags: %d)\n\r", frame->x0, frame->x1);
-    file *open_file = malloc(sizeof(file));
-    vfs_open((const char *)frame->x0, frame->x1, &open_file);
+    task *cur = get_current();
+    int fd = get_task_idle_fd(cur);
+    if(fd < 0){
+      printf("[ERROR][sys_open] find idle fd\n\r");
+      frame->x0 = -1;
+    }
+    file *open_file = NULL;
+    vfs_open((const char *)frame->x0, (int)frame->x1, &open_file);
+    cur->fd_table[fd] = open_file;
+    frame->x0 = fd;
   }else if(frame->x8 == 12){
-    printf("[INFO][syscall] close(fd: %d)\n\r", frame->x0);
-    vfs_close((file *)frame->x0);
+    task *cur = get_current();
+    file *target_file = cur->fd_table[frame->x0];
+    vfs_close(target_file);
   }else if(frame->x8 == 13){
-    printf("[INFO][syscall] write(fd: %d, *buf: %s, count: %d)\n\r", frame->x0, frame->x1, frame->x2);
-    vfs_write((file *)frame->x0, (const void *)frame->x1, frame->x2);
+    task *cur = get_current();
+    file *target_file = cur->fd_table[frame->x0];
+    int write_count = vfs_write(target_file, (const void *)frame->x1, frame->x2);
+    frame->x0 = write_count;
   }else if(frame->x8 == 14){
-    printf("[INFO][syscall] read(fd: %d, *buf: %s, count: %d)\n\r", frame->x0, frame->x1, frame->x2);
-    vfs_read((file *)frame->x0, (void *)frame->x1, frame->x2);
+    task *cur = get_current();
+    file *target_file = cur->fd_table[frame->x0];
+    int read_count = vfs_read(target_file, (void *)frame->x1, frame->x2);
+    frame->x0 = read_count;
   }else if(frame->x8 == 15){
-    printf("[INFO][syscall] mkdir(*pathname: %s, mode)\n\r", frame->x0, frame->x1);
     vfs_mkdir((const char *)frame->x0);
   }else if(frame->x8 == 16){
-    printf("[INFO][syscall] mount(*src: %s, *target: %s, *filesystem: %s, flags: %d, *data: %s)\n\r", frame->x0, frame->x1, frame->x2, frame->x3, frame->x4);
     vfs_mount((const char *)frame->x1, (const char *)frame->x2);
   }else if(frame->x8 == 17){
     printf("[INFO][syscall] chdir(*path: %d)\n\r", frame->x0);
