@@ -43,10 +43,10 @@ void irq_router(uint64_t x0){
 
 void sync_router(uint64_t x0, uint64_t x1){
   trap_frame *frame = (trap_frame *)x1;
-  if(frame->x8 == 0){               // get pid
+  if(frame->x8 == 0){             // get pid
     task *cur = get_current();
     frame->x0 = cur->pid;
-  }else if(frame->x8 == 1){         // uart read
+  }else if(frame->x8 == 1){       // uart read
     interrupt_enable();
     char *buf = (char *)frame->x0;
     for(int i=0; i < frame->x1; i++){
@@ -54,14 +54,14 @@ void sync_router(uint64_t x0, uint64_t x1){
     }
     frame->x0 = frame->x1;
     interrupt_disable();
-  }else if(frame->x8 == 2){         // uart write
+  }else if(frame->x8 == 2){       // uart write
     interrupt_enable();
     char *buf = (char *)frame->x0;
     for(int i=0; i<frame->x1; i++)
       uart_send(buf[i]);
     frame->x0 = frame->x1;
     interrupt_disable();
-  }else if(frame->x8 == 3){         // exec
+  }else if(frame->x8 == 3){       // exec
     char *name = (char *)frame->x0;
     task *cur = get_current();
     frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
@@ -69,7 +69,7 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->elr_el1 = (uint64_t)addr;
     // char *argv = (char *)frame->x1;
     frame->x0 = 0;
-  }else if(frame->x8 == 4){        // fork
+  }else if(frame->x8 == 4){       // fork
     task *parent = get_current();
     task *child = task_create(NULL, USER);
     /* copy the task context & kernel stack (including trap frame) of parent to child */
@@ -113,7 +113,7 @@ void sync_router(uint64_t x0, uint64_t x1){
       child_frame->sp_el0 -= ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
     }
     frame->x0 = child->pid;
-  }else if(frame->x8 == 5){        // exit
+  }else if(frame->x8 == 5){       // exit
     task *cur = get_current();
     if(signal_exit){
       signal_exit = 0;
@@ -121,13 +121,13 @@ void sync_router(uint64_t x0, uint64_t x1){
     }
     cur->state = EXIT;
     schedule();
-  }else if(frame->x8 == 6){        // mbox call
+  }else if(frame->x8 == 6){       // mbox call
     unsigned char ch = (unsigned char)frame->x0;
     uint32_t *mbox = (uint32_t *)frame->x1;
     frame->x0 = mbox_call(ch, mbox);
-  }else if(frame->x8 == 7){        // kill
+  }else if(frame->x8 == 7){       // kill
     kill_thread(frame->x0);
-  }else if(frame->x8 == 8){        // register
+  }else if(frame->x8 == 8){       // register
     task *cur = get_current();
     cur->handler = (void (*)())frame->x1;
   }else if(frame->x8 == 9){       // signal kill
@@ -138,37 +138,65 @@ void sync_router(uint64_t x0, uint64_t x1){
     remove_task(frame->x0);
     task *handler_task = task_create(NULL, USER);
     handler_task->target_func = (uint64_t)signal_handler_wrapper;
-  }else if(frame->x8 == 11){
+  }else if(frame->x8 == 11){      // open
     task *cur = get_current();
     int fd = get_task_idle_fd(cur);
     if(fd < 0){
       printf("[ERROR][sys_open] find idle fd\n\r");
       frame->x0 = -1;
     }
+    char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
+    abs_path[0] = '\0';
+    to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
     file *open_file = NULL;
-    vfs_open((const char *)frame->x0, (int)frame->x1, &open_file);
+    vfs_open((const char *)abs_path, (int)frame->x1, &open_file);
     cur->fd_table[fd] = open_file;
+    free(abs_path);
     frame->x0 = fd;
-  }else if(frame->x8 == 12){
+  }else if(frame->x8 == 12){      // close
+    // printf("%d\n\r", frame->x8);
     task *cur = get_current();
     file *target_file = cur->fd_table[frame->x0];
     vfs_close(target_file);
-  }else if(frame->x8 == 13){
+    frame->x0 = 0;
+  }else if(frame->x8 == 13){      // write
+    // printf("%d\n\r", frame->x8);
     task *cur = get_current();
     file *target_file = cur->fd_table[frame->x0];
     int write_count = vfs_write(target_file, (const void *)frame->x1, frame->x2);
     frame->x0 = write_count;
-  }else if(frame->x8 == 14){
+  }else if(frame->x8 == 14){      // read
+    // printf("%d\n\r", frame->x8);
     task *cur = get_current();
     file *target_file = cur->fd_table[frame->x0];
     int read_count = vfs_read(target_file, (void *)frame->x1, frame->x2);
     frame->x0 = read_count;
-  }else if(frame->x8 == 15){
-    vfs_mkdir((const char *)frame->x0);
-  }else if(frame->x8 == 16){
+  }else if(frame->x8 == 15){      // mkdir
+    task *cur = get_current();
+    char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
+    abs_path[0] = '\0';
+    to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
+    vfs_mkdir((const char *)abs_path);
+    free(abs_path);
+    frame->x0 = 0;
+  }else if(frame->x8 == 16){      // mount
+    printf("%s\n\r", frame->x1);
+    // task *cur = get_current();
+    // char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
+    // char abs_path[TMPFS_MAX_PATH_LEN];
+    // abs_path[0] = '\0';
+    // to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
+    // vfs_mount((const char *)abs_path, (const char *)frame->x2);
     vfs_mount((const char *)frame->x1, (const char *)frame->x2);
+    // free(abs_path);
+    frame->x0 = 0;
   }else if(frame->x8 == 17){
-    printf("[INFO][syscall] chdir(*path: %d)\n\r", frame->x0);
+    // task *cur = get_current();
+    // char changed_path[TMPFS_MAX_PATH_LEN];
+    // changed_path[0] = '\0';
+    // vnode *node = NULL;
+    // printf("cd %s\n\r", frame->x0);
+    frame->x0 = 0;
   }
 }
 

@@ -172,8 +172,6 @@ static char *pop_first_component(char *pathname){ // return the string pointer r
     i++; // skip first directory
   if(pathname[i] == '/') 
     i++;                           // skip leading '/'
-  if(pathname[i] == '\0')
-    i++;
   return &pathname[i];
 }
 
@@ -191,7 +189,7 @@ static int first_component(char *pathname, char *component_name){
 
 void vfs_dump_under(vnode *node, int depth){
   if(node->mount != NULL){
-    printf("mount name: %s\n\r", node->component->name);
+    printf("mount: %s\n\r", node->component->name);
     vfs_dump_under(node->mount->root, depth);
   }
   else if(node->component->type == COMP_DIR){
@@ -213,3 +211,64 @@ void vfs_dump_under(vnode *node, int depth){
 void vfs_dump_root(){
   vfs_dump_under(rootfs->root, 0);
 }
+
+
+
+int to_abs_path(char *abs_path, const char *cwd, const char *path){
+
+  // Input abs path, copy directly and return
+  if(path[0] == '/'){
+    strcpy(abs_path, path);
+    return 0;
+  }
+
+  // Return if cwd not starts or not ends with '/'
+  if(cwd[0] != '/' || cwd[strlen((char *)cwd)-1] != '/'){
+    printf("Error, to_abs_path(), cwd should stars and ends with \"/\", cwd=%s\r\n", cwd);
+    return 1;
+  }
+
+  // Concatenate cwd and input path
+  char untranslate[TMPFS_MAX_PATH_LEN]; // "." and ".." are untranslated yet
+  untranslate[0] = '\0';
+  strcat_(untranslate, cwd);
+  strcat_(untranslate, path);
+  // printf("untranslate: %s\n\r", untranslate);
+  // Spilt string by "/"
+  char *comps[VFS_MAX_DEPTH]; // component string array
+  int count = spilt_strings(comps, untranslate, "/");
+  // for(int i=0; i<count; i++)
+  //   printf("%d, %s\n\r", i, comps[i]);
+  // Translate "." and ".."
+  int w = 0;  // write(update) index, w-- is like pop, w++ is like push. in place FILO
+  int r = 0;  // read index, always advance by 1. in place FIFO
+  while(w < count && r < count){
+    // Skip blank and "."
+    while(comps[r][0] == '\0' || strcmp(comps[r], CURRENT_DIR) == 0)
+      r++;
+
+    // Handle ".."
+    if(strcmp(comps[r], PARENT_DIR) == 0){
+      // when stack empty (w==0) or stack top is "..", then push ".."
+      if(w == 0 || strcmp(comps[w-1], PARENT_DIR)==0)
+        comps[w++] = comps[r];   // push ".."
+      else
+        comps[w--] = NULL;    // pop, just "w--;" also does the job
+    }
+
+    // Push normal component
+    else
+      comps[w++] = comps[r];
+
+    r++;
+  }
+
+  count = w; // items after w are ignored
+  abs_path[0] = '\0'; // clear string
+  for(int i=0; i<count; i++){
+    strcat_(abs_path, "/");
+    strcat_(abs_path, comps[i]);
+  }
+  return 0;
+}
+

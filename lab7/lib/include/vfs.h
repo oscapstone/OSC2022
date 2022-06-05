@@ -10,6 +10,8 @@
 #define O_CREAT 00000100
 #define TMPFS_MAX_PATH_LEN 255
 #define VFS_PROCESS_MAX_OPEN_FILE 16
+#define CURRENT_DIR "."
+#define PARENT_DIR ".."
 
 typedef uint64_t size_t;
 
@@ -86,5 +88,7 @@ int vfs_lookup(const char* pathname, vnode **target);
 
 void vfs_dump_under(vnode *node, int depth);
 void vfs_dump_root();
+
+int to_abs_path(char *abs_path, const char *cwd, const char *path);
 
 #endif

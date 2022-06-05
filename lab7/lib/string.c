@@ -1,6 +1,14 @@
 #include "printf.h"
 #include "string.h"
 
+char* strcat_(char* dest, const char* src){
+  char *tmp = dest;
+  while(*dest++);
+  dest--;
+  while((*dest++ = *src++));
+  return tmp;
+}
+
 void *memset_(void *str, int c, size_t len){
   char* ptr = (void*) str;
   for(int i=0; i<len; i++)

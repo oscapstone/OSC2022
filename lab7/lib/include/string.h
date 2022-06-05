@@ -2,6 +2,7 @@
 
 typedef uint64_t size_t;
 
+char* strcat_(char* dest, const char* src);
 void *memset_(void *str, int c, size_t len);
 void memcpy_(void* dest, const void* src, size_t len);
 int strlen(char *s);

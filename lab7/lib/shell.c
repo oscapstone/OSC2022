@@ -53,6 +53,10 @@ void shell(){
           vfs_mount(args[1], "tmpfs");
         }else if(!strcmp(args[0], "dd")){
           vfs_dump_root();
+        }else if(!strcmp(args[0], "tt")){
+          char tmp[TMPFS_MAX_PATH_LEN];
+          to_abs_path(tmp, args[1], args[2]);
+          printf("cwd: %s, cd: %s, abs: %s\n\r", args[1], args[2], tmp);
         }
         printf("pi#  ");
         input[0] = 0;
