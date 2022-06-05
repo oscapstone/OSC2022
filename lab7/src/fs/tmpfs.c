@@ -26,7 +26,7 @@ struct vnode* tmpfs_create_vnode(struct mount* _mount, enum tmpfs_type type)
     struct vnode *v = kmalloc(sizeof(struct vnode));
     v->f_ops = &tmpfs_file_operations;
     v->v_ops = &tmpfs_vnode_operations;
-    v->mount = _mount;
+    v->mount = 0;
     struct tmpfs_inode* inode = kmalloc(sizeof(struct tmpfs_inode));
     memset(inode, 0, sizeof(struct tmpfs_inode));
     inode->type = type;
@@ -40,19 +40,10 @@ int tmpfs_write(struct file *file, const void *buf, size_t len)
 {
     struct tmpfs_inode *inode = file->vnode->internal;
 
-    if (len + file->f_pos > inode->datasize)
-    {
-        memcpy(inode->data + file->f_pos, buf, inode->datasize - file->f_pos);
-        file->f_pos += inode->datasize - file->f_pos;
-        return inode->datasize - file->f_pos;
-    }
-    else
-    {
-        memcpy(inode->data + file->f_pos, buf, len);
-        file->f_pos += len;
-        return len;
-    }
-    return -1;
+    memcpy(inode->data + file->f_pos, buf, len);
+    file->f_pos += len;
+    if(inode->datasize<file->f_pos)inode->datasize = file->f_pos;
+    return len;
 }
 
 int tmpfs_read(struct file *file, void *buf, size_t len)

@@ -72,5 +72,6 @@ int vfs_lookup(const char *pathname, struct vnode **target);
 struct filesystem reg_fs[MAX_FS_REG];
 
 void init_rootfs();
+void vfs_test();
 
 #endif

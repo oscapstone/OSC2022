@@ -47,7 +47,7 @@ int vfs_open(const char *pathname, int flags, struct file **target)
 
         char dirname[MAX_PATH_NAME+1];
         strcpy(dirname, pathname);
-        dirname[last_slash_idx] = '/';
+        dirname[last_slash_idx] = 0;
         if (vfs_lookup(dirname,&node)!=0)
         {
             uart_printf("cannot ocreate no dir name\r\n");
@@ -139,13 +139,20 @@ int vfs_mount(const char *target, const char *filesystem)
         return -1;
     }else
     {
-        dirnode->mount->fs->setup_mount(fs,dirnode->mount);
+        dirnode->mount = kmalloc(sizeof(struct mount));
+        fs->setup_mount(fs, dirnode->mount);
     }
     return 0;
 }
 
 int vfs_lookup(const char *pathname, struct vnode **target)
 {
+    if(strlen(pathname)==0)
+    {
+        *target = rootfs->root;
+        return 0;
+    }
+
     struct vnode *dirnode = rootfs->root;
     char component_name[FILE_NAME_MAX+1] = {};
     int c_idx = 0;
@@ -154,10 +161,10 @@ int vfs_lookup(const char *pathname, struct vnode **target)
         if (pathname[i] == '/')
         {
             component_name[c_idx++] = 0;
-            struct vnode *prev_root = dirnode->mount->root;
             if (dirnode->v_ops->lookup(dirnode, &dirnode, component_name) != 0)return -1;
             // redirect to new mounted filesystem
-            if (dirnode->mount->root != prev_root)
+
+            if (dirnode->mount)
             {
                 dirnode = dirnode->mount->root;
             }
@@ -170,10 +177,9 @@ int vfs_lookup(const char *pathname, struct vnode **target)
     }
 
     component_name[c_idx++] = 0;
-    struct vnode *prev_root = dirnode->mount->root;
     if (dirnode->v_ops->lookup(dirnode, &dirnode, component_name) != 0)return -1;
     // redirect to new mounted filesystem
-    if (dirnode->mount->root != prev_root)
+    if (dirnode->mount)
     {
         dirnode = dirnode->mount->root;
     }
@@ -188,11 +194,26 @@ void init_rootfs()
     int idx = register_tmpfs();
     rootfs = kmalloc(sizeof(struct mount));
     reg_fs[idx].setup_mount(&reg_fs[idx], rootfs);
+
+    vfs_test();
 }
 
 void vfs_test()
 {
+    // test read/write
     vfs_mkdir("/lll");
-    struct file* testfile;
-    vfs_open("/lll/ddd", O_CREAT, &testfile);
+    vfs_mkdir("/lll/ddd");
+    // test mount
+    vfs_mount("/lll/ddd", "tmpfs");
+
+    struct file* testfilew;
+    struct file *testfiler;
+    char testbufw[0x30] = "ABCDEABBBBBBDDDDDDDDDDD";
+    char testbufr[0x30] = {};
+    vfs_open("/lll/ddd/ggg", O_CREAT, &testfilew);
+    vfs_open("/lll/ddd/ggg", O_CREAT, &testfiler);
+    vfs_write(testfilew, testbufw, 10);
+    vfs_read(testfiler, testbufr, 10);
+    uart_printf("%s",testbufr);
+
 }
