@@ -33,6 +33,7 @@ int vfs_mount(const char* target, const char* file_name){
       vnode_mount->mount = malloc_(sizeof(mount));
       vnode_mount->mount->fs = malloc_(sizeof(filesystem));
       vnode_mount->mount->fs->name = malloc_(NAME_LEN);
+      vnode_mount->mount->root = vnode_mount;   // for pass the node name
       strcpy((char *)vnode_mount->mount->fs->name, file_name);
       register_filesystem(vnode_mount->mount->fs);
       return vnode_mount->mount->fs->setup_mount(vnode_mount->mount->fs, vnode_mount->mount);
@@ -93,6 +94,10 @@ int lookup_path(const char* pathname, vnode *dir_node, vnode **target, int creat
 }
 
 int vfs_lookup(const char* pathname, vnode **target){
+  if(strcmp(pathname, "/") == 0){
+    *target = rootfs->root;
+    return 0;
+  }
   return lookup_path(pathname, rootfs->root, target, 0);
 }
 
@@ -189,7 +194,7 @@ static int first_component(char *pathname, char *component_name){
 
 void vfs_dump_under(vnode *node, int depth){
   if(node->mount != NULL){
-    printf("mount: %s\n\r", node->component->name);
+    // printf("mount: %s\n\r", node->component->name);
     vfs_dump_under(node->mount->root, depth);
   }
   else if(node->component->type == COMP_DIR){

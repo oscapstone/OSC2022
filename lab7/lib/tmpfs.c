@@ -7,27 +7,30 @@ int tmpfs_setup_mount(struct filesystem *fs, mount *mount){
   if(mount == NULL){
     printf("[ERROR][tmpfs_setup_mount] no pointer");
   }
+  char tmp_name[TMPFS_MAX_COMPONENT_NAME];
+  tmp_name[0] = '\0';
+  if(mount->root != NULL){
+    strcpy(tmp_name, mount->root->component->name);
+  }
+  mount->root = malloc_(sizeof(vnode));
+  mount->root->mount = NULL;
+  mount->root->component = malloc_(sizeof(vnode_component));
+  mount->root->component->type = COMP_DIR;
+  mount->root->component->len = 0;
+  // mount->root->component->name = "";
+  strcpy(mount->root->component->name, tmp_name);
+  mount->root->component->entries = NULL;
 
-  // if(mount->root == NULL){
-    mount->root = malloc_(sizeof(vnode));
-    mount->root->mount = NULL;
-    mount->root->component = malloc_(sizeof(vnode_component));
-    mount->root->component->type = COMP_DIR;
-    mount->root->component->len = 0;
-    mount->root->component->name = "";
-    mount->root->component->entries = NULL;
+  mount->root->f_ops = malloc_(sizeof(file_operations));
+  mount->root->f_ops->write = tmpfs_write;
+  mount->root->f_ops->read = tmpfs_read;
+  mount->root->f_ops->open = tmpfs_open;
+  mount->root->f_ops->close = tmpfs_close;
 
-    mount->root->f_ops = malloc_(sizeof(file_operations));
-    mount->root->f_ops->write = tmpfs_write;
-    mount->root->f_ops->read = tmpfs_read;
-    mount->root->f_ops->open = tmpfs_open;
-    mount->root->f_ops->close = tmpfs_close;
-
-    mount->root->v_ops = malloc_(sizeof(vnode_operations));
-    mount->root->v_ops->mkdir = tmpfs_mkdir;
-    mount->root->v_ops->create = tmpfs_create;
-    mount->root->v_ops->lookup = tmpfs_lookup;
-  // }
+  mount->root->v_ops = malloc_(sizeof(vnode_operations));
+  mount->root->v_ops->mkdir = tmpfs_mkdir;
+  mount->root->v_ops->create = tmpfs_create;
+  mount->root->v_ops->lookup = tmpfs_lookup;
   return 0;
 }
 

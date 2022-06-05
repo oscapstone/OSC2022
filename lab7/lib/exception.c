@@ -8,11 +8,14 @@
 #include "system.h"
 #include "vfs.h"
 #include "malloc.h"
+#include "string.h"
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
 static uint32_t signal_exit = 0;
 static uint64_t signal_pid = 0;
+static int sysc_mount(const char* target, const char* file_name);
+static int sysc_chdir(const char *path);
 
 void invalid_exception_router(uint64_t x0){
   uint64_t elr_el1, esr_el1, spsr_el1;
@@ -150,25 +153,26 @@ void sync_router(uint64_t x0, uint64_t x1){
     to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
     file *open_file = NULL;
     vfs_open((const char *)abs_path, (int)frame->x1, &open_file);
+    // printf("open %s %d\n\r", abs_path, frame->x1);
     cur->fd_table[fd] = open_file;
     free(abs_path);
     frame->x0 = fd;
   }else if(frame->x8 == 12){      // close
-    // printf("%d\n\r", frame->x8);
     task *cur = get_current();
     file *target_file = cur->fd_table[frame->x0];
+    // printf("close %s\n\r", target_file->vnode->component->name);
     vfs_close(target_file);
     frame->x0 = 0;
   }else if(frame->x8 == 13){      // write
-    // printf("%d\n\r", frame->x8);
     task *cur = get_current();
     file *target_file = cur->fd_table[frame->x0];
+    // printf("write %s\n\r", target_file->vnode->component->name);
     int write_count = vfs_write(target_file, (const void *)frame->x1, frame->x2);
     frame->x0 = write_count;
   }else if(frame->x8 == 14){      // read
-    // printf("%d\n\r", frame->x8);
     task *cur = get_current();
     file *target_file = cur->fd_table[frame->x0];
+    // printf("read %s\n\r", target_file->vnode->component->name);
     int read_count = vfs_read(target_file, (void *)frame->x1, frame->x2);
     frame->x0 = read_count;
   }else if(frame->x8 == 15){      // mkdir
@@ -176,28 +180,45 @@ void sync_router(uint64_t x0, uint64_t x1){
     char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
     abs_path[0] = '\0';
     to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
+    // printf("mkdir %s\n\r", abs_path);
     vfs_mkdir((const char *)abs_path);
     free(abs_path);
     frame->x0 = 0;
   }else if(frame->x8 == 16){      // mount
-    printf("%s\n\r", frame->x1);
-    // task *cur = get_current();
-    // char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
-    // char abs_path[TMPFS_MAX_PATH_LEN];
-    // abs_path[0] = '\0';
-    // to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
-    // vfs_mount((const char *)abs_path, (const char *)frame->x2);
-    vfs_mount((const char *)frame->x1, (const char *)frame->x2);
-    // free(abs_path);
-    frame->x0 = 0;
+    frame->x0 = sysc_mount((const char *)frame->x1, (const char *)frame->x2);
   }else if(frame->x8 == 17){
-    // task *cur = get_current();
-    // char changed_path[TMPFS_MAX_PATH_LEN];
-    // changed_path[0] = '\0';
-    // vnode *node = NULL;
-    // printf("cd %s\n\r", frame->x0);
-    frame->x0 = 0;
+    frame->x0 = sysc_chdir((const char *)frame->x0);
+    // frame->x0 = 0;
   }
+}
+
+static int sysc_mount(const char* target, const char* file_name){
+  // printf("mount %s\n\r", target);
+  task *cur = get_current();
+  char abs_path[TMPFS_MAX_PATH_LEN];
+  abs_path[0] = '\0';
+  to_abs_path(abs_path, cur->cwd, target);
+  return vfs_mount((const char *)abs_path, file_name);
+}
+
+static int sysc_chdir(const char *path){
+  // vfs_dump_root();
+  // printf("cd %s\n\r", path);
+  task *cur = get_current();
+  char changed_path[TMPFS_MAX_PATH_LEN];
+  changed_path[0] = '\0';
+  to_abs_path(changed_path, cur->cwd, path);
+  vnode *node = NULL;
+  // int ret = vfs_lookup("tmp", &node);
+  int ret = vfs_lookup(changed_path, &node);
+  // printf("node %s\n\r", node->component->name);
+  if(changed_path[strlen(changed_path)-1] != '/')
+    strcat_(changed_path, "/");
+  if(ret == 0)
+    strcpy(cur->cwd, changed_path);
+  else
+    printf("[ERROR]");
+  return ret;
 }
 
 void signal_handler_wrapper(){
