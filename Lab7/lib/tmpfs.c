@@ -5,12 +5,9 @@
 #include "utils.h"
 
 
-struct mount _root_fs;
-struct mount* rootfs = &_root_fs;
-static int initialized = 0;
+struct mount* rootfs = 0;
 
-int tmpfs_nodeInit(mount* mnt, vnode* root) {
-	root->mnt = mnt;
+int tmpfs_nodeInit(vnode* root) {
 	root->v_ops = (vnode_operations*)kmalloc(sizeof(vnode_operations));
 	root->v_ops->lookup = tmpfs_lookup;
 	root->v_ops->create = tmpfs_creat;
@@ -21,8 +18,7 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 	root->f_ops->open = tmpfs_open;
 	root->f_ops->close = tmpfs_close;
 	root->internal = (void*)kmalloc(sizeof(Content));
-	root->parent = root;
-
+	
 	Content* content = (Content*)(root->internal);
 	content->name = 0;
 	content->type = DIR_TYPE;
@@ -30,9 +26,6 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 	content->size = 0;
 	content->data = (void*)kmalloc(DIR_CAP * 8);
 
-	if (initialized)
-		return 0;
-	initialized = 1;
 	void* f = fbase_get();
 	unsigned long size;
 	while (1) {  //build tree
@@ -66,17 +59,6 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 				new_node->mnt = dir_node->mnt;
 				content = (Content*)(new_node->internal);
 				if (fmode == 1) {
-					if (compare_string(content->name, "home") == 0)
-						home_dir = new_node;
-					if (compare_string(content->name, "initramfs") == 0) {
-						mount* mnt = kmalloc(sizeof(mount));
-						filesystem* fs = kmalloc(sizeof(filesystem));
-						mnt->root = new_node;
-       					new_node->mnt = mnt;
-						register_filesystem(fs, "tmpfs");
-						fs->setup_mount(fs, mnt);
-						initramfs = mnt;
-					}
 					content->type = DIR_TYPE;
 					content->capacity = DIR_CAP;
 					content->size = 0;
@@ -98,17 +80,10 @@ int tmpfs_nodeInit(mount* mnt, vnode* root) {
 		}
 		f = next_fget(f);
 	}
-	if (!home_dir) {
-		uart_printf("[ERROR][tmpfs_nodeInit] Can't find home dir!\n");
-		//while (1) {}
-	}
 	return 0;
 }
 
-int tmpfs_setup(filesystem* fs, mount* root) {
-    rootfs->root = (vnode*)kmalloc(sizeof(vnode));
-    rootfs->fs = fs;
-    tmpfs_nodeInit(rootfs, rootfs->root);
+int tmpfs_setup(filesystem* fs, mount* mnt) {
 	return 0;
 }
 

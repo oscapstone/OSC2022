@@ -86,6 +86,9 @@ void lower_sync_handler(trap_frame *tf) {
                 case 16:
                     regs[0] = sys_mount((const char*)regs[0], (const char*)regs[1], (const char*)regs[2], (unsigned long)regs[3], (const void*)regs[4]);
                     break;
+                case 17:
+                    regs[0] = sys_chdir((const char*)regs[0]);
+                    break;
                 default:
                     uart_printf("[ERROR][lower_sync_handler] unknown svc!\n");
             }
@@ -310,7 +313,7 @@ int sys_open(const char *pathname, int flags) {
     vnode* new_root;
     new_root = find_root(pathname, cur->cur_dir, &new_path);
     for (int i = 0; i < FD_TABLE_SIZE; ++i) {
-		if ((cur->fd_table)[i] == 0 && (vfs_open(pathname, flags, &(cur->fd_table)[i], new_root) == SUCCESS))
+		if ((cur->fd_table)[i] == 0 && (vfs_open(new_path, flags, &(cur->fd_table)[i], new_root) == SUCCESS))
             return i;
 	}
     uart_printf("[sys_open fail]\n");
@@ -356,7 +359,7 @@ int sys_mkdir(const char *pathname) {
     char* new_path;
     vnode* new_root;
     new_root = find_root(pathname, get_current()->cur_dir, &new_path);
-    if (vfs_mkdir(pathname, new_root) == SUCCESS)
+    if (vfs_mkdir(new_path, new_root) == SUCCESS)
         return 0;
     uart_printf("[sys_mkdir fail]\n");
     return -1;
@@ -371,6 +374,15 @@ int sys_mount(const char *src, const char *target, const char *filesystem, unsig
         return 0;
     uart_printf("[sys_mount fail]\n");
     return -1;
+}
+
+int sys_chdir(const char *path) {
+    char* new_path;
+    vnode* node, *new_root = find_root(path, get_current()->cur_dir, &new_path);
+    if (vfs_lookup(new_path, &node, new_root) != SUCCESS)
+        return -1;
+    get_current()->cur_dir = node;
+    return 0;
 }
 
 /* helper functions */

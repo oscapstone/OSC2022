@@ -18,9 +18,14 @@ void kernel_main(void) {
 	create_root_thread();
 
 	// setup tmpfs
-	filesystem* fs = kmalloc(sizeof(filesystem));
-	register_filesystem(fs, "tmpfs");
-	fs->setup_mount(fs, rootfs);
+	rootfs = kmalloc(sizeof(mount));
+	rootfs->root = kmalloc(sizeof(vnode));
+	rootfs->root->mnt = rootfs;
+	rootfs->fs = kmalloc(sizeof(filesystem));
+	register_filesystem(rootfs->fs, "tmpfs");
+	rootfs->fs->setup_mount(rootfs->fs, rootfs);
+	rootfs->root->parent = rootfs->root;
+	tmpfs_nodeInit(rootfs->root);
     //tmpfs_dump(rootfs->root, 0);
 	
 	shell();

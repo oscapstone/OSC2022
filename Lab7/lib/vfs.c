@@ -5,7 +5,6 @@
 #include "allocator.h"
 
 char buffer[16];
-struct vnode* home_dir = 0;
 struct mount* initramfs = 0;
 
 int register_filesystem(filesystem* fs, const char* fs_name) {
@@ -77,6 +76,7 @@ int vfs_write(file* f, const void* buf, size_t len) {
 int vfs_create(vnode* dir_node, vnode** target, const char* component_name) {
     if (isReadOnly(dir_node))
         return FAIL;
+    (*target)->parent = dir_node;
     return dir_node->v_ops->create(dir_node, target, component_name);
 }
 
@@ -94,6 +94,7 @@ int vfs_mkdir(const char* pathname, vnode* root) {
         if (idx == -1) {  // dir not exists
             flag = 1;
             dir->v_ops->mkdir(dir, &target, prefix);
+            target->parent = dir;
         }
         dir = target;
         pathname = slashIgnore(pathname, prefix, PREFIX_LEN);
@@ -116,9 +117,20 @@ int vfs_mount(const char* target, const char* file_system, vnode* root) {
         mount* mnt = kmalloc(sizeof(mount));
         mnt->root = node;
         node->mnt = mnt;
-        filesystem* fs = kmalloc(sizeof(filesystem));
-        register_filesystem(fs, "tmpfs");
-        fs->setup_mount(fs, mnt);
+        mnt->fs = kmalloc(sizeof(filesystem));
+        register_filesystem(mnt->fs, "tmpfs");
+        mnt->fs->setup_mount(mnt->fs, mnt);
+
+        node->v_ops = (vnode_operations*)kmalloc(sizeof(vnode_operations));
+        node->v_ops->lookup = tmpfs_lookup;
+        node->v_ops->create = tmpfs_creat;
+        node->v_ops->mkdir = tmpfs_mkdir;
+        node->f_ops=(file_operations*)kmalloc(sizeof(file_operations));
+        node->f_ops->write = tmpfs_write;
+        node->f_ops->read = tmpfs_read;
+        node->f_ops->open = tmpfs_open;
+        node->f_ops->close = tmpfs_close;
+        node->internal = (void*)kmalloc(sizeof(Content));
     }
     else {
         uart_printf("[ERROR][vfs_mount] Unsupported filesystem!\n");

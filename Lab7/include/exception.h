@@ -34,6 +34,7 @@ int sys_read(int fd, void *buf, int count);
 int sys_mkdir(const char *pathname);
 // you can ignore arguments other than target and filesystem
 int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data);
+int sys_chdir(const char *path);
 
 /* helper functions */
 extern void (*_handler)();

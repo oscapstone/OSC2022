@@ -65,7 +65,6 @@ typedef struct mode_t mode_t;
 #define FILE_NOT_EXIST 2
 
 extern struct mount* rootfs;
-extern struct vnode* home_dir;
 extern struct mount* initramfs;
 
 // register the file system to the kernel.

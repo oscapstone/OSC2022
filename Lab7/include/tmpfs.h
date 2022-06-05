@@ -14,8 +14,8 @@ typedef struct {
 	void* cache;// only for FILE_TYPE 
 } Content;
 
-int tmpfs_setup(filesystem* fs, mount* root);
-int tmpfs_nodeInit(mount* mnt, vnode* root);
+int tmpfs_setup(filesystem* fs, mount* mnt);
+int tmpfs_nodeInit(vnode* root);
 void tmpfs_dump(vnode* cur, int level);
 void cache_init(Content* content);
 
