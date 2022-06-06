@@ -26,6 +26,19 @@ int vfs_mount(const char* target, const char* file_name){
     strcpy((char *)rootfs->fs->name, file_name);
     register_filesystem(rootfs->fs);
     return rootfs->fs->setup_mount(rootfs->fs, rootfs);
+  }else if(strcmp(target, "/initramfs") == 0){
+    vfs_mkdir(target);
+    vnode *vnode_mount = NULL;
+    int result = vfs_lookup(target, &vnode_mount);
+    if(result == 0){
+      vnode_mount->mount = malloc_(sizeof(mount));
+      vnode_mount->mount->fs = malloc_(sizeof(filesystem));
+      vnode_mount->mount->fs->name = malloc_(NAME_LEN);
+      vnode_mount->mount->root = vnode_mount;   // for pass the node name
+      strcpy((char *)vnode_mount->mount->fs->name, file_name);
+      register_filesystem(vnode_mount->mount->fs);
+      return vnode_mount->mount->fs->setup_mount(vnode_mount->mount->fs, vnode_mount->mount);
+    }
   }else{
     vnode *vnode_mount = NULL;
     int result = vfs_lookup(target, &vnode_mount);
@@ -51,9 +64,10 @@ int lookup_path(const char* pathname, vnode *dir_node, vnode **target, int creat
   char component_name[TMPFS_MAX_COMPONENT_NAME];
   first_component((char *)pathname, component_name);
   rest_path = pop_first_component((char *)pathname);
-
-  if(dir_node->mount != NULL)
+  if(dir_node->mount != NULL){
+    printf("change mount\n\r");
     return lookup_path(pathname, dir_node->mount->root, target, create);
+  }
 
   if(dir_node->component->type != COMP_DIR){
     printf("[ERROR][lookup_path]fail at pathname: %s. the type isn't folder\n\r", pathname);
@@ -64,7 +78,6 @@ int lookup_path(const char* pathname, vnode *dir_node, vnode **target, int creat
     if(dir_node->v_ops->lookup(dir_node, target, component_name) == 0){
       dir_node = *target;
       if(rest_path[0] != '\0' && dir_node->component->type == COMP_DIR){
-        // printf("[INFO][lookup_path] find the dir '%s', type %d\n\r", dir_node->component->name, dir_node->component->type);
         return lookup_path(rest_path, dir_node, target, create);
       }else if(rest_path[0] != '\0' && dir_node->component->type == COMP_FILE){
         printf("[ERROR][lookup_path] find the file '%s' not dir.\n\r", dir_node->component->name);
@@ -84,7 +97,6 @@ int lookup_path(const char* pathname, vnode *dir_node, vnode **target, int creat
         continue;
       if(dir_node->v_ops->mkdir(dir_node, target, rest_comps[i]) == 0){
         dir_node = *target;
-        // printf("[INFO][lookup_path] create folder '%s'.\n\r", dir_node->component->name);
       }else{
         printf("[ERROR][lookup_path]\n\r");
       }
@@ -194,6 +206,7 @@ static int first_component(char *pathname, char *component_name){
 
 void vfs_dump_under(vnode *node, int depth){
   if(node->mount != NULL){
+    printf("mount: %s\n\r", node->component->name);
     vfs_dump_under(node->mount->root, depth);
   }
   else if(node->component->type == COMP_DIR){

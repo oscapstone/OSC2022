@@ -17,5 +17,7 @@ void main(char * arg){
   page_init();
   thread_init();
   vfs_mount("/", "tmpfs");
+  // printf("mount ini\n\r");
+  vfs_mount("/initramfs", "tmpfs");
   shell();
 }

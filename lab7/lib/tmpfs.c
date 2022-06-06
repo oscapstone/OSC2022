@@ -147,16 +147,6 @@ int tmpfs_create(vnode *dir_node, vnode **target, const char* component_name){
     return 1;
   }
 
-  // vnode *entry = NULL;
-  // for(size_t i=0; i<dir_node->component->len; i++){
-  //   entry = dir_node->component->entries[i];
-  //   if(strcmp(component_name, entry->component->name) == 0){
-  //     printf("Warning, tmpfs_create(), %s already exist under %s, entry=0x%lX, dir_node=0x%lX, \r\n",component_name, dir_node->component->name, (uint64_t)entry, (uint64_t)dir_node);
-  //     *target = entry;
-  //     return 1;
-  //   }
-  // }
-
   if(dir_node->component->len >= TMPFS_MAX_ENTRY){
     printf("[ERROR][tmpfs_create] '%s', no more entry can create\n\r", component_name);
     return -1;
@@ -164,8 +154,9 @@ int tmpfs_create(vnode *dir_node, vnode **target, const char* component_name){
 
   *target = malloc_(sizeof(vnode));
   (*target)->component = malloc_(sizeof(vnode_component));
-  (*target)->component->name = malloc_(sizeof(char) * strlen((char *)component_name));
+  (*target)->component->name = malloc_(sizeof(char) * (NAME_LEN));
   strcpy((*target)->component->name, component_name);
+  // printf("name: %s\n\r", (*target)->component->name);
   (*target)->component->data = NULL;
   (*target)->component->len = 0;
 

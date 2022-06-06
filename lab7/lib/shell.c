@@ -38,23 +38,21 @@ void shell(){
           cpio_ls();
         }else if(!strcmp(args[0], "cat")){
           cpio_cat(args[1]);
-        }else if(!strcmp(args[0], "r")){
+        }else if(!strcmp(args[0], "run")){
           char *addr = load_program("vfs1.img");
           if(addr != 0){
             task_create((thread_func)addr, USER);
             idle_thread();
           }
-        }else if(!strcmp(args[0], "rr")){
-          char *addr = load_program("vm.img");
-          if(addr != 0){
-            task_create((thread_func)addr, USER);
-            idle_thread();
-          }
-        }else if(!strcmp(args[0], "mk")){
+        }else if(!strcmp(args[0], "mkdir")){
           vfs_mkdir(args[1]);
-        }else if(!strcmp(args[0], "op")){
+        }else if(!strcmp(args[0], "open")){
           file *open_file = NULL;
           vfs_open(args[1], 0100, &open_file);
+        }else if(!strcmp(args[0], "open11")){
+          file *open_file = NULL;
+          int ret = vfs_open(args[1], 0, &open_file);
+          printf("ret: %d\n\r", ret);
         }else if(!strcmp(args[0], "mount")){
           vfs_mount(args[1], "tmpfs");
         }else if(!strcmp(args[0], "dd")){
