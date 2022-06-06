@@ -149,6 +149,7 @@ static void cpio_parse(cpio_file_ll **file){
     }
     header = header + namesize + filesize + 110;
   }
+  ptr->next = NULL;
 }
 
 /* For the Virtual File System */

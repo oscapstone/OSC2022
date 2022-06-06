@@ -260,8 +260,10 @@ static int sysc_open(const char *pathname, int flags){
 static int sysc_close(int fd){
   task *cur = get_current();
   file *target_file = cur->fd_table[fd];
-  vfs_close(target_file);
-  // printf("close %s\n\r", target_file->vnode->component->name);
+  int result = vfs_close(target_file);
+  if(result == 0){
+    cur->fd_table[fd] = 0;
+  }
   return 0;
 }
 

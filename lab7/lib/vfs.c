@@ -66,7 +66,7 @@ int lookup_path(const char* pathname, vnode *dir_node, vnode **target, int creat
   first_component((char *)pathname, component_name);
   rest_path = pop_first_component((char *)pathname);
   if(dir_node->mount != NULL){
-    printf("change mount\n\r");
+    // printf("change mount\n\r");
     return lookup_path(pathname, dir_node->mount->root, target, create);
   }
 
