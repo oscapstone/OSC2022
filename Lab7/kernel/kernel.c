@@ -26,7 +26,7 @@ void kernel_main(void) {
 	rootfs->fs->setup_mount(rootfs->fs, rootfs);
 	rootfs->root->parent = rootfs->root;
 	tmpfs_nodeInit(rootfs->root);
-    //tmpfs_dump(rootfs->root, 0);
+    tmpfs_dump(rootfs->root, 0);
 	
 	shell();
 }

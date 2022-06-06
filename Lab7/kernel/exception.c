@@ -12,6 +12,7 @@
 #include "mail_box.h"
 #include "vm.h"
 #include "allocator.h"
+#include "tmpfs.h"
 
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
@@ -308,6 +309,7 @@ void sys_signal_kill(int pid, int SIGNAL) {
 }
 
 int sys_open(const char *pathname, int flags) {
+    //uart_printf("sys_open: %s\n", pathname);
     task_struct* cur = get_current();
     char* new_path;
     vnode* new_root;
@@ -321,6 +323,7 @@ int sys_open(const char *pathname, int flags) {
 }
 
 int sys_close(int fd) {
+    //uart_printf("sys_close\n");
     if (fd < 0 || fd >= FD_TABLE_SIZE) {
         uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
     }
@@ -334,6 +337,7 @@ int sys_close(int fd) {
 }
 
 int sys_write(int fd, const void *buf, int count) {
+    //uart_printf("sys_write\n");
     if (fd < 0 || fd >= FD_TABLE_SIZE) {
         uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
     }
@@ -345,6 +349,7 @@ int sys_write(int fd, const void *buf, int count) {
 }
 
 int sys_read(int fd, void *buf, int count) {
+    //uart_printf("sys_read\n");
     if (fd < 0 || fd >= FD_TABLE_SIZE) {
         uart_printf("[ERROR][sys_close] Invalid fd: %d\n", fd);
     }
@@ -356,6 +361,7 @@ int sys_read(int fd, void *buf, int count) {
 }
 
 int sys_mkdir(const char *pathname) {
+    //uart_printf("sys_mkdir: %s\n", pathname);
     char* new_path;
     vnode* new_root;
     new_root = find_root(pathname, get_current()->cur_dir, &new_path);
@@ -367,6 +373,7 @@ int sys_mkdir(const char *pathname) {
 
 // you can ignore arguments other than target and filesystem
 int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data) {
+    //uart_printf("sys_mount: %s\n", target);
     char* new_path;
     vnode* new_root;
     new_root = find_root(target, get_current()->cur_dir, &new_path);
@@ -377,6 +384,11 @@ int sys_mount(const char *src, const char *target, const char *filesystem, unsig
 }
 
 int sys_chdir(const char *path) {
+    //uart_printf("sys_chdir: %s\n", path);
+    if (compare_string(path, "/") == 0) {
+        get_current()->cur_dir = rootfs->root;
+        return 0;
+    }
     char* new_path;
     vnode* node, *new_root = find_root(path, get_current()->cur_dir, &new_path);
     if (vfs_lookup(new_path, &node, new_root) != SUCCESS)

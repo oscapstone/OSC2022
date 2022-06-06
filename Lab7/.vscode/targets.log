@@ -7,7 +7,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # There is NO WARRANTY, to the extent permitted by law.
  
 
-# Make data base, printed on Sun Jun  5 23:49:43 2022
+# Make data base, printed on Mon Jun  6 11:09:57 2022
 
 # Variables
 
@@ -62,7 +62,7 @@ LC_NAME = lzh_TW
 # environment
 VSCODE_CWD = /home/littlelagi
 # environment
-SSH_CONNECTION = 36.226.222.104 64138 140.113.193.201 55146
+SSH_CONNECTION = 36.226.221.135 52822 140.113.193.201 55146
 # environment
 PATH = /home/littlelagi/.vscode-server/bin/c3511e6c69bb39013c4a4b7b9566ec1ca73fc4d5/bin/remote-cli:/home/littlelagi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 # environment
@@ -72,7 +72,7 @@ VSCODE_LOG_STACK = false
 # environment
 LC_NUMERIC = lzh_TW
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-32e8e41b-72e4-4960-b5ce-b7a2f952820c.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-a34a4a7a-c942-4afb-b2c4-d711fbbad62f.sock
 # makefile (from 'Makefile', line 7)
 LIB = lib
 # default
@@ -116,7 +116,7 @@ MAKECMDGOALS := all
 # environment
 SHLVL = 0
 # environment
-XDG_SESSION_ID = 309
+XDG_SESSION_ID = 342
 # environment
 USER = littlelagi
 # environment
@@ -140,7 +140,7 @@ MAKEFLAGS = pqrR
 # environment
 MFLAGS = -pqrR
 # environment
-SSH_CLIENT = 36.226.222.104 64138 55146
+SSH_CLIENT = 36.226.221.135 52822 55146
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
 # environment
@@ -225,7 +225,7 @@ all: kernel8.img archive/initramfs.cpio fs_test.img
 
 fs_test.img: user/fs_test.c user/lib/system_call.c
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-05 21:38:49.999772263
+#  Last modified 2022-06-06 00:37:21.793042917
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 18):
@@ -243,7 +243,7 @@ qemu-kernel:
 # Not a target:
 kernel/exception.c:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-05 21:39:32.795125117
+#  Last modified 2022-06-06 00:36:44.829916125
 #  File has been updated.
 #  Successfully updated.
 
@@ -256,13 +256,14 @@ lib/shell.c:
 
 archive/initramfs.cpio: fs_test.img
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-05 21:38:50.007772141
+#  Last modified 2022-06-06 00:37:21.797042824
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 22):
 	cd archive/rootfs && find . | cpio -o -H newc > ../initramfs.cpio
 
 # Not a target:
+ 
 Makefile:
 #  Implicit rule search has been done.
 #  Last modified 2022-05-29 14:36:28.045748705
@@ -300,8 +301,7 @@ lib/timer.c:
 # Not a target:
 lib/tmpfs.c:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-05 21:41:24.942031131
- 
+#  Last modified 2022-06-06 00:18:26.010891705
 #  File has been updated.
 #  Successfully updated.
 
@@ -386,7 +386,7 @@ lib/vm.c:
 # Not a target:
 kernel/kernel.c:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-05 21:31:25.254669387
+#  Last modified 2022-06-06 00:34:58.948598455
 #  File has been updated.
 #  Successfully updated.
 
@@ -399,7 +399,7 @@ lib/mm.S:
 
 rd.o: archive/initramfs.cpio
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-05 21:38:50.007772141
+#  Last modified 2022-06-06 00:37:21.797042824
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 25):
@@ -407,7 +407,7 @@ rd.o: archive/initramfs.cpio
 
 kernel8.img: kernel/boot.S kernel/exception.c kernel/kernel.c lib/mm.S lib/switch.S lib/printf.c lib/tmpfs.c lib/allocator.c lib/shell.c lib/vfs.c lib/task.c lib/mini_uart.c lib/cpio.c lib/memory.c lib/mail_box.c lib/vm.c lib/reboot.c lib/timer.c lib/utils.c rd.o
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-05 21:41:34.133969697
+#  Last modified 2022-06-06 00:37:22.089036043
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 14):
@@ -417,6 +417,7 @@ kernel8.img: kernel/boot.S kernel/exception.c kernel/kernel.c lib/mm.S lib/switc
 # Not a target:
 user/lib/system_call.c:
 #  Implicit rule search has been done.
+ 
 #  Last modified 2022-05-29 14:17:18.893532177
 #  File has been updated.
 #  Successfully updated.
@@ -439,7 +440,7 @@ lib/allocator.c:
 # Not a target:
 lib/vfs.c:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-05 21:41:07.974141693
+#  Last modified 2022-06-06 00:34:52.04478362
 #  File has been updated.
 #  Successfully updated.
 
@@ -457,6 +458,6 @@ lib/vfs.c:
 # strcache performance: lookups = 106 / hit rate = 33%
 # hash-table stats:
 # Load=70/8192=1%, Rehash=0, Collisions=4/106=4%
-# Finished Make data base on Sun Jun  5 23:49:43 2022
+# Finished Make data base on Mon Jun  6 11:09:57 2022
 
  

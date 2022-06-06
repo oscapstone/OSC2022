@@ -120,17 +120,6 @@ int vfs_mount(const char* target, const char* file_system, vnode* root) {
         mnt->fs = kmalloc(sizeof(filesystem));
         register_filesystem(mnt->fs, "tmpfs");
         mnt->fs->setup_mount(mnt->fs, mnt);
-
-        node->v_ops = (vnode_operations*)kmalloc(sizeof(vnode_operations));
-        node->v_ops->lookup = tmpfs_lookup;
-        node->v_ops->create = tmpfs_creat;
-        node->v_ops->mkdir = tmpfs_mkdir;
-        node->f_ops=(file_operations*)kmalloc(sizeof(file_operations));
-        node->f_ops->write = tmpfs_write;
-        node->f_ops->read = tmpfs_read;
-        node->f_ops->open = tmpfs_open;
-        node->f_ops->close = tmpfs_close;
-        node->internal = (void*)kmalloc(sizeof(Content));
     }
     else {
         uart_printf("[ERROR][vfs_mount] Unsupported filesystem!\n");

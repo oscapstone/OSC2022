@@ -8,24 +8,6 @@
 struct mount* rootfs = 0;
 
 int tmpfs_nodeInit(vnode* root) {
-	root->v_ops = (vnode_operations*)kmalloc(sizeof(vnode_operations));
-	root->v_ops->lookup = tmpfs_lookup;
-	root->v_ops->create = tmpfs_creat;
-	root->v_ops->mkdir = tmpfs_mkdir;
-    root->f_ops=(file_operations*)kmalloc(sizeof(file_operations));
-	root->f_ops->write = tmpfs_write;
-	root->f_ops->read = tmpfs_read;
-	root->f_ops->open = tmpfs_open;
-	root->f_ops->close = tmpfs_close;
-	root->internal = (void*)kmalloc(sizeof(Content));
-	
-	Content* content = (Content*)(root->internal);
-	content->name = 0;
-	content->type = DIR_TYPE;
-	content->capacity = DIR_CAP;
-	content->size = 0;
-	content->data = (void*)kmalloc(DIR_CAP * 8);
-
 	void* f = fbase_get();
 	unsigned long size;
 	while (1) {  //build tree
@@ -35,9 +17,8 @@ int tmpfs_nodeInit(vnode* root) {
 		if (compare_string(fname, "TRAILER!!!") == 0)
             break;
 
-		//insert file from root
-		vnode* dir_node = root;
-		content = (Content*)(dir_node->internal);
+		vnode* dir_node = root;  //insert file from root
+		Content* content = (Content*)(dir_node->internal);
 		vnode** target = (vnode**)(content->data);
 		while (1) {  //iterative search for a path name
 			char prefix[PREFIX_LEN];
@@ -84,6 +65,28 @@ int tmpfs_nodeInit(vnode* root) {
 }
 
 int tmpfs_setup(filesystem* fs, mount* mnt) {
+	vnode* root = mnt->root;
+	root->v_ops = (vnode_operations*)kmalloc(sizeof(vnode_operations));
+	root->v_ops->lookup = tmpfs_lookup;
+	root->v_ops->create = tmpfs_creat;
+	root->v_ops->mkdir = tmpfs_mkdir;
+    root->f_ops=(file_operations*)kmalloc(sizeof(file_operations));
+	root->f_ops->write = tmpfs_write;
+	root->f_ops->read = tmpfs_read;
+	root->f_ops->open = tmpfs_open;
+	root->f_ops->close = tmpfs_close;
+	char* name = 0;
+	if (root->internal)
+		name = ((Content*)(root->internal))->name;
+	root->internal = (void*)kmalloc(sizeof(Content));
+	
+	Content* content = (Content*)(root->internal);
+	content->name = name;
+	content->type = DIR_TYPE;
+	content->capacity = DIR_CAP;
+	content->size = 0;
+	content->data = (void*)kmalloc(DIR_CAP * 8);
+
 	return 0;
 }
 
