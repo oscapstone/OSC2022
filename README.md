@@ -68,6 +68,7 @@ sudo ../uartboot.py <num>
  ┃ ┣ 📂include
  ┃ ┃ ┣ 📜allocator.h
  ┃ ┃ ┣ 📜cpio.h
+ ┃ ┃ ┣ 📜dev_ops.h
  ┃ ┃ ┣ 📜exc.h
  ┃ ┃ ┣ 📜fdt.h
  ┃ ┃ ┣ 📜gpio.h
@@ -86,10 +87,17 @@ sudo ../uartboot.py <num>
  ┃ ┃ ┣ 📜string.h
  ┃ ┃ ┣ 📜syscall.h
  ┃ ┃ ┣ 📜task.h
+ ┃ ┃ ┣ 📜test_fs.h
  ┃ ┃ ┣ 📜timer.h
+ ┃ ┃ ┣ 📜tmpfs.h
  ┃ ┃ ┣ 📜uart.h
- ┃ ┃ ┗ 📜user_syscall.h
+ ┃ ┃ ┣ 📜user_syscall.h
+ ┃ ┃ ┗ 📜vfs.h
  ┃ ┣ 📂initramfs
+ ┃ ┃ ┣ 📂flag
+ ┃ ┃ ┃ ┣ 📂fffflag
+ ┃ ┃ ┃ ┃ ┗ 📜flag   
+ ┃ ┃ ┃ ┗ 📜fakeflag.txt
  ┃ ┃ ┣ 📜me
  ┃ ┃ ┣ 📜test1
  ┃ ┃ ┣ 📜test2.txt
@@ -99,14 +107,15 @@ sudo ../uartboot.py <num>
  ┃ ┃ ┣ 📜allocator.c
  ┃ ┃ ┣ 📜cpio.c
  ┃ ┃ ┣ 📜ctx_switch.S
+ ┃ ┃ ┣ 📜dev_ops.c
  ┃ ┃ ┣ 📜exc.c
  ┃ ┃ ┣ 📜fdt.c
  ┃ ┃ ┣ 📜irq.c
  ┃ ┃ ┣ 📜mailbox.c
  ┃ ┃ ┣ 📜main.c
  ┃ ┃ ┣ 📜malloc.c
- ┃ ┃ ┣ 📜read.c
  ┃ ┃ ┣ 📜math.c
+ ┃ ┃ ┣ 📜read.c
  ┃ ┃ ┣ 📜reboot.c
  ┃ ┃ ┣ 📜sched.c
  ┃ ┃ ┣ 📜shell.c
@@ -114,9 +123,12 @@ sudo ../uartboot.py <num>
  ┃ ┃ ┣ 📜string.c
  ┃ ┃ ┣ 📜syscall.c
  ┃ ┃ ┣ 📜task.c
+ ┃ ┃ ┣ 📜test_fs.c
  ┃ ┃ ┣ 📜timer.c
+ ┃ ┃ ┣ 📜tmpfs.c
  ┃ ┃ ┣ 📜uart.c
- ┃ ┃ ┗ 📜user_syscall.S
+ ┃ ┃ ┣ 📜user_syscall.S
+ ┃ ┃ ┗ 📜vfs.c
  ┃ ┣ 📜Makefile
  ┃ ┣ 📜bcm2710-rpi-3-b-plus.dtb
  ┃ ┗ 📜initramfs.cpio
