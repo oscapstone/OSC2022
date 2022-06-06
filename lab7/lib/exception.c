@@ -8,6 +8,7 @@
 #include "system.h"
 #include "vfs.h"
 #include "string.h"
+#include "malloc.h"
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
@@ -119,7 +120,9 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = sysc_chdir((const char *)frame->x0);
     break;
   default:
-    printf("syscall num: %d\n\r", syscall_num);
+    if(x0 == 8)
+      printf("syscall number: %d\n\r", syscall_num);
+    invalid_exception_router(x0);
     break;
   }
 }
@@ -144,8 +147,14 @@ static int sysc_uart_write(char buf[], size_t size){
 static int sysc_exec(const char* name, char *const argv[], trap_frame *frame){
   task *cur = get_current();
   frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
-  char *addr = load_program((char *)name);
-  frame->elr_el1 = (uint64_t)addr;
+  file *file_handler = NULL;
+  char *load_addr = (char *)page_allocate_addr(0x1000 * 64);
+  if(vfs_open(name, 0, &file_handler) == 0){
+    file_handler->f_ops->read(file_handler, load_addr, 0x1000*64);
+    file_handler->f_ops->close(file_handler);
+  }
+  // char *load_addr = load_program((char *)name);
+  frame->elr_el1 = (uint64_t)load_addr;
   return 0;
 }
 

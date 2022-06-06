@@ -174,7 +174,7 @@ sync_el1h:
   save_all
   mov x0, 4
   mov x1, sp
-  bl invalid_exception_router
+  bl sync_router
   load_all
   eret
 irq_el1h:

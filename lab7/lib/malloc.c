@@ -29,6 +29,10 @@ void* simple_malloc_(size_t size) {
   return return_ptr;
 }
 
+void *page_allocate_addr(size_t size){
+  return (void *)((uint64_t)((page_allocate(size)*0x1000)));
+}
+
 void page_init(){
   char *sim_alloc_start = 0;
   char *sim_alloc_end = 0;

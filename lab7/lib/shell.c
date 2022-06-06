@@ -49,18 +49,10 @@ void shell(){
         }else if(!strcmp(args[0], "open")){
           file *open_file = NULL;
           vfs_open(args[1], 0100, &open_file);
-        }else if(!strcmp(args[0], "open11")){
-          file *open_file = NULL;
-          int ret = vfs_open(args[1], 0, &open_file);
-          printf("ret: %d\n\r", ret);
         }else if(!strcmp(args[0], "mount")){
           vfs_mount(args[1], "tmpfs");
         }else if(!strcmp(args[0], "dd")){
           vfs_dump_root();
-        }else if(!strcmp(args[0], "ll")){
-          vnode *nn = NULL;
-          int ret = vfs_lookup(args[1], &nn);
-          printf("%d, %s\n\r", ret, nn->component->name);
         }
         printf("pi#  ");
         input[0] = 0;

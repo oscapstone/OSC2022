@@ -192,11 +192,10 @@ int initramfs_setup_mount(struct filesystem *fs, mount *mount){
     if(file->file_size > 0){
       // Create entry
       // printf("%d %s\n\r", file->file_size, file->pathname);
-      // printf("%s\n\r", file->data_ptr);
+      printf("%");  // TODO add this for some bug I don't know why
       lookup_path((char*)file->pathname, dir_node, &node_new, 1);
 
       // Config entry to a file
-      // printf("type %d\n\r", node_new->component->type);
       node_new->component->type = COMP_FILE;
       node_new->component->data = (char*)file->data_ptr;
       node_new->component->len = file->file_size;
