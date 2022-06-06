@@ -119,6 +119,7 @@ void sync_router(uint64_t x0, uint64_t x1){
     frame->x0 = sysc_chdir((const char *)frame->x0);
     break;
   default:
+    printf("syscall num: %d\n\r", syscall_num);
     break;
   }
 }
@@ -240,7 +241,7 @@ static int sysc_open(const char *pathname, int flags){
   char abs_path[TMPFS_MAX_PATH_LEN];
   abs_path[0] = '\0';
   to_abs_path(abs_path, cur->cwd, pathname);
-  printf("open %s %d\n\r", abs_path, flags);
+  // printf("open %s %d\n\r", abs_path, flags);
   file *open_file = NULL;
   vfs_open((const char *)abs_path, flags, &open_file);
   cur->fd_table[fd] = open_file;
@@ -251,21 +252,21 @@ static int sysc_close(int fd){
   task *cur = get_current();
   file *target_file = cur->fd_table[fd];
   vfs_close(target_file);
-  printf("close %s\n\r", target_file->vnode->component->name);
+  // printf("close %s\n\r", target_file->vnode->component->name);
   return 0;
 }
 
 static int sysc_write(int fd, const void *buf, unsigned long count){
   task *cur = get_current();
   file *target_file = cur->fd_table[fd];
-  printf("write %s\n\r", target_file->vnode->component->name);
+  // printf("write %s\n\r", target_file->vnode->component->name);
   return vfs_write(target_file, buf, count);
 }
 
 static int sysc_read(int fd, void *buf, unsigned long count){
   task *cur = get_current();
   file *target_file = cur->fd_table[fd];
-  printf("read %s\n\r", target_file->vnode->component->name);
+  // printf("read %s\n\r", target_file->vnode->component->name);
   return vfs_read(target_file, buf, count);
 }
 
@@ -275,7 +276,7 @@ static int sysc_mkdir(const char *pathname, unsigned mode){
   abs_path[0] = '\0';
   to_abs_path(abs_path, cur->cwd, pathname);
   vfs_mkdir((const char *)abs_path);
-  printf("mkdir %s\n\r", abs_path);
+  // printf("mkdir %s\n\r", abs_path);
   return 0;
 }
 
@@ -284,7 +285,7 @@ static int sysc_mount(const char* target, const char* file_name){
   char abs_path[TMPFS_MAX_PATH_LEN];
   abs_path[0] = '\0';
   to_abs_path(abs_path, cur->cwd, target);
-  printf("mount %s\n\r", abs_path);
+  // printf("mount %s\n\r", abs_path);
   return vfs_mount((const char *)abs_path, file_name);
 }
 
@@ -299,7 +300,7 @@ static int sysc_chdir(const char *path){
     strcat_(changed_path, "/");
   if(ret == 0)
     strcpy(cur->cwd, changed_path);
-  printf("cd %s\n\r", changed_path);
+  // printf("cd %s\n\r", changed_path);
   return ret;
 }
 

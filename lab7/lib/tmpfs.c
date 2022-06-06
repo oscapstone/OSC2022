@@ -7,17 +7,18 @@ int tmpfs_setup_mount(struct filesystem *fs, mount *mount){
   if(mount == NULL){
     printf("[ERROR][tmpfs_setup_mount] no pointer");
   }
-  char tmp_name[TMPFS_MAX_COMPONENT_NAME];
-  tmp_name[0] = '\0';
-  if(mount->root != NULL){
-    strcpy(tmp_name, mount->root->component->name);
-  }
+  // char tmp_name[TMPFS_MAX_COMPONENT_NAME];
+  // tmp_name[0] = '\0';
+  // if(mount->root != NULL){
+  //   strcpy(tmp_name, mount->root->component->name);
+  // }
   mount->root = malloc_(sizeof(vnode));
   mount->root->mount = NULL;
   mount->root->component = malloc_(sizeof(vnode_component));
   mount->root->component->type = COMP_DIR;
   mount->root->component->len = 0;
-  strcpy(mount->root->component->name, tmp_name);
+  mount->root->component->name = "";
+  // strcpy(mount->root->component->name, tmp_name);
   mount->root->component->entries = NULL;
 
   mount->root->f_ops = malloc_(sizeof(file_operations));
