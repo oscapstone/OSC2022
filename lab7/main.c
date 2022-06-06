@@ -15,9 +15,9 @@ void main(char * arg){
   core_timer_enable();
   fdt_traverse(initramfs_callback);
   page_init();
-  thread_init();
   vfs_mount("/", "tmpfs");
-  // printf("mount ini\n\r");
   vfs_mount("/initramfs", "tmpfs");
+  vfs_mount("/dev", "devfs");
+  thread_init();
   shell();
 }

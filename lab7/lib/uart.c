@@ -120,3 +120,14 @@ void disable_uart_r_interrupt(){
 void disable_uart_w_interrupt(){
   *AUX_MU_IER &= ~(2);  
 }
+
+
+uint8_t uart_read_byte(){
+  uint8_t r;
+  // wait until something is in the buffer
+  while(!(*AUX_MU_LSR&0x01));
+
+  // read it and return
+  r = (char)(*AUX_MU_IO);
+  return r;
+}

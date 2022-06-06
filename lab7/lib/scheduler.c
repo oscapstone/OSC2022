@@ -7,6 +7,10 @@
 #include "system.h"
 #include "string.h"
 
+#define FD_STDIN  0
+#define FD_STDOUT 1
+#define FD_STDERR 2
+
 static task *run_queue = NULL;
 static task *zombies_queue = NULL;
 static task *temp_queue = NULL;
@@ -52,6 +56,13 @@ void *task_create(thread_func func, enum mode mode){
   new_task->sp = (uint64_t)addr;
   strcpy(new_task->cwd, "/");
   memset_(new_task->fd_table, 0, sizeof(new_task->fd_table)); // init file table
+
+
+  file *file_handler = NULL;
+  vfs_open("/dev/uart", 0, &file_handler);  new_task->fd_table[FD_STDIN] = file_handler;
+  vfs_open("/dev/uart", 0, &file_handler);  new_task->fd_table[FD_STDOUT] = file_handler;
+  vfs_open("/dev/uart", 0, &file_handler);  new_task->fd_table[FD_STDERR] = file_handler;
+
   enqueue(&run_queue, new_task);  
   return new_task;
 }

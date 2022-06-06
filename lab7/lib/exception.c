@@ -62,6 +62,8 @@ void irq_router(uint64_t x0){
 void sync_router(uint64_t x0, uint64_t x1){
   trap_frame *frame = (trap_frame *)x1;
   int syscall_num = frame->x8;
+  // if(syscall_num > 10)
+  //   printf("%d", syscall_num);
   switch (syscall_num){
   case SYSCALL_NUM_PID:
     frame->x0 = sysc_pid();

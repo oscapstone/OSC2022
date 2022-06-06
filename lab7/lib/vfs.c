@@ -4,6 +4,7 @@
 #include "printf.h"
 #include "malloc.h"
 #include "cpio.h"
+#include "devfs.h"
 
 mount* rootfs;
 
@@ -40,6 +41,19 @@ int vfs_mount(const char* target, const char* file_name){
       vnode_mount->mount->fs->setup_mount = initramfs_setup_mount;
       return vnode_mount->mount->fs->setup_mount(vnode_mount->mount->fs, vnode_mount->mount);
     }
+  }else if(strcmp(target, "/dev") == 0){
+    vfs_mkdir(target);
+    vnode *vnode_mount = NULL;
+    int result = vfs_lookup(target, &vnode_mount);
+    if(result == 0){
+      vnode_mount->mount = malloc_(sizeof(mount));
+      vnode_mount->mount->fs = malloc_(sizeof(filesystem));
+      vnode_mount->mount->fs->name = malloc_(NAME_LEN);
+      // vnode_mount->mount->root = vnode_mount;   // for pass the node name
+      strcpy((char *)vnode_mount->mount->fs->name, file_name);
+      vnode_mount->mount->fs->setup_mount = devfs_setup_mount;
+      return vnode_mount->mount->fs->setup_mount(vnode_mount->mount->fs, vnode_mount->mount);
+    }
   }else{
     vnode *vnode_mount = NULL;
     int result = vfs_lookup(target, &vnode_mount);
@@ -66,7 +80,6 @@ int lookup_path(const char* pathname, vnode *dir_node, vnode **target, int creat
   first_component((char *)pathname, component_name);
   rest_path = pop_first_component((char *)pathname);
   if(dir_node->mount != NULL){
-    // printf("change mount\n\r");
     return lookup_path(pathname, dir_node->mount->root, target, create);
   }
 
