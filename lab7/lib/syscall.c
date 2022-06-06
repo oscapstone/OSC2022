@@ -134,6 +134,91 @@ void sys_kill(int pid) {
 
 }
 
+int sys_open(const char *pathname, int flags) {
+    printf("[debug] start of syscall open\n");
+    struct file *f;
+    printf("[debug] test 0x%x\n", rootfs);
+    printf("[debug] test 0x%x\n", rootfs->root);
+    int res = vfs_open(pathname, flags, &f);
+    struct pt_regs *cur_regs = task_pt_regs(current);
+
+    if (res == FAIL) {
+        cur_regs->regs[0] = -1;
+        return;
+    }
+
+    int fd_num = current->files.count;
+
+    current->files.fds[fd_num] = f;
+    current->files.count++;
+    cur_regs->regs[0] = fd_num;
+    printf("[debug] end of syscall open\n");
+}
+
+int sys_close(int fd) {
+    printf("[debug] start of syscall close\n");
+    struct pt_regs *cur_regs = task_pt_regs(current);
+    if (fd < 0) {
+        cur_regs->regs[0] = -1;
+        return;
+    }
+    struct file *f = current->files.fds[fd];
+    cur_regs->regs[0] = vfs_close(f);
+    current->files.fds[fd] = 0;
+    printf("[debug] end of syscall close\n");
+}
+
+long sys_write(int fd, const void *buf, unsigned long count) {
+    printf("[debug] start of syscall write\n");
+    struct pt_regs *cur_regs = task_pt_regs(current);
+    if (fd < 0) {
+        cur_regs->regs[0] = -1;
+        return;
+    }
+    struct file *f = current->files.fds[fd];
+    if (f == 0) {
+        cur_regs->regs[0] = 0;
+        return;
+    }
+    cur_regs->regs[0] = vfs_write(f, buf, count);
+    printf("[debug] end of syscall write\n");
+}
+
+long sys_read(int fd, void *buf, unsigned long count) {
+    printf("[debug] start of syscall read\n");
+    struct pt_regs *cur_regs = task_pt_regs(current);
+    if (fd < 0) {
+        cur_regs->regs[0] = -1;
+        return;
+    }
+    struct file *f = current->files.fds[fd];
+    if (f == 0) {
+        cur_regs->regs[0] = 0;
+        return;
+    }
+    cur_regs->regs[0] = vfs_read(f, buf, count);
+    printf("[debug] end of syscall read\n");
+}
+
+int sys_mkdir(const char *pathname, unsigned mode) {
+    printf("[debug] start of syscall mkdir\n");
+    struct pt_regs *cur_regs = task_pt_regs(current);
+    cur_regs->regs[0] = vfs_mkdir(pathname);
+    printf("[debug] end of syscall mkdir\n");
+}
+
+int sys_mount(const char *src, const char *target, const char *fs, unsigned long flags, const void *data) {
+    printf("[debug] start of syscall mount\n");
+    printf("[debug] end of syscall mount\n");
+}
+
+int sys_chdir(const char *path) {
+    printf("[debug] start of syscall chdir\n");
+    struct pt_regs *cur_regs = task_pt_regs(current);
+    cur_regs->regs[0] = vfs_chdir(path);
+    printf("[debug] end of syscall chdir\n");
+}
+
 void * const sys_call_table[] =
 {
     sys_getpid,
@@ -143,5 +228,15 @@ void * const sys_call_table[] =
     sys_fork,
     sys_exit,
     sys_mbox_call,
-    sys_kill
+    sys_kill,
+    0,
+    0,
+    0,
+    sys_open,
+    sys_close,
+    sys_write,
+    sys_read,
+    sys_mkdir,
+    sys_mount,
+    sys_chdir
 };

@@ -53,7 +53,7 @@ void start_video() {
 
         filesize = hexstr_to_uint(header->c_filesize, 8);
 
-        if (stringncmp(filename, "vm.img", namesize) == 0) {
+        if (stringncmp(filename, "vfs1.img", namesize) == 0) {
             code_loc = ((void*)header) + offset;
             break;
         }
@@ -66,8 +66,8 @@ void start_video() {
         header = ((void*)header) + offset;
         
     }
-    printf("vm.img found in cpio at location 0x%x.\n", code_loc);
-    printf("vm.img has size of %d bytes.\n", (int)filesize);
+    printf("vfs1.img found in cpio at location 0x%x.\n", code_loc);
+    printf("vfs1.img has size of %d bytes.\n", (int)filesize);
     
     int err = move_to_user_mode((unsigned long)code_loc, filesize, 0);
     if (err<0) 

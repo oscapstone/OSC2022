@@ -19,7 +19,6 @@
 #define MAX_BUFFER_SIZE 256u
 
 static char buffer[MAX_BUFFER_SIZE];
-static int shared = 1;
 
 void foo() {
     for(int i = 0; i < 10; ++i) {
@@ -35,40 +34,18 @@ void foo() {
 void user_foo() {
 
     printf("User thread id: %d\n", getpid());
+    char *msg = "hello world\n";
+    int fd;
+    char buf[15];
+    buf[14] = '\0';
 
-    volatile unsigned int __attribute__((aligned(16))) mailbox[7];
-    mailbox[0] = 7 * 4;
-    mailbox[1] = REQUEST_CODE;
-    mailbox[2] = GET_BOARD_REVISION;
-    mailbox[3] = 4;
-    mailbox[4] = TAG_REQUEST_CODE;
-    mailbox[5] = 0;
-    mailbox[6] = END_TAG;
-    mbox_call(0x8, mailbox);
-    printf("Board Revision:\t\t%x\n", mailbox[5]);
+    fd = open("/initramfs/msg", 0);
+    read(fd, buf, 13);
+    close(fd);
 
-    int pid = fork();
-    if (pid == 0) {
-        printf("Child says hello!\n");
-        while(1) {
-            printf("Please don't kill me :(\n");
-            shared++;
-        }
-    } else if (pid > 0) {
-        printf("Parent says, \"My child has pid %d\"\n", pid);
-        printf("Shared? %d\n", shared);
-        delay(10000000);
-        printf("Kill my own child :(\n");
-        kill(pid);
-        delay(10000000);
-        printf("shared %d\n", shared);
-    }
+    printf("%s", buf);
 
-    //char buf[4] = {0};
-    //uart_read(buf, 3);
-    //uart_write(buf, 3);
-
-    exit();
+    exit(0);
 
 }
 
@@ -109,7 +86,7 @@ void start_video() {
 
         filesize = hexstr_to_uint(header->c_filesize, 8);
 
-        if (stringncmp(filename, "syscall.img", namesize) == 0) {
+        if (stringncmp(filename, "vfs1.img", namesize) == 0) {
             code_loc = ((void*)header) + offset;
             break;
         }
@@ -122,8 +99,8 @@ void start_video() {
         header = ((void*)header) + offset;
         
     }
-    printf("syscall.img found in cpio at location 0x%x.\n", code_loc);
-    printf("syscall.img has size of %d bytes.\n", (int)filesize);
+    printf("vfs1.img found in cpio at location 0x%x.\n", code_loc);
+    printf("vfs1.img has size of %d bytes.\n", (int)filesize);
     
     void *move_loc = malloc(filesize + 4096); // an extra page for bss just in case
     if(move_loc == NULL) return;

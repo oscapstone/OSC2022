@@ -5,6 +5,8 @@
 
 #ifndef __ASSEMBLER__
 
+#include "vfs.h"
+
 #define THREAD_SIZE             4096
 
 #define NR_TASKS                64
@@ -65,6 +67,8 @@ struct task_struct {
     unsigned long flags;
     long id;
     struct mm_struct mm;
+    struct fd_table files;
+    struct vnode *cwd;
 };
 
 extern void sched_init();
@@ -82,7 +86,9 @@ extern void update_pgd(unsigned long);
 { \
 {0,0,0,0,0,0,0,0,0,0,0,0,0},\
 0, 0, 1, 0, PF_KTHREAD, 0, \
-{0,0,{{0}},0,{0}}\
+{0,0,{{0}},0,{0}},\
+{0, {0}},\
+0 \
 }
 
 #endif

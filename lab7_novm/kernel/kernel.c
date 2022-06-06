@@ -6,6 +6,7 @@
 #include "timer.h"
 #include "exception.h"
 #include "fork.h"
+#include "vfs.h"
 
 void kernel_main(void)
 {
@@ -14,6 +15,8 @@ void kernel_main(void)
 	fdt_traverse(initramfs_callback);
 	init_mm_reserve();
 	timer_init();
+	rootfs_init();
+	initramfs_init();
 	enable_interrupt();
 	uart_send_string("OSDI 2022 Spring\n");
 

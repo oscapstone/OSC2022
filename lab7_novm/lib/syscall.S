@@ -47,3 +47,45 @@ kill:
     mov w8, #SYS_KILL_NUM
     svc #0
     ret
+
+.globl open
+open:
+    mov w8, #SYS_OPEN_NUM
+    svc #0
+    ret
+
+.globl close
+close:
+    mov w8, #SYS_CLOSE_NUM
+    svc #0
+    ret
+    
+.globl write
+write:
+    mov w8, #SYS_WRITE_NUM
+    svc #0
+    ret
+
+.globl read
+read:
+    mov w8, #SYS_READ_NUM
+    svc #0
+    ret
+
+.globl mkdir
+mkdir:
+    mov w8, #SYS_MKDIR_NUM
+    svc #0
+    ret
+
+.globl mount
+mount:
+    mov w8, #SYS_MOUNT_NUM
+    svc #0
+    ret
+
+.globl chdir
+chdir:
+    mov w8, #SYS_CHDIR_NUM
+    svc #0
+    ret

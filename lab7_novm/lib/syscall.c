@@ -130,6 +130,77 @@ void sys_kill(int pid) {
 
 }
 
+int sys_open(const char *pathname, int flags) {
+    printf("[debug] start of syscall open: %s %d\n", pathname, flags);
+    struct file *f;
+    int res = vfs_open(pathname, flags, &f);
+    if (res < 0) return -1;
+
+    int fd_num = current->files.count;
+
+    if (fd_num >= 16) {
+        for (int i=0; i<16; i++) {
+            if (current->files.fds[i] == 0) fd_num = i;
+        }
+    }
+
+    if (fd_num >= 16) return -1;
+
+    current->files.fds[fd_num] = f;
+    current->files.count++;
+    
+    return fd_num;
+}
+
+int sys_close(int fd) {
+    printf("[debug] start of syscall close with fd %d\n", fd);
+    if (fd < 0) return -1;
+
+    struct file *f = current->files.fds[fd];
+    current->files.fds[fd] = 0;
+    
+    return vfs_close(f);
+}
+
+long sys_write(int fd, const void *buf, unsigned long count) {
+    printf("[debug] start of syscall write with fd %d\n", fd);
+
+    if (fd < 0) return -1;
+
+    struct file *f = current->files.fds[fd];
+    if (f == 0) return 0;
+
+    return vfs_write(f, buf, count);
+}
+
+long sys_read(int fd, void *buf, unsigned long count) {
+    printf("[debug] start of syscall read with fd %d\n", fd);
+    
+    if (fd < 0) return -1;
+
+    struct file *f = current->files.fds[fd];
+    if (f == 0) return 0;
+
+    return vfs_read(f, buf, count);
+}
+
+int sys_mkdir(const char *pathname, unsigned mode) {
+    printf("[debug] start of syscall mkdir\n");
+
+    return vfs_mkdir(pathname);
+}
+
+int sys_mount(const char *src, const char *target, const char *fs, unsigned long flags, const void *data) {
+    printf("[debug] start of syscall mount\n");
+    return vfs_mount(target, fs);
+}
+
+int sys_chdir(const char *path) {
+    printf("[debug] start of syscall chdir: %s\n", path);
+    
+    return vfs_chdir(path);
+}
+
 void * const sys_call_table[] =
 {
     sys_getpid,
@@ -139,5 +210,15 @@ void * const sys_call_table[] =
     sys_fork,
     sys_exit,
     sys_mbox_call,
-    sys_kill
+    sys_kill,
+    0,
+    0,
+    0,
+    sys_open,
+    sys_close,
+    sys_write,
+    sys_read,
+    sys_mkdir,
+    sys_mount,
+    sys_chdir
 };

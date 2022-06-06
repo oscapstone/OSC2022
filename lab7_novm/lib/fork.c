@@ -32,6 +32,8 @@ int copy_process(unsigned long clone_flags, unsigned long fn, unsigned long arg,
         p->stack = stack;
     }
 
+    p->files = current->files;
+    p->cwd = current->cwd;
     p->flags = clone_flags;
     p->priority = current->priority;
     p->state = TASK_RUNNING;

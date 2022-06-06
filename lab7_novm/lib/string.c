@@ -37,3 +37,19 @@ unsigned int strlen(const char *s) {
     return l;
 
 }
+
+void strcpy(char *dest, const char *src) {
+    int i = 0;
+    while (src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
+}
+
+void strncpy(char *dest, const char *src, int n) {
+    for (int i=0; i<n; i++) {
+        dest[i] = src[i];
+    }
+    dest[n] = '\0';
+}
