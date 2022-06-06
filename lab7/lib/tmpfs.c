@@ -17,7 +17,6 @@ int tmpfs_setup_mount(struct filesystem *fs, mount *mount){
   mount->root->component = malloc_(sizeof(vnode_component));
   mount->root->component->type = COMP_DIR;
   mount->root->component->len = 0;
-  // mount->root->component->name = "";
   strcpy(mount->root->component->name, tmp_name);
   mount->root->component->entries = NULL;
 

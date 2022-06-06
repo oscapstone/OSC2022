@@ -7,13 +7,27 @@
 #include "mailbox.h"
 #include "system.h"
 #include "vfs.h"
-#include "malloc.h"
 #include "string.h"
 
 static void signal_handler_wrapper();
 static handler_func _handler = NULL;
 static uint32_t signal_exit = 0;
 static uint64_t signal_pid = 0;
+static int sysc_pid();
+static int sysc_uart_read(char buf[], size_t size);
+static int sysc_uart_write(char buf[], size_t size);
+static int sysc_exec(const char* name, char *const argv[], trap_frame *frame);
+static int sysc_fork(trap_frame *frame);
+static int sysc_exit();
+static int sysc_mbox_call(unsigned char ch, unsigned int *mbox);
+static int sysc_kill(int pid);
+static int sysc_register(int SIGNAL, void (*handler)());
+static int sysc_signal_kill(int pid,int SIGNAL);
+static int sysc_open(const char *pathname, int flags);
+static int sysc_close(int fd);
+static int sysc_write(int fd, const void *buf, unsigned long count);
+static int sysc_read(int fd, void *buf, unsigned long count);
+static int sysc_mkdir(const char *pathname, unsigned mode);
 static int sysc_mount(const char* target, const char* file_name);
 static int sysc_chdir(const char *path);
 
@@ -46,178 +60,246 @@ void irq_router(uint64_t x0){
 
 void sync_router(uint64_t x0, uint64_t x1){
   trap_frame *frame = (trap_frame *)x1;
-  if(frame->x8 == 0){             // get pid
-    task *cur = get_current();
-    frame->x0 = cur->pid;
-  }else if(frame->x8 == 1){       // uart read
+  int syscall_num = frame->x8;
+  switch (syscall_num){
+  case SYSCALL_NUM_PID:
+    frame->x0 = sysc_pid();
+    break;
+  case SYSCALL_NUM_UART_READ:
     interrupt_enable();
-    char *buf = (char *)frame->x0;
-    for(int i=0; i < frame->x1; i++){
-      buf[i] = uart_getc();
-    }
-    frame->x0 = frame->x1;
+    frame->x0 = sysc_uart_read((char *)frame->x0, frame->x1);
     interrupt_disable();
-  }else if(frame->x8 == 2){       // uart write
+    break;
+  case SYSCALL_NUM_UART_WRITE:
     interrupt_enable();
-    char *buf = (char *)frame->x0;
-    for(int i=0; i<frame->x1; i++)
-      uart_send(buf[i]);
-    frame->x0 = frame->x1;
+    frame->x0 = sysc_uart_write((char *)frame->x0, frame->x1);
     interrupt_disable();
-  }else if(frame->x8 == 3){       // exec
-    char *name = (char *)frame->x0;
-    task *cur = get_current();
-    frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
-    char *addr = load_program(name);
-    frame->elr_el1 = (uint64_t)addr;
-    // char *argv = (char *)frame->x1;
-    frame->x0 = 0;
-  }else if(frame->x8 == 4){       // fork
-    task *parent = get_current();
-    task *child = task_create(NULL, USER);
-    /* copy the task context & kernel stack (including trap frame) of parent to child */
-    child->x19 = frame->x19;
-    child->x20 = frame->x20;
-    child->x21 = frame->x21;
-    child->x22 = frame->x22;
-    child->x23 = frame->x23;
-    child->x24 = frame->x24;
-    child->x25 = frame->x25;
-    child->x26 = frame->x26;
-    child->x27 = frame->x27;
-    child->x28 = frame->x28;
-    child->fp = frame->x29;
-    child->lr = (uint64_t)child_return_from_fork;
-    child->sp = (uint64_t)frame;
-    child->target_func = parent->target_func;
-    child->handler = parent->handler;
-    // copy the stack
-    char *src1 = (char *)parent->user_sp;
-    char *dst1 = (char *)child->user_sp;
-    char *src2 = (char *)parent->sp_addr;
-    char *dst2 = (char *)child->sp_addr;
-    for(int i=0; i<THREAD_SP_SIZE; i++){
-      *(dst1+i) = *(src1+i);
-      *(dst2+i) = *(src2+i); 
-    }
-    if((uint64_t)child->sp_addr > (uint64_t)parent->sp_addr){
-      child->sp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
-      // child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);      // fp is the chain this only move the fist element
-    }else if((uint64_t)child->sp_addr < (uint64_t)parent->sp_addr){
-      child->sp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
-      // child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
-    }
-    trap_frame *child_frame = (trap_frame *)child->sp;
-    child_frame->x0 = 0;
-    child_frame->x29 = child->fp;
-    if((uint64_t)child->user_sp > (uint64_t)parent->user_sp){
-      child_frame->sp_el0 += ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
-    }else if((uint64_t)child->user_sp < (uint64_t)parent->user_sp){
-      child_frame->sp_el0 -= ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
-    }
-    frame->x0 = child->pid;
-  }else if(frame->x8 == 5){       // exit
-    task *cur = get_current();
-    if(signal_exit){
-      signal_exit = 0;
-      sys_kill(signal_pid);
-    }
-    cur->state = EXIT;
+    break;
+  case SYSCALL_NUM_EXEC:
+    frame->x0 = sysc_exec((char *)frame->x0, (char **) frame->x1, frame);
+    break;
+  case SYSCALL_NUM_FORK:
+    frame->x0 = sysc_fork(frame);
+    break;
+  case SYSCALL_NUM_EXIT:
+    frame->x0 = sysc_exit();
     schedule();
-  }else if(frame->x8 == 6){       // mbox call
-    unsigned char ch = (unsigned char)frame->x0;
-    uint32_t *mbox = (uint32_t *)frame->x1;
-    frame->x0 = mbox_call(ch, mbox);
-  }else if(frame->x8 == 7){       // kill
-    kill_thread(frame->x0);
-  }else if(frame->x8 == 8){       // register
-    task *cur = get_current();
-    cur->handler = (void (*)())frame->x1;
-  }else if(frame->x8 == 9){       // signal kill
-    task *target = find_task(frame->x0);
-    _handler = (handler_func)target->handler;
-    signal_pid = frame->x0;
-    signal_exit = 1;
-    remove_task(frame->x0);
-    task *handler_task = task_create(NULL, USER);
-    handler_task->target_func = (uint64_t)signal_handler_wrapper;
-  }else if(frame->x8 == 11){      // open
-    task *cur = get_current();
-    int fd = get_task_idle_fd(cur);
-    if(fd < 0){
-      printf("[ERROR][sys_open] find idle fd\n\r");
-      frame->x0 = -1;
-    }
-    char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
-    abs_path[0] = '\0';
-    to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
-    file *open_file = NULL;
-    vfs_open((const char *)abs_path, (int)frame->x1, &open_file);
-    // printf("open %s %d\n\r", abs_path, frame->x1);
-    cur->fd_table[fd] = open_file;
-    free(abs_path);
-    frame->x0 = fd;
-  }else if(frame->x8 == 12){      // close
-    task *cur = get_current();
-    file *target_file = cur->fd_table[frame->x0];
-    // printf("close %s\n\r", target_file->vnode->component->name);
-    vfs_close(target_file);
-    frame->x0 = 0;
-  }else if(frame->x8 == 13){      // write
-    task *cur = get_current();
-    file *target_file = cur->fd_table[frame->x0];
-    // printf("write %s\n\r", target_file->vnode->component->name);
-    int write_count = vfs_write(target_file, (const void *)frame->x1, frame->x2);
-    frame->x0 = write_count;
-  }else if(frame->x8 == 14){      // read
-    task *cur = get_current();
-    file *target_file = cur->fd_table[frame->x0];
-    // printf("read %s\n\r", target_file->vnode->component->name);
-    int read_count = vfs_read(target_file, (void *)frame->x1, frame->x2);
-    frame->x0 = read_count;
-  }else if(frame->x8 == 15){      // mkdir
-    task *cur = get_current();
-    char *abs_path = malloc_(TMPFS_MAX_PATH_LEN);
-    abs_path[0] = '\0';
-    to_abs_path(abs_path, cur->cwd, (const char *)frame->x0);
-    // printf("mkdir %s\n\r", abs_path);
-    vfs_mkdir((const char *)abs_path);
-    free(abs_path);
-    frame->x0 = 0;
-  }else if(frame->x8 == 16){      // mount
+    break;
+  case SYSCALL_NUM_MBOX_CALL:
+    frame->x0 = sysc_mbox_call((unsigned char)frame->x0, (uint32_t *)frame->x1);
+    break;
+  case SYSCALL_NUM_KILL:
+    frame->x0 = sysc_kill(frame->x0);
+    break;
+  case SYSCALL_NUM_REGISTER:
+    frame->x0 = sysc_register(frame->x0, (void (*)())frame->x1);
+    break;
+  case SYSCALL_NUM_SIGNAL_KILL:
+    frame->x0 = sysc_signal_kill(frame->x0, frame->x1);
+    break;
+  case SYSCALL_NUM_OPEN:
+    frame->x0 = sysc_open((const char *)frame->x0, frame->x1);
+    break;
+  case SYSCALL_NUM_CLOSE:
+    frame->x0 = sysc_close(frame->x0);
+    break;
+  case SYSCALL_NUM_WRITE:
+    frame->x0 = sysc_write(frame->x0, (const void*)frame->x1, (uint64_t)frame->x2);
+    break;
+  case SYSCALL_NUM_READ:
+    frame->x0 = sysc_read(frame->x0, (void *)frame->x1, (uint64_t)frame->x2);
+    break;
+  case SYSCALL_NUM_MKDIR:
+    frame->x0 = sysc_mkdir((const char *)frame->x0, frame->x1);;
+    break;
+  case SYSCALL_NUM_MOUNT:
     frame->x0 = sysc_mount((const char *)frame->x1, (const char *)frame->x2);
-  }else if(frame->x8 == 17){
+    break;
+  case SYSCALL_NUM_CHDIR:
     frame->x0 = sysc_chdir((const char *)frame->x0);
-    // frame->x0 = 0;
+    break;
+  default:
+    break;
   }
 }
 
+static int sysc_pid(){
+  task *cur = get_current();
+  return cur->pid;
+}
+
+static int sysc_uart_read(char buf[], size_t size){
+  for(int i=0; i < size; i++)
+    buf[i] = uart_getc();
+  return size;
+}
+
+static int sysc_uart_write(char buf[], size_t size){
+  for(int i=0; i<size; i++)
+    uart_send(buf[i]);
+  return size;
+}
+
+static int sysc_exec(const char* name, char *const argv[], trap_frame *frame){
+  task *cur = get_current();
+  frame->sp_el0 = cur->user_sp + THREAD_SP_SIZE - cur->user_sp%16;
+  char *addr = load_program((char *)name);
+  frame->elr_el1 = (uint64_t)addr;
+  return 0;
+}
+
+static int sysc_fork(trap_frame *frame){
+  task *parent = get_current();
+  task *child = task_create(NULL, USER);
+  /* copy the task context & kernel stack (including trap frame) of parent to child */
+  child->x19 = frame->x19;
+  child->x20 = frame->x20;
+  child->x21 = frame->x21;
+  child->x22 = frame->x22;
+  child->x23 = frame->x23;
+  child->x24 = frame->x24;
+  child->x25 = frame->x25;
+  child->x26 = frame->x26;
+  child->x27 = frame->x27;
+  child->x28 = frame->x28;
+  child->fp = frame->x29;
+  child->lr = (uint64_t)child_return_from_fork;
+  child->sp = (uint64_t)frame;
+  child->target_func = parent->target_func;
+  child->handler = parent->handler;
+  // copy the stack
+  char *src1 = (char *)parent->user_sp;
+  char *dst1 = (char *)child->user_sp;
+  char *src2 = (char *)parent->sp_addr;
+  char *dst2 = (char *)child->sp_addr;
+  for(int i=0; i<THREAD_SP_SIZE; i++){
+    *(dst1+i) = *(src1+i);
+    *(dst2+i) = *(src2+i); 
+  }
+  if((uint64_t)child->sp_addr > (uint64_t)parent->sp_addr){
+    child->sp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);
+    // child->fp += ((uint64_t)child->sp_addr - (uint64_t)parent->sp_addr);      // fp is the chain this only move the fist element
+  }else if((uint64_t)child->sp_addr < (uint64_t)parent->sp_addr){
+    child->sp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
+    // child->fp -= ((uint64_t)parent->sp_addr - (uint64_t)child->sp_addr);
+  }
+  trap_frame *child_frame = (trap_frame *)child->sp;
+  child_frame->x0 = 0;
+  child_frame->x29 = child->fp;
+  if((uint64_t)child->user_sp > (uint64_t)parent->user_sp){
+    child_frame->sp_el0 += ((uint64_t)child->user_sp - (uint64_t)parent->user_sp);
+  }else if((uint64_t)child->user_sp < (uint64_t)parent->user_sp){
+    child_frame->sp_el0 -= ((uint64_t)parent->user_sp - (uint64_t)child->user_sp);
+  }
+  return child->pid;
+}
+
+static int sysc_exit(){
+  task *cur = get_current();
+  if(signal_exit){
+    signal_exit = 0;
+    sys_kill(signal_pid);
+  }
+  cur->state = EXIT;
+  return 0;
+}
+
+static int sysc_mbox_call(unsigned char ch, unsigned int *mbox){
+  return mbox_call(ch, mbox);
+}
+
+static int sysc_kill(int pid){
+  kill_thread(pid);
+  return 0;
+}
+
+static int sysc_register(int SIGNAL, void (*handler)()){
+  task *cur = get_current();
+  cur->handler = handler;
+  return 0;
+}
+
+static int sysc_signal_kill(int pid,int SIGNAL){
+  task *target = find_task(pid);
+  _handler = (handler_func)target->handler;
+  signal_pid = pid;
+  signal_exit = 1;
+  remove_task(pid);
+  task *handler_task = task_create(NULL, USER);
+  handler_task->target_func = (uint64_t)signal_handler_wrapper;
+  return 0;
+}
+
+static int sysc_open(const char *pathname, int flags){
+  task *cur = get_current();
+  int fd = get_task_idle_fd(cur);
+  if(fd < 0){
+    printf("[ERROR][sys_open] find idle fd\n\r");
+    return -1;
+  }
+  char abs_path[TMPFS_MAX_PATH_LEN];
+  abs_path[0] = '\0';
+  to_abs_path(abs_path, cur->cwd, pathname);
+  file *open_file = NULL;
+  vfs_open((const char *)abs_path, flags, &open_file);
+  cur->fd_table[fd] = open_file;
+  // printf("open %s %d\n\r", abs_path, flags);
+  return fd;
+}
+
+static int sysc_close(int fd){
+  task *cur = get_current();
+  file *target_file = cur->fd_table[fd];
+  vfs_close(target_file);
+  // printf("close %s\n\r", target_file->vnode->component->name);
+  return 0;
+}
+
+static int sysc_write(int fd, const void *buf, unsigned long count){
+  task *cur = get_current();
+  file *target_file = cur->fd_table[fd];
+  // printf("write %s\n\r", target_file->vnode->component->name);
+  return vfs_write(target_file, buf, count);
+}
+
+static int sysc_read(int fd, void *buf, unsigned long count){
+  task *cur = get_current();
+  file *target_file = cur->fd_table[fd];
+  // printf("read %s\n\r", target_file->vnode->component->name);
+  return vfs_read(target_file, buf, count);
+}
+
+static int sysc_mkdir(const char *pathname, unsigned mode){
+  task *cur = get_current();
+  char abs_path[TMPFS_MAX_PATH_LEN];
+  abs_path[0] = '\0';
+  to_abs_path(abs_path, cur->cwd, pathname);
+  vfs_mkdir((const char *)abs_path);
+  // printf("mkdir %s\n\r", abs_path);
+  return 0;
+}
+
 static int sysc_mount(const char* target, const char* file_name){
-  // printf("mount %s\n\r", target);
   task *cur = get_current();
   char abs_path[TMPFS_MAX_PATH_LEN];
   abs_path[0] = '\0';
   to_abs_path(abs_path, cur->cwd, target);
+  // printf("mount %s\n\r", abs_path);
   return vfs_mount((const char *)abs_path, file_name);
 }
 
 static int sysc_chdir(const char *path){
-  // vfs_dump_root();
-  // printf("cd %s\n\r", path);
   task *cur = get_current();
   char changed_path[TMPFS_MAX_PATH_LEN];
   changed_path[0] = '\0';
   to_abs_path(changed_path, cur->cwd, path);
   vnode *node = NULL;
-  // int ret = vfs_lookup("tmp", &node);
   int ret = vfs_lookup(changed_path, &node);
-  // printf("node %s\n\r", node->component->name);
   if(changed_path[strlen(changed_path)-1] != '/')
     strcat_(changed_path, "/");
   if(ret == 0)
     strcpy(cur->cwd, changed_path);
-  else
-    printf("[ERROR]");
+  // printf("cd %s\n\r", changed_path);
   return ret;
 }
 

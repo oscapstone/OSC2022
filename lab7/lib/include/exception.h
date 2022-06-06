@@ -6,6 +6,25 @@
 #define IRQS1_PENDING   ((volatile uint64_t *)(MMIO_BASE+0x0000b204))
 #define INTERRUPT_SOURCE_CNTPNSIRQ (1<<1)
 
+#define SYSCALL_NUM_PID             0
+#define SYSCALL_NUM_UART_READ       1
+#define SYSCALL_NUM_UART_WRITE      2
+#define SYSCALL_NUM_EXEC            3
+#define SYSCALL_NUM_FORK            4
+#define SYSCALL_NUM_EXIT            5
+#define SYSCALL_NUM_MBOX_CALL       6
+#define SYSCALL_NUM_KILL            7
+#define SYSCALL_NUM_REGISTER        8
+#define SYSCALL_NUM_SIGNAL_KILL     9
+#define SYSCALL_NUM_OPEN            11
+#define SYSCALL_NUM_CLOSE           12
+#define SYSCALL_NUM_WRITE           13
+#define SYSCALL_NUM_READ            14
+#define SYSCALL_NUM_MKDIR           15
+#define SYSCALL_NUM_MOUNT           16
+#define SYSCALL_NUM_CHDIR           17
+
+
 void invalid_exception_router(uint64_t x0);
 void irq_router(uint64_t x0);
 void sync_router(uint64_t x0, uint64_t x1);

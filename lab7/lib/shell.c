@@ -44,6 +44,12 @@ void shell(){
             task_create((thread_func)addr, USER);
             idle_thread();
           }
+        }else if(!strcmp(args[0], "rr")){
+          char *addr = load_program("vm.img");
+          if(addr != 0){
+            task_create((thread_func)addr, USER);
+            idle_thread();
+          }
         }else if(!strcmp(args[0], "mk")){
           vfs_mkdir(args[1]);
         }else if(!strcmp(args[0], "op")){
