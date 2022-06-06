@@ -4,8 +4,14 @@
 #include "stddef.h"
 
 #define MAX_PATH_NAME 255
-#define MAX_FD 16
-#define O_CREAT 1
+#define O_CREAT 00000100
+#define SEEK_SET 0
+
+enum node_type
+{
+    dir_t,
+    file_t
+};
 
 struct vnode
 {
@@ -43,6 +49,7 @@ struct file_operations
     int (*open)(struct vnode *file_node, struct file **target);
     int (*close)(struct file *file);
     long (*lseek64)(struct file *file, long offset, int whence);
+    long (*getsize)(struct vnode *vd);
 };
 
 struct vnode_operations
@@ -73,5 +80,6 @@ struct filesystem reg_fs[MAX_FS_REG];
 
 void init_rootfs();
 void vfs_test();
+char* path_to_absolute(char* path,char* curr_working_dir);
 
 #endif

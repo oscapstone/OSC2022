@@ -2,6 +2,8 @@
 #define SCHED_H
 
 #include "list.h"
+#include "fs/vfs.h"
+#include "syscall.h"
 
 #define PIDMAX 32768
 #define USTACK_SIZE 0x4000
@@ -48,6 +50,8 @@ typedef struct thread
     int signal_is_checking;
     list_head_t vma_list;
     thread_context_t signal_saved_context;
+    char curr_working_dir[MAX_PATH_NAME+1];
+    struct file* file_descriptors_table[MAX_FD];
 } thread_t;
 
 thread_t *curr_thread;

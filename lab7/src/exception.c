@@ -72,6 +72,34 @@ void sync_64_router(trapframe_t *tpf, unsigned long x1)
     {
         sys_mmap(tpf,(void *)tpf->x0,tpf->x1,tpf->x2,tpf->x3,tpf->x4,tpf->x5);
     }
+    else if (syscall_no == 11)
+    {
+        sys_open(tpf, (char*)tpf->x0, tpf->x1);
+    }
+    else if (syscall_no == 12)
+    {
+        sys_close(tpf, tpf->x0);
+    }
+    else if (syscall_no == 13)
+    {
+        sys_write(tpf, tpf->x0, (char *)tpf->x1, tpf->x2);
+    }
+    else if (syscall_no == 14)
+    {
+        sys_read(tpf, tpf->x0, (char *)tpf->x1, tpf->x2);
+    }
+    else if (syscall_no == 15)
+    {
+        sys_mkdir(tpf, (char *)tpf->x0, tpf->x1);
+    }
+    else if (syscall_no == 16)
+    {
+        sys_mount(tpf, (char *)tpf->x0, (char *)tpf->x1, (char *)tpf->x2, tpf->x3, (void*)tpf->x4);
+    }
+    else if (syscall_no == 17)
+    {
+        sys_chdir(tpf, (char *)tpf->x0);
+    }
     else if (syscall_no == 50)
     {
         sigreturn(tpf);

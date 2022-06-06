@@ -3,7 +3,7 @@
 #include "string.h"
 #include "malloc.h"
 
-struct file_operations tmpfs_file_operations = {tmpfs_write,tmpfs_read,tmpfs_open,tmpfs_close,tmpfs_lseek64};
+struct file_operations tmpfs_file_operations = {tmpfs_write,tmpfs_read,tmpfs_open,tmpfs_close,tmpfs_lseek64,tmpfs_getsize};
 struct vnode_operations tmpfs_vnode_operations = {tmpfs_lookup,tmpfs_create,tmpfs_mkdir};
 
 int register_tmpfs()
@@ -21,7 +21,7 @@ int tmpfs_setup_mount(struct filesystem *fs, struct mount *_mount)
     return 0;
 }
 
-struct vnode* tmpfs_create_vnode(struct mount* _mount, enum tmpfs_type type)
+struct vnode* tmpfs_create_vnode(struct mount* _mount, enum node_type type)
 {
     struct vnode *v = kmalloc(sizeof(struct vnode));
     v->f_ops = &tmpfs_file_operations;
@@ -52,9 +52,10 @@ int tmpfs_read(struct file *file, void *buf, size_t len)
     
     if(len+file->f_pos > inode->datasize)
     {
-        memcpy(buf,inode->data+file->f_pos,inode->datasize - file->f_pos);
+        len = inode->datasize - file->f_pos;
+        memcpy(buf, inode->data + file->f_pos, len);
         file->f_pos += inode->datasize - file->f_pos;
-        return inode->datasize - file->f_pos;
+        return len;
     }
     else
     {
@@ -81,7 +82,12 @@ int tmpfs_close(struct file *file)
 
 long tmpfs_lseek64(struct file *file, long offset, int whence)
 {
-    return 0;
+    if(whence == SEEK_SET)
+    {
+        file->f_pos = offset;
+        return file->f_pos;
+    }
+    return -1;
 }
 
 
@@ -93,6 +99,7 @@ int tmpfs_lookup(struct vnode *dir_node, struct vnode **target, const char *comp
     for (; child_idx < MAX_DIR_ENTRY; child_idx++)
     {
         struct vnode *vnode = dir_inode->entry[child_idx];
+        if(!vnode)break;
         struct tmpfs_inode *inode = vnode->internal;
         if (strncmp(component_name, inode->name, strlen(component_name)) == 0)
         {
@@ -118,16 +125,13 @@ int tmpfs_create(struct vnode *dir_node, struct vnode **target, const char *comp
     int child_idx = 0;
     for (; child_idx < MAX_DIR_ENTRY; child_idx++)
     {
+        if (!inode->entry[child_idx])break;
+
         struct tmpfs_inode *child_inode = inode->entry[child_idx]->internal;
         if (strcmp(child_inode->name,component_name)==0)
         {
             uart_printf("tmpfs create file exists\r\n");
             return -1;
-        }
-
-        if (!inode->entry[child_idx])
-        {
-            break;
         }
     }
 
@@ -137,7 +141,7 @@ int tmpfs_create(struct vnode *dir_node, struct vnode **target, const char *comp
         return -1;
     }
 
-    struct vnode *_vnode = tmpfs_create_vnode(dir_node->mount, file_t);
+    struct vnode *_vnode = tmpfs_create_vnode(0, file_t);
     inode->entry[child_idx] = _vnode;
     if (strlen(component_name) > FILE_NAME_MAX)
     {
@@ -158,7 +162,7 @@ int tmpfs_mkdir(struct vnode *dir_node, struct vnode **target, const char *compo
 
     if (inode->type != dir_t)
     {
-        uart_printf("tmpfs create not dir_t\r\n");
+        uart_printf("tmpfs mkdir not dir_t\r\n");
         return -1;
     }
 
@@ -177,7 +181,7 @@ int tmpfs_mkdir(struct vnode *dir_node, struct vnode **target, const char *compo
         return -1;
     }
 
-    struct vnode* _vnode = tmpfs_create_vnode(dir_node->mount, dir_t);
+    struct vnode* _vnode = tmpfs_create_vnode(0, dir_t);
     inode->entry[child_idx] = _vnode;
     if(strlen(component_name) > FILE_NAME_MAX)
     {
@@ -190,4 +194,10 @@ int tmpfs_mkdir(struct vnode *dir_node, struct vnode **target, const char *compo
 
     *target = _vnode;
     return 0;
+}
+
+long tmpfs_getsize(struct vnode* vd)
+{
+    struct tmpfs_inode *inode = vd->internal;
+    return inode->datasize;
 }

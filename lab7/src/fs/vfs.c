@@ -2,6 +2,7 @@
 #include "fs/tmpfs.h"
 #include "malloc.h"
 #include "string.h"
+#include "fs/initramfs.h"
 
 int register_filesystem(struct filesystem *fs)
 {
@@ -10,7 +11,7 @@ int register_filesystem(struct filesystem *fs)
         if(!reg_fs[i].name)
         {
             reg_fs[i].name = fs->name;
-            reg_fs->setup_mount = fs->setup_mount;
+            reg_fs[i].setup_mount = fs->setup_mount;
             return i;
         }
     }
@@ -195,6 +196,10 @@ void init_rootfs()
     rootfs = kmalloc(sizeof(struct mount));
     reg_fs[idx].setup_mount(&reg_fs[idx], rootfs);
 
+    vfs_mkdir("/initramfs");
+    register_initramfs();
+    vfs_mount("/initramfs","initramfs");
+
     vfs_test();
 }
 
@@ -216,4 +221,49 @@ void vfs_test()
     vfs_read(testfiler, testbufr, 10);
     uart_printf("%s",testbufr);
 
+    struct file *testfile_initramfs;
+    vfs_open("/initramfs/get_simpleexec.sh", O_CREAT, &testfile_initramfs);
+    vfs_read(testfile_initramfs, testbufr, 30);
+    uart_printf("%s", testbufr);
+}
+
+char *path_to_absolute(char *path, char *curr_working_dir)
+{
+    //relative path
+    if(path[0] != '/')
+    {
+        strcat(path, curr_working_dir);
+    }
+
+    char absolute_path[MAX_PATH_NAME+1] = {};
+    int idx = 0;
+    for (int i = 0; i < strlen(path); i++)
+    {
+        // meet /..
+        if (path[i] == '/' && path[i+1] == '.' && path[i+2] == '.')
+        {
+            for (int j = idx; j > 0;j--)
+            {
+                if(absolute_path[j] == '/')
+                {
+                    absolute_path[j] = 0;
+                    idx = j;
+                }
+            }
+            i += 2;
+            continue;
+        }
+
+        // ignore /.
+        if (path[i] == '/' && path[i+1] == '.')
+        {
+            i++;
+            continue;
+        }
+
+
+        absolute_path[idx++] = path[i];
+    }
+
+    return strcpy(path, absolute_path);
 }
