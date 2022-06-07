@@ -65,6 +65,7 @@ struct vnode_operations
 struct mount *rootfs;
 
 int register_filesystem(struct filesystem *fs);
+int register_dev(struct file_operations* fo);
 struct filesystem *find_filesystem(const char *fs_name);
 int vfs_open(const char *pathname, int flags, struct file **target);
 int vfs_close(struct file *file);
@@ -75,11 +76,14 @@ int vfs_mount(const char *target, const char *filesystem);
 int vfs_lookup(const char *pathname, struct vnode **target);
 
 #define MAX_FS_REG 0x50
+#define MAX_DEV_REG 0x10
 
 struct filesystem reg_fs[MAX_FS_REG];
+struct file_operations reg_dev[MAX_DEV_REG];
 
 void init_rootfs();
 void vfs_test();
 char* path_to_absolute(char* path,char* curr_working_dir);
+int op_deny();
 
 #endif
