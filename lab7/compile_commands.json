@@ -12,6 +12,126 @@
       "-I./include/",
       "-c",
       "-o",
+      "lib/string.o",
+      "lib/string.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/lib/string.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/lib/string.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
+      "lib/stdio.o",
+      "lib/stdio.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/lib/stdio.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/lib/stdio.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
+      "lib/stdarg.o",
+      "lib/stdarg.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/lib/stdarg.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/lib/stdarg.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
+      "src/exec.o",
+      "src/exec.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/exec.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/exec.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
+      "src/syscall.o",
+      "src/syscall.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/syscall.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/syscall.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
+      "src/mem.o",
+      "src/mem.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/mem.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/mem.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
       "src/tmpfs.o",
       "src/tmpfs.c"
     ],
@@ -252,6 +372,26 @@
       "-I./include/",
       "-c",
       "-o",
+      "src/timer.o",
+      "src/timer.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/timer.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/timer.o"
+  },
+  {
+    "arguments": [
+      "/usr/lib/llvm/11/bin/clang",
+      "--target=aarch64-elf",
+      "-mcpu=cortex-a53+nosimd",
+      "-mgeneral-regs-only",
+      "-Wall",
+      "-ffreestanding",
+      "-nostdinc",
+      "-I./lib/",
+      "-I./include/",
+      "-c",
+      "-o",
       "src/fork.o",
       "src/fork.c"
     ],
@@ -272,12 +412,12 @@
       "-I./include/",
       "-c",
       "-o",
-      "src/timer.o",
-      "src/timer.c"
+      "src/initramfs.o",
+      "src/initramfs.c"
     ],
     "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7",
-    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/timer.c",
-    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/timer.o"
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/initramfs.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/src/initramfs.o"
   },
   {
     "arguments": [
