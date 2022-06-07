@@ -22,7 +22,6 @@ int initramfs_write(struct file *file, const void *buf, size_t len);
 int initramfs_read(struct file *file, void *buf, size_t len);
 int initramfs_open(struct vnode *file_node, struct file **target);
 int initramfs_close(struct file *file);
-long initramfs_lseek64(struct file *file, long offset, int whence);
 long initramfs_getsize(struct vnode *vd);
 
 int initramfs_lookup(struct vnode *dir_node, struct vnode **target, const char *component_name);

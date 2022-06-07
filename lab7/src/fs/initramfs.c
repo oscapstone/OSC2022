@@ -4,7 +4,7 @@
 #include "malloc.h"
 #include "cpio.h"
 
-struct file_operations initramfs_file_operations = {initramfs_write, initramfs_read, initramfs_open, initramfs_close, initramfs_lseek64,initramfs_getsize};
+struct file_operations initramfs_file_operations = {initramfs_write, initramfs_read, initramfs_open, initramfs_close, vfs_lseek64, initramfs_getsize};
 struct vnode_operations initramfs_vnode_operations = {initramfs_lookup, initramfs_create, initramfs_mkdir};
 
 int register_initramfs()
@@ -105,16 +105,6 @@ int initramfs_close(struct file *file)
 {
     kfree(file);
     return 0;
-}
-
-long initramfs_lseek64(struct file *file, long offset, int whence)
-{
-    if (whence == SEEK_SET)
-    {
-        file->f_pos = offset;
-        return file->f_pos;
-    }
-    return -1;
 }
 
 // vnode operations

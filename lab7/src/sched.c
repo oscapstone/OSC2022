@@ -105,7 +105,7 @@ int exec_thread(char *data, unsigned int filesize)
     vfs_open("/dev/uart", 0, &curr_thread->file_descriptors_table[0]);
     vfs_open("/dev/uart", 0, &curr_thread->file_descriptors_table[1]);
     vfs_open("/dev/uart", 0, &curr_thread->file_descriptors_table[2]);
-    //add_timer(schedule_timer, 1, "", 0);
+    add_timer(schedule_timer, 1, "", 0);
     // eret to exception level 0
     asm("msr tpidr_el1, %0\n\t"
         "msr elr_el1, %1\n\t"

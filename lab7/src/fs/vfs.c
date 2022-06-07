@@ -4,6 +4,7 @@
 #include "string.h"
 #include "fs/initramfs.h"
 #include "fs/dev_uart.h"
+#include "fs/dev_framebuffer.h"
 
 int register_filesystem(struct filesystem *fs)
 {
@@ -214,6 +215,16 @@ int vfs_mknod(char* pathname, int id)
     return 0;
 }
 
+long vfs_lseek64(struct file *file, long offset, int whence)
+{
+    if (whence == SEEK_SET)
+    {
+        file->f_pos = offset;
+        return file->f_pos;
+    }
+    return -1;
+}
+
 void init_rootfs()
 {
     int idx = register_tmpfs();
@@ -228,6 +239,8 @@ void init_rootfs()
     vfs_mkdir("/dev");
     int uart_id = init_dev_uart();
     vfs_mknod("/dev/uart", uart_id);
+    int framebuffer_id = init_dev_framebuffer();
+    vfs_mknod("/dev/framebuffer", framebuffer_id);
 
     vfs_test();
 }

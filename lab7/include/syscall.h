@@ -44,4 +44,8 @@ int sys_mount(trapframe_t *tpf, const char *src, const char *target, const char 
 // syscall number : 17
 int sys_chdir(trapframe_t *tpf, const char *path);
 
+// syscall number : 18
+// you only need to implement seek set
+long sys_lseek64(trapframe_t *tpf, int fd, long offset, int whence);
+
 #endif

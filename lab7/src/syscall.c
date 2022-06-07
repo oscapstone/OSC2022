@@ -113,6 +113,12 @@ int fork(trapframe_t *tpf)
         newt->singal_handler[i] = curr_thread->singal_handler[i];
     }
 
+    //copy signal handler
+    for (int i = 0; i <= MAX_FD; i++)
+    {
+        newt->file_descriptors_table[i] = curr_thread->file_descriptors_table[i];
+    }
+
     list_head_t *pos;
     list_for_each(pos, &curr_thread->vma_list){
 
@@ -350,4 +356,12 @@ int sys_chdir(trapframe_t *tpf, const char *path)
     strcpy(curr_thread->curr_working_dir, abs_path);
 
     return 0;
+}
+
+// syscall number : 18
+// you only need to implement seek set
+long sys_lseek64(trapframe_t *tpf,int fd, long offset, int whence)
+{
+    tpf->x0 = vfs_lseek64(curr_thread->file_descriptors_table[fd],offset,whence);
+    return tpf->x0;
 }

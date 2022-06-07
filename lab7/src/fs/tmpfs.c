@@ -3,7 +3,7 @@
 #include "string.h"
 #include "malloc.h"
 
-struct file_operations tmpfs_file_operations = {tmpfs_write,tmpfs_read,tmpfs_open,tmpfs_close,tmpfs_lseek64,tmpfs_getsize};
+struct file_operations tmpfs_file_operations = {tmpfs_write, tmpfs_read, tmpfs_open, tmpfs_close, vfs_lseek64, tmpfs_getsize};
 struct vnode_operations tmpfs_vnode_operations = {tmpfs_lookup,tmpfs_create,tmpfs_mkdir};
 
 int register_tmpfs()
@@ -79,17 +79,6 @@ int tmpfs_close(struct file *file)
     kfree(file);
     return 0;
 }
-
-long tmpfs_lseek64(struct file *file, long offset, int whence)
-{
-    if(whence == SEEK_SET)
-    {
-        file->f_pos = offset;
-        return file->f_pos;
-    }
-    return -1;
-}
-
 
 // vnode operations
 int tmpfs_lookup(struct vnode *dir_node, struct vnode **target, const char *component_name)

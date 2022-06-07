@@ -100,6 +100,17 @@ void sync_64_router(trapframe_t *tpf, unsigned long x1)
     {
         sys_chdir(tpf, (char *)tpf->x0);
     }
+    else if(syscall_no == 18)
+    {
+        sys_lseek64(tpf, tpf->x0, tpf->x1, tpf->x2);
+    }
+    else if(syscall_no == 19)
+    {
+        // ioctl 0 will be use to get info
+        // there will be default value in info
+        // if it works with default value, you can ignore this syscall
+        tpf->x0 = 0;
+    }
     else if (syscall_no == 50)
     {
         sigreturn(tpf);

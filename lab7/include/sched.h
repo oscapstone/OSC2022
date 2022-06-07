@@ -51,7 +51,7 @@ typedef struct thread
     list_head_t vma_list;
     thread_context_t signal_saved_context;
     char curr_working_dir[MAX_PATH_NAME+1];
-    struct file* file_descriptors_table[MAX_FD];
+    struct file* file_descriptors_table[MAX_FD+1];
 } thread_t;
 
 thread_t *curr_thread;
