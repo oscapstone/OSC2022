@@ -101,7 +101,7 @@ int tmpfs_lookup(struct vnode *dir_node, struct vnode **target, const char *comp
         struct vnode *vnode = dir_inode->entry[child_idx];
         if(!vnode)break;
         struct tmpfs_inode *inode = vnode->internal;
-        if (strncmp(component_name, inode->name, strlen(component_name)) == 0)
+        if (strcmp(component_name, inode->name) == 0)
         {
             *target = vnode;
             return 0;
@@ -181,13 +181,14 @@ int tmpfs_mkdir(struct vnode *dir_node, struct vnode **target, const char *compo
         return -1;
     }
 
-    struct vnode* _vnode = tmpfs_create_vnode(0, dir_t);
-    inode->entry[child_idx] = _vnode;
-    if(strlen(component_name) > FILE_NAME_MAX)
+    if (strlen(component_name) > FILE_NAME_MAX)
     {
         uart_printf("FILE NAME TOO　LONG\r\n");
         return -1;
     }
+
+    struct vnode* _vnode = tmpfs_create_vnode(0, dir_t);
+    inode->entry[child_idx] = _vnode;
 
     struct tmpfs_inode *newinode = _vnode->internal;
     strcpy(newinode->name, component_name);

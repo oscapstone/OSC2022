@@ -127,7 +127,7 @@ int initramfs_lookup(struct vnode *dir_node, struct vnode **target, const char *
         struct vnode *vnode = dir_inode->entry[child_idx];
         if (!vnode)break;
         struct initramfs_inode *inode = vnode->internal;
-        if (strncmp(component_name, inode->name, strlen(component_name)) == 0)
+        if (strcmp(component_name, inode->name) == 0)
         {
             *target = vnode;
             return 0;

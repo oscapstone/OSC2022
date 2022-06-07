@@ -130,7 +130,7 @@ void handle_abort(esr_el1_t* esr_el1)
     // For translation fault
     if ((esr_el1->iss & 0x3f) == TF_LEVEL0 || (esr_el1->iss & 0x3f) == TF_LEVEL1 || (esr_el1->iss & 0x3f) == TF_LEVEL2 || (esr_el1->iss & 0x3f) == TF_LEVEL3)
     {
-        uart_printf("[Translation fault]: 0x%x\r\n",far_el1);
+        //uart_printf("[Translation fault]: 0x%x\r\n",far_el1);
 
         size_t addr_offset = (far_el1 - the_area_ptr->virt_addr);
         addr_offset = (addr_offset % 0x1000) == 0 ? addr_offset : addr_offset - (addr_offset % 0x1000);

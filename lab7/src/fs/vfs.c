@@ -232,7 +232,11 @@ char *path_to_absolute(char *path, char *curr_working_dir)
     //relative path
     if(path[0] != '/')
     {
-        strcat(path, curr_working_dir);
+        char tmp[MAX_PATH_NAME];
+        strcpy(tmp, curr_working_dir);
+        if(strcmp(curr_working_dir,"/")!=0)strcat(tmp, "/");
+        strcat(tmp, path);
+        strcpy(path, tmp);
     }
 
     char absolute_path[MAX_PATH_NAME+1] = {};
@@ -242,7 +246,7 @@ char *path_to_absolute(char *path, char *curr_working_dir)
         // meet /..
         if (path[i] == '/' && path[i+1] == '.' && path[i+2] == '.')
         {
-            for (int j = idx; j > 0;j--)
+            for (int j = idx; j >= 0;j--)
             {
                 if(absolute_path[j] == '/')
                 {
@@ -264,6 +268,8 @@ char *path_to_absolute(char *path, char *curr_working_dir)
 
         absolute_path[idx++] = path[i];
     }
+
+    absolute_path[idx] = 0;
 
     return strcpy(path, absolute_path);
 }
