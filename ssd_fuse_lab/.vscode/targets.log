@@ -7,7 +7,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # There is NO WARRANTY, to the extent permitted by law.
  
 
-# Make data base, printed on Mon Jun  6 19:01:49 2022
+# Make data base, printed on Tue Jun  7 14:52:38 2022
 
 # Variables
 
@@ -34,7 +34,7 @@ VSCODE_LOG_NATIVE = false
 # default
 MAKE_VERSION := 4.2.1
 # makefile
-CURDIR := /home/littlelagi/ssd_fuse_lab
+CURDIR := /home/littlelagi/OSC2022/ssd_fuse_lab
 # makefile
 SHELL = /bin/sh
 # environment
@@ -60,7 +60,7 @@ LC_NAME = lzh_TW
 # environment
 VSCODE_CWD = /home/littlelagi
 # environment
-SSH_CONNECTION = 36.226.221.135 52822 140.113.193.201 55146
+SSH_CONNECTION = 36.226.185.218 58944 140.113.193.201 55146
 # environment
 PATH = /home/littlelagi/.vscode-server/bin/c3511e6c69bb39013c4a4b7b9566ec1ca73fc4d5/bin/remote-cli:/home/littlelagi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 # environment
@@ -70,7 +70,7 @@ VSCODE_LOG_STACK = false
 # environment
 LC_NUMERIC = lzh_TW
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-bb812af5-27b7-4f77-ae03-00489175bc79.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-83f3e396-c5b2-417c-ad2b-e7e48cbe9956.sock
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -80,7 +80,7 @@ LS_COLORS =
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-PWD = /home/littlelagi/ssd_fuse_lab
+PWD = /home/littlelagi/OSC2022/ssd_fuse_lab
 # default
 .LOADED := 
 # automatic
@@ -110,7 +110,7 @@ MAKECMDGOALS := all
 # environment
 SHLVL = 0
 # environment
-XDG_SESSION_ID = 342
+XDG_SESSION_ID = 390
 # environment
 USER = littlelagi
 # environment
@@ -132,7 +132,7 @@ MAKEFLAGS = pqrR
 # environment
 MFLAGS = -pqrR
 # environment
-SSH_CLIENT = 36.226.221.135 52822 55146
+SSH_CLIENT = 36.226.185.218 58944 55146
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
 # environment
@@ -178,9 +178,9 @@ MOTD_SHOWN = pam
 
 # Directories
 
-# . (device 66306, inode 19267656): 30 files, no impossibilities.
+# . (device 66306, inode 19408395): 26 files, no impossibilities.
 
-# 30 files, no impossibilities in 1 directories.
+# 26 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -220,6 +220,7 @@ all:
 	./ssd_fuse -d /tmp/ssd
 
 # Not a target:
+ 
 .SUFFIXES:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -228,7 +229,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-01 16:41:50.524616918
+#  Last modified 2022-06-06 23:50:39.196410918
 #  File has been updated.
 #  Successfully updated.
 
@@ -239,7 +240,6 @@ test:
 #  recipe to execute (from 'Makefile', line 12):
 	./test.sh test1
 	./test.sh test2
- 
 
 # Not a target:
 .DEFAULT:
@@ -263,12 +263,12 @@ clean:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 37 / storage = 330 B / avg = 8 B
-# current buf: size = 8162 B / used = 330 B / count = 37 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 33 / storage = 294 B / avg = 8 B
+# current buf: size = 8162 B / used = 294 B / count = 33 / avg = 8 B
 
-# strcache performance: lookups = 46 / hit rate = 19%
+# strcache performance: lookups = 42 / hit rate = 21%
 # hash-table stats:
-# Load=37/8192=0%, Rehash=0, Collisions=1/46=2%
-# Finished Make data base on Mon Jun  6 19:01:49 2022
+# Load=33/8192=0%, Rehash=0, Collisions=1/42=2%
+# Finished Make data base on Tue Jun  7 14:52:38 2022
 
  

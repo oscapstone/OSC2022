@@ -205,19 +205,11 @@ static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
     unsigned int new_pca = get_next_pca();
     // GC
     if (new_pca == OUT_OF_BLOCK) {
-        // for (int i = 0; i < PHYSICAL_NAND_NUM; ++i) {
-        //     int isFull = 1;
-        //     for (int j = 0; j < PAGE_PER_BLOCK; ++j) {
-        //         if (P2L[PHYSICAL_NAND_NUM * PAGE_PER_BLOCK + j] != INVALID_LBA) {
-        //             isFull = 0;
-        //             break;
-        //         }
-        //     }
-        //     if (isFull)
-        //         nand_erase(i);
-        // }
+        nand_erase((curr_pca.fields.nand + 1) % PHYSICAL_NAND_NUM);
+        new_pca = get_next_pca();
     }
     nand_write(buf, new_pca);
+    printf("%d\n", new_pca);
     L2P[lba] = new_pca;
 }
 
