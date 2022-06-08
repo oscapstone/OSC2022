@@ -7,7 +7,7 @@
 /* use this buffer(global variable) directly and the mbox_call will use it after call*/ 
 /* mbox  format https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface */
 /* mbox address need to be aligned to 16 bytes */
-extern volatile unsigned int mbox[72];
+extern volatile unsigned int mbox[36];
 
 #define MBOX_REQUEST    0
 

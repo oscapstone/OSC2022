@@ -10,6 +10,7 @@
 #include "mmu.h"
 #include "string.h"
 #include "fs/vfs.h"
+#include "fs/dev_framebuffer.h"
 
 int getpid(trapframe_t* tpf)
 {
@@ -22,7 +23,7 @@ size_t uartread(trapframe_t *tpf,char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size;i++)
     {
-        buf[i] = uart_getc();
+        buf[i] = uart_async_getc();
     }
     tpf->x0 = i;
     return i;
@@ -33,7 +34,7 @@ size_t uartwrite(trapframe_t *tpf,const char buf[], size_t size)
     int i = 0;
     for (int i = 0; i < size; i++)
     {
-        uart_putc(buf[i]); // TODO : debug -> some unknown bugs occur when uart_async_putc (only in qemu)
+        uart_async_putc(buf[i]); // TODO : debug -> some unknown bugs occur when uart_async_putc (only in qemu)
     }
     tpf->x0 = i;
     return i;
@@ -116,7 +117,11 @@ int fork(trapframe_t *tpf)
     //copy signal handler
     for (int i = 0; i <= MAX_FD; i++)
     {
-        newt->file_descriptors_table[i] = curr_thread->file_descriptors_table[i];
+        if (curr_thread->file_descriptors_table[i])
+        {
+            newt->file_descriptors_table[i] = kmalloc(sizeof(struct file));
+            *newt->file_descriptors_table[i] = *curr_thread->file_descriptors_table[i];
+        }
     }
 
     list_head_t *pos;
@@ -363,5 +368,24 @@ int sys_chdir(trapframe_t *tpf, const char *path)
 long sys_lseek64(trapframe_t *tpf,int fd, long offset, int whence)
 {
     tpf->x0 = vfs_lseek64(curr_thread->file_descriptors_table[fd],offset,whence);
+    return tpf->x0;
+}
+
+extern unsigned int height;
+extern unsigned int isrgb;
+extern unsigned int pitch;
+extern unsigned int width;
+int sys_ioctl(trapframe_t *tpf, int fb, unsigned long request, void *info)
+{
+    if(request == 0)
+    {
+        struct framebuffer_info *fb_info = info;
+        fb_info->height = height;
+        fb_info->isrgb = isrgb;
+        fb_info->pitch = pitch;
+        fb_info->width = width;
+    }
+
+    tpf->x0 = 0;
     return tpf->x0;
 }

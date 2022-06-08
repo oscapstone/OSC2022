@@ -71,6 +71,12 @@ void kill_zombies(){
                 pos = next_pos;
             }
 
+            for(int i = 0; i < MAX_FD;i++)
+            {
+                if (((thread_t *)curr)->file_descriptors_table[i])
+                    vfs_close(((thread_t *)curr)->file_descriptors_table[i]);
+            }
+
             kfree(PHYS_TO_VIRT(((thread_t *)curr)->context.ttbr0_el1)); // free PGD
             ((thread_t *)curr)->iszombie = 0;
             ((thread_t *)curr)->isused = 0;

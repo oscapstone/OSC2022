@@ -1,7 +1,7 @@
 #include "mbox.h"
 #include "uart.h"
 /* mailbox message buffer */
-volatile unsigned int  __attribute__((aligned(16))) mbox[72];
+volatile unsigned int  __attribute__((aligned(16))) mbox[36];
 
 /**
  * Make a mailbox call. Returns 0 on failure, non-zero on success

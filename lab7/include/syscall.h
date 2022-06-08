@@ -48,4 +48,7 @@ int sys_chdir(trapframe_t *tpf, const char *path);
 // you only need to implement seek set
 long sys_lseek64(trapframe_t *tpf, int fd, long offset, int whence);
 
+// syscall number : 19
+int sys_ioctl(trapframe_t *tpf, int fb, unsigned long request, void *info);
+
 #endif

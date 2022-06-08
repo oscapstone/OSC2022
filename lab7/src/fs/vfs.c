@@ -242,9 +242,10 @@ void init_rootfs()
     int framebuffer_id = init_dev_framebuffer();
     vfs_mknod("/dev/framebuffer", framebuffer_id);
 
-    vfs_test();
+    //vfs_test();
 }
 
+/*
 void vfs_test()
 {
     // test read/write
@@ -267,7 +268,7 @@ void vfs_test()
     vfs_open("/initramfs/get_simpleexec.sh", O_CREAT, &testfile_initramfs);
     vfs_read(testfile_initramfs, testbufr, 30);
     uart_printf("%s", testbufr);
-}
+}*/
 
 char *path_to_absolute(char *path, char *curr_working_dir)
 {

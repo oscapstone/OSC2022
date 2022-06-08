@@ -15,7 +15,7 @@ int dev_uart_write(struct file *file, const void *buf, size_t len)
     const char *cbuf = buf;
     for (int i = 0; i < len;i++)
     {
-        uart_putc(cbuf[i]);
+        uart_async_putc(cbuf[i]);
     }
     return len;
 }
@@ -25,7 +25,7 @@ int dev_uart_read(struct file *file, void *buf, size_t len)
     char *cbuf = buf;
     for (int i = 0; i < len; i++)
     {
-        cbuf[i] = uart_getc();
+        cbuf[i] = uart_async_getc();
     }
     return len;
 }

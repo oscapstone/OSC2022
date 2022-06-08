@@ -83,8 +83,15 @@ int init_dev_framebuffer()
 
 int dev_framebuffer_write(struct file *file, const void *buf, size_t len)
 {
+    lock();
+    if (len + file->f_pos > pitch * height)
+    {
+        uart_printf("????\r\n");
+        len = pitch * height - file->f_pos;
+    }
     memcpy(lfb + file->f_pos, buf, len);
     file->f_pos += len;
+    unlock();
     return len;
 }
 

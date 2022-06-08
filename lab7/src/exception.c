@@ -109,6 +109,7 @@ void sync_64_router(trapframe_t *tpf, unsigned long x1)
         // ioctl 0 will be use to get info
         // there will be default value in info
         // if it works with default value, you can ignore this syscall
+        sys_ioctl(tpf, tpf->x0, tpf->x1, (void*)tpf->x2);
         tpf->x0 = 0;
     }
     else if (syscall_no == 50)
@@ -120,6 +121,8 @@ void sync_64_router(trapframe_t *tpf, unsigned long x1)
         while(1);
     }
 
+    // load all shouldn't be irq
+    disable_interrupt();
     /*
     unsigned long long spsr_el1;
 	__asm__ __volatile__("mrs %0, SPSR_EL1\n\t" : "=r" (spsr_el1));
@@ -188,6 +191,7 @@ void irq_router(trapframe_t* tpf)
         run_preemptive_tasks();
         core_timer_enable(); // lab 3 : advanced 2 -> unmask device line
 
+        disable_interrupt();
         //at least two thread running -> schedule for any timer irq
         if (run_queue->next->next != run_queue)schedule();
     }
@@ -198,13 +202,26 @@ void irq_router(trapframe_t* tpf)
         check_signal(tpf);
     }
 
+    // load all shouldn't be irq
+    disable_interrupt();
 }
 
 void invalid_exception_router(unsigned long long x0){
     unsigned long long elr_el1;
     __asm__ __volatile__("mrs %0, ELR_EL1\n\t"
                          : "=r"(elr_el1));
+
+    unsigned long long spsr_el1;
+    __asm__ __volatile__("mrs %0, SPSR_EL1\n\t"
+                         : "=r"(spsr_el1));
+
+    unsigned long long lr;
+    __asm__ __volatile__("mov %0, lr\n\t"
+                         : "=r"(lr));
+
     uart_printf("invalid exception : 0x%x\r\n", elr_el1);
+    uart_printf("invalid exception : 0x%x\r\n", spsr_el1);
+    uart_printf("invalid exception : 0x%x\r\n", lr);
     uart_printf("invalid exception : x0 : %x\r\n",x0);
     while(1);
 }
