@@ -180,7 +180,7 @@ int vfs_lookup(const char *pathname, struct vnode **target)
             if (dirnode->v_ops->lookup(dirnode, &dirnode, component_name) != 0)return -1;
             // redirect to new mounted filesystem
 
-            if (dirnode->mount)
+            while (dirnode->mount)
             {
                 dirnode = dirnode->mount->root;
             }
@@ -195,7 +195,7 @@ int vfs_lookup(const char *pathname, struct vnode **target)
     component_name[c_idx++] = 0;
     if (dirnode->v_ops->lookup(dirnode, &dirnode, component_name) != 0)return -1;
     // redirect to new mounted filesystem
-    if (dirnode->mount)
+    while (dirnode->mount)
     {
         dirnode = dirnode->mount->root;
     }
