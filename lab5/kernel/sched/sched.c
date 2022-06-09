@@ -13,7 +13,10 @@ void add_task_to_rq(struct task_struct *task){
     local_irq_restore(daif);
 }
 struct task_struct* pick_next_task_from_rq(){
-    return list_first_entry(&rq, struct task_struct, sched_info.sched_list);
+    if(!list_empty(&rq))
+        return list_first_entry(&rq, struct task_struct, sched_info.sched_list);
+    else
+        return NULL;
 }
 
 void schedule(){
@@ -34,9 +37,10 @@ void schedule(){
 
         // context switch
         next = pick_next_task_from_rq();
-        list_del(&next->sched_info.sched_list);
-
-        switch_to(current, next);
+        if(next != NULL){
+            list_del(&next->sched_info.sched_list);
+            switch_to(current, next);
+        }
     }
     local_irq_restore(daif);
 }
