@@ -114,7 +114,7 @@ el0_sync_handler:
     lsr x24, x24, #26
     cmp x24, #0x15
 
-    bl local_irq_enable 
+;    bl local_irq_enable 
     b.eq svc_handler
     b    nothing
 
