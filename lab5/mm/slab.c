@@ -40,10 +40,12 @@ struct slab* slab_create(size_t obj_size){
 void slab_destroy(struct slab* slab){
     size_t page_num; 
     struct page* page = pfn_to_page(addr_to_pfn(slab));
-    
+    uint64_t daif;
     LOG("slab_destroy recycle order %u buddy %p", (void*)slab, get_page_order(page));
     // free pages
+    daif = local_irq_disable_save();
     free_pages((void*)slab, get_page_order(page));
+    local_irq_restore(daif);
 }
 
 void *slab_alloc(struct slab* slab){
@@ -51,6 +53,8 @@ void *slab_alloc(struct slab* slab){
     struct page* page;
     uint32_t order;
     size_t max_size;
+    uint64_t daif;
+    daif = local_irq_disable_save();
     if(!list_empty(&slab->free_list)){
         // check free list  
         ret = slab->free_list.next; 
@@ -67,24 +71,32 @@ void *slab_alloc(struct slab* slab){
             slab->inuse++;
         }
     }
+    local_irq_restore(daif);
     return ret;
 }
 
 void slab_free(struct slab* slab, void* obj){
+    uint64_t daif;
+    daif = local_irq_disable_save();
     list_add((struct list_head*)obj, &slab->free_list);
     slab->inuse--;
+    local_irq_restore(daif);
 }
 
 void kmalloc_init(){
+    uint64_t daif;
+    daif = local_irq_disable_save();
     for(uint64_t i = 0 ; i < KMEM_CACHE_NUM ; i++){
         INIT_LIST_HEAD(&kmem_cache[i]);
     }
+    local_irq_restore(daif);
 }
 void* kmalloc(size_t size){
     uint64_t cache_idx;
     struct list_head* cache_list, *node;
     struct slab *s;
     void * ret = NULL;
+    uint64_t daif;
 
     size = ALIGN_UP(size, SLAB_ALIGNMENT);
 
@@ -93,9 +105,10 @@ void* kmalloc(size_t size){
         LOG("kmalloc invalid size %l", size); 
         return NULL;
     }
-    
     // allocate memory from corresponding cache bin 
     cache_idx = ALIGN_UP(size, SLAB_ALIGNMENT) / SLAB_ALIGNMENT;
+    
+    daif = local_irq_disable_save(); 
     cache_list = &kmem_cache[cache_idx];
 
     list_for_each(node, cache_list){
@@ -115,7 +128,7 @@ void* kmalloc(size_t size){
             LOG("kmalloc(%u) found a free object %p in kmem_cache[%u]", size, ret, cache_idx);
         }
     }
-        
+    local_irq_restore(daif);         
     
     LOG("kmalloc s->inuse: %x", s->inuse);
     LOG("kmalloc(%u) end, ret: %p", size, ret);
@@ -123,6 +136,7 @@ void* kmalloc(size_t size){
 }
 
 void kfree(void* obj){
+    uint64_t daif = local_irq_disable_save();
     uint64_t pfn = addr_to_pfn(ALIGN_DOWN(obj, PAGE_SIZE));
     struct page* page = pfn_to_page(pfn);
     struct page* buddy_leader = get_buddy_leader(page);
@@ -136,9 +150,11 @@ void kfree(void* obj){
     }
     if(s->inuse == 0){
         LOG("kfree(%p) triger recycle unused slab", obj);
+       
         list_del(&s->list);
         slab_destroy(s);
     }
+    local_irq_restore(daif);
 }
 
 #define TEST_SIZE 64 
