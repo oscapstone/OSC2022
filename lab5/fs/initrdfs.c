@@ -64,6 +64,7 @@ void initrdfs_cat(){
         }
     }
 }
+
 void initrdfs_loadfile(char* name, uint8_t* addr){
     struct list_head* head = &root->list;
     struct list_head* node;
@@ -75,6 +76,20 @@ void initrdfs_loadfile(char* name, uint8_t* addr){
                 LOG("Load file %s to %p", name, addr);
                 memcpy(addr, f->data, f->filesize);
                 break;
+            }
+        }
+    }
+}
+
+size_t initrdfs_filesize(char* name){
+    struct list_head* head = &root->list;
+    struct list_head* node;
+
+    list_for_each(node, head){
+        struct fentry* f = list_entry(node, struct fentry, list);
+        if((f->mode & FILE_TYPE_MASK) == FILE_TYPE_REGULAR){ 
+            if(strcmp(name, f->filename) == 0){
+                return f->filesize;
             }
         }
     }

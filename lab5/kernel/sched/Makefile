@@ -13,7 +13,8 @@ OUTPUT ?= .
 HEADERS ?= ../../include
 OBJECTS = \
 		sched.o \
-		kthread.o
+		kthread.o \
+		task.o
 
 .PHONY: all 
 all: $(OBJECTS)

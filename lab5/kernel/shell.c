@@ -90,13 +90,18 @@ void simple_shell(){
         }else if(strcmp(token, "cat") == 0){
             initrdfs_cat();
         }else if(strcmp(token, "load") == 0){
-            initrdfs_loadfile("test.img",(uint8_t*) 0x100000);
+           /*( initrdfs_loadfile("test.img",(uint8_t*) 0x100000);
             asm volatile("mov x0, 0x0\n\t" 
                          "msr spsr_el1, x0\n\t"
+                         "mov x0, 0x100000\n\t"
+                         "msr sp_el0, x0\n\t"
                          "mov x0, #0x100000\n\t"
                          "msr elr_el1, x0\n\t"
                          "eret\n\t"
-            );
+            );*/
+            run_init_task("test.img");
+            kthread_exit();
+             
         }else if(strcmp(token, "time") == 0){
             uint64_t j = get_jiffies();
             printf("Elapsed time after booting: %l.%l\r\n", j / HZ, j % HZ);

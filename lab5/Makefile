@@ -56,6 +56,7 @@ KOBJECTS = \
 		 $(OUTPUT)/slab.o \
 		 $(OUTPUT)/sched.o \
 		 $(OUTPUT)/kthread.o \
+		 $(OUTPUT)/task.o \
 		 $(LIBS)
 
 

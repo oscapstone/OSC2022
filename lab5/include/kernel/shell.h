@@ -10,7 +10,8 @@
 #include "kernel/timer.h"
 #include "kernel/irq_handler.h"
 #include "mm/slab.h"
-#include "kernel/sched/sched.h"
+#include "kernel/sched/task.h"
+#include "kernel/sched/kthread.h"
 
 void simple_shell(void);
 

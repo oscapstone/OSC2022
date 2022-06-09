@@ -21,7 +21,8 @@
     stp x24, x25, [sp ,16 * 12]
     stp x26, x27, [sp ,16 * 13]
     stp x28, x29, [sp ,16 * 14]
-    str x30, [sp, 16 * 15]
+    mrs x24, sp_el0
+    stp x30, x24, [sp, 16 * 15]
 
     mrs x24, spsr_el1
     mrs x25, elr_el1
@@ -32,6 +33,9 @@
     ldp x24, x25, [sp, 16 * 16]
     msr spsr_el1, x24 
     msr elr_el1, x25 
+
+    ldp x30, x24, [sp, 16 * 15]
+    msr sp_el0, x24
 
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
@@ -48,9 +52,15 @@
     ldp x24, x25, [sp ,16 * 12]
     ldp x26, x27, [sp ,16 * 13]
     ldp x28, x29, [sp ,16 * 14]
-    ldr x30, [sp, 16 * 15]
+
     add sp, sp, 17 * 16
+
     .endm
+
+.global run_init_task_load_all
+run_init_task_load_all:
+    load_all
+    eret
 
 
 // exception vector table 

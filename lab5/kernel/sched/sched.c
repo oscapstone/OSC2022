@@ -4,12 +4,13 @@ uint64_t pid_count = 0;
 int need_sched = 0;
 LIST_HEAD(rq);
 void add_task_to_rq(struct task_struct *task){
+    uint64_t daif;
     task->thread_info.state = TASK_RUNNING;
 
-    local_irq_disable();
+    daif = local_irq_disable_save();
     list_add_tail(&task->sched_info.sched_list, &rq);
     need_sched = 1;
-    local_irq_enable();
+    local_irq_restore(daif);
 }
 struct task_struct* pick_next_task_from_rq(){
     return list_first_entry(&rq, struct task_struct, sched_info.sched_list);
