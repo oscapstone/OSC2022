@@ -83,7 +83,6 @@ EL1_exception_vector_table:
 	ventry	invalid_handler		    // Error 32-bit EL0
 
 
-el0_irq_handler:
 invalid_handler:
 el1_sync_handler:
     save_all
@@ -92,6 +91,7 @@ el1_sync_handler:
     eret
 
 
+el0_irq_handler:
 el1_irq_handler:
     save_all
     bl irq_handler
