@@ -153,17 +153,24 @@ void mini_uart_irq_read(){
     b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
     ring_buf_write(rx_rbuf, b, 1);
 }
+
 size_t mini_uart_get_rx_len(){
     return ring_buf_get_len(rx_rbuf);
 }
 
 uint8_t mini_uart_aio_read(void){
     uint8_t b[1];
-    while(ring_buf_is_empty(rx_rbuf));
+    uint64_t daif;
+    while(1){
+        daif = local_irq_disable_save();
+        if(!ring_buf_is_empty(rx_rbuf)){
+            ring_buf_read(rx_rbuf, b, 1);
+            local_irq_restore(daif);
+            break;
+        }
+        local_irq_restore(daif);
+    }
 
-    local_irq_disable();
-    ring_buf_read(rx_rbuf, b, 1);
-    local_irq_enable();
     return b[0];
 }
 
@@ -173,6 +180,7 @@ void mini_uart_irq_write(){
         IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
     }
 }
+
 size_t mini_uart_get_tx_len(){
     return ring_buf_get_len(tx_rbuf);
 }
@@ -181,14 +189,19 @@ void mini_uart_aio_write(uint8_t c){
     uint8_t b[1];
     uint64_t daif;
     
-    daif = local_irq_disable_save();
     //write_hex(daif);
     //write_str("\r\n");
-    while(ring_buf_is_full(tx_rbuf));
-    b[0] = c;
+    while(1){
+        daif = local_irq_disable_save();
+        if(!ring_buf_is_full(tx_rbuf)){
+            b[0] = c;
+            ring_buf_write(tx_rbuf, b, 1);
+            local_irq_restore(daif);
+            break;
+        }
+        local_irq_restore(daif);
+    }
 
-    ring_buf_write(tx_rbuf, b, 1);
-    local_irq_restore(daif);
 
     enable_mini_uart_irq(TX);
 }
@@ -196,4 +209,10 @@ void mini_uart_aio_write(uint8_t c){
 ssize_t aio_write_bytes(uint8_t* buf, size_t n){
     for(uint64_t i = 0 ; i < n ; i++) mini_uart_aio_write(buf[i]);
     return n;
+}
+
+ssize_t uart_write(char *buf, size_t size){
+    while(size--){
+        while(ring_buf_is_full(tx_rbuf));
+    }
 }
