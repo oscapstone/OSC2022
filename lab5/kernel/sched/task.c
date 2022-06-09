@@ -42,11 +42,11 @@ uint64_t task_dup(struct task_struct* parent){
             LOG("Create user stack 0x%x", pvma->vm_end);
 
             memcpy((void*)pvma->vm_start, (void*)ppvma->vm_start, PAGE_SIZE * 2);
-            user_sp = pvma->vm_end + (ppvma->vm_end - pptrap_frame->sp_el0);
+            user_sp = pvma->vm_end - (ppvma->vm_end - pptrap_frame->sp_el0);
             LOG("parent's sp 0x%x", pptrap_frame->sp_el0);
             LOG("user_sp 0x%x", user_sp);
 
-            user_fp = pvma->vm_end + (ppvma->vm_end - pptrap_frame->x29);
+            user_fp = pvma->vm_end - (ppvma->vm_end - pptrap_frame->x29);
             LOG("parent's fp 0x%x", pptrap_frame->x29);
             LOG("user_fp 0x%x", user_fp);
 
