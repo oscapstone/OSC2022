@@ -22,8 +22,8 @@ void schedule(){
     // prevent running scheduler in softirq
     if(in_softirq()) return;
 
+    daif = local_irq_disable_save();
     if(need_sched){
-        daif = local_irq_disable_save();
         need_sched = 0;
        
         // add current task to schdule list
@@ -37,8 +37,8 @@ void schedule(){
         list_del(&next->sched_info.sched_list);
 
         switch_to(current, next);
-        local_irq_restore(daif);
     }
+    local_irq_restore(daif);
 }
 
 void update_sched_info(struct task_struct* task){

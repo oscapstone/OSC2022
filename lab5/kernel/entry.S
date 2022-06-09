@@ -114,20 +114,24 @@ el0_sync_handler:
     lsr x24, x24, #26
     cmp x24, #0x15
 
+    bl local_irq_enable 
     b.eq svc_handler
     b    nothing
 
 svc_handler:
-    adr x24, syscall_table
-    ldr x24, [x24]
+    mov x24, 8
+    adr x25, syscall_table
+    madd x25, x8, x24, x25
+    ldr x25, [x25]
 
-    blr x24
+    blr x25
 
     str x0, [sp]
     load_all
     eret
 
 nothing:
+    bl local_irq_disable 
     load_all 
     eret
 

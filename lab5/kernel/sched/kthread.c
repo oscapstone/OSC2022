@@ -13,6 +13,7 @@ void _kthread_remove_zombies(){
     local_irq_disable();
     while(!list_empty(&kthread_zombies)){
         zombie = list_first_entry(&kthread_zombies, struct task_struct, siblings);
+        LOG("Remove %l", zombie->thread_info.pid);
         list_del(kthread_zombies.next); 
         kthread_destroy(zombie);
     }
@@ -76,13 +77,14 @@ uint64_t kthread_create(kthread_func func){
 void kthread_exit(){
     LOG("kthread_exit start");
     struct task_struct* cur;
+    uint64_t daif;
     cur = get_current();
     cur->thread_info.state = TASK_DEAD;
 
-    local_irq_disable();
+    daif = local_irq_disable_save();
     list_add_tail(&cur->siblings, &kthread_zombies);
     need_sched = 1; 
-    local_irq_enable();
+    local_irq_restore(daif);
 
     LOG("kthread_exit end");
     schedule();
