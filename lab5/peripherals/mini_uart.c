@@ -176,7 +176,7 @@ uint8_t mini_uart_aio_read(void){
 
 void mini_uart_irq_write(){
     uint8_t b[1];
-    if(ring_buf_read(tx_rbuf, b, 1)){
+    while(ring_buf_read(tx_rbuf, b, 1)){
         IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
     }
 }
