@@ -1,6 +1,27 @@
 #include "shell.h"
 
-char buf[0x100];
+char buf[0x1000];
+
+struct cmd cmd_list[] = {
+    {"help",      cmd_help,      "print this help menu"},
+    {"hello",     cmd_hello,     "print Hello World!"},
+    // {"reboot",    cmd_reboot,    "reboot the device"},
+    {"revision",  cmd_revision,  "print board revision"},
+    {"memory",    cmd_memory,    "print ARM memory base address and size"},
+    {"ls",        cmd_ls,        "list directory contents"},
+    {"cat",       cmd_cat,       "print file content"},
+    {"dtb",       cmd_dtb,       "show device tree"},
+    {"initramfs", cmd_initramfs, "show initramfs address"},
+    // {"async",     cmd_async,     "test async print"},
+    // {"prog",      cmd_prog,      "load a user program in the initramfs, and jump to it"},
+    // {"sec2",      cmd_sec2,      "print the seconds after booting and set the next timeout to 2 seconds later."},
+    // {"setTimeout",cmd_setTimeout,"prints message after seconds"},
+    // {"testfoo",   cmd_foo,       "test thread"},
+    // {"preempt",   cmd_preempt,   "test preemption"},
+    // {"pageTest",  cmd_pageTest,  "test page frame allocator"},
+    // {"chunkTest", cmd_chunkTest, "test small chunk allocator"},
+    {"exec",      cmd_exec,      "run img file"},
+};
 
 void welcome_msg() {
     uart_printf("************************************************\r\n");
@@ -11,7 +32,8 @@ void read_cmd() {
     unsigned int idx = 0;
     while (1) {
         // read char
-        c = uart_read_char_async();
+        uart_read(&c, 1);
+        // c = uart_read_char_async();
         // handle buffer
         switch (c) {
             case '\r':
@@ -88,28 +110,16 @@ void cmd_reboot(char* param) {
 }
 
 void cmd_revision() {
-    volatile unsigned int mbox[36];
-    if (get_board_revision(mbox)) {
-        uart_printf("Board Revision : 0x");
-        uart_write_hex(mbox[5]);
-        uart_printf("\r\n");
-    }
-    else
-        uart_printf("Failed to get board revision\r\n");
+    unsigned int board_revision;
+    get_board_revision(&board_revision);
+    uart_printf("Board Revision : 0x%x\r\n", board_revision);
 }
 
 void cmd_memory() {
-    volatile unsigned int mbox[36];
-    if (get_arm_memory(mbox)) {
-        uart_printf("ARM Memory Base Address : 0x");
-        uart_write_hex(mbox[5]);
-        uart_printf("\r\n");
-        uart_printf("ARM Memory Size         : 0x");
-        uart_write_hex(mbox[6]);
-        uart_printf("\r\n");
-    }
-    else
-        uart_printf("Failed to get ARM memory base address and size\r\n");
+    unsigned int arm_mem_base, arm_mem_size;
+    get_arm_memory(&arm_mem_base, &arm_mem_size);
+    uart_printf("ARM Memory Base Address : 0x%x\r\n", arm_mem_base);
+    uart_printf("ARM Memory Size         : 0x%x\r\n", arm_mem_size);
 }
 
 void cmd_ls(char* param) {
@@ -137,7 +147,7 @@ void cmd_prog(char* param) {
 }
 
 void cmd_sec2() {
-    add_timer(two_second_alert, 2, "");
+    add_timer(two_second_alert, 2, "", 0);
 }
 
 void cmd_setTimeout(char* param) {
@@ -150,15 +160,15 @@ void cmd_setTimeout(char* param) {
     msg[idx++] = '\n';
     msg[idx++] = '\0';
     char *seconds = param + 1;
-    add_timer(uart_write_string, atoi(seconds), msg);
+    add_timer(uart_write_string, atoi(seconds), msg, 0);
 }
 
 void cmd_preempt() {
     char tmp[0x100];
     for (int i = 0; i < 0x100; i++)
         tmp[i] = ('A' + (i % 26));
-    add_timer(uart_write_string, 1, "Timer\r\n");
-    uart_write_string_async(tmp);
+    add_timer(uart_write_string, 1, "Timer\r\n", 0);
+    uart_write_string(tmp);
 }
 
 void cmd_pageTest() {
@@ -169,18 +179,37 @@ void cmd_chunkTest() {
     sc_test();
 }
 
+void cmd_exec(char* param) {
+    cpio_newc_parser(cpio_exec_callback, param);
+}
+
 void cmd_unknown() {
     uart_printf("Err: command %s not found, try <help>\r\n", buf);
 }
 
+void foo() {
+    for (int i = 0; i < 10; i++) {
+        uart_printf("Thread id : %d, i : %d\r\n", curr_thread->pid, i);
+        nop_delay(100000);
+        schedule();
+    }
+    thread_exit();
+}
+
+void cmd_foo() {
+    for (int i = 0; i < 3; i++) {
+        thread_create(foo, 0x1000);
+    }
+    schedule();
+}
+
 void shell() {
-    cpio_init();
     welcome_msg();
-
-    mm_init();
-
+    // init thread scheduler
+    init_thread_sched();
+    // init timer
     timer_list_init();
-    core_timer_enable(); 
+    core_timer_enable();  
     
     while (1) {
         uart_printf("# ");

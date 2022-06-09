@@ -1,7 +1,8 @@
 #ifndef GPIO_H
 #define GPIO_H
+#include "mmu.h"
 
-#define MMIO_BASE           0x3f000000
+#define MMIO_BASE           PHYS_TO_VIRT(0x3f000000)
 #define GPIO_BASE           (MMIO_BASE + 0x200000)
 
 #define GPFSEL0             ((volatile unsigned int*)(GPIO_BASE + 0x00))

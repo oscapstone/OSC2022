@@ -1,5 +1,6 @@
 #ifndef SIMPLE_ALLOC_H
 #define SIMPLE_ALLOC_H
+#include "uart.h"
 
 // from linker.ld
 extern char _simple_alloc_start;

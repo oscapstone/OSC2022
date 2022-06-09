@@ -1,7 +1,7 @@
 #include "uart.h"
 
-char uart_read_buf[0x100] = {};
-char uart_write_buf[0x100] = {};
+char uart_read_buf[MAX_BUF_SIZE] = {};
+char uart_write_buf[MAX_BUF_SIZE] = {};
 unsigned int uart_read_buf_begin = 0, uart_read_buf_end = 0;
 unsigned int uart_write_buf_begin = 0, uart_write_buf_end = 0;
 
@@ -52,8 +52,7 @@ void uart_init() {
 }
 
 void uart_write_char(char c) {
-    while (!(*AUX_MU_LSR_REG & 0x20))
-        nop_delay(1);
+    do{asm volatile("nop");}while(!(*AUX_MU_LSR_REG & 0x20));
     *AUX_MU_IO_REG = (unsigned int)c;
 }
 
@@ -88,8 +87,7 @@ int uart_printf(char *fmt, ...) {
 
 void uart_read(char* buf, unsigned int size) {
     for (unsigned int i = 0; i < size; i++) {
-        while (!(*AUX_MU_LSR_REG & 0x01))
-            nop_delay(1);
+        do{asm volatile("nop");}while(!(*AUX_MU_LSR_REG & 0x01));
         buf[i] = (char)(*AUX_MU_IO_REG);
     }
 }
@@ -104,14 +102,16 @@ void nop_delay(unsigned int t) {
 // read data to read buffer
 void uart_interrupt_r_handler() {
     // read buffer full => disable read interrupt
-    if ((uart_read_buf_end + 1) % 0x100 == uart_read_buf_begin) {
+    if ((uart_read_buf_end + 1) % MAX_BUF_SIZE == uart_read_buf_begin) {
+        // NOT SURE == clear fifo
+        *AUX_MU_IIR_REG = 0xc2;
         disable_mini_uart_r_interrupt();
         return;
     }
     // read to buffer
     uart_read(&uart_read_buf[uart_read_buf_end++], 1);
     // circular buffer
-    if (uart_read_buf_end >= 0x100)
+    if (uart_read_buf_end >= MAX_BUF_SIZE)
         uart_read_buf_end = 0;
     
     // unmasks the device’s interrupt line
@@ -120,17 +120,16 @@ void uart_interrupt_r_handler() {
 
 // write data from write buffer
 void uart_interrupt_w_handler() {
-    // verify preemption
-    // nop_delay(10000);
     // buffer is empty => disable write interrupt
     if (uart_write_buf_begin == uart_write_buf_end) {
+        *AUX_MU_IIR_REG = 0xc4;
         disable_mini_uart_w_interrupt();
         return;
     }
     // write from buffer
     uart_write_char(uart_write_buf[uart_write_buf_begin++]);
     // circular buffer
-    if (uart_write_buf_begin >= 0x100)
+    if (uart_write_buf_begin >= MAX_BUF_SIZE)
         uart_write_buf_begin = 0;
 
     // unmasks the device’s interrupt line
@@ -177,19 +176,19 @@ int mini_uart_w_interrupt_is_enable() {
 // wrtie data to write buffer
 void uart_write_char_async(char c) {
     // wait for full buffer
-    while ((uart_write_buf_end + 1) % 0x100 == uart_write_buf_begin) {
+    while ((uart_write_buf_end + 1) % MAX_BUF_SIZE == uart_write_buf_begin) {
         // start asynchronous transfer
         enable_mini_uart_w_interrupt();
     }
     // critical section
-    disable_interrupt();
+    lock();
     // write to buffer
     uart_write_buf[uart_write_buf_end++] = c;
     // circular buffer
-    if (uart_write_buf_end >= 0x100)
+    if (uart_write_buf_end >= MAX_BUF_SIZE)
         uart_write_buf_end = 0;
     // start asynchronous transfer
-    enable_interrupt();
+    unlock();
     // enable interrupt to transfer
     enable_mini_uart_w_interrupt();
 }
@@ -235,12 +234,12 @@ char uart_read_char_async() {
         enable_mini_uart_r_interrupt();
     
     // critical section
-    disable_interrupt();
+    lock();
     char r = uart_read_buf[uart_read_buf_begin++];
 
-    if (uart_read_buf_begin >= 0x100)
+    if (uart_read_buf_begin >= MAX_BUF_SIZE)
         uart_read_buf_begin = 0;
     
-    enable_interrupt();
+    unlock();
     return r;
 }

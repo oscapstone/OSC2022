@@ -1,12 +1,13 @@
 /* entry point */
 ENTRY(_start)
 
-_simple_alloc_start = 0x3b000000;
-_simple_alloc_end = 0x3bffffff;
+_simple_alloc_start = 0xffff00002c000000;
+_simple_alloc_end = 0xffff00002dffffff;
 
 SECTIONS
 {
-    . = 0x80000;
+    . = 0xffff000000000000;
+    . += 0x80000;
 
     _text_start = .;
     .text : 

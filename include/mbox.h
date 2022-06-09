@@ -2,6 +2,8 @@
 #define MAILBOX_H
 #include "gpio.h"
 
+extern volatile unsigned int  __attribute__((aligned(16))) mbox[72];
+
 #define VIDEOCORE_MBOX      (MMIO_BASE + 0xB880) // MMIO base address + MAILBOX offset
 #define MAILBOX_READ        ((volatile unsigned int*)(VIDEOCORE_MBOX))
 #define MAILBOX_POLL        ((volatile unsigned int*)(VIDEOCORE_MBOX+0x10))
@@ -34,8 +36,8 @@
 #define GET_BOARD_REVISION  0x00010002
 #define GET_ARM_MEMORY      0x00010005
 
-unsigned int get_board_revision(volatile unsigned int [36]);
-unsigned int get_arm_memory(volatile unsigned int [36]);
-unsigned int mailbox_call(volatile unsigned int [36], unsigned char);
+unsigned int get_board_revision(unsigned int* board_revision);
+unsigned int get_arm_memory(unsigned int* base_addr,unsigned int* size);
+unsigned int mailbox_call(unsigned char);
 
 #endif

@@ -1,5 +1,6 @@
 #ifndef BUDDY_H
 #define BUDDY_H
+#include "mmu.h"
 #include "dtb.h"
 #include "list.h"
 #include "math.h"

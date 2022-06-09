@@ -1,4 +1,4 @@
-CROSS = aarch64-unknown-linux-gnu
+CROSS = aarch64-linux-gnu
 CC = $(CROSS)-gcc
 CFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
 LD = $(CROSS)-ld

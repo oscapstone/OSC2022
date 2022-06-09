@@ -1,6 +1,10 @@
 #ifndef DTB_H
 #define DTB_H
+#include "mmu.h"
+#include "uart.h"
+#include "string.h"
 
+extern char* DTB_ADDRESS;
 extern void* INITRD_ADDR;
 extern void* INITRD_END;
 
