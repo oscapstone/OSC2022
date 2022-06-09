@@ -39,7 +39,7 @@ uint64_t task_dup(struct task_struct* parent){
             pvma->vm_start = (uint64_t)alloc_pages(1);
             pvma->vm_end = pvma->vm_start + PAGE_SIZE * 2;
 
-            LOG("Create user stack 0x%x", pvma->vm_start);
+            LOG("Create user stack 0x%x", pvma->vm_end);
 
             memcpy((void*)pvma->vm_start, (void*)ppvma->vm_start, PAGE_SIZE * 2);
             user_sp = pvma->vm_end + (ppvma->vm_end - pptrap_frame->sp_el0);

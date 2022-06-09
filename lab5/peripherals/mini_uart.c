@@ -133,8 +133,8 @@ void write_hex(uint64_t n){
 }
 
 void mini_uart_irq_init(){
-    rx_rbuf = create_simple_ring_buf(4096 * 4 - 1);
-    tx_rbuf = create_simple_ring_buf(4095 * 4 - 1);
+    rx_rbuf = create_simple_ring_buf(4096 * 10 - 1);
+    tx_rbuf = create_simple_ring_buf(4096 * 10 - 1);
 
 
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
