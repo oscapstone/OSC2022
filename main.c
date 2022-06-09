@@ -8,13 +8,14 @@ void main() {
     uart_init();
 
     // set up initramfs address
+    fdt_address();
     if (fdt_traverse(cpio_callback))
             printf("error no cpio\n");
     // say hello
     // uart_puts("Hello World!\n");
     
     // init timer
-    timer_init();
+    // timer_init();
 
     // init memory
     init_buddy();

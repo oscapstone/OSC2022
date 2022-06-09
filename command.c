@@ -1,5 +1,6 @@
 #include "command.h"
 
+#include "gpio.h"
 #include "uart.h"
 #include "mbox.h"
 #include "cpio.h"
@@ -11,10 +12,10 @@
 #include "timer.h"
 
 #define PM_PASSWORD 0x5a000000
-#define PM_RSTC 0x3F10001c
-#define PM_WDOG 0x3F100024
+#define PM_RSTC     ((volatile unsigned long)(MMIO_BASE+0x0010001c))
+#define PM_WDOG     ((volatile unsigned long)(MMIO_BASE+0x00100024))
 
-void set(long addr, unsigned int value) {
+void set(unsigned long addr, unsigned int value) {
     volatile unsigned int* point = (unsigned int*)addr;
     *point = value;
 }
@@ -60,7 +61,7 @@ void exec_cat() {
 }
 
 void exec_load() {
-    load_file();
+    load_cpio("initramfs/vfs1.img");
 }
 
 void exec_lsfdt() {
@@ -92,7 +93,7 @@ void exec_timeout(char *command_string) {
 }
 
 void exec_testmem() {
-    load_cpio("app.img");
+    test_malloc();
 }
 
 void exec_check(char *command_string) {
@@ -138,8 +139,7 @@ void mbox_board_revision() {
     // send the message to the GPU and receive answer
     if (mbox_call(MBOX_CH_PROP)) {
         uart_puts("My board revision is: 0x");
-        uart_hex(mbox[5]);
-        uart_puts("\n");
+        printf("%x\n", mbox[5]);
     } else {
         uart_puts("Unable to query serial!\n");
     }
@@ -161,11 +161,9 @@ void mbox_arm_memory() {
     // send the message to the GPU and receive answer
     if (mbox_call(MBOX_CH_PROP)) {
         uart_puts("My ARM memory base address is: 0x");
-        uart_hex(mbox[5]);
-        uart_puts("\n");
+        printf("%x\n", mbox[5]);
         uart_puts("My ARM memory size is: 0x");
-        uart_hex(mbox[6]);
-        uart_puts("\n");
+        printf("%x\n", mbox[6]);
     } else {
         uart_puts("Unable to query serial!\n");
     }
@@ -185,7 +183,7 @@ void parse_command(char* command_string) {
     else if (!strcmp(command_string, "cat"))
         exec_cat();
     else if (!strcmp(command_string, "load"))
-        load_file();
+        exec_load();
     else if (!strcmp(command_string, "test"))
         exec_testmem();
     else if (!strcmp(command_string, "check"))

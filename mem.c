@@ -3,14 +3,15 @@
 #include "uart.h"
 
 // #define MEM_DEMO_LOG
-#define BUDDY_MAX_ORDER 5
+#define NULLPTR ((void*)0xFFFF000000000000)
+#define BUDDY_MAX_ORDER 7
 #define BUDDY_MAX_LEN (1 << BUDDY_MAX_ORDER)
 #define FRAME_SIZE 4096
 #define CHUNK_SIZE 32
 #define RESERVED_LEN 32
 extern unsigned char _start, _end;
 
-unsigned long mem_position = (unsigned long)&_end;
+unsigned long mem_position = (unsigned long)0xFFFF000002000000;
 
 void* simple_malloc(unsigned long size) {
     void *chunk = (void*)mem_position;
@@ -112,13 +113,13 @@ mem_frame *check_merge(mem_frame *my_frame) {
     if (buddy_frame->free && buddy_frame->order == my_frame->order)
         return master ? my_frame : buddy_frame;
     else
-        return 0;
-    return 0;
+        return NULLPTR;
+    return NULLPTR;
 };
 
 void merge(mem_frame *my_frame) {
     mem_frame *merge_frame = check_merge(my_frame);
-    if (merge_frame) {
+    if (merge_frame != NULLPTR) {
         mem_frame *buddy_frame = &frame_array[merge_frame->position + (1 << merge_frame->order)];
         merge_frame->order++;
         buddy_frame->order++;
@@ -137,7 +138,7 @@ mem_frame *ask_mem(unsigned int need_order) {
     unsigned int current_order = need_order + 1;
     while (current_order <= BUDDY_MAX_ORDER) {
         mem_frame *target = buddy_system[current_order].next;
-        if (!target) {
+        if (target == NULLPTR) {
             current_order++;
         }
         else {
@@ -149,7 +150,7 @@ mem_frame *ask_mem(unsigned int need_order) {
         }
     } 
     printf("out-of-memory");
-    return 0;
+    return NULLPTR;
 }
 
 mem_frame *buddy_malloc(unsigned int size) {
@@ -163,7 +164,7 @@ mem_frame *buddy_malloc(unsigned int size) {
     }
 
     mem_frame *target = buddy_system[need_order].next;
-    if (!target) {
+    if (target == NULLPTR) {
         target = ask_mem(need_order);
     }
 
@@ -195,12 +196,14 @@ chunk *init_chunk(mem_frame *target) {
         slot->chunk_slot[i].position = i;
     }
     slot->chunk_slot[0].order = FRAME_SIZE/CHUNK_SIZE;
-    slot->chunk_slot[0].next = 0;
+    slot->chunk_slot[0].next = NULLPTR;
     slot->chunk_slot[0].prev = slot->curr;
     return slot;
 };
 
 mem_frame *slot_malloc(chunk *my_chunk, mem_frame *slot, unsigned int need_len) {
+    if (need_len == slot->order)
+        return slot;
     mem_frame *bound = &my_chunk->chunk_slot[need_len+slot->position];
     bound->next = slot->next;
     slot->next->prev = bound;
@@ -216,9 +219,9 @@ mem_frame *slot_malloc(chunk *my_chunk, mem_frame *slot, unsigned int need_len) 
 mem_frame *find_slot(unsigned int need_len) {
     chunk *target = chunk_system.next;
     mem_frame *slot;
-    while (target) {
+    while (target != NULLPTR) {
         slot = target->curr;
-        while (slot) {
+        while (slot != NULLPTR) {
             if (slot->free && slot->order >= need_len) {
                 slot = slot_malloc(target, slot, need_len);
                 return slot;
@@ -227,7 +230,7 @@ mem_frame *find_slot(unsigned int need_len) {
         }
         target = target->next;
     }
-    return 0;    
+    return NULLPTR;    
 };
 
 mem_frame *ask_chunk(unsigned int need_len) {
@@ -240,13 +243,12 @@ mem_frame *ask_chunk(unsigned int need_len) {
 mem_frame *chunk_malloc(unsigned int size) {
     unsigned int need_len = (size-1) / CHUNK_SIZE +1;
     mem_frame *target = find_slot(need_len);
-    if (!target) {
+    if (target == NULLPTR) {
         target = ask_chunk(need_len);
     }
     target->free = 0;
 #ifdef MEM_DEMO_LOG
-    uart_hex(target->address);
-    uart_send('\n');
+    printf("kalloc:%x\n", target->address);
 #endif
     return target;
 }
@@ -254,7 +256,7 @@ mem_frame *chunk_malloc(unsigned int size) {
 int slot_merge(mem_frame *slot) {
     // right
     mem_frame *target = slot->next;
-    if (target != 0 && target->free) {
+    if (target != NULLPTR && target->free) {
         target->free = 0;
         slot->order += target->order;
         target->next->prev = slot;
@@ -286,6 +288,9 @@ void chunk_free(unsigned long address) {
     // free slot
     mem_frame *target = &chunk_array[position].chunk_slot[shift];
     target->free = 1;
+#ifdef MEM_DEMO_LOG
+    printf("kfree:%x\n", target->address);
+#endif
     if (slot_merge(target)) {
         // free chunk
         chunk *slot = &chunk_array[position];
@@ -301,6 +306,13 @@ void* kmalloc(unsigned int size) {
     else 
         target = chunk_malloc(size);
     return (void*)target->address;
+}
+
+void* cmalloc(unsigned int size) {
+    char *zero = kmalloc(size);
+    for (int i=0; i<size; i++)
+        zero[i] = 0;
+    return (void*)zero;
 }
 
 void kfree(void *ptr) {
@@ -341,12 +353,12 @@ void memory_reserve(unsigned long start, unsigned long end, char* message) {
         }
     }
 #ifdef MEM_DEMO_LOG
-    printf("reserve %s:\t%x\t---%x\n", message, start, end);
+    printf("reserve %s:\t%x------%x\n", message, start, end);
 #endif
 };
 
 void startup_allocation() {
-    memory_reserve((unsigned long)0x0000, (unsigned long)0x1000, "multicore boot"); // Spin tables for multicore boot
+    memory_reserve((unsigned long)0xFFFF000000000000, (unsigned long)0xFFFF000000001000, "multicore boot"); // Spin tables for multicore boot
     memory_reserve((unsigned long)&_start, (unsigned long)&_end, "Kernel image");   // Kernel image in the physical memory
     memory_reserve((unsigned long)cpio_start, (unsigned long)cpio_end, "Initramfs");// Initramfs
     memory_reserve((unsigned long)fdt_start, (unsigned long)fdt_end, "Devicetree");  // Devicetree
@@ -381,7 +393,7 @@ void init_buddy() {
         frame_array[i].free = 0;
     }
     for (int i=0; i<BUDDY_MAX_ORDER+1; i++) {
-        buddy_system[i].next = 0;
+        buddy_system[i].next = NULLPTR;
         buddy_system[i].next->prev = &buddy_system[i];
     }
     buddy_system[5].next->prev = &frame_array[0];
@@ -392,7 +404,7 @@ void init_buddy() {
     buddy_system[5].next->free = 1;
     
     // init chunk slots
-    chunk_system.next = 0;
+    chunk_system.next = NULLPTR;
     chunk_system.next->prev = &chunk_system;
 
     mem_position -= FRAME_SIZE*BUDDY_MAX_LEN;

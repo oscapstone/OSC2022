@@ -8,9 +8,8 @@
 #define FDT_NOP         0x00000004
 #define FDT_END         0x00000009
 
-extern void *_fdt_ptr;
-
 int fdt_indent = 0;
+unsigned long fdt_addr = 0x8200000;
 
 typedef struct {
     unsigned int magic;
@@ -25,14 +24,18 @@ typedef struct {
     unsigned int size_dt_struct;
 } fdt_header;
 
+void fdt_address() {
+    asm volatile("mov %0, x9	\n":"=r"(fdt_addr):);
+    fdt_addr += 0xFFFF000000000000;
+}
+
 
 unsigned int endiantoi(void* _endian) {
     char* endian = _endian;
     unsigned int tmp = 0;
-    tmp |= endian[0] << 24;
-    tmp |= endian[1] << 16;
-    tmp |= endian[2] << 8;
-    tmp |= endian[3];
+    for (int i=0; i<4; i++) {
+        tmp |= endian[i] << (3-i)*8;
+    }
     return tmp;
 }
 
@@ -78,15 +81,15 @@ void initramfs_callback(int type, char *name, void *data, unsigned int size) {
 
 void cpio_callback(int type, char *name, void *data, unsigned int size) {
     if (type == FDT_PROP && !strcmp(name, "linux,initrd-start")) {
-        cpio_start = (void *)(unsigned long)endiantoi(data);
+        cpio_start = (void *)((unsigned long)endiantoi(data) + 0xFFFF000000000000);
     }
     if (type == FDT_PROP && !strcmp(name, "linux,initrd-end")) {
-        cpio_end = (void *)(unsigned long)endiantoi(data);
+        cpio_end = (void *)((unsigned long)endiantoi(data) + 0xFFFF000000000000);
     }
 }
 
 int fdt_parser(unsigned long _dt_struct, unsigned long _dt_strings, unsigned int totalsize, void (*callback)(int type, char *name, void *data, unsigned int size)) {
-    unsigned int end = _dt_struct + totalsize;
+    unsigned long end = _dt_struct + totalsize;
 
     while(_dt_struct < end) {
         unsigned int type = endiantoi((char*)_dt_struct);
@@ -132,7 +135,7 @@ int fdt_parser(unsigned long _dt_struct, unsigned long _dt_strings, unsigned int
 
 
 int fdt_traverse(void (*callback)(int type, char *name, void *data, unsigned int size)) {
-    unsigned long addr = (unsigned long)_fdt_ptr;
+    unsigned long addr = fdt_addr;
     fdt_header* ftd = (fdt_header*)addr;
 
     if (endiantoi(&ftd->magic) != 0xd00dfeed)

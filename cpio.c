@@ -7,6 +7,8 @@
 #include "exception.h"
 #include "mem.h"
 #include "thread.h"
+#include "tmpfs.h"
+#include "vfs.h"
 
 //Cpio New ASCII Format https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
 typedef struct{
@@ -259,4 +261,119 @@ void load_file(){
 		// load_cpio(addr,target);
 		load_cpio(target);
 	}
+}
+
+void build_file_tree(vnode* root) {
+	List node, dirname;
+	node.entry = root;
+	char *none = "";
+	dirname.entry = none;
+	List *top = &node;
+	top->next = NULLPTR;
+	List *top_name = &dirname;
+	top_name->next = NULLPTR;
+
+	cpio_t* addr = (cpio_t*)cpio_start;
+	if (strcmp((char*)(addr+1), "."))
+		printf("error no cpio\n");
+	else
+		while(1){
+			unsigned long nsize, fsize;
+			nsize=strtoi(addr->c_namesize);
+			fsize=strtoi(addr->c_filesize);
+
+			// total size of the fixed header plus pathname is a multiple of four
+			if((sizeof(cpio_t) + nsize) & 3)
+				nsize += 4 - ((sizeof(cpio_t) + nsize) & 3);
+			if(fsize & 3)
+				fsize += 4 - (fsize & 3);
+
+			// check filename and data
+			char* filename = (char*)(addr+1);
+			char* data = filename + nsize;
+
+			while (top_name->next != NULLPTR) {
+				if (!strncmp(top_name->entry, filename))
+					break;
+				else {
+					List *free_node = top;
+					List *free_name = top_name;
+					top = top->next;
+					top_name = top_name->next;
+					kfree(free_node);
+					kfree(free_name);
+				}
+			}
+			if(strcmp(filename,"TRAILER!!!") == 0)
+				break;
+
+			char *childname;
+			if (strlen(top_name->entry))
+				childname = filename +1 + strlen(top_name->entry);
+			else
+				childname = filename;
+
+			vnode *parent = (vnode*)top->entry;
+			vnode *child = vnode_create(parent, childname);
+			File_Info *child_info = (File_Info*)child->internal;
+
+			int c_mode = strtoi(addr->c_mode) >> 12;
+			if (c_mode == MODE_DIR) {
+				strcpy(child_info->name, childname);
+				child_info->mode = MODE_DIR;
+				child_info->size = 0;
+				child_info->data = (vnode**)kmalloc(TMPFS_DIR_LEN * 8);
+				for (int i=0; i<TMPFS_DIR_LEN; i++)
+        			((vnode**)child_info->data)[i] = NULLPTR;
+
+				if (!strcmp(child_info->name, ".")) {
+					addr=(cpio_t*)(data+fsize);
+					continue;
+				}
+				else if(!strcmp(child_info->name, "initramfs")) {
+					struct mount *new_mount = kmalloc(sizeof(struct mount));
+					register_filesystem("initramfs");
+					struct filesystem *mount_fs = find_fs("initramfs");
+					mount_fs->setup_mount(mount_fs, new_mount);
+					vnode *mount_vnode = new_mount->root;
+
+					File_Info *mount_info = (File_Info*)mount_vnode->internal;
+					strcpy(mount_info->name, "initramfs");
+					new_mount->root->parent = parent;
+
+					File_Info* parent_info = (File_Info*)parent->internal;
+					vnode **childs = (vnode**)parent_info->data;
+					for (int i=0; i<TMPFS_DIR_LEN; i++) {
+						if (childs[i] == child) {
+							childs[i] = mount_vnode;
+							break;
+						}
+					}
+
+					child = mount_vnode;
+				}
+
+				List *new_node = kmalloc(sizeof(List));
+				List *new_dir = kmalloc(sizeof(List));
+				new_node->entry = child;
+				new_dir->entry = filename;
+				new_node->next = top;
+				new_dir->next = top_name;
+				top = new_node;
+				top_name = new_dir;
+
+			}
+			else if (c_mode == MODE_FILE) {
+				strcpy(child_info->name, childname);
+				child_info->mode = MODE_FILE;
+				child_info->size = fsize;
+				child_info->data = data;
+			}
+			else {
+				printf("unknown c_mode\n");
+				while (1) {}
+			}
+
+			addr=(cpio_t*)(data+fsize);
+		}
 }
