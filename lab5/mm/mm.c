@@ -187,15 +187,15 @@ void mm_init(void *dtb){
 
     print_buddy_statistics();
 
-    if(debug)
-        debug_slab();
+  /*  if(debug)
+        debug_slab();*/
 
     kmalloc_init();
 
-    if(debug){
+/*    if(debug){
         debug_kmalloc();
         //debug_buddy();
         print_buddy_statistics();
-    }
+    }*/
 
 }
