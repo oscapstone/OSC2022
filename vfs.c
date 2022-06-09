@@ -39,6 +39,8 @@ int register_filesystem(const char *filesystem) {
 		fs->setup_mount = tmpfs_setup_mount;
 	else if (!strcmp((char*)fs->name, "initramfs")) 
 		fs->setup_mount = initramfs_setup_mount;
+	else if (!strcmp((char*)fs->name, "uartfs"))
+		fs->setup_mount = uartfs_setup_mount;
 	else
 		return -1;
 

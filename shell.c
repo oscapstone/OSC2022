@@ -6,6 +6,7 @@
 #include "thread.h"
 #include "mem.h"
 #include "vfs.h"
+#include "tmpfs.h"
 
 extern struct mount* rootfs;
 
@@ -51,8 +52,7 @@ void shell() {
 	register_filesystem("tmpfs");
     struct filesystem *tmp_fs = find_fs("tmpfs");
 	tmp_fs->setup_mount(tmp_fs, rootfs);
-
-    parse_command("load");
+    setup_uart_fs();
 
     // read input
     while (1) {

@@ -15,8 +15,11 @@ typedef struct File_Info{
 	void* data;
 } File_Info;
 
+void setup_uart_fs();
+void setup_uart_fd();
 int tmpfs_setup_mount(struct filesystem* fs, struct mount* mount);
 int initramfs_setup_mount(struct filesystem* fs, struct mount* mount);
+int uartfs_setup_mount(struct filesystem* fs, struct mount* mount);
 vnode* vnode_create(vnode* parent, char* filename);
 
 #endif

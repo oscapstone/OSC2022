@@ -83,8 +83,10 @@ Thread *thread_create(void *program_start) {
     page_table_alloc((unsigned long)pgd, 0x6000, BOOT_PGD_ATTR, 0);
     if (new->pid == 0)
         new->user_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_USER_STACK, 0, USER_READ_WRITE);
-    else
+    else {
+        setup_uart_fd(new->fd_table);
         demand_log(new->demand, VIRTUAL_USER_STACK);
+    }
     demand_log(new->demand, 0x0000FFFFFFFFC000);
     new->kernel_stack = (char*)page_alloc((unsigned long)pgd, VIRTUAL_KERNEL_STACK, 0, PD_RAM_ATTR);
 
@@ -123,7 +125,7 @@ void init_schedule() {
 }
 
 int alloc_fd(Thread *user_thread) {
-    for (int i=0; i<FILE_DESCRIPTOR_LEN; i++) {
+    for (int i=3; i<FILE_DESCRIPTOR_LEN; i++) {
         if (user_thread->fd_table[i] == NULLPTR) {
             return i;
         }
@@ -326,63 +328,52 @@ void kill(Trap_Frame *tpf, int pid) {
 }
 
 int open(Trap_Frame *tpf, const char *pathname, int flags) {
-    disable_current_interrupt();
     Thread *current = thread_list.beg;
     int fd = alloc_fd(current);
     vnode *dir = current->curr_dir;
     if(dir->f_ops->open(dir, pathname, flags, &current->fd_table[fd])) {
         tpf->x0 = -1;
-        enable_current_interrupt();
         return -1;
     }
     
     tpf->x0 = fd;
-    enable_current_interrupt();
     return fd;
 }
 
 int close(Trap_Frame *tpf, int fd) {
-    disable_current_interrupt();
     Thread *current = thread_list.beg;
     vnode *file = current->curr_dir;
     int code = file->f_ops->close(current->fd_table[fd]);
     current->fd_table[fd] = NULLPTR;
     
     tpf->x0 = code;
-    enable_current_interrupt();
     return code;
 }
 
 long write(Trap_Frame *tpf, int fd, const void *buf, unsigned long count) {
-    disable_current_interrupt();
     Thread *current = thread_list.beg;
-    vnode *file = current->curr_dir;
+    vnode *file = current->fd_table[fd]->vnode;
     int code = file->f_ops->write(current->fd_table[fd], buf, count);
     
     tpf->x0 = code;
-    enable_current_interrupt();
     return code;
 }
 
 long read(Trap_Frame *tpf, int fd, void *buf, unsigned long count) {
-    disable_current_interrupt();
     Thread *current = thread_list.beg;
-    vnode *file = current->curr_dir;
+    vnode *file = current->fd_table[fd]->vnode;
     int code = file->f_ops->read(current->fd_table[fd], buf, count);
    
     tpf->x0 = code;
-    enable_current_interrupt();
     return code;
 }
 
 int mkdir(Trap_Frame *tpf, const char *pathname, unsigned mode) {
-    disable_current_interrupt();
     Thread *current = thread_list.beg;
     vnode *dir = current->curr_dir;
     int code = dir->v_ops->mkdir(dir, NULLPTR, parse_path((char*)pathname, NULLPTR));
    
     tpf->x0 = code;
-    enable_current_interrupt();
     return code;
 }
 
@@ -396,7 +387,6 @@ int mount(Trap_Frame *tpf, const char *src, const char *target, const char *file
 	code = register_filesystem(filesystem);
     if (code) {
         tpf->x0 = code;
-        enable_current_interrupt();
         return code;
     }
 	struct filesystem *mount_fs = find_fs(filesystem);
@@ -410,7 +400,6 @@ int mount(Trap_Frame *tpf, const char *src, const char *target, const char *file
         tmp_path = parse_path(tmp_path, name);
         if (dir->v_ops->lookup(*target_dir, target_dir, name)) {
             tpf->x0 = code;
-            enable_current_interrupt();
             return code;
         }
     }
@@ -431,19 +420,16 @@ int mount(Trap_Frame *tpf, const char *src, const char *target, const char *file
     }
 
     tpf->x0 = code;
-    enable_current_interrupt();
     return code;
 }
 
 int chdir(Trap_Frame *tpf, const char *path) {
-    disable_current_interrupt();
     Thread *current = thread_list.beg;
     vnode *dir = current->curr_dir;
 
     if (!strcmp(path, "/")) {
         current->curr_dir = rootfs->root;
         tpf->x0 = 0;
-        enable_current_interrupt();
         return 0;
     }
 
@@ -455,14 +441,12 @@ int chdir(Trap_Frame *tpf, const char *path) {
         if (dir->v_ops->lookup(*target_dir, target_dir, name)) {
             printf("chdir: %s: No such file or directory\n", name);
             tpf->x0 = -1;
-            enable_current_interrupt();
             return -1;
         }
     }
     current->curr_dir = *target_dir;
 
     tpf->x0 = 0;
-    enable_current_interrupt();
     return 0;
 }
 

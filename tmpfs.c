@@ -8,6 +8,8 @@
 struct mount root_fs;
 struct mount* rootfs = &root_fs;
 
+vnode **dev;
+
 void check_tree(vnode* root) {
     File_Info *info = (File_Info*)root->internal;
     vnode** child = info->data;
@@ -258,4 +260,98 @@ int initramfs_setup_mount(struct filesystem* fs, struct mount* mount) {
     initramfs_setup_node(mount->root);
 
 	return 0;
+}
+
+int uartfs_read(struct file* file, void* buf, size_t len) {
+	vnode* node = file->vnode;
+	File_Info *info = (File_Info*)node->internal;
+	if (info->mode != MODE_FILE) {
+        printf("Not file\n");
+		while (1) {}
+	}
+
+    char* buffer = (char*)buf;
+    for (int i=0; i<len; i++) {
+        buffer[i] = async_uart_getc();
+    }
+    
+    return len;
+}
+
+int uartfs_write(struct file* file, const void* buf, size_t len) {
+	vnode* node = file->vnode;
+	File_Info *info = (File_Info*)node->internal;
+	if (info->mode != MODE_FILE) {
+        printf("Not file\n");
+		while (1) {}
+	}
+
+    char* buffer = (char*)buf;
+    for (int i=0; i<len; i++) {
+        uart_send(buffer[i]);
+    }
+
+    return len;
+}
+
+int uartfs_setup_node(vnode* root) {
+    root->f_ops=(struct file_operations*)kmalloc(sizeof(struct file_operations));
+	root->f_ops->write = uartfs_write;
+	root->f_ops->read = uartfs_read;
+    root->parent = root;
+
+    root->internal = (File_Info*)kmalloc(sizeof(File_Info));
+    File_Info *info = (File_Info*)root->internal;
+    strcpy(info->name, "uart");
+    info->mode = MODE_FILE;
+    info->size = 0;
+    info->data = 0;
+
+    return 0;
+}
+
+int uartfs_setup_mount(struct filesystem* fs, struct mount* mount) {
+    mount->root = (vnode*)kmalloc(sizeof(vnode));
+    mount->fs = fs;
+    mount->root->mount = mount;
+    tmpfs_setup_node(mount->root);
+    uartfs_setup_node(mount->root);
+
+	return 0;
+}
+
+void setup_uart_fs() {
+    tmpfs_mkdir(rootfs->root, dev, "dev");
+    tmpfs_create(*dev, dev, "uart");
+    
+    struct mount *new_mount = kmalloc(sizeof(struct mount));
+    register_filesystem("uartfs");
+    struct filesystem *mount_fs = find_fs("uartfs");
+    mount_fs->setup_mount(mount_fs, new_mount);
+    vnode *mount_vnode = new_mount->root;
+
+    new_mount->root->parent = (*dev)->parent;
+
+    File_Info* parent_info = (File_Info*)((*dev)->parent)->internal;
+    vnode **childs = (vnode**)parent_info->data;
+    for (int i=0; i<TMPFS_DIR_LEN; i++) {
+        if (childs[i] == *dev) {
+            childs[i] = mount_vnode;
+            break;
+        }
+    }
+
+    *dev = mount_vnode;
+}
+
+void setup_uart_fd(struct file **fd_table) {
+    struct file* file = (struct file*)kmalloc(sizeof(struct file));
+    file = (struct file*)kmalloc(sizeof(struct file));
+    file->vnode = *dev;
+    file->f_ops = (*dev)->f_ops;
+    file->f_pos = 0;
+    file->flags = 0;
+    fd_table[0] = file;
+    fd_table[1] = file;
+    fd_table[2] = file;
 }
