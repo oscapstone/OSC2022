@@ -10,6 +10,7 @@ typedef uint64_t pid_t;
 #define TASK_INTERRUPTIBLE  1
 #define TASK_UNINTERRUPTIBLE    2
 #define TASK_DEAD		64
+#define VM_AREA_STACK 1
 struct thread_info{
     pid_t pid;
     volatile int64_t state;
@@ -76,8 +77,9 @@ struct task_ctx{
 }__attribute__((packed));
 
 struct vm_area_struct{
-    void * vm_start;
-    void * vm_end;
+    uint64_t vm_start;
+    uint64_t vm_end;
+    uint64_t type;
     struct list_head list;
 };
 

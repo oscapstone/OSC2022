@@ -1,12 +1,25 @@
 #include "user_lib.h"
 #include "types.h"
-int main(void){
+
+
+int __start(void){
     char buf[15];
-    size_t s;
+    //size_t s;
     uart_write("hello world\r\n", sizeof("hello world\r\n"));
     while(1){
-        s = uart_read(buf, 10);
-        uart_write(buf, s);
-        uart_write("\r\n", 2);
+        if(fork() == 0){
+            while(1){
+                uart_write("hello child\r\n", sizeof("hello child\r\n"));
+                delay(500000);
+            }
+        }else{
+            while(1){
+                uart_write("hello parent\r\n", sizeof("hello parent\r\n"));
+                delay(500000);
+            }
+        }
+
     }
 }
+
+

@@ -57,8 +57,8 @@
 
     .endm
 
-.global run_init_task_load_all
-run_init_task_load_all:
+.global task_load_all
+task_load_all:
     load_all
     eret
 
@@ -131,7 +131,6 @@ svc_handler:
     eret
 
 nothing:
-    bl local_irq_disable 
     load_all 
     eret
 

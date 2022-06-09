@@ -4,4 +4,5 @@
 extern uint64_t sys_hello(uint64_t);
 extern size_t sys_uart_write(char *, size_t);
 extern size_t sys_uart_read(char *, size_t);
+extern uint64_t sys_fork();
 #endif

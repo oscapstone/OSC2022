@@ -62,6 +62,14 @@ void init_core_timer(){
     set_CNTP_CTL_EL0(1);
     freq = get_CNTFRQ_EL0();
     set_CNTP_TVAL_EL0(freq / HZ);
+
+
+    // lab5,  user space want to access cpu timer register
+    uint64_t tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" : : "r"(tmp));
+
     enable_core_timer_irq();
 }
 void core_timer_irq_handler(){

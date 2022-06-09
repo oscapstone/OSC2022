@@ -2,7 +2,9 @@
 void *syscall_table[] = {
     sys_hello,
     sys_uart_read,
-    sys_uart_write
+    sys_uart_write,
+    0,
+    sys_fork
 };
 
 

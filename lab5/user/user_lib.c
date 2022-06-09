@@ -20,5 +20,14 @@ size_t uart_write(char *buf, size_t size){
     );
 }
 
+uint64_t fork(void){
+    asm volatile("mov x8, 4\n\t"
+                 "svc 0\n\t"
+                 :
+                 :
+    );
+}
 
-
+void delay(uint64_t clock){
+    for(uint64_t i = 0 ; i < clock ; i++) asm volatile("nop");
+}
