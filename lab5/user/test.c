@@ -6,6 +6,8 @@ int __start(void){
     char buf[15];
     //size_t s;
     uart_write("test fork\r\n", sizeof("test fork\r\n"));
+    uart_read(buf, 1);
+    uart_write("start fork\r\n", sizeof("test fork\r\n"));
     while(1){
         if(fork() == 0){
             while(1){
