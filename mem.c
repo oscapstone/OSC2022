@@ -248,7 +248,7 @@ mem_frame *chunk_malloc(unsigned int size) {
     }
     target->free = 0;
 #ifdef MEM_DEMO_LOG
-    printf("%x\n", target->address);
+    printf("kalloc:%x\n", target->address);
 #endif
     return target;
 }
@@ -288,6 +288,9 @@ void chunk_free(unsigned long address) {
     // free slot
     mem_frame *target = &chunk_array[position].chunk_slot[shift];
     target->free = 1;
+#ifdef MEM_DEMO_LOG
+    printf("kfree:%x\n", target->address);
+#endif
     if (slot_merge(target)) {
         // free chunk
         chunk *slot = &chunk_array[position];
@@ -303,6 +306,13 @@ void* kmalloc(unsigned int size) {
     else 
         target = chunk_malloc(size);
     return (void*)target->address;
+}
+
+void* cmalloc(unsigned int size) {
+    char *zero = kmalloc(size);
+    for (int i=0; i<size; i++)
+        zero[i] = 0;
+    return (void*)zero;
 }
 
 void kfree(void *ptr) {

@@ -22,6 +22,35 @@ int strlen(const char *str){
 
 }
 
+int strncmp(char* s1, char* s2) {
+    int len = strlen(s1);
+	for(int i = 0; i < len; ++i){
+        if (*s1 && (*s1 == *s2)) {
+            s1++;
+            s2++;
+        }
+        else
+            return *s1 - *s2;
+    }
+    return 0;
+}
+
+void strcpy(char *dest, char *src) {
+	int i;
+	for(i = 0; i < strlen(src); ++i){
+		dest[i] = src[i];
+	}
+	dest[i] = '\0';
+}
+
+void strncpy(char *dest, char *src, unsigned int size) {
+	int i;
+	for(i = 0; i < size; ++i){
+		dest[i] = src[i];
+	}
+	dest[i] = '\0';
+}
+
 unsigned int vsprintf(char *dst, char* fmt, __builtin_va_list args)
 {
     long int arg;

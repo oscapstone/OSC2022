@@ -61,7 +61,7 @@ void exec_cat() {
 }
 
 void exec_load() {
-    load_cpio("vm.img");
+    load_cpio("initramfs/vfs1.img");
 }
 
 void exec_lsfdt() {

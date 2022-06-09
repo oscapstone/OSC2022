@@ -9,6 +9,8 @@
 #include "mmu.h"
 #include "mbox.h"
 
+extern struct mount* rootfs;
+
 void schedule(){
 	disable_current_interrupt();
 
@@ -73,7 +75,10 @@ Thread *thread_create(void *program_start) {
     new->parent = new->iszombie = 0;
     for (int i=0; i<16; i++) {
         new->demand[i] = 0;
+        new->fd_table[i] = NULLPTR;
     }
+
+    new->curr_dir = rootfs->root;
 
     page_table_alloc((unsigned long)pgd, 0x6000, BOOT_PGD_ATTR, 0);
     if (new->pid == 0)
@@ -115,6 +120,16 @@ void init_schedule() {
     //     thread_create(foo);
     // }
 
+}
+
+int alloc_fd(Thread *user_thread) {
+    for (int i=0; i<FILE_DESCRIPTOR_LEN; i++) {
+        if (user_thread->fd_table[i] == NULLPTR) {
+            return i;
+        }
+    }
+    printf("not enough FD table");
+    return 0;
 }
 
 void exec_thread(char *data, unsigned int filesize) {
@@ -161,6 +176,12 @@ void jump_thread(char *data, unsigned int filesize) {
 	
     Thread *user_thread = thread_list.beg;
 
+    for (int i=0; i<16; i++) {
+        user_thread->demand[i] = 0;
+        user_thread->fd_table[i] = NULLPTR;
+    }
+    user_thread->curr_dir = rootfs->root;
+
     // user_thread->program = (char *)(PHYSICAL_USER_PROGRAM+KVA);
     user_thread->program_size = filesize;
 
@@ -205,8 +226,8 @@ size_t uartwrite(Trap_Frame *tpf,const char buf[], size_t size) {
 
 int exec(Trap_Frame *tpf,const char* name, char *const argv[]) {
     disable_current_interrupt();
-    jump_cpio((char*)name);
-	enable_current_interrupt();
+    jump_cpio(parse_path((char*)name, NULLPTR));
+    enable_current_interrupt();
 
     tpf->x0 = 0;
 
@@ -302,6 +323,147 @@ void kill(Trap_Frame *tpf, int pid) {
         }
         killpid = killpid->next;
     }
+}
+
+int open(Trap_Frame *tpf, const char *pathname, int flags) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    int fd = alloc_fd(current);
+    vnode *dir = current->curr_dir;
+    if(dir->f_ops->open(dir, pathname, flags, &current->fd_table[fd])) {
+        tpf->x0 = -1;
+        enable_current_interrupt();
+        return -1;
+    }
+    
+    tpf->x0 = fd;
+    enable_current_interrupt();
+    return fd;
+}
+
+int close(Trap_Frame *tpf, int fd) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    vnode *file = current->curr_dir;
+    int code = file->f_ops->close(current->fd_table[fd]);
+    current->fd_table[fd] = NULLPTR;
+    
+    tpf->x0 = code;
+    enable_current_interrupt();
+    return code;
+}
+
+long write(Trap_Frame *tpf, int fd, const void *buf, unsigned long count) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    vnode *file = current->curr_dir;
+    int code = file->f_ops->write(current->fd_table[fd], buf, count);
+    
+    tpf->x0 = code;
+    enable_current_interrupt();
+    return code;
+}
+
+long read(Trap_Frame *tpf, int fd, void *buf, unsigned long count) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    vnode *file = current->curr_dir;
+    int code = file->f_ops->read(current->fd_table[fd], buf, count);
+   
+    tpf->x0 = code;
+    enable_current_interrupt();
+    return code;
+}
+
+int mkdir(Trap_Frame *tpf, const char *pathname, unsigned mode) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    vnode *dir = current->curr_dir;
+    int code = dir->v_ops->mkdir(dir, NULLPTR, parse_path((char*)pathname, NULLPTR));
+   
+    tpf->x0 = code;
+    enable_current_interrupt();
+    return code;
+}
+
+int mount(Trap_Frame *tpf, const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    vnode *dir = current->curr_dir;
+    int code = 0;
+    
+    struct mount *new_mount = kmalloc(sizeof(struct mount));
+	code = register_filesystem(filesystem);
+    if (code) {
+        tpf->x0 = code;
+        enable_current_interrupt();
+        return code;
+    }
+	struct filesystem *mount_fs = find_fs(filesystem);
+    mount_fs->setup_mount(mount_fs, new_mount);
+    vnode *mount_vnode = new_mount->root;
+    
+    vnode **target_dir = &dir; 
+    char *tmp_path = (char*)target;
+    char name[TMPFS_NAME_LEN];
+    while (*tmp_path) {
+        tmp_path = parse_path(tmp_path, name);
+        if (dir->v_ops->lookup(*target_dir, target_dir, name)) {
+            tpf->x0 = code;
+            enable_current_interrupt();
+            return code;
+        }
+    }
+
+    File_Info *mount_info = (File_Info*)mount_vnode->internal;
+    strcpy(mount_info->name, name);
+
+    vnode *parent = (*target_dir)->parent;
+    new_mount->root->parent = parent;
+
+    File_Info* parent_info = (File_Info*)parent->internal;
+    vnode **childs = (vnode**)parent_info->data;
+    for (int i=0; i<TMPFS_DIR_LEN; i++) {
+        if (childs[i] == *target_dir) {
+            childs[i] = mount_vnode;
+            break;
+        }
+    }
+
+    tpf->x0 = code;
+    enable_current_interrupt();
+    return code;
+}
+
+int chdir(Trap_Frame *tpf, const char *path) {
+    disable_current_interrupt();
+    Thread *current = thread_list.beg;
+    vnode *dir = current->curr_dir;
+
+    if (!strcmp(path, "/")) {
+        current->curr_dir = rootfs->root;
+        tpf->x0 = 0;
+        enable_current_interrupt();
+        return 0;
+    }
+
+    vnode **target_dir = &current->curr_dir;
+    char *tmp_path = (char*)path;
+    char name[TMPFS_NAME_LEN];
+    while (*tmp_path) {
+        tmp_path = parse_path(tmp_path, name);
+        if (dir->v_ops->lookup(*target_dir, target_dir, name)) {
+            printf("chdir: %s: No such file or directory\n", name);
+            tpf->x0 = -1;
+            enable_current_interrupt();
+            return -1;
+        }
+    }
+    current->curr_dir = *target_dir;
+
+    tpf->x0 = 0;
+    enable_current_interrupt();
+    return 0;
 }
 
 /********

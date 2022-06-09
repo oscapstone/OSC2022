@@ -4,6 +4,11 @@
 #include "uart.h"
 #include "exception.h"
 #include "thread.h"
+#include "mem.h"
+#include "vfs.h"
+
+extern struct mount* rootfs;
+
 int parse(char input_char, int buffer_counter) {
     if ((input_char > 31 && input_char < 127) || input_char == 9) {
         buffer_counter++;
@@ -42,6 +47,12 @@ void shell() {
 
     enable_current_interrupt(); // ------v
     init_schedule();
+
+	register_filesystem("tmpfs");
+    struct filesystem *tmp_fs = find_fs("tmpfs");
+	tmp_fs->setup_mount(tmp_fs, rootfs);
+
+    parse_command("load");
 
     // read input
     while (1) {

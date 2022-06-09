@@ -134,6 +134,30 @@ void lower_svc(Trap_Frame *tpf) {
     else if (syscall_svc == 7) {
         kill(tpf, (int)tpf->x0);
     }
+    else if (syscall_svc == 11) {
+        open(tpf, (const char *)tpf->x0, tpf->x1);
+    }
+    else if (syscall_svc == 12) {
+        close(tpf, tpf->x0);
+    }
+    else if (syscall_svc == 13) {
+        write(tpf, tpf->x0, (const void *)tpf->x1, tpf->x2);
+    }
+    else if (syscall_svc == 14) {
+        read(tpf, tpf->x0, (void *)tpf->x1, tpf->x2);
+    }
+    else if (syscall_svc == 15) {
+        mkdir(tpf, (const char *)tpf->x0, tpf->x1);
+    }
+    else if (syscall_svc == 16) {
+        mount(tpf, (const char *)tpf->x0, (const char *)tpf->x1, (const char *)tpf->x2, tpf->x3, (const void *)tpf->x4);
+    }
+    else if (syscall_svc == 17) {
+        chdir(tpf, (const char *)tpf->x0);
+    }
+	else {
+		printf("unknown system call:%d\n",syscall_svc);
+	}
 }
 
 void lower_sync_entry(Trap_Frame *tpf) {
