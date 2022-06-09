@@ -52,9 +52,10 @@ void update_sched_info(struct task_struct* task){
 
 pid_t get_pid_counter(void){
     pid_t ret;
-    local_irq_disable();
+    uint64_t daif;
+    daif = local_irq_disable_save();
     ret = pid_count++; 
-    local_irq_enable();
+    local_irq_restore(daif);
     return ret;
 }
 
