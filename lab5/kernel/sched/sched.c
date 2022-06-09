@@ -69,16 +69,17 @@ void print_rq(void){
     struct list_head *node;
     struct task_struct *tmp_task;
     struct task_pid *tmp_task_pid;
+    uint64_t daif;
     LIST_HEAD(head);
     // In printf, interrupt will be enable, so we can't directly print run queue
-    local_irq_disable();
+    daif = local_irq_disable_save();
     list_for_each(node, &rq){
         tmp_task = list_entry(node, struct task_struct, sched_info.sched_list);
         tmp_task_pid = (struct task_pid*)kmalloc(sizeof(struct task_pid));
         tmp_task_pid->pid = tmp_task->thread_info.pid;
         list_add_tail(&tmp_task_pid->list, &head);
     }
-    local_irq_enable();
+    local_irq_restore(daif);
 
     while(!list_empty(&head)){
         tmp_task_pid = list_first_entry(&head, struct task_pid, list);
