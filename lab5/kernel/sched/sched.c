@@ -34,6 +34,7 @@ void schedule(){
         // add current task to schdule list
         current = get_current();
         if( current != NULL && current->thread_info.state != TASK_DEAD){ 
+            while(next == current) write_str("scheduler error\r\n");
             list_add_tail(&current->sched_info.sched_list, &rq);
         }
 
