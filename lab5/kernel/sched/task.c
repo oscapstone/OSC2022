@@ -90,7 +90,7 @@ uint64_t task_dup(struct task_struct* parent){
 
     // initialize schedule info
     child->sched_info.rticks = 0;
-    child->sched_info.priority = 1;
+    child->sched_info.priority = parent->sched_info.priority ;
     child->sched_info.counter = child->sched_info.priority;
    
     add_task_to_rq(child);
@@ -136,12 +136,12 @@ void run_init_task(char* filename){
     task->stack = alloc_pages(1);
     
     // initialize trap frame in kernel stack
-    ptrap_frame = (struct trap_frame*)((uint64_t)task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame));
+    ptrap_frame = (struct trap_frame*)get_trap_frame(task);
     ptrap_frame->spsr_el1 = 0x0; 
     ptrap_frame->sp_el0 = user_sp; 
-    ptrap_frame->x29 = user_sp;
     ptrap_frame->elr_el1 = user_entry;
-    ptrap_frame->x30 = user_entry;
+    ptrap_frame->x30 = 0x9487;
+    ptrap_frame->x29 = 0x9488;
 
     // initialize thread_info
     task->thread_info.pid = get_pid_counter();
@@ -149,7 +149,7 @@ void run_init_task(char* filename){
 
     // initialize thread context
     task->ctx.lr = (uint64_t)task_load_all;
-    task->ctx.sp = (uint64_t)task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame);
+    task->ctx.sp = (uint64_t)get_trap_frame(task);
     task->ctx.fp = task->ctx.sp;
 
     // initialize relationship

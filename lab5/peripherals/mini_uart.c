@@ -220,28 +220,26 @@ ssize_t aio_write_bytes(uint8_t* buf, size_t n){
 size_t sys_uart_write(char *buf, size_t size){
     uint64_t daif;
     size_t c = 0, tmp;
-/*
     while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
         size = size - tmp;
         c = c + tmp;
-        local_irq_restore(daif);
         enable_mini_uart_irq(TX);
+        local_irq_restore(daif);
     }
-    return c;
-*/
+    return c;/*
     for(size_t i = 0 ; i < size ; i++){
         daif = local_irq_disable_save();
         mini_uart_write(buf[i]);
         local_irq_restore(daif);
-    }
+    }*/
 }
 
 size_t sys_uart_read(char *buf, size_t size){
     uint64_t daif;
     size_t c = 0, tmp;
- /*   
+    
     while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
@@ -249,10 +247,10 @@ size_t sys_uart_read(char *buf, size_t size){
         c = c + tmp;
         local_irq_restore(daif);
     }
-*/
-    for(size_t i = 0 ; i < size ; i++){
+
+    /*for(size_t i = 0 ; i < size ; i++){
        buf[i] = mini_uart_read();
-    }
+    }*/
 
     return c;
 }

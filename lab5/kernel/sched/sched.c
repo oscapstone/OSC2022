@@ -5,9 +5,9 @@ int need_sched = 0;
 LIST_HEAD(rq);
 void add_task_to_rq(struct task_struct *task){
     uint64_t daif;
+    daif = local_irq_disable_save();
     task->thread_info.state = TASK_RUNNING;
 
-    daif = local_irq_disable_save();
     list_add_tail(&task->sched_info.sched_list, &rq);
     need_sched = 1;
     local_irq_restore(daif);
@@ -24,9 +24,12 @@ void schedule(){
     struct task_struct* current, *next;
     uint64_t daif;
     // prevent running scheduler in softirq
-    if(in_softirq()) return;
-
     daif = local_irq_disable_save();
+    if(in_softirq()){
+        local_irq_restore(daif);
+        return;
+    }
+    
     if(need_sched){
         need_sched = 0;
         next = pick_next_task_from_rq();
@@ -34,7 +37,6 @@ void schedule(){
         // add current task to schdule list
         current = get_current();
         if( current != NULL && current->thread_info.state != TASK_DEAD){ 
-            while(next == current) write_str("scheduler error\r\n");
             list_add_tail(&current->sched_info.sched_list, &rq);
         }
 

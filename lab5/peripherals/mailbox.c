@@ -111,4 +111,15 @@ void MBox_get_arm_memory(uint32_t* ret){
     LOG("Leave");
 }
 
+int Mbox_call(uint32_t* mbox, uint8_t ch) {
+    MBox_register* mbox_reg = (MBox_register*)MBOX_REG;
+    while(mbox_reg->status & MBOX_STATUS_FULL_MASK);
 
+    mbox_reg->write = ((uint32_t)(uint64_t)mbox & ~0xF) | ch;
+
+    while (mbox_reg->status & MBOX_STATUS_EMPTY_MASK);
+    return mbox_reg->read == (((uint32_t)(uint64_t)mbox & ~0xF) | ch); 
+}
+int sys_mbox_call(uint8_t ch, uint32_t *mbox){
+    return Mbox_call(mbox, ch);
+}

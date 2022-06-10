@@ -75,7 +75,7 @@ EL1_exception_vector_table:
 	ventry	invalid_handler	    	// Error EL1t
 
 // Exception from the current EL while using SP_ELx 
-	ventry	invalid_handler         // Synchronous EL1h
+	ventry	el1_sync_invalid_handler// Synchronous EL1h
 	ventry	el1_irq_handler         // IRQ EL1h
 	ventry	invalid_handler   	    // FIQ EL1h
 	ventry	invalid_handler		    // Error EL1h
@@ -92,10 +92,15 @@ EL1_exception_vector_table:
 	ventry	invalid_handler   	    // FIQ 32-bit EL0
 	ventry	invalid_handler		    // Error 32-bit EL0
 
-
+el1_sync_invalid_handler:
+    mov x0, 135 
 invalid_handler:
-el1_sync_handler:
     save_all
+	mrs	x1, esr_el1
+	mrs	x2, elr_el1
+	mrs	x3, spsr_el1
+	mrs	x4, sp_el0
+	mov	x5, sp
     bl err_handler
     load_all
     eret
@@ -114,21 +119,23 @@ el0_sync_handler:
     lsr x24, x24, #26
     cmp x24, #0x15
 
-    bl local_irq_enable 
     b.eq svc_handler
     b    nothing
 
 svc_handler:
+    ldr x24, len_syscall_table 
+    cmp x8, x24 
+    b.ge nothing
+
     mov x24, 8
     adr x25, syscall_table
     madd x25, x8, x24, x25
     ldr x25, [x25]
 
+    bl local_irq_enable 
     blr x25
 
     str x0, [sp]
-    load_all
-    eret
 
 nothing:
     load_all 

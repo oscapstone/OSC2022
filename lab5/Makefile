@@ -92,6 +92,9 @@ dump:
 qemu-run: 
 	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
 
+qemu-run-gui: 
+	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -serial null -serial stdio -initrd ./initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
+
 qemu-run-instr: 
 	sudo $(QEMU) -M $(RASPI_VER) -kernel $(OUTPUT)/$(KNAME).img -display none -d in_asm 
 

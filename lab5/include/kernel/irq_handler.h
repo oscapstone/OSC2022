@@ -7,6 +7,7 @@
 #include "lib/print.h"
 #include "lib/bitops.h"
 #include "kernel/timer.h"
+#include "kernel/sched/sched.h"
 #include "debug/debug.h"
 #include "asm.h"
 

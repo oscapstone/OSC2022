@@ -5,9 +5,11 @@ CFLAGS ?= \
         -nostartfiles \
         -mgeneral-regs-only \
         -fno-builtin \
+		-g
 
 LDFLAGS ?= \
-        -nostdlib 
+        -nostdlib \
+		-g
 
 LD = aarch64-linux-gnu-ld
 CC = aarch64-linux-gnu-gcc

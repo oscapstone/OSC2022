@@ -75,7 +75,6 @@ void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , 
     }
     
     enable_device_irq();
-    schedule();
 }
 
 void irq_handler(){
@@ -98,6 +97,7 @@ void irq_handler(){
     if(core0_irq_source & 2){
         //core timer interrupt
         do_irq(CORE0_TIMER, core_timer_irq_handler, enable_core_timer_irq, disable_core_timer_irq);
+        schedule();
     }else if(irq_pending_1 & (1 << 29)){
         auxirq = IO_MMIO_read32(AUX_IRQ); 
         if(auxirq & 1){
@@ -121,6 +121,47 @@ void irq_handler(){
     }
 }
 
-void err_handler(void){
-    write_str("In err_handler\r\n");
+void err_handler(uint64_t type, uint64_t esr, uint64_t elr, uint64_t spsr_el1, uint64_t sp_el0, uint64_t sp){
+    struct task_struct *cur = get_current();
+    write_str("unkown irq count: ");
+    write_hex(irq_count[UNKNOWN_IRQ]);
+    write_str("\r\n");
+
+    write_str("pid: ");
+    write_hex(cur->thread_info.pid);
+    write_str("\r\n");
+    
+    write_str("trap frame: ");
+    write_hex((uint64_t)get_trap_frame(cur));
+    write_str("\r\n");
+
+    write_str("kernel stack: ");
+    write_hex((uint64_t)cur->stack);
+    write_str("\r\n");
+
+    write_str("type: ");
+    write_hex(type);
+    write_str("\r\n");
+
+    write_str("esr_el1: ");
+    write_hex(esr);
+    write_str("\r\n");
+
+    write_str("elr_el1: ");
+    write_hex(get_ELR_EL1());
+    write_str("\r\n");
+
+    write_str("spsr_el1: ");
+    write_hex(spsr_el1);
+    write_str("\r\n");
+
+    write_str("sp_el0: ");
+    write_hex(sp_el0);
+    write_str("\r\n");
+
+    write_str("sp: ");
+    write_hex(sp);
+    write_str("\r\n");
+
+    while(1);
 }
