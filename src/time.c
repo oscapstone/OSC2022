@@ -16,8 +16,8 @@ void print_sec()
     asm volatile ("mrs %0, cntpct_el0": "=r"(cur_time));
 
     sec = (cur_time - start_time) / freq;
-    sync_uart_puts("\nHas booted after ");
-    uart_dec(sec);
-    sync_uart_puts(" seconds ago\n");
+    // sync_uart_puts("\nHas booted after ");
+    // uart_dec(sec);
+    // sync_uart_puts(" seconds ago\n");
 
 }

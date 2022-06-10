@@ -1,9 +1,13 @@
 #include "cpio.h"
 
-void cpio_init(char* name, char *base_addr)
+void cpio_init(char* name, char *addr)
 {
     if (strcmp(name, "linux,initrd-start") == 0) {
-        CPIO_BASE = base_addr;
+        CPIO_BASE = addr;
+    }
+
+    if (strcmp(name, "linux,initrd-end") == 0) {
+        CPIO_END = addr;
     }
 }
 

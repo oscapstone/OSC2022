@@ -239,6 +239,20 @@ void uart_dec(int num) {
 
 }
 
+void uart_sdec(char* pre, int num, char* post)
+{
+    uart_puts(pre);
+    uart_dec(num);
+    uart_puts(post);
+}
+
+void uart_shex(char* pre, unsigned int num, char* post)
+{
+    uart_puts(pre);
+    uart_hex(num);
+    uart_puts(post);
+}
+
 void uart_irq_handler()
 {
     uint32_t value;

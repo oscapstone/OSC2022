@@ -36,6 +36,7 @@ typedef struct fdt_prop_header
 } fdt_prop_header_t;
 
 void *DTB_BASE;
+void *DTB_END;
 
 void big2little(uint32_t *num);
 

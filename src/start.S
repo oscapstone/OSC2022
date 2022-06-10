@@ -178,31 +178,31 @@ usr_irq_source_determine:
 .align 11      // vector table should be aligned to 0x800
 .global exception_vector_table
 exception_vector_table:
-  b exit       // branch to a handler function.
+  b exit_000       // branch to a handler function.
   .align 7     // entry size is 0x80, .align will pad 0
-  b exit
+  b exit_080
   .align 7
-  b exit
+  b exit_100
   .align 7
-  b exit
+  b exit_180
   .align 7
 
-  b exit
+  b exit_200
   .align 7
   b kernel_irq_source_determine // irq handler
   .align 7
-  b exit
+  b exit_300
   .align 7
-  b exit
+  b exit_380
   .align 7
 
   b exception_handler // svc 0, Exception from a lower EL and at least one lower EL is AARCH64, Synchronnous
   .align 7
   b usr_irq_source_determine
   .align 7
-  b exit
+  b exit_500
   .align 7
-  b exit
+  b exit_580
   .align 7
 
   b exit

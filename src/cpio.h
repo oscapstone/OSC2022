@@ -43,6 +43,7 @@ typedef struct cpio_file_pointer
 } cpio_fp_t;
 
 char *CPIO_BASE;
+char *CPIO_END;
 
 void cpio_init(char* name, char *base_addr);
 void cpio_cat(char *filename);

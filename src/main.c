@@ -29,6 +29,10 @@
 #include "string.h"
 #include "dtb.h"
 #include "stdlib.h"
+#include "buddy.h"
+#include "math.h"
+#include "mm.h"
+
 
 void main()
 {
@@ -39,6 +43,37 @@ void main()
     // set up serial console
     uart_init();
 
+    dtb_parse(cpio_init);
+    
+    init_buddy();
+    uart_puts("Reserve spin table\n");
+    reserve_memory(0x0, 0x1000);                         // reserve spin table
+    uart_puts("Reserve kernel image\n");
+    reserve_memory(0x60000, 0x100000);                   // reserve kernel image
+    uart_puts("Reserve initfs\n");
+    reserve_memory(CPIO_BASE, CPIO_END);                 // reserve initfs
+    uart_puts("Reserve devicetree\n");
+    reserve_memory(DTB_BASE, DTB_END);                   // reserve devicetree
+    uart_puts("Reserve simple_alloc\n");
+    reserve_memory(heap_start, heap_start + heap_size);  // reserve simple_alloc
+
+    //uart_puts("1\n");
+    build_free_list();
+    //uart_puts("2\n");
+
+    // uint32_t *addr = 0x06000000;
+    // uart_shex("addr = 0x", addr,"\n");
+    // uart_shex("*addr = 0x", *addr,"\n");
+
+
+    build_buddy();
+
+
+    
+    mm_init();
+    
+    set_start_time();
+    
     shell();
     
 }

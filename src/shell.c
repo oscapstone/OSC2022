@@ -26,6 +26,12 @@ void PrintHelp()
     uart_puts("lshw               : print device tree structure\n");
     uart_puts("alloc              : alloc test\n");
     uart_puts("run                : run user program\n");
+    uart_puts("balloc <order>     : buddy alloc test\n");
+    uart_puts("bfree              : buddy free test\n");
+    uart_puts("malloc <order>     : mm alloc test\n");
+    uart_puts("mfree              : mm free test\n");
+
+    uart_puts("\n");
 }
 
 void jump2usr_prog(cpio_fp_t *fp)
@@ -40,46 +46,6 @@ void jump2usr_prog(cpio_fp_t *fp)
     sp_value += 0x8000;
     disable_recieve_irq();
 
-    // for (int i=0;i<prog_size;i++) {
-    //     uart_send(prog_addr[i]);
-    //     if (prog_addr[i] == 'h') {
-    //         uart_puts("\nprog_addr = 0x");
-    //         uart_hex(i);
-    //         exit();
-    //     }
-    // }
-    // uart_puts(fp->filename);
-    // uart_puts("\n");
-    // for (int i=0;i<prog_size;i++) {
-    //     uart_send(prog_addr[i]);
-    //     if (prog_addr[i] == 'h') {
-    //         uart_puts("\ni = 0x");
-    //         uart_hex(i);
-    //         uart_puts("\ni = ");
-    //         uart_dec(i);
-    //         uart_puts("\nfp->data[i] = 0x");
-    //         uart_send(prog_addr[i]);
-    //         uart_puts("\n&fp->data[i] = 0x");
-    //         uart_hex(&(prog_addr[i]));
-    //         uart_puts("\nfp->data = 0x");
-    //         uart_hex(prog_addr);
-    //         exit();
-    //     }
-    // }
-    // uart_puts("\nEND\n");
-    // uart_hex((prog_addr+0x4fc));
-    // exit();
-    // uart_puts("prog_size = 0x");
-    // uart_hex(prog_size);
-    // uart_puts("\nprog_addr = 0x");
-    // uart_hex(prog_addr);
-    // uart_puts("\nsp_value = 0x");
-    // uart_hex(sp_value);
-    // uart_puts("\nfp->data = 0x");
-    // uart_hex(prog_addr);
-    // uart_puts("\nprog = 0x");
-    // uart_hex(prog);
-    // uart_puts("\n");
     asm volatile ("msr spsr_el1, %0" : : "r"(spsr_value));
     asm volatile ("msr elr_el1, %0"  : : "r"(prog_addr));
     asm volatile ("msr sp_el0, %0"   : : "r"(sp_value));
@@ -107,8 +73,6 @@ void PrintInfo()
     mbox[4] = 0;
     mbox[5] = 0;                    // clear output buffer
     mbox[6] = MBOX_TAG_LAST;
-
-    //mbox[7] = ;
 
     // send the message to the GPU and receive answer
     if (mbox_call(MBOX_CH_PROP)) {
@@ -186,8 +150,6 @@ void svc_handler()
 
 void shell()
 {
-    dtb_parse(cpio_init);
-    set_start_time();
     PrintHelp();
 
     while (1) {
@@ -200,6 +162,14 @@ void shell()
         asm volatile("nop");
     }
 }
+
+void *baddr[64];
+int baddr_head = 0;
+int baddr_tail = 0;
+
+void *maddr[64];
+int maddr_head = 0;
+int maddr_tail = 0;
 
 void cmd_handler()
 {
@@ -216,6 +186,7 @@ void cmd_handler()
     read_buf_idx = 0;
     tok = strtok(cmd_buf, ' ');
     
+    
     if (strcmp(tok, "help") == 0) PrintHelp();
     else if (strcmp(tok, "hello") == 0) PrintHello();
     else if (strcmp(tok, "sysinfo") == 0) PrintInfo();
@@ -228,6 +199,25 @@ void cmd_handler()
     else if (strcmp(tok, "run") == 0) {
         cpio_get_file_info("user_program", &fp);
         jump2usr_prog(&fp);
+    }
+    else if (strcmp(tok, "balloc") == 0) {
+        int order = atoi(strtok(NULL, ' '));
+        baddr[baddr_head] = buddy_alloc(order);
+        baddr_head++;
+    }
+    else if (strcmp(tok, "bfree") == 0) {
+        buddy_free(baddr[baddr_tail++]);
+    }
+    else if (strcmp(tok, "malloc") == 0) {
+        int size = atoi(strtok(NULL, ' '));
+        maddr[maddr_head++] = mm_alloc(size);
+    }
+    else if (strcmp(tok, "mfree") == 0) {
+        mm_free(maddr[maddr_tail++]);
+    }
+    else if (strcmp(tok, "log") == 0){
+        uart_sdec("baddr_head = ", baddr_head, "\n");
+        uart_sdec("baddr_tail = ", baddr_tail, "\n");
     }
     else if (tok != NULL) uart_puts("Command not found\n");
 

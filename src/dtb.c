@@ -75,6 +75,7 @@ void dtb_parse( void (*fun)(char *, char *) )
 
     // read device tree header
     read_fdt_header(&header, DTB_BASE);
+    DTB_END = DTB_BASE + header.totalsize;
 
     struct_addr = DTB_BASE + header.off_dt_struct;
     STRING_BASE = DTB_BASE + header.off_dt_strings;
