@@ -76,7 +76,6 @@ void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , 
     
     enable_device_irq();
     schedule();
-    enable_device_irq();
 }
 
 void irq_handler(){

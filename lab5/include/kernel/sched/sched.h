@@ -17,9 +17,9 @@ struct thread_info{
 };
 
 struct sched_info{
-    uint64_t rticks; // running ticks = user + system ticks
-    uint64_t priority;
-    uint64_t counter; // reset counter -> counter = priority
+    int64_t rticks; // running ticks = user + system ticks
+    int64_t priority;
+    int64_t counter; // reset counter -> counter = priority
     struct list_head sched_list; 
 };
 
