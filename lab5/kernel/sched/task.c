@@ -14,8 +14,8 @@ uint64_t task_dup(struct task_struct* parent){
     struct trap_frame *pptrap_frame;
     struct trap_frame *pctrap_frame;
     uint64_t child_pid;
-    uint64_t user_sp;
-    uint64_t user_fp;
+    uint64_t user_sp, kernel_sp;
+    uint64_t user_fp, kernel_fp;
 
 
     daif = local_irq_disable_save();
@@ -71,9 +71,10 @@ uint64_t task_dup(struct task_struct* parent){
     child->thread_info.state = TASK_RUNNING;
 
     // initialize thread context
-    child->ctx.lr = (uint64_t)task_load_all;
-    child->ctx.sp = (uint64_t)get_trap_frame(child);
-    child->ctx.fp = child->ctx.sp;
+    memcpy(&child->ctx,  &parent->ctx, sizeof(struct task_ctx));
+    kernel_sp = kernel_fp = (uint64_t)child->stack + PAGE_SIZE * 2;
+    child->ctx.sp = kernel_sp - ((uint64_t)parent->stack + PAGE_SIZE * 2 - parent->ctx.sp);
+    child->ctx.fp = kernel_fp - ((uint64_t)parent->stack + PAGE_SIZE * 2 - parent->ctx.fp);
 
     // initialize child's relationship
     child->parent = parent;
