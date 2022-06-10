@@ -231,11 +231,11 @@ size_t sys_uart_write(char *buf, size_t size){
     }
     return c;
 */
-    daif = local_irq_disable_save();
     for(size_t i = 0 ; i < size ; i++){
+        daif = local_irq_disable_save();
         mini_uart_write(buf[i]);
+        local_irq_restore(daif);
     }
-    local_irq_restore(daif);
 }
 
 size_t sys_uart_read(char *buf, size_t size){
