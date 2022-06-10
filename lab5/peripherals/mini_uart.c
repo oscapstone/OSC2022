@@ -241,17 +241,17 @@ size_t sys_uart_read(char *buf, size_t size){
     uint64_t daif;
     size_t c = 0, tmp;
     
-    while(size){
+    /*while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
         local_irq_restore(daif);
         size = size - tmp;
         c = c + tmp;
-    }
-
-    /*for(size_t i = 0 ; i < size ; i++){
-       buf[i] = mini_uart_read();
     }*/
+
+    for(size_t i = 0 ; i < size ; i++){
+       buf[i] = mini_uart_read();
+    }
 
     return c;
 }
