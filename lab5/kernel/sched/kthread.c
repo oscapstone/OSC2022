@@ -29,6 +29,7 @@ void kthread_idle(){
         need_sched = 1;
         schedule();
         local_irq_restore(daif);
+        printf("idle\r\n");
     }
 }
 
