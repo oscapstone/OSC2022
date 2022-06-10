@@ -72,7 +72,7 @@ uint64_t task_dup(struct task_struct* parent){
 
     // initialize thread context
     child->ctx.lr = (uint64_t)task_load_all;
-    child->ctx.sp = (uint64_t)child->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame);
+    child->ctx.sp = (uint64_t)get_trap_frame(child);
     child->ctx.fp = child->ctx.sp;
 
     // initialize child's relationship

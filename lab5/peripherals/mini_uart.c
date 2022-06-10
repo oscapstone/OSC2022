@@ -183,7 +183,12 @@ void mini_uart_irq_write(){
 }
 
 size_t mini_uart_get_tx_len(){
-    return ring_buf_get_len(tx_rbuf);
+    size_t len;
+    uint64_t daif;
+    daif = local_irq_disable_save();
+    len = ring_buf_get_len(tx_rbuf);
+    local_irq_restore(daif);
+    return len;
 }
 
 void mini_uart_aio_write(uint8_t c){

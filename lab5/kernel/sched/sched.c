@@ -12,6 +12,7 @@ void add_task_to_rq(struct task_struct *task){
     need_sched = 1;
     local_irq_restore(daif);
 }
+
 struct task_struct* pick_next_task_from_rq(){
     if(!list_empty(&rq))
         return list_first_entry(&rq, struct task_struct, sched_info.sched_list);
