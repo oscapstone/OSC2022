@@ -50,33 +50,33 @@ void do_softirq(){
         pending = get_softirq_pending();
         set_softirq_pending(0);
 
-        local_irq_enable();
         while(pending){
             softirq_bit = ffs16(pending);
             softirq_handler = softirq_vec[softirq_bit];
+            local_irq_enable();
             softirq_handler();
+            local_irq_disable();
             pending &= ~(1 << softirq_bit);
         }
-        local_irq_disable();
         try++;
     }
 }
 
 void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , irq_funcptr disable_device_irq){
-    irq_count[nr]++;
-    do_hardirq();
-    add_softirq_task(nr);
-
     disable_device_irq();
+    irq_count[nr]++;
+    add_softirq_task(nr);
+    do_hardirq();
+
     if(!in_softirq() && has_softirq_pending()){
         enter_softirq();
         do_softirq();
         exit_softirq();
-        enable_device_irq();
-        schedule();
     }
-    enable_device_irq();
     
+    enable_device_irq();
+    schedule();
+    enable_device_irq();
 }
 
 void irq_handler(){
