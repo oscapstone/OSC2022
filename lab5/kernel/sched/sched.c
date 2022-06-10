@@ -44,6 +44,7 @@ void schedule(){
         if(next != NULL){
             list_del(&next->sched_info.sched_list);
             switch_to(current, next);
+            //write_str("switch after\r\n");
         }
     }
     local_irq_restore(daif);

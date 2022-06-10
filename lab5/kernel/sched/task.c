@@ -39,7 +39,8 @@ uint64_t task_dup(struct task_struct* parent){
             pvma->vm_start = (uint64_t)alloc_pages(1);
             pvma->vm_end = pvma->vm_start + PAGE_SIZE * 2;
 
-            LOG("Create user stack 0x%x", pvma->vm_end);
+            LOG("parent user stack 0x%x", ppvma->vm_end);
+            LOG("Create child user stack 0x%x", pvma->vm_end);
 
             memcpy((void*)pvma->vm_start, (void*)ppvma->vm_start, PAGE_SIZE * 2);
             user_sp = pvma->vm_end - (ppvma->vm_end - pptrap_frame->sp_el0);
@@ -58,15 +59,16 @@ uint64_t task_dup(struct task_struct* parent){
         list_add_tail(&pvma->list, &child->mm->mmap_list);
     }
 
-    // fix child's 1st trap frame
-    // We can't not handle case that have multiple trap frame in kernel stack
-    // So keep it simple, just ignore all other trap frame except the first one that can
-    // help process successfully back to user space 
-
+    // fix child's trap frame
     pctrap_frame = get_trap_frame(child);
+    LOG("parent kernel stack: %x\r\n", parent->stack + PAGE_SIZE * 2);
+    LOG("child trap stack: %x\r\n", child->stack + PAGE_SIZE * 2);
+
+    LOG("parent trap frame: %x\r\n", pptrap_frame);
+    LOG("child trap frame: %x\r\n", pctrap_frame);
     pctrap_frame->x29 = user_fp;
     pctrap_frame->sp_el0 = user_sp;
-
+    pctrap_frame->spsr_el1 = 0;
     // set child's return value to 0
     pctrap_frame->x0 = 0;
 
@@ -79,8 +81,8 @@ uint64_t task_dup(struct task_struct* parent){
     // directly back to user space
     memcpy(&child->ctx,  &parent->ctx, sizeof(struct task_ctx));
     child->ctx.lr = (uint64_t)task_load_all;
-    child->ctx.sp = (uint64_t)get_trap_frame(child);
-    child->ctx.fp = child->ctx.sp; 
+    child->ctx.sp = (uint64_t)pctrap_frame;
+    child->ctx.fp = (uint64_t)pctrap_frame; 
 
     // initialize child's relationship
     child->parent = parent;
@@ -114,6 +116,7 @@ void run_init_task(char* filename){
     uint64_t user_entry, user_sp;
     struct trap_frame* ptrap_frame;
     LOG("run_init_task enter");
+    LOG("Size of struct trap_frame: %x", sizeof(struct trap_frame));
     struct task_struct* task = (struct task_struct*)kmalloc(sizeof(struct task_struct));
 
     // initialize mm
@@ -146,8 +149,6 @@ void run_init_task(char* filename){
     ptrap_frame->spsr_el1 = 0x0; 
     ptrap_frame->sp_el0 = user_sp; 
     ptrap_frame->elr_el1 = user_entry;
-    ptrap_frame->x30 = 0x9487;
-    ptrap_frame->x29 = 0x9488;
 
     // initialize thread_info
     task->thread_info.pid = get_pid_counter();

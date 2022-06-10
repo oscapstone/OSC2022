@@ -92,12 +92,12 @@ void _free_pages(struct page* page, uint32_t order){
         page = pfn_to_page(pfn);
         order++;
     }
-    local_irq_restore(daif);
 
     LOG("Merge %p into order %u free list ", pfn_to_addr(pfn), order);
     __free_pages(page, order);
     LOG("end merge pages");
 
+    local_irq_restore(daif);
 }
 
 // free 2^order pages
@@ -120,6 +120,8 @@ void free_page(void* addr){
 // split large buddy group to two small buddy groups
 void expand(struct page *page, uint32_t high, uint32_t low){
     struct page* tmp_page;
+    uint64_t daif;
+    daif = local_irq_disable_save();
     while(high > low){
         high--;
         tmp_page = page + (1 << high);
@@ -127,6 +129,7 @@ void expand(struct page *page, uint32_t high, uint32_t low){
         LOG("add page %p to order %u free list",pfn_to_addr(page_to_pfn(tmp_page)) , high);
         __free_pages(tmp_page, high);
     }
+    local_irq_restore(daif);
 }
 
 struct page* _alloc_pages(uint32_t order){
@@ -136,9 +139,9 @@ struct page* _alloc_pages(uint32_t order){
     struct page* page, *tmp_page;
     uint64_t daif;
    
+    daif = local_irq_disable_save();
     // find appropriate buddy group for user
     for(uint32_t i = order ; i < BUDDY_MAX_ORDER ; i++){
-        daif = local_irq_disable_save();
         free_list = &buddy.free_lists[i];
 
         if(list_empty(&free_list->list)){
@@ -165,6 +168,7 @@ struct page* _alloc_pages(uint32_t order){
         local_irq_restore(daif);
         return page; 
     }
+    local_irq_restore(daif);
     return NULL;
 }
 

@@ -19,7 +19,7 @@ struct slab* slab_create(size_t obj_size){
     }
 
     // get sufficient order
-    page_num = ALIGN_UP(obj_size + SLAB_SIZE, 4096) >> PAGE_SHIFT;
+    //page_num = ALIGN_UP(obj_size + SLAB_SIZE, 4096) >> PAGE_SHIFT;
     order = BUDDY_MAX_ORDER - 1;
     pages = alloc_pages(order);
     if(pages == NULL){

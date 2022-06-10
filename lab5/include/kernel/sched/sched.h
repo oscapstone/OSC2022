@@ -75,6 +75,7 @@ struct task_ctx{
     uint64_t fp; 
     uint64_t lr;
     uint64_t sp;
+    uint64_t redzone[5];
 }__attribute__((packed));
 
 struct vm_area_struct{

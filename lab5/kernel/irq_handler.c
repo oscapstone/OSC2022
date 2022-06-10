@@ -135,6 +135,18 @@ void err_handler(uint64_t type, uint64_t esr, uint64_t elr, uint64_t spsr_el1, u
     write_hex((uint64_t)get_trap_frame(cur));
     write_str("\r\n");
 
+    write_str("cur->ctx.lr: ");
+    write_hex(cur->ctx.lr);
+    write_str("\r\n");
+
+    write_str("cur->ctx.sp: ");
+    write_hex(cur->ctx.sp);
+    write_str("\r\n");
+
+    write_str("cur->ctx.fp: ");
+    write_hex(cur->ctx.fp);
+    write_str("\r\n");
+
     write_str("kernel stack: ");
     write_hex((uint64_t)cur->stack);
     write_str("\r\n");
