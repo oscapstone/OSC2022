@@ -145,7 +145,7 @@ void kfree(void* obj){
     LOG("kfree(%p) free an object", obj);
     slab_free(s, obj);
     
-    if((int64_t)s->inuse < 0){
+    if(s->inuse < 0){
         LOG("[Error]: s->inuse : %p", s->inuse);
     }
     if(s->inuse == 0){

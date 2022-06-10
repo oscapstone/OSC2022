@@ -58,10 +58,15 @@ uint64_t task_dup(struct task_struct* parent){
         list_add_tail(&pvma->list, &child->mm->mmap_list);
     }
 
-    // fix child's trap frame
+    // fix child's 1st trap frame
+    // We can't not handle case that have multiple trap frame in kernel stack
+    // So keep it simple, just ignore all other trap frame except the first one that can
+    // help process successfully back to user space 
+
     pctrap_frame = get_trap_frame(child);
     pctrap_frame->x29 = user_fp;
     pctrap_frame->sp_el0 = user_sp;
+
     // set child's return value to 0
     pctrap_frame->x0 = 0;
 
@@ -71,10 +76,11 @@ uint64_t task_dup(struct task_struct* parent){
     child->thread_info.state = TASK_RUNNING;
 
     // initialize thread context
+    // directly back to user space
     memcpy(&child->ctx,  &parent->ctx, sizeof(struct task_ctx));
-    kernel_sp = kernel_fp = (uint64_t)child->stack + PAGE_SIZE * 2;
-    child->ctx.sp = kernel_sp - ((uint64_t)parent->stack + PAGE_SIZE * 2 - parent->ctx.sp);
-    child->ctx.fp = kernel_fp - ((uint64_t)parent->stack + PAGE_SIZE * 2 - parent->ctx.fp);
+    child->ctx.lr = (uint64_t)task_load_all;
+    child->ctx.sp = (uint64_t)get_trap_frame(child);
+    child->ctx.fp = child->ctx.sp; 
 
     // initialize child's relationship
     child->parent = parent;

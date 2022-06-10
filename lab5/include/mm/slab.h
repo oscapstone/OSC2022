@@ -10,7 +10,7 @@
 struct slab{
     size_t size; // object size
     void* s_mem; // pointe to the first object
-    size_t inuse;
+    int64_t inuse;
     struct list_head free_list; // free list
     struct list_head list; // next slab
 };
