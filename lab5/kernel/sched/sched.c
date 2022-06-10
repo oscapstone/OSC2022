@@ -44,6 +44,7 @@ void schedule(){
         // context switch
         if(next != NULL){
             list_del(&next->sched_info.sched_list);
+            printf("switch from %l to %l\r\n", current->thread_info.pid, next->thread_info.pid);
             switch_to(current, next);
             //write_str("switch after\r\n");
         }
@@ -82,7 +83,7 @@ void print_rq(void){
 
     while(!list_empty(&head)){
         tmp_task_pid = list_first_entry(&head, struct task_pid, list);
-        printf("%l ", tmp_task_pid->pid);
+        printf("%l: ", tmp_task_pid->pid);
         list_del(head.next);
         kfree(tmp_task_pid);
     }
