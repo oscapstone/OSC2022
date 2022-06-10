@@ -124,7 +124,7 @@ el0_sync_handler:
     b    nothing
 
 svc_handler:
-    bl local_irq_enable 
+;    bl local_irq_enable 
     bl syscall_handler 
     str x0, [sp]
 

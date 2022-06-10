@@ -53,9 +53,9 @@ void do_softirq(){
         while(pending){
             softirq_bit = ffs16(pending);
             softirq_handler = softirq_vec[softirq_bit];
-    /*        local_irq_enable();
+            local_irq_enable();
             softirq_handler();
-            local_irq_disable();*/
+            local_irq_disable();
             pending &= ~(1 << softirq_bit);
         }
         try++;
@@ -108,9 +108,11 @@ void irq_handler(){
                 // Transmit holding register empty
                 do_irq(MINI_UART_TX, mini_uart_irq_write, enable_mini_uart_tx_irq, disable_mini_uart_tx_irq);
             }else{
+                irq_count[UNKNOWN_IRQ]++;
                 LOG("UART interrupt");
             }
         }else{
+            irq_count[UNKNOWN_IRQ]++;
             LOG("Unkown AUX interrupt, DAIF: %x", get_DAIF());
         }
     }
