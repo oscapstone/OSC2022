@@ -142,7 +142,6 @@ void mini_uart_irq_init(){
 }
 
 void mini_uart_tx_softirq_callback(){
-    disable_mini_uart_tx_irq();
 }
 
 void mini_uart_rx_softirq_callback(){
@@ -207,10 +206,10 @@ void mini_uart_aio_write(uint8_t c){
             local_irq_restore(daif);
             break;
         }
+        enable_mini_uart_tx_irq();
         local_irq_restore(daif);
     }
 
-    enable_mini_uart_tx_irq();
 }
 
 ssize_t aio_write_bytes(uint8_t* buf, size_t n){
