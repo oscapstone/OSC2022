@@ -75,7 +75,7 @@ EL1_exception_vector_table:
 	ventry	invalid_handler	    	// Error EL1t
 
 // Exception from the current EL while using SP_ELx 
-	ventry	irq_handler             // Synchronous EL1h
+	ventry	invalid_handler         // Synchronous EL1h
 	ventry	el1_irq_handler         // IRQ EL1h
 	ventry	invalid_handler   	    // FIQ EL1h
 	ventry	invalid_handler		    // Error EL1h
