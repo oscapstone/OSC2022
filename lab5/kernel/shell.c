@@ -99,7 +99,7 @@ void simple_shell(){
                          "msr elr_el1, x0\n\t"
                          "eret\n\t"
             );*/
-            disable_mini_uart_rx_irq();
+            //disable_mini_uart_rx_irq();
             run_init_task("syscall.img");
             kthread_exit();
              

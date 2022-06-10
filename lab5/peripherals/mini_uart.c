@@ -139,7 +139,6 @@ void mini_uart_irq_init(){
 
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
     // only enable receive interrupt. transmit interrupts should be enable when user want to transmit data.
-    enable_mini_uart_irq(RX);
 }
 
 void mini_uart_tx_softirq_callback(){
@@ -161,6 +160,7 @@ size_t mini_uart_get_rx_len(){
 uint8_t mini_uart_aio_read(void){
     uint8_t b[1];
     uint64_t daif;
+    enable_mini_uart_irq(RX);
     while(1){
         daif = local_irq_disable_save();
         if(!ring_buf_is_empty(rx_rbuf)){
@@ -208,8 +208,7 @@ void mini_uart_aio_write(uint8_t c){
         local_irq_restore(daif);
     }
 
-
-    enable_mini_uart_irq(TX);
+    enable_mini_uart_tx_irq();
 }
 
 ssize_t aio_write_bytes(uint8_t* buf, size_t n){
@@ -220,7 +219,7 @@ ssize_t aio_write_bytes(uint8_t* buf, size_t n){
 size_t sys_uart_write(char *buf, size_t size){
     uint64_t daif;
     size_t c = 0, tmp;
-    /*while(size){
+    while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
         enable_mini_uart_irq(TX);
@@ -228,12 +227,14 @@ size_t sys_uart_write(char *buf, size_t size){
 
         size = size - tmp;
         c = c + tmp;
-    }*/
+    }
+    /*
     for(size_t i = 0 ; i < size ; i++){
         daif = local_irq_disable_save();
         mini_uart_write(buf[i]);
         local_irq_restore(daif);
     }
+    */
     return c;
 }
 
@@ -241,17 +242,17 @@ size_t sys_uart_read(char *buf, size_t size){
     uint64_t daif;
     size_t c = 0, tmp;
     
-    /*while(size){
+    while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
         local_irq_restore(daif);
         size = size - tmp;
         c = c + tmp;
-    }*/
-
+    }
+/*
     for(size_t i = 0 ; i < size ; i++){
        buf[i] = mini_uart_read();
     }
-
+*/
     return c;
 }
