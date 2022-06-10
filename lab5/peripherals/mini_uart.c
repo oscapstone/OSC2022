@@ -222,6 +222,7 @@ size_t sys_uart_write(char *buf, size_t size){
     size_t c = 0, tmp;
 
     while(size){
+        write_str("1");
         daif = local_irq_disable_save();
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
         size = size - tmp;
