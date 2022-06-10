@@ -29,7 +29,8 @@ void schedule(){
     daif = local_irq_disable_save();
     if(need_sched){
         need_sched = 0;
-       
+        next = pick_next_task_from_rq();
+
         // add current task to schdule list
         current = get_current();
         if( current != NULL && current->thread_info.state != TASK_DEAD){ 
@@ -37,7 +38,6 @@ void schedule(){
         }
 
         // context switch
-        next = pick_next_task_from_rq();
         if(next != NULL){
             list_del(&next->sched_info.sched_list);
             switch_to(current, next);
