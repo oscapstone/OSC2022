@@ -29,6 +29,7 @@ void kthread_idle(){
         _kthread_remove_zombies();
         need_sched = 1;
         printf("%l: sp %l\r\n", c++, get_SP());
+        print_rq();
         schedule();
         //printf("sp %l\r\n", get_SP());
         local_irq_restore(daif);
