@@ -23,13 +23,15 @@ void _kthread_remove_zombies(){
 
 void kthread_idle(){
     uint64_t daif;
+    uint64_t c = 0;
     while(1){
         daif = local_irq_disable_save();
         _kthread_remove_zombies();
         need_sched = 1;
         schedule();
+        c++;
         local_irq_restore(daif);
-        printf("idle\r\n");
+        printf("idle %l\r\n", c);
     }
 }
 
