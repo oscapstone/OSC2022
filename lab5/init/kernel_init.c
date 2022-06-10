@@ -5,8 +5,8 @@ void kernel_init(void *dtb){
     init_core_timer();
     mini_uart_init();
     mini_uart_irq_init();
-    local_irq_enable();
 
+    local_irq_enable();
     INFO("kernel start initialization...");
 
     // memory management initialization

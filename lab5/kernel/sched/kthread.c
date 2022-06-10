@@ -28,11 +28,11 @@ void kthread_idle(){
         daif = local_irq_disable_save();
         _kthread_remove_zombies();
         need_sched = 1;
-        print_rq();
-        c++;
-        printf("idle %l\r\n", c);
-        schedule();
+        //print_rq();
+        //c++;
+        //printf("idle %l\r\n", c);
         local_irq_restore(daif);
+        schedule();
     }
 }
 

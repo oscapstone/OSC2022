@@ -7,7 +7,6 @@
 #include "debug/debug.h"
 #include "mm/slab.h"
 
-#define get_trap_frame(task) (task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame))
 
 extern void task_init();
 extern uint64_t task_dup();

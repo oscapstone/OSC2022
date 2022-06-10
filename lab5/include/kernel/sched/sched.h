@@ -11,6 +11,7 @@ typedef uint64_t pid_t;
 #define TASK_UNINTERRUPTIBLE    2
 #define TASK_DEAD		64
 #define VM_AREA_STACK 1
+#define get_trap_frame(task) (task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame))
 struct thread_info{
     pid_t pid;
     volatile int64_t state;
