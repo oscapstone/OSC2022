@@ -159,7 +159,7 @@ void run_init_task(char* filename){
 
     // initialize schedule info
     task->sched_info.rticks = 0;
-    task->sched_info.priority = 1;
+    task->sched_info.priority = 2;
     task->sched_info.counter = task->sched_info.priority;
     
     LOG("run_init_task end");

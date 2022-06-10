@@ -20,7 +20,7 @@ int __start(void){
             while(1){
                 asm volatile("mov %0, sp" : "=r"(cur_sp));
                 printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-                delay(1000000);
+                delay(100000);
             }
         }
         else{
@@ -34,7 +34,7 @@ int __start(void){
             while(1){
                 asm volatile("mov %0, sp" : "=r"(cur_sp));
                 printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-                delay(1000000);
+                delay(100000);
             }
         }
     }
@@ -43,7 +43,7 @@ int __start(void){
         while(1){
             asm volatile("mov %0, sp" : "=r"(cur_sp));
             printf("parent here, pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-            delay(1000000);
+            delay(100000);
         }
     }
     while(1);

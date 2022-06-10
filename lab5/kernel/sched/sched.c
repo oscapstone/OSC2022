@@ -48,11 +48,14 @@ void schedule(){
 }
 
 void update_sched_info(struct task_struct* task){
+    uint64_t daif;
     task->sched_info.rticks++;
     task->sched_info.counter--;
     if(task->sched_info.counter <= 0){
         task->sched_info.counter = task->sched_info.priority;
+        daif = local_irq_disable_save();
         need_sched = 1;
+        local_irq_restore(daif);
     }
 }
 
