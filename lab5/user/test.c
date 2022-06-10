@@ -3,13 +3,14 @@
 
 
 int __start(void){
-    printf("\r\n%s, pid %d\r\n","Fork test", getpid());
     int cnt = 1;
     int ret = 0;
+    long long cur_sp;
+                asm volatile("mov %0, sp" : "=r"(cur_sp));
+    printf("Fork test pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
     //debug_info();
     if ((ret = fork()) == 0) { // child
         //debug_info();
-        long long cur_sp;
         asm volatile("mov %0, sp" : "=r"(cur_sp));
         printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
         ++cnt;
@@ -31,7 +32,8 @@ int __start(void){
     }
     else {
             //debug_info();
-        printf("parent here, pid %d, child %d\r\n", getpid(), ret);
+                asm volatile("mov %0, sp" : "=r"(cur_sp));
+        printf("parent here, pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
     } 
     while(1);
 }
