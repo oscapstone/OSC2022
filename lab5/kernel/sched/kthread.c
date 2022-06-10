@@ -29,9 +29,9 @@ void kthread_idle(){
         _kthread_remove_zombies();
         need_sched = 1;
         print_rq();
+        c++;
+        printf("idle %l\r\n", c);
         schedule();
-        //c++;
-        //printf("idle %l\r\n", c);
         local_irq_restore(daif);
     }
 }
