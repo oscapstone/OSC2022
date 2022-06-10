@@ -28,7 +28,7 @@ void kthread_idle(){
         daif = local_irq_disable_save();
         _kthread_remove_zombies();
         need_sched = 1;
-        //print_rq();
+        print_rq();
         schedule();
         //c++;
         //printf("idle %l\r\n", c);
