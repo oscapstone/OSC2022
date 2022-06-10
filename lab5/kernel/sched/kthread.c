@@ -28,7 +28,7 @@ void kthread_idle(){
         daif = local_irq_disable_save();
         _kthread_remove_zombies();
         need_sched = 1;
-        printf("sp %l\r\n", get_SP());
+        printf("%l: sp %l\r\n", c++, get_SP());
         schedule();
         //printf("sp %l\r\n", get_SP());
         local_irq_restore(daif);
