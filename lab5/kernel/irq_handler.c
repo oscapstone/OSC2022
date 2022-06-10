@@ -63,19 +63,20 @@ void do_softirq(){
 }
 
 void do_irq(uint32_t nr, irq_funcptr do_hardirq,irq_funcptr enable_device_irq , irq_funcptr disable_device_irq){
-    disable_device_irq();
     irq_count[nr]++;
     do_hardirq();
     add_softirq_task(nr);
 
+    disable_device_irq();
     if(!in_softirq() && has_softirq_pending()){
         enter_softirq();
         do_softirq();
         exit_softirq();
+        enable_device_irq();
+        schedule();
     }
-    
     enable_device_irq();
-    schedule();
+    
 }
 
 void irq_handler(){

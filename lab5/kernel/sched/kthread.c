@@ -22,7 +22,6 @@ void _kthread_remove_zombies(){
 }
 
 void kthread_idle(){
-    local_irq_enable();
     while(1){
         _kthread_remove_zombies();
         need_sched = 1;
@@ -32,7 +31,6 @@ void kthread_idle(){
 
 void kthread_test(){
     struct task_struct* cur;
-    local_irq_enable();
     cur = get_current();
     for(uint32_t i = 0 ; i < 10 ; i++){
         printf("%u: pid: %l\r\n",i , cur->thread_info.pid);
