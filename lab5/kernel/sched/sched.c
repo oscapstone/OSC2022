@@ -37,6 +37,7 @@ void schedule(){
         // add current task to schdule list
         current = get_current();
         if( current != NULL && current->thread_info.state != TASK_DEAD){ 
+            current->sched_info.counter = current->sched_info.priority;
             list_add_tail(&current->sched_info.sched_list, &rq);
         }
 
@@ -50,24 +51,10 @@ void schedule(){
     local_irq_restore(daif);
 }
 
-void update_sched_info(struct task_struct* task){
-    uint64_t daif;
-    task->sched_info.rticks++;
-    task->sched_info.counter--;
-    if(task->sched_info.counter <= 0){
-        task->sched_info.counter = task->sched_info.priority;
-        daif = local_irq_disable_save();
-        need_sched = 1;
-        local_irq_restore(daif);
-    }
-}
 
 pid_t get_pid_counter(void){
     pid_t ret;
-    uint64_t daif;
-    daif = local_irq_disable_save();
     ret = pid_count++; 
-    local_irq_restore(daif);
     return ret;
 }
 

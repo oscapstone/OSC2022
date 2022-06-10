@@ -43,9 +43,7 @@ void slab_destroy(struct slab* slab){
     uint64_t daif;
     LOG("slab_destroy recycle order %u buddy %p", (void*)slab, get_page_order(page));
     // free pages
-    daif = local_irq_disable_save();
     free_pages((void*)slab, get_page_order(page));
-    local_irq_restore(daif);
 }
 
 void *slab_alloc(struct slab* slab){

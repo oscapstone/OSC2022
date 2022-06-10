@@ -42,7 +42,7 @@ void add_softirq_task(uint32_t softirq_nr){
 
 void do_softirq(){
     uint16_t try = 0;
-    uint16_t pending;
+    volatile uint16_t pending;
     uint16_t softirq_bit;
     irq_funcptr softirq_handler;
 
@@ -53,9 +53,9 @@ void do_softirq(){
         while(pending){
             softirq_bit = ffs16(pending);
             softirq_handler = softirq_vec[softirq_bit];
-            local_irq_enable();
+    /*        local_irq_enable();
             softirq_handler();
-            local_irq_disable();
+            local_irq_disable();*/
             pending &= ~(1 << softirq_bit);
         }
         try++;
@@ -97,7 +97,6 @@ void irq_handler(){
     if(core0_irq_source & 2){
         //core timer interrupt
         do_irq(CORE0_TIMER, core_timer_irq_handler, enable_core_timer_irq, disable_core_timer_irq);
-        schedule();
     }else if(irq_pending_1 & (1 << 29)){
         auxirq = IO_MMIO_read32(AUX_IRQ); 
         if(auxirq & 1){

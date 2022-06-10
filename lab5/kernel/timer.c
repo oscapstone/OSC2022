@@ -80,7 +80,15 @@ void core_timer_irq_handler(){
     set_CNTP_TVAL_EL0(freq / HZ);
 
     jiffies += 1;
-    if(current) update_sched_info(current);
+
+    // update task schedule info
+    if(current){
+        current->sched_info.rticks++;
+        current->sched_info.counter--;
+        if(current->sched_info.counter <= 0){
+            need_sched = 1;
+        }
+    }
 }
 
 uint64_t inline get_jiffies(){

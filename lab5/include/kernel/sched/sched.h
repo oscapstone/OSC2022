@@ -75,7 +75,7 @@ struct task_ctx{
     uint64_t fp; 
     uint64_t lr;
     uint64_t sp;
-    uint64_t redzone[5];
+    uint64_t redzone;
 }__attribute__((packed));
 
 struct vm_area_struct{
@@ -112,7 +112,6 @@ extern int need_sched;
 
 extern void add_task_to_rq(struct task_struct *task);
 extern struct task_struct* pick_next_task_from_rq();
-extern void update_sched_info(struct task_struct*);
 extern void schedule();
 extern void switch_to(struct task_struct*, struct task_struct*);
 extern struct task_struct* get_current();

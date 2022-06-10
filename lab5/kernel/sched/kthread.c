@@ -28,10 +28,9 @@ void kthread_idle(){
         daif = local_irq_disable_save();
         _kthread_remove_zombies();
         need_sched = 1;
-        //print_rq();
-        //c++;
-        //printf("idle %l\r\n", c);
+        //printf("sp %l\r\n", get_SP());
         schedule();
+        //printf("sp %l\r\n", get_SP());
         local_irq_restore(daif);
     }
 }
@@ -50,6 +49,7 @@ void kthread_test(){
 
 uint64_t kthread_create(kthread_func func){
     LOG("kthread enter");
+    uint64_t daif = local_irq_disable_save();
     struct task_struct* kthread = (struct task_struct*)kmalloc(sizeof(struct task_struct));
 
     // initialize kernel stack
@@ -79,6 +79,7 @@ uint64_t kthread_create(kthread_func func){
     
     LOG("kthread end");
     add_task_to_rq(kthread);
+    local_irq_restore(daif);
     return 0;
 }
 

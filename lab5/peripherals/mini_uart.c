@@ -142,6 +142,7 @@ void mini_uart_irq_init(){
 }
 
 void mini_uart_tx_softirq_callback(){
+    disable_mini_uart_tx_irq();
 }
 
 void mini_uart_rx_softirq_callback(){
@@ -180,6 +181,7 @@ void mini_uart_irq_write(){
         while(!(IO_MMIO_read32(AUX_MU_LSR_REG) & (0x1 << 5)));
         IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
     }
+    disable_mini_uart_tx_irq();
 }
 
 size_t mini_uart_get_tx_len(){
@@ -222,7 +224,7 @@ size_t sys_uart_write(char *buf, size_t size){
     while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
-        enable_mini_uart_irq(TX);
+        enable_mini_uart_tx_irq();
         local_irq_restore(daif);
 
         size = size - tmp;

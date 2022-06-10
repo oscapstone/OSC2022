@@ -110,6 +110,7 @@ el0_irq_handler:
 el1_irq_handler:
     save_all
     bl irq_handler
+    bl schedule
     load_all
     eret
 
