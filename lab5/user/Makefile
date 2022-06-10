@@ -4,10 +4,10 @@ CFLAGS ?= \
         -ffreestanding \
         -nostartfiles \
         -mgeneral-regs-only \
-        -fno-builtin
+        -fno-builtin \
 
 LDFLAGS ?= \
-        -nostdlib \
+        -nostdlib 
 
 LD = aarch64-linux-gnu-ld
 CC = aarch64-linux-gnu-gcc
@@ -18,8 +18,8 @@ all:
 	$(CC) -c user_lib.c -o user_lib.o -I. $(CFLAGS)
 	$(CC) -c test.c -o test.o -I. $(CFLAGS)
 	$(LD) -T linker.ld -o test.elf test.o user_lib.o $(LDFLAGS)
-	$(OBJCOPY) -O binary test.elf test.img
+	$(OBJCOPY) -O binary test.elf syscall.img
 
 
 clean:
-	rm test.o user_lib.o test.img
+	rm test.o user_lib.o syscall.img

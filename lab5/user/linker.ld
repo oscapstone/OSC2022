@@ -2,7 +2,7 @@ ENTRY(__start)
 
 SECTIONS
 {
-    . = 0x80000; /* bootloader (start.elf) will loader kernel8.img to 0x80000*/
+    . = 0;
     __text_start = .;
     .text : 
     {

@@ -99,7 +99,7 @@ void simple_shell(){
                          "msr elr_el1, x0\n\t"
                          "eret\n\t"
             );*/
-            run_init_task("test.img");
+            run_init_task("syscall.img");
             kthread_exit();
              
         }else if(strcmp(token, "time") == 0){
