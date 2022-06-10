@@ -10,22 +10,25 @@ void kthread_destroy(struct task_struct* task){
 void _kthread_remove_zombies(){
     struct list_head* node;
     struct task_struct* zombie;
-    uint64_t daif;
-    daif = local_irq_disable_save();
+    //uint64_t daif;
+    //daif = local_irq_disable_save();
     while(!list_empty(&kthread_zombies)){
         zombie = list_first_entry(&kthread_zombies, struct task_struct, siblings);
         LOG("Remove %l", zombie->thread_info.pid);
         list_del(kthread_zombies.next); 
         kthread_destroy(zombie);
     }
-    local_irq_restore(daif);
+    //local_irq_restore(daif);
 }
 
 void kthread_idle(){
+    uint64_t daif;
     while(1){
+        daif = local_irq_disable_save();
         _kthread_remove_zombies();
         need_sched = 1;
         schedule();
+        local_irq_restore(daif);
     }
 }
 
