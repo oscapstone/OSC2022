@@ -1,13 +1,37 @@
 #include "kernel/syscall_table.h"
-void *syscall_table[] = {
-    sys_getpid,
-    sys_uart_read,
-    sys_uart_write,
-    0xdeadbeaf,
-    sys_fork,
-    sys_hello,
-    sys_mbox_call,
-};
 
+uint64_t syscall_handler(){
+    struct task_struct *current = get_current();
+    struct trap_frame* trap_frame = get_trap_frame(current);
+    uint64_t NR_syscall = trap_frame->x8;
+    uint64_t x0, x1, x2, x3, x4;
+    uint64_t ret;
 
-uint64_t len_syscall_table = sizeof(syscall_table) / sizeof(void*);
+    switch(NR_syscall){
+        case 0:
+            ret = sys_getpid();
+            break;
+        case 1:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            ret = sys_uart_read((uint8_t*)x0, x1);
+            break;
+        case 2:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            ret = sys_uart_write((uint8_t*)x0, x1);
+            break;
+        case 4:
+            ret = sys_fork();
+            break;
+        case 6:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            ret  = sys_mbox_call(x0,(uint32_t*)x1);
+            break;
+        default:
+            printf("Unknown system call\r\n");
+            while(1);
+    }
+    return ret;
+}

@@ -123,18 +123,8 @@ el0_sync_handler:
     b    nothing
 
 svc_handler:
-    ldr x24, len_syscall_table 
-    cmp x8, x24 
-    b.ge nothing
-
-    mov x24, 8
-    adr x25, syscall_table
-    madd x25, x8, x24, x25
-    ldr x25, [x25]
-
     bl local_irq_enable 
-    blr x25
-
+    bl syscall_handler 
     str x0, [sp]
 
 nothing:
