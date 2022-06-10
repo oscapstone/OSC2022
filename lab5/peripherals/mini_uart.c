@@ -214,12 +214,15 @@ ssize_t aio_write_bytes(uint8_t* buf, size_t n){
 
 size_t sys_uart_write(char *buf, size_t size){
     uint64_t daif;
-    size_t c;
+    size_t c = 0, tmp;
 
-    daif = local_irq_disable_save();
-    c = ring_buf_write(tx_rbuf, buf, size);
-    local_irq_restore(daif);
-
+    while(size){
+        daif = local_irq_disable_save();
+        tmp = ring_buf_write(tx_rbuf, buf + c, size);
+        size = size - tmp;
+        c = c + tmp;
+        local_irq_restore(daif);
+    }
     enable_mini_uart_irq(TX);
     return c;
 }

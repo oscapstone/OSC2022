@@ -3,26 +3,37 @@
 
 
 int __start(void){
-    char buf[15];
-    //size_t s;
-    uart_write("test fork 1\r\n", sizeof("test fork 1\r\n"));
-    uart_write("> \r\n", sizeof(">\r\n"));
-    uart_read(buf, 1);
-    uart_write("start fork\r\n", sizeof("start fork\r\n"));
-    while(1){
-        if(fork() == 0){
-            while(1){
-                uart_write("hello child\r\n", sizeof("hello child\r\n"));
-                delay(500000);
-            }
-        }else{
-            while(1){
-                uart_write("hello parent\r\n", sizeof("hello parent\r\n"));
-                delay(500000);
+    printf("\r\n%s, pid %d\r\n","Fork test", getpid());
+    int cnt = 1;
+    int ret = 0;
+    //debug_info();
+    if ((ret = fork()) == 0) { // child
+        //debug_info();
+        long long cur_sp;
+        asm volatile("mov %0, sp" : "=r"(cur_sp));
+        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
+        ++cnt;
+
+        if ((ret = fork()) != 0){
+            //debug_info();
+            asm volatile("mov %0, sp" : "=r"(cur_sp));
+            printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
+        }
+        else{
+            //debug_info();
+            while (cnt < 5) {
+                asm volatile("mov %0, sp" : "=r"(cur_sp));
+                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
+                delay(1000000);
+                ++cnt;
             }
         }
-
     }
+    else {
+            //debug_info();
+        printf("parent here, pid %d, child %d\r\n", getpid(), ret);
+    } 
+    while(1);
 }
 
 

@@ -168,3 +168,7 @@ void run_init_task(char* filename){
 uint64_t sys_fork(){
     return task_dup(get_current());
 }
+
+uint64_t sys_getpid(){
+    return get_current()->thread_info.pid;
+}
