@@ -210,17 +210,16 @@ size_t sys_uart_write(char *buf, size_t size){
 
 size_t sys_uart_read(char *buf, size_t size){
     size_t c = 0, tmp;
-    
+   /* 
     while(size){
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
 
         size = size - tmp;
         c = c + tmp;
-    }
-/*
+    }*/
+    disable_mini_uart_irq(RX);
     for(size_t i = 0 ; i < size ; i++){
        buf[i] = mini_uart_read();
     }
-*/
     return c;
 }
