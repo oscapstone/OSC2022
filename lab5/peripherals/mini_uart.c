@@ -15,13 +15,13 @@ inline void enable_mini_uart_irq(uint32_t tx){
 }
 
 inline void enable_mini_uart_tx_irq(){
-    if(mini_uart_get_tx_len() > 0){
+    /*if(mini_uart_get_tx_len() > 0){
         enable_mini_uart_irq(TX);
-    }
+    }*/
 }
 
 inline void enable_mini_uart_rx_irq(){
-    enable_mini_uart_irq(RX);
+    //enable_mini_uart_irq(RX);
 }
 
 inline void disable_mini_uart_irq(uint32_t tx){
@@ -32,11 +32,11 @@ inline void disable_mini_uart_irq(uint32_t tx){
 }
 
 inline void disable_mini_uart_tx_irq(){
-    disable_mini_uart_irq(TX);
+    //disable_mini_uart_irq(TX);
 }
 
 inline void disable_mini_uart_rx_irq(){
-    disable_mini_uart_irq(RX);
+    //disable_mini_uart_irq(RX);
 }
 
 void mini_uart_init(){
@@ -138,7 +138,6 @@ void mini_uart_irq_init(){
 
 
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
-    // only enable receive interrupt. transmit interrupts should be enable when user want to transmit data.
 }
 
 void mini_uart_tx_softirq_callback(){
@@ -170,6 +169,7 @@ uint8_t mini_uart_aio_read(void){
         }
         local_irq_restore(daif);
     }
+    disable_mini_uart_irq(RX);
 
     return b[0];
 }
@@ -180,7 +180,7 @@ void mini_uart_irq_write(){
         while(!(IO_MMIO_read32(AUX_MU_LSR_REG) & (0x1 << 5)));
         IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
     }
-    disable_mini_uart_tx_irq();
+    disable_mini_uart_irq(TX);
 }
 
 size_t mini_uart_get_tx_len(){
@@ -206,10 +206,9 @@ void mini_uart_aio_write(uint8_t c){
             local_irq_restore(daif);
             break;
         }
-        enable_mini_uart_tx_irq();
         local_irq_restore(daif);
     }
-
+    enable_mini_uart_irq(TX);
 }
 
 ssize_t aio_write_bytes(uint8_t* buf, size_t n){
@@ -223,8 +222,8 @@ size_t sys_uart_write(char *buf, size_t size){
     while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
-        enable_mini_uart_tx_irq();
         local_irq_restore(daif);
+        enable_mini_uart_irq(TX);
 
         size = size - tmp;
         c = c + tmp;
@@ -243,6 +242,7 @@ size_t sys_uart_read(char *buf, size_t size){
     uint64_t daif;
     size_t c = 0, tmp;
     
+    enable_mini_uart_irq(RX);
     while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
@@ -250,6 +250,7 @@ size_t sys_uart_read(char *buf, size_t size){
         size = size - tmp;
         c = c + tmp;
     }
+    disable_mini_uart_irq(RX);
 /*
     for(size_t i = 0 ; i < size ; i++){
        buf[i] = mini_uart_read();
