@@ -150,10 +150,6 @@ void mini_uart_irq_read(){
     uint8_t b[1];
     b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
     ring_buf_write(rx_rbuf, b, 1);
-write_hex(2);
-    write_str("\r\n");
-
-    disable_mini_uart_irq(RX);
 }
 
 size_t mini_uart_get_rx_len(){
@@ -168,11 +164,12 @@ uint8_t mini_uart_aio_read(void){
         daif = local_irq_disable_save();
         if(!ring_buf_is_empty(rx_rbuf)){
             ring_buf_read(rx_rbuf, b, 1);
-            local_irq_restore(daif);
             break;
         }
         local_irq_restore(daif);
     }
+    disable_mini_uart_irq(RX);
+    local_irq_restore(daif);
     return b[0];
 }
 
