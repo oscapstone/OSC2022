@@ -1,6 +1,5 @@
 #include "kernel/sched/kthread.h"
 
-LIST_HEAD(kthread_zombies);
 extern void kthread_trampoline();
 
 void kthread_destroy(struct task_struct* task){
@@ -15,10 +14,10 @@ void _kthread_remove_zombies(){
     //uint64_t daif;
     //daif = local_irq_disable_save();
     local_irq_disable();
-    while(!list_empty(&kthread_zombies)){
-        zombie = list_first_entry(&kthread_zombies, struct task_struct, siblings);
+    while(!list_empty(&zombies)){
+        zombie = list_first_entry(&zombies, struct task_struct, siblings);
         LOG("Remove %l", zombie->thread_info.pid);
-        list_del(kthread_zombies.next); 
+        list_del(zombies.next); 
         kthread_destroy(zombie);
     }
     local_irq_enable(daif);
@@ -27,7 +26,7 @@ void _kthread_remove_zombies(){
 
 void kthread_idle(){
     while(1){
-        schedule(1);
+        preempt_schedule();
         _kthread_remove_zombies();
     }
 }
@@ -94,7 +93,7 @@ void kthread_exit(){
     cur->thread_info.state = TASK_DEAD;
 
     daif = local_irq_disable_save();
-    list_add_tail(&cur->siblings, &kthread_zombies);
+    list_add_tail(&cur->siblings, &zombies);
     local_irq_restore(daif);
     LOG("kthread_exit end");
     preempt_schedule();

@@ -1,5 +1,6 @@
 #include "kernel/sched/sched.h"
 
+LIST_HEAD(zombies);
 uint64_t pid_count = 0;
 int need_sched = 0;
 LIST_HEAD(rq);

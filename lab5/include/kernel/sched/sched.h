@@ -109,6 +109,7 @@ struct task_struct{
 };
 
 extern int need_sched;
+extern struct list_head zombies;
 
 extern void add_task_to_rq(struct task_struct *task);
 extern struct task_struct* pick_next_task_from_rq();

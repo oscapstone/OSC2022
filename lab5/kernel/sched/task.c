@@ -108,8 +108,22 @@ uint64_t task_dup(struct task_struct* parent){
 }
 
 
-void task_exit(){}
+void task_exit(){
+    uint64_t daif;
+    LOG("task_exit start");
+    struct task_struct* cur;
+    cur = get_current();
+    cur->thread_info.state = TASK_DEAD;
+
+    daif = local_irq_disable_save();
+    list_add_tail(&cur->siblings, &zombies);
+    local_irq_restore(daif);
+    LOG("task_exit end");
+    preempt_schedule();
+}
+
 void task_destroy(struct task_struct* task){}
+
 void run_init_task(char* filename){
     uint64_t size;
     struct vm_area_struct* pvma;
@@ -179,4 +193,8 @@ uint64_t sys_fork(){
 
 uint64_t sys_getpid(){
     return get_current()->thread_info.pid;
+}
+
+void sys_exit(){
+    return task_exit();
 }
