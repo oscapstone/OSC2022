@@ -44,9 +44,8 @@ void schedule(){
         // context switch
         if(next != NULL){
             list_del(&next->sched_info.sched_list);
-            printf("switch from %l to %l\r\n", current->thread_info.pid, next->thread_info.pid);
+            //printf("switch from %l to %l\r\n", current->thread_info.pid, next->thread_info.pid);
             switch_to(current, next);
-            //write_str("switch after\r\n");
         }
     }
     local_irq_restore(daif);

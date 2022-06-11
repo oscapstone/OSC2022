@@ -224,7 +224,11 @@ size_t sys_uart_write(char *buf, size_t size){
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
         local_irq_restore(daif);
         enable_mini_uart_irq(TX);
-
+        
+        if(tmp > size){
+            write_str("sys_uart_write error\r\n");
+            while(1);
+        }
         size = size - tmp;
         c = c + tmp;
     }
@@ -247,6 +251,12 @@ size_t sys_uart_read(char *buf, size_t size){
         daif = local_irq_disable_save();
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
         local_irq_restore(daif);
+
+        if(tmp > size){
+            write_str("sys_uart_read error\r\n");
+            while(1);
+        }
+
         size = size - tmp;
         c = c + tmp;
     }
