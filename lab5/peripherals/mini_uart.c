@@ -188,7 +188,7 @@ size_t sys_uart_write(char *buf, size_t size){
     //size_t c;
 //    c = ring_buf_write(tx_rbuf, buf, size);
 //    enable_mini_uart_irq(TX);
-    return aio_write_bytes(buf, size);/*
+    return write_bytes(buf, size);/*
     for(size_t i = 0 ; i < size ; i++){
     //    daif = local_irq_disable_save();
         mini_uart_write(buf[i]);

@@ -99,8 +99,8 @@ void simple_shell(){
                          "msr elr_el1, x0\n\t"
                          "eret\n\t"
             );*/
-            //disable_mini_uart_rx_irq();
             disable_mini_uart_irq(RX);
+            disable_mini_uart_irq(TX);
             run_init_task("syscall.img");
             return; 
         }else if(strcmp(token, "time") == 0){
