@@ -108,7 +108,7 @@ void write_hex(uint64_t n){
 void mini_uart_irq_init(){
     rx_rbuf = create_simple_ring_buf(4095);
 
-//    IO_MMIO_write32(AUX_MU_IER_REG, 1);
+    IO_MMIO_write32(AUX_MU_IER_REG, 1);
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
 }
 
@@ -128,7 +128,9 @@ size_t mini_uart_get_rx_len(){
 
 uint8_t mini_uart_aio_read(void){
     uint8_t b[1];
+    IO_MMIO_write32(AUX_MU_IER_REG, 1);
     while(!ring_buf_read(rx_rbuf, b, 1));
+    IO_MMIO_write32(AUX_MU_IER_REG, 0);
     return b[0];
 }
 
@@ -149,15 +151,13 @@ size_t sys_uart_write(char *buf, size_t size){
 
 size_t sys_uart_read(char *buf, size_t size){
     size_t c = 0, tmp;
-   /* 
+    IO_MMIO_write32(AUX_MU_IER_REG, 1);
     while(size){
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
 
         size = size - tmp;
         c = c + tmp;
-    }*/
-    for(size_t i = 0 ; i < size ; i++){
-       buf[i] = mini_uart_read();
     }
+    IO_MMIO_write32(AUX_MU_IER_REG, 0);
     return c;
 }
