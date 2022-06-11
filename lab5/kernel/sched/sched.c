@@ -24,7 +24,7 @@ void schedule(int preempt){
     struct task_struct* current, *next;
     uint64_t daif;
     // prevent running scheduler in softirq
-    daif = local_irq_disable_save();
+//    daif = local_irq_disable_save();
     if(in_softirq()){
         local_irq_restore(daif);
         return;
@@ -48,7 +48,7 @@ void schedule(int preempt){
             switch_to(current, next);
         }
     }
-    local_irq_restore(daif);
+//    local_irq_restore(daif);
 }
 
 
