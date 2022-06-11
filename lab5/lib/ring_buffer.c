@@ -27,7 +27,7 @@ void free_ring_buf(ring_buffer* rbuf){
 }
 
 uint8_t ring_buf_is_empty(ring_buffer* rbuf){
-    uint64_t daif;
+    volatile uint64_t daif;
     daif = local_irq_disable_save();
     if(rbuf->head == rbuf->tail){
         local_irq_restore(daif);
@@ -38,7 +38,7 @@ uint8_t ring_buf_is_empty(ring_buffer* rbuf){
 }
 
 uint8_t ring_buf_is_full(ring_buffer* rbuf){
-    uint64_t daif;
+    volatile uint64_t daif;
     if((rbuf->tail + 1) % (rbuf->size + 1) == rbuf->head){
         local_irq_disable_save(daif);
         return 1;
@@ -49,7 +49,7 @@ uint8_t ring_buf_is_full(ring_buffer* rbuf){
 
 size_t ring_buf_write(ring_buffer* rbuf, uint8_t* data, size_t s){
     size_t count = 0;
-    uint64_t daif;
+    volatile uint64_t daif;
 
     daif = local_irq_disable_save();
     while(!ring_buf_is_full(rbuf) && count < s){
@@ -78,7 +78,7 @@ size_t ring_buf_write_unsafe(ring_buffer* rbuf, uint8_t* data, size_t s){
 
 size_t ring_buf_read(ring_buffer* rbuf, uint8_t* data, size_t s){
     size_t count = 0;
-    uint64_t daif;
+    volatile uint64_t daif;
 
     daif = local_irq_disable_save();
     while(!ring_buf_is_empty(rbuf) && count < s){
@@ -106,7 +106,7 @@ size_t ring_buf_read_unsafe(ring_buffer* rbuf, uint8_t* data, size_t s){
 }
 
 size_t ring_buf_get_len(ring_buffer* rbuf){
-    uint64_t daif;
+    volatile uint64_t daif;
     size_t ret;
 
     daif = local_irq_disable_save();

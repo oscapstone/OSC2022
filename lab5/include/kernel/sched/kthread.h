@@ -2,6 +2,7 @@
 #define _KTHREAD_H_
 
 #include "kernel/sched/sched.h"
+#include "kernel/sched/task.h"
 #include "mm/page_alloc.h"
 #include "debug/debug.h"
 #include "mm/slab.h"

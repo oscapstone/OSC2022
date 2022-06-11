@@ -11,6 +11,7 @@ typedef uint64_t pid_t;
 #define TASK_UNINTERRUPTIBLE    2
 #define TASK_DEAD		64
 #define VM_AREA_STACK 1
+#define VM_AREA_PROGRAM 2
 #define get_trap_frame(task) (task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame))
 struct thread_info{
     pid_t pid;
@@ -82,6 +83,11 @@ struct vm_area_struct{
     uint64_t vm_start;
     uint64_t vm_end;
     uint64_t type;
+    int64_t ref;
+};
+
+struct vm_area_struct_list{
+    struct vm_area_struct* vm_area;
     struct list_head list;
 };
 
@@ -106,10 +112,18 @@ struct task_struct{
     struct task_struct* parent;
     struct task_struct* child;
     struct list_head siblings;
+
+    // task list
+    struct list_head list;
+
+    // zombie list
+    struct list_head zombie;
 };
 
 extern int need_sched;
 extern struct list_head zombies;
+extern struct list_head task_list;
+extern struct task_struct* user_init;
 
 extern void add_task_to_rq(struct task_struct *task);
 extern struct task_struct* pick_next_task_from_rq();
@@ -119,4 +133,5 @@ extern struct task_struct* get_current();
 extern pid_t get_pid_counter(void);
 extern void preempt_schedule();
 extern void print_rq(void);
+extern struct task_struct* find_task_by_pid(uint64_t pid);
 #endif

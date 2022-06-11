@@ -93,4 +93,5 @@ size_t initrdfs_filesize(char* name){
             }
         }
     }
+    return 0;
 }

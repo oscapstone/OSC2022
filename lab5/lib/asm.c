@@ -8,7 +8,7 @@ void local_irq_disable(){
 }
 
 uint64_t local_irq_disable_save() {
-    uint64_t daif;
+    volatile uint64_t daif;
     asm volatile(
         "mrs %0, DAIF\t\n"
         "msr DAIFSet, 0xf"

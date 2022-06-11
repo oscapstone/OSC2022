@@ -1,11 +1,14 @@
 #include "kernel/sched/sched.h"
 
 LIST_HEAD(zombies);
+LIST_HEAD(rq);
+LIST_HEAD(task_list);
 uint64_t pid_count = 0;
 int need_sched = 0;
-LIST_HEAD(rq);
+struct task_struct* user_init = NULL;
+
 void add_task_to_rq(struct task_struct *task){
-    uint64_t daif;
+    volatile uint64_t daif;
     daif = local_irq_disable_save();
     task->thread_info.state = TASK_RUNNING;
 
@@ -48,11 +51,10 @@ void schedule(){
 }
 
 void preempt_schedule(){
-    uint64_t daif;
-    daif = local_irq_disable_save();
+    local_irq_disable();
     need_sched = 1;
     schedule();
-    local_irq_restore(daif);
+    local_irq_enable();
 }
 
 pid_t get_pid_counter(void){
@@ -61,33 +63,36 @@ pid_t get_pid_counter(void){
     return ret;
 }
 
+struct task_struct* find_task_by_pid(uint64_t pid){
+    struct list_head *node;
+    struct task_struct *tmp_task;
+    uint64_t daif;
+
+    daif = local_irq_disable_save();
+    list_for_each(node, &task_list){
+        tmp_task = list_entry(node, struct task_struct, list);
+        if(tmp_task->thread_info.pid == pid){
+            local_irq_restore(daif);
+            return tmp_task;
+        }
+    }
+    local_irq_restore(daif);
+    return NULL;
+}
+
 
 /* debug */
-struct task_pid{
-    pid_t pid;
-    struct list_head list;
-};
 void print_rq(void){
     struct list_head *node;
     struct task_struct *tmp_task;
     struct task_pid *tmp_task_pid;
-    uint64_t daif;
-    LIST_HEAD(head);
+    volatile uint64_t daif;
     // In printf, interrupt will be enable, so we can't directly print run queue
     daif = local_irq_disable_save();
-    list_for_each(node, &rq){
-        tmp_task = list_entry(node, struct task_struct, sched_info.sched_list);
-        tmp_task_pid = (struct task_pid*)kmalloc(sizeof(struct task_pid));
-        tmp_task_pid->pid = tmp_task->thread_info.pid;
-        list_add_tail(&tmp_task_pid->list, &head);
+    list_for_each(node, &task_list){
+        tmp_task = list_entry(node, struct task_struct, list);
+        printf("%l ", tmp_task->thread_info.pid);
     }
     local_irq_restore(daif);
-
-    while(!list_empty(&head)){
-        tmp_task_pid = list_first_entry(&head, struct task_pid, list);
-        printf("%l: ", tmp_task_pid->pid);
-        list_del(head.next);
-        kfree(tmp_task_pid);
-    }
     printf("\r\n");
 }

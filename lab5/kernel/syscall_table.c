@@ -21,13 +21,26 @@ uint64_t syscall_handler(){
             x1 = trap_frame->x1;
             ret = sys_uart_write((uint8_t*)x0, x1);
             break;
+        case 3:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            ret = sys_exec((const char *)x0, (char **const)x1);
+            break;
         case 4:
             ret = sys_fork();
+            break;
+        case 5:
+            x0 = trap_frame->x0;
+            sys_exit(x0);
             break;
         case 6:
             x0 = trap_frame->x0;
             x1 = trap_frame->x1;
-            ret  = sys_mbox_call(x0,(uint32_t*)x1);
+            ret  = sys_mbox_call(x0, (uint32_t*)x1);
+            break;
+        case 7:
+            x0 = trap_frame->x0;
+            sys_kill(x0);
             break;
         default:
             printf("Unknown system call\r\n");

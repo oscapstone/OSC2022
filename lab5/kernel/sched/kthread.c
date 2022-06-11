@@ -4,21 +4,23 @@ extern void kthread_trampoline();
 
 void kthread_destroy(struct task_struct* task){
 //    LOG("kthread_destroy %l", task->thread_info.pid);
+    list_del(&task->list);
     free_pages(task->stack, 1);
     kfree(task);
 }
 void _kthread_remove_zombies(){
     struct list_head* node;
     struct task_struct* zombie;
-    uint64_t daif;
-    //uint64_t daif;
+    volatile uint64_t daif;
+    //volatile uint64_t daif;
     //daif = local_irq_disable_save();
     local_irq_disable();
     while(!list_empty(&zombies)){
-        zombie = list_first_entry(&zombies, struct task_struct, siblings);
+        zombie = list_first_entry(&zombies, struct task_struct, zombie);
         LOG("Remove %l", zombie->thread_info.pid);
         list_del(zombies.next); 
-        kthread_destroy(zombie);
+        if(zombie->mm == NULL) kthread_destroy(zombie);
+        else task_destroy(zombie);
     }
     local_irq_enable(daif);
     //local_irq_restore(daif);
@@ -44,7 +46,7 @@ void kthread_test(){
 
 uint64_t kthread_create(kthread_func func){
     LOG("kthread enter");
-    uint64_t daif;
+    volatile uint64_t daif;
     struct task_struct* kthread = (struct task_struct*)kmalloc(sizeof(struct task_struct));
 
     // initialize kernel stack
@@ -72,6 +74,7 @@ uint64_t kthread_create(kthread_func func){
     kthread->sched_info.rticks = 0;
     kthread->sched_info.priority = 1;
     kthread->sched_info.counter = kthread->sched_info.priority;
+    list_add_tail(&kthread->list, &task_list);
     
     LOG("kthread end");
     daif = local_irq_disable_save();
@@ -86,14 +89,14 @@ void kthread_start(kthread_func func){
 }
 
 void kthread_exit(){
-    uint64_t daif;
+    volatile uint64_t daif;
     LOG("kthread_exit start");
     struct task_struct* cur;
     cur = get_current();
     cur->thread_info.state = TASK_DEAD;
 
     daif = local_irq_disable_save();
-    list_add_tail(&cur->siblings, &zombies);
+    list_add_tail(&cur->zombie, &zombies);
     local_irq_restore(daif);
     LOG("kthread_exit end");
     preempt_schedule();

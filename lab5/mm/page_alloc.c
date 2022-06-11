@@ -28,7 +28,7 @@ void _init_mem_map(){
 }
 
 void __free_pages(struct page* page, uint32_t order){
-    uint64_t daif;
+    volatile uint64_t daif;
     struct page* end_page = page + (1 << order);
 
     // initialize buddy group leader and add it to free list
@@ -76,9 +76,9 @@ void _free_pages(struct page* page, uint32_t order){
         buddy_pfn = find_buddy_pfn(pfn, order); 
         buddy_page = pfn_to_page(buddy_pfn); 
 
-        // Check if buddy is not reserved and freed
-        LOG("%p is buddy of %p in order %u free list and it can be merged", pfn_to_addr(buddy_pfn), pfn_to_addr(pfn), order);
         if(!PAGE_IS_RESERVED(buddy_page) && BUDDY_IS_FREED(buddy_page) && buddy_page->order == order){
+            // Check if buddy is not reserved and freed
+            LOG("%p is buddy of %p in order %u free list and it can be merged", pfn_to_addr(buddy_pfn), pfn_to_addr(pfn), order);
             list_del(&buddy_page->list);
             buddy.free_lists[order].count--;
         }else{
@@ -98,7 +98,7 @@ void _free_pages(struct page* page, uint32_t order){
 // free 2^order pages
 void free_pages(void* addr, uint32_t order){
     LOG("_free_pages(%p, %u)",addr, order);
-    uint64_t daif;
+    volatile uint64_t daif;
     uint64_t pfn = addr_to_pfn(addr);
     struct page *page = pfn_to_page(pfn);
     
@@ -109,7 +109,7 @@ void free_pages(void* addr, uint32_t order){
 
 // free one page
 void free_page(void* addr){
-    uint64_t daif;
+    volatile uint64_t daif;
     uint64_t pfn = addr_to_pfn(addr);
     struct page *page = pfn_to_page(pfn);
 
@@ -121,7 +121,7 @@ void free_page(void* addr){
 // split large buddy group to two small buddy groups
 void expand(struct page *page, uint32_t high, uint32_t low){
     struct page* tmp_page;
-    uint64_t daif;
+    volatile uint64_t daif;
     while(high > low){
         high--;
         tmp_page = page + (1 << high);
@@ -170,7 +170,7 @@ struct page* _alloc_pages(uint32_t order){
 // return 2^order pages
 void* alloc_pages(uint32_t order){
     if(order > BUDDY_MAX_ORDER - 1) return NULL;
-    uint64_t daif;
+    volatile uint64_t daif;
 
     daif = local_irq_disable_save();
     struct page* page = _alloc_pages(order);
@@ -182,7 +182,7 @@ void* alloc_pages(uint32_t order){
 
 // return one page
 void* alloc_page(){
-    uint64_t daif;
+    volatile uint64_t daif;
     daif = local_irq_disable_save();
     struct page* page = _alloc_pages(0);
     local_irq_restore(daif);

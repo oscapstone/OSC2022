@@ -100,7 +100,13 @@ void simple_shell(){
                          "eret\n\t"
             );*/
             run_init_task("syscall.img");
-            return; 
+            while(1){
+                local_irq_disable();
+                if(user_init == NULL) break;
+                preempt_schedule();
+                local_irq_enable();
+            }
+            local_irq_enable();
         }else if(strcmp(token, "time") == 0){
             uint64_t j = get_jiffies();
             printf("Elapsed time after booting: %l.%l\r\n", j / HZ, j % HZ);

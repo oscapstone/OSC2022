@@ -40,7 +40,7 @@ struct slab* slab_create(size_t obj_size){
 void slab_destroy(struct slab* slab){
     size_t page_num; 
     struct page* page = pfn_to_page(addr_to_pfn(slab));
-    uint64_t daif;
+    volatile uint64_t daif;
     LOG("slab_destroy recycle order %u buddy %p", (void*)slab, get_page_order(page));
     // free pages
     free_pages((void*)slab, get_page_order(page));
@@ -51,7 +51,7 @@ void *slab_alloc(struct slab* slab){
     struct page* page;
     uint32_t order;
     size_t max_size;
-    uint64_t daif;
+    volatile uint64_t daif;
     daif = local_irq_disable_save();
     if(!list_empty(&slab->free_list)){
         // check free list  
@@ -74,7 +74,7 @@ void *slab_alloc(struct slab* slab){
 }
 
 void slab_free(struct slab* slab, void* obj){
-    uint64_t daif;
+    volatile uint64_t daif;
     daif = local_irq_disable_save();
     list_add((struct list_head*)obj, &slab->free_list);
     slab->inuse--;
@@ -82,7 +82,7 @@ void slab_free(struct slab* slab, void* obj){
 }
 
 void kmalloc_init(){
-    uint64_t daif;
+    volatile uint64_t daif;
     daif = local_irq_disable_save();
     for(uint64_t i = 0 ; i < KMEM_CACHE_NUM ; i++){
         INIT_LIST_HEAD(&kmem_cache[i]);
@@ -94,7 +94,7 @@ void* kmalloc(size_t size){
     struct list_head* cache_list, *node;
     struct slab *s;
     void * ret = NULL;
-    uint64_t daif;
+    volatile uint64_t daif;
 
     size = ALIGN_UP(size, SLAB_ALIGNMENT);
 
@@ -134,14 +134,14 @@ void* kmalloc(size_t size){
 }
 
 void kfree(void* obj){
-    uint64_t daif = local_irq_disable_save();
+    volatile uint64_t daif = local_irq_disable_save();
     uint64_t pfn = addr_to_pfn(ALIGN_DOWN(obj, PAGE_SIZE));
     struct page* page = pfn_to_page(pfn);
     struct page* buddy_leader = get_buddy_leader(page);
     struct slab* s = pfn_to_addr(page_to_pfn(buddy_leader));
 
-    LOG("kfree(%p) free an object", obj);
     slab_free(s, obj);
+    LOG("kfree(%p) free an object, s->inuse: %l", obj, s->inuse);
     
     if(s->inuse < 0){
         LOG("[Error]: s->inuse : %p", s->inuse);
