@@ -50,14 +50,14 @@ void do_softirq(){
         pending = get_softirq_pending();
         set_softirq_pending(0);
 
+        local_irq_enable();
         while(pending){
             softirq_bit = ffs16(pending);
             softirq_handler = softirq_vec[softirq_bit];
-            local_irq_enable();
             softirq_handler();
-            local_irq_disable();
             pending &= ~(1 << softirq_bit);
         }
+        local_irq_disable();
         try++;
     }
 }

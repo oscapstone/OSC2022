@@ -11,7 +11,7 @@
 #include "debug/debug.h"
 #include "asm.h"
 
-#define MAX_SOFTIRQ_TRY 1 
+#define MAX_SOFTIRQ_TRY 10
 
 enum {CORE0_TIMER = 0, MINI_UART_RX, MINI_UART_TX, UNKNOWN_IRQ, END_OF_LIST};
 typedef void (*irq_funcptr)(void);

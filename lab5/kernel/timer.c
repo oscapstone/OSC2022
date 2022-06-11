@@ -80,7 +80,9 @@ void core_timer_irq_handler(){
     set_CNTP_TVAL_EL0(freq / HZ);
 
     jiffies += 1;
-
+    
+    write_hex(mini_uart_get_tx_len());
+    write_str("\r\n");
     // update task schedule info
     if(current){
         current->sched_info.rticks++;

@@ -9,7 +9,7 @@
 #include "kernel/sched/sched.h"
 
 
-#define HZ 32 
+#define HZ 100
 
 typedef void (*timer_callback)(void*);
 
