@@ -30,7 +30,7 @@ void kthread_idle(){
         _kthread_remove_zombies();
         need_sched = 1;
         local_irq_restore(daif);
-        //schedule();
+        schedule();
     }
 }
 
