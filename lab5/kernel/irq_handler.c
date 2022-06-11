@@ -122,6 +122,7 @@ void irq_handler(){
 
 void err_handler(uint64_t type, uint64_t esr, uint64_t elr, uint64_t spsr_el1, uint64_t sp_el0, uint64_t sp){
     struct task_struct *cur = get_current();
+    struct trap_frame *trap_frame = get_trap_frame(cur);
     write_str("unkown irq count: ");
     write_hex(irq_count[UNKNOWN_IRQ]);
     write_str("\r\n");
@@ -144,6 +145,10 @@ void err_handler(uint64_t type, uint64_t esr, uint64_t elr, uint64_t spsr_el1, u
 
     write_str("cur->ctx.fp: ");
     write_hex(cur->ctx.fp);
+    write_str("\r\n");
+
+    write_str("trap_frame->x0: ");
+    write_hex(trap_frame->x0);
     write_str("\r\n");
 
     write_str("kernel stack: ");

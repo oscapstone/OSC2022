@@ -4,7 +4,7 @@
 #include "types.h"
 struct list_head{
    struct list_head* next, *prev; 
-}__attribute__((packed));
+};
 
 #define LIST_HEAD(head) struct list_head head = { &(head), &(head) }
 #define list_entry(node, type, member) container_of(node, type, member)

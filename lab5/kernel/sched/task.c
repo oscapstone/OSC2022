@@ -40,7 +40,6 @@ uint64_t task_dup(struct task_struct* parent){
             pvmal = kmalloc(sizeof(struct vm_area_struct_list));
             pvma->type = ppvma->type;
             pvma->vm_start = (uint64_t)alloc_pages(1);
-            pvma->vm_start = (uint64_t)alloc_pages(1);
             pvma->vm_end = pvma->vm_start + PAGE_SIZE * 2;
             pvma->ref = 1;
             pvmal->vm_area = pvma;
@@ -214,27 +213,36 @@ int task_exec(const char* name, char* const argv[]){
     struct vm_area_struct_list *pvmal;
     struct task_struct* current = get_current();
     struct trap_frame *trap_frame = get_trap_frame(current);
-    uint64_t daif;
+    volatile uint64_t daif;
     size_t s;
 
     daif = local_irq_disable_save();
     // initialize mm
     if(s = initrdfs_filesize((char*)name)){
         list_for_each(node, &current->mm->mmap_list){
+            LOG("node[-1]: %x", ((uint64_t*)node)[-1]);
             pvmal = list_entry(node, struct vm_area_struct_list, list);
+            LOG("pvmal: %x", pvmal);
             pvma = pvmal->vm_area;
+            LOG("pvma: %x", pvma);
             if(pvma->type == VM_AREA_STACK){
                 trap_frame->sp_el0 = pvma->vm_end;
             }else if(pvma->type == VM_AREA_PROGRAM){
                 pvma->ref--;
                 if(pvma->ref <= 0){
                     free_pages((void*)pvma->vm_start, BUDDY_MAX_ORDER - 1);
+                    kfree(pvma);
                 }
+                pvma = kmalloc(sizeof(struct vm_area_struct));
                 pvma->vm_start = (uint64_t)alloc_pages(BUDDY_MAX_ORDER - 1);
                 trap_frame->elr_el1 = pvma->vm_start;
                 initrdfs_loadfile((char*)name, (void*)pvma->vm_start);
                 pvma->vm_end = pvma->vm_start + (1 << (BUDDY_MAX_ORDER - 1)) * PAGE_SIZE; 
+                pvma->type = VM_AREA_PROGRAM;
                 pvma->ref = 1;
+            }else{
+                printf("unkown vm area\r\n");
+                while(1);
             }
         }
         trap_frame->spsr_el1 = 0;  
@@ -269,12 +277,13 @@ void run_init_task(char* filename){
     pvma->vm_start = (uint64_t)alloc_pages(BUDDY_MAX_ORDER - 1);
     pvma->vm_end = pvma->vm_start + (1 << (BUDDY_MAX_ORDER - 1)) * PAGE_SIZE;
     pvma->ref = 1;
-    pvma->type = VM_AREA_PROGRAM ;
+    pvma->type = VM_AREA_PROGRAM;
     pvmal->vm_area = pvma;
     list_add_tail(&pvmal->list, &task->mm->mmap_list);
     // copy file to text memory area
     initrdfs_loadfile(filename, (void*)pvma->vm_start);
     user_entry = (uint64_t)pvma->vm_start;
+    LOG("pvmal: %x", pvmal);
     // create user stack
     pvma = kmalloc(sizeof(struct vm_area_struct));
     pvmal = kmalloc(sizeof(struct vm_area_struct_list));
@@ -286,6 +295,7 @@ void run_init_task(char* filename){
     list_add_tail(&pvmal->list, &task->mm->mmap_list);
     user_sp = (uint64_t)pvma->vm_end;
 
+    LOG("pvmal: %x", pvmal);
     // create kernel stack
     task->stack = alloc_pages(1);
     
