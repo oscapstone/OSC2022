@@ -109,7 +109,6 @@ el0_sync_handler:
     b    nothing
 
 svc_handler:
-    adr x24, syscall_table
     ldr x24, [x24]
 
     blr x24
