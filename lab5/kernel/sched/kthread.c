@@ -77,6 +77,7 @@ uint64_t kthread_create(kthread_func func){
     kthread->sched_info.counter = kthread->sched_info.priority;
     
     LOG("kthread end");
+    daif = local_irq_disable_save();
     add_task_to_rq(kthread);
     local_irq_restore(daif);
     return 0;
