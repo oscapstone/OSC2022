@@ -87,14 +87,15 @@ void kthread_start(kthread_func func){
 }
 
 void kthread_exit(){
+    uint64_t daif;
     LOG("kthread_exit start");
     struct task_struct* cur;
     cur = get_current();
     cur->thread_info.state = TASK_DEAD;
 
-    local_irq_disable();
+    daif = local_irq_disable_save();
     list_add_tail(&cur->siblings, &kthread_zombies);
-    local_irq_enable();
+    local_irq_restore(daif);
     LOG("kthread_exit end");
     schedule(1);
 }
