@@ -231,9 +231,10 @@ int task_exec(const char* name, char* const argv[]){
                 pvma->ref--;
                 if(pvma->ref <= 0){
                     free_pages((void*)pvma->vm_start, BUDDY_MAX_ORDER - 1);
-                    kfree(pvma);
+                }else{
+                    pvma = kmalloc(sizeof(struct vm_area_struct));
                 }
-                pvma = kmalloc(sizeof(struct vm_area_struct));
+                pvmal->vm_area = pvma;
                 pvma->vm_start = (uint64_t)alloc_pages(BUDDY_MAX_ORDER - 1);
                 trap_frame->elr_el1 = pvma->vm_start;
                 initrdfs_loadfile((char*)name, (void*)pvma->vm_start);
