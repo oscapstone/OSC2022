@@ -181,10 +181,6 @@ void mini_uart_irq_write(){
     if(mini_uart_get_tx_len() <= 0){
         disable_mini_uart_irq(TX);
     }
-write_hex(3);
-    write_str("\r\n");
-
-
 }
 
 size_t mini_uart_get_tx_len(){
@@ -195,8 +191,6 @@ void mini_uart_aio_write(uint8_t c){
     uint8_t b[1];
     uint64_t daif;
     
-    //write_hex(daif);
-    //write_str("\r\n");
     while(1){
         daif = local_irq_disable_save();
         if(!ring_buf_is_full(tx_rbuf)){

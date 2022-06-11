@@ -1,6 +1,7 @@
 #include "kernel/sched/kthread.h"
 
 LIST_HEAD(kthread_zombies);
+extern void kthread_trampoline();
 
 void kthread_destroy(struct task_struct* task){
 //    LOG("kthread_destroy %l", task->thread_info.pid);
@@ -29,8 +30,7 @@ void kthread_idle(){
         _kthread_remove_zombies();
         need_sched = 1;
         local_irq_restore(daif);
-        schedule();
-        //printf("sp %l\r\n", get_SP());
+        //schedule();
     }
 }
 
@@ -43,12 +43,11 @@ void kthread_test(){
             asm volatile("nop");
         }
     }
-    kthread_exit();
 }
 
 uint64_t kthread_create(kthread_func func){
     LOG("kthread enter");
-    uint64_t daif = local_irq_disable_save();
+    uint64_t daif;
     struct task_struct* kthread = (struct task_struct*)kmalloc(sizeof(struct task_struct));
 
     // initialize kernel stack
@@ -59,7 +58,8 @@ uint64_t kthread_create(kthread_func func){
     kthread->thread_info.state = TASK_RUNNING;
 
     // initialize thread context
-    kthread->ctx.lr = (uint64_t)func;
+    kthread->ctx.lr = (uint64_t)kthread_trampoline;
+    kthread->ctx.x19 = (uint64_t)func;
     kthread->ctx.sp = (uint64_t)kthread->stack + PAGE_SIZE * 2;
     kthread->ctx.fp = kthread->ctx.sp;
 
@@ -80,6 +80,11 @@ uint64_t kthread_create(kthread_func func){
     add_task_to_rq(kthread);
     local_irq_restore(daif);
     return 0;
+}
+
+void kthread_start(kthread_func func){
+    func();
+    kthread_exit();
 }
 
 void kthread_exit(){

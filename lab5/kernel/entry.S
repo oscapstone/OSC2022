@@ -62,9 +62,13 @@ task_load_all:
     load_all
     eret
 
+.global kthread_trampoline
+kthread_trampoline:
+    bl local_irq_enable
+    mov x0, x19 
+    bl kthread_start
 
 // exception vector table 
-
 .align 11
 .global EL1_exception_vector_table
 EL1_exception_vector_table:
