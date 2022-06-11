@@ -20,7 +20,7 @@ struct task_struct* pick_next_task_from_rq(){
         return NULL;
 }
 
-void schedule(){
+void schedule(int preempt){
     struct task_struct* current, *next;
     uint64_t daif;
     // prevent running scheduler in softirq
@@ -30,7 +30,7 @@ void schedule(){
         return;
     }
     
-    if(need_sched){
+    if(need_sched || preempt){
         need_sched = 0;
         next = pick_next_task_from_rq();
 

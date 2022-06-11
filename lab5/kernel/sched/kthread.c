@@ -11,26 +11,24 @@ void kthread_destroy(struct task_struct* task){
 void _kthread_remove_zombies(){
     struct list_head* node;
     struct task_struct* zombie;
+    uint64_t daif;
     //uint64_t daif;
     //daif = local_irq_disable_save();
+    local_irq_disable();
     while(!list_empty(&kthread_zombies)){
         zombie = list_first_entry(&kthread_zombies, struct task_struct, siblings);
         LOG("Remove %l", zombie->thread_info.pid);
         list_del(kthread_zombies.next); 
         kthread_destroy(zombie);
     }
+    local_irq_enable(daif);
     //local_irq_restore(daif);
 }
 
 void kthread_idle(){
-    uint64_t daif;
-    uint64_t c = 0;
     while(1){
-        daif = local_irq_disable_save();
+        schedule(1);
         _kthread_remove_zombies();
-        need_sched = 1;
-        local_irq_restore(daif);
-        schedule();
     }
 }
 
@@ -91,15 +89,11 @@ void kthread_start(kthread_func func){
 void kthread_exit(){
     LOG("kthread_exit start");
     struct task_struct* cur;
-    uint64_t daif;
     cur = get_current();
     cur->thread_info.state = TASK_DEAD;
 
-    daif = local_irq_disable_save();
+    local_irq_disable();
     list_add_tail(&cur->siblings, &kthread_zombies);
-    need_sched = 1; 
-    local_irq_restore(daif);
-
     LOG("kthread_exit end");
-    schedule();
+    schedule(1);
 }
