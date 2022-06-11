@@ -108,7 +108,7 @@ void write_hex(uint64_t n){
 void mini_uart_irq_init(){
     rx_rbuf = create_simple_ring_buf(4095);
 
-    //IO_MMIO_write32(AUX_MU_IER_REG, 1);
+    IO_MMIO_write32(AUX_MU_IER_REG, 1);
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
 }
 
@@ -157,7 +157,7 @@ size_t sys_uart_read(char *buf, size_t size){
         c = c + tmp;
     }*/
     for(size_t i = 0 ; i < size ; i++){
-       buf[i] = mini_uart_read();
+       buf[i] = mini_uart_aio_read();
     }
     return c;
 }
