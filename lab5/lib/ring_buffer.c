@@ -36,6 +36,7 @@ uint8_t ring_buf_is_empty(ring_buffer* rbuf){
     local_irq_restore(daif);
     return 0;
 }
+
 uint8_t ring_buf_is_full(ring_buffer* rbuf){
     uint64_t daif;
     if((rbuf->tail + 1) % (rbuf->size + 1) == rbuf->head){
@@ -45,6 +46,7 @@ uint8_t ring_buf_is_full(ring_buffer* rbuf){
     local_irq_restore(daif);
     return 0;
 }
+
 size_t ring_buf_write(ring_buffer* rbuf, uint8_t* data, size_t s){
     size_t count = 0;
     uint64_t daif;
@@ -60,6 +62,20 @@ size_t ring_buf_write(ring_buffer* rbuf, uint8_t* data, size_t s){
     local_irq_restore(daif);
     return count;
 }
+
+size_t ring_buf_write_unsafe(ring_buffer* rbuf, uint8_t* data, size_t s){
+    size_t count = 0;
+
+    while(!ring_buf_is_full(rbuf) && count < s){
+        rbuf->buf[rbuf->tail] = data[count];
+
+        rbuf->tail = (rbuf->tail + 1) % (rbuf->size + 1);
+        count = count + 1;
+    }
+    rbuf->count += count;
+    return count;
+}
+
 size_t ring_buf_read(ring_buffer* rbuf, uint8_t* data, size_t s){
     size_t count = 0;
     uint64_t daif;
@@ -75,6 +91,20 @@ size_t ring_buf_read(ring_buffer* rbuf, uint8_t* data, size_t s){
     local_irq_restore(daif);
     return count;
 }
+
+size_t ring_buf_read_unsafe(ring_buffer* rbuf, uint8_t* data, size_t s){
+    size_t count = 0;
+
+    while(!ring_buf_is_empty(rbuf) && count < s){
+        data[count] = rbuf->buf[rbuf->head];
+
+        rbuf->head = (rbuf->head + 1) % (rbuf->size + 1);
+        count = count + 1;
+    }
+    rbuf->count -= count;
+    return count;
+}
+
 size_t ring_buf_get_len(ring_buffer* rbuf){
     uint64_t daif;
     size_t ret;

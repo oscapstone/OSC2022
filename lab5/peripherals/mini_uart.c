@@ -146,7 +146,7 @@ void mini_uart_rx_softirq_callback(){
 void mini_uart_irq_read(){
     uint8_t b[1];
     b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
-    ring_buf_write(rx_rbuf, b, 1);
+    ring_buf_write_unsafe(rx_rbuf, b, 1);
 }
 
 size_t mini_uart_get_rx_len(){
@@ -163,9 +163,7 @@ uint8_t mini_uart_aio_read(void){
 
 void mini_uart_irq_write(){
     uint8_t b[1];
-    while(ring_buf_read(tx_rbuf, b, 1)){
-        mini_uart_write(b[0]);
-    }
+    while(ring_buf_read_unsafe(tx_rbuf, b, 1)) mini_uart_write(b[0]);
     disable_mini_uart_irq(TX);
 }
 
