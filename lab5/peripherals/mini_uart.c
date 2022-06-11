@@ -175,12 +175,10 @@ uint8_t mini_uart_aio_read(void){
 
 void mini_uart_irq_write(){
     uint8_t b[1];
-    ring_buf_read(tx_rbuf, b, 1);
-    IO_MMIO_write32(AUX_MU_IO_REG, b[0]);
-    
-    if(mini_uart_get_tx_len() <= 0){
-        disable_mini_uart_irq(TX);
+    while(ring_buf_read(tx_rbuf, b, 1)){
+        mini_uart_write(b[0]);
     }
+    disable_mini_uart_irq(TX);
 }
 
 size_t mini_uart_get_tx_len(){
