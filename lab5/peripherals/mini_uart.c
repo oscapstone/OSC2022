@@ -21,7 +21,6 @@ inline void enable_mini_uart_tx_irq(){
 }
 
 inline void enable_mini_uart_rx_irq(){
-    //enable_mini_uart_irq(RX);
 }
 
 inline void disable_mini_uart_irq(uint32_t tx){
@@ -136,6 +135,7 @@ void mini_uart_irq_init(){
 
 
     IO_MMIO_write32(ENABLE_IRQS_1, 1 << 29);
+    enable_mini_uart_irq(RX);
 }
 
 void mini_uart_tx_softirq_callback(){
@@ -156,14 +156,12 @@ size_t mini_uart_get_rx_len(){
 
 uint8_t mini_uart_aio_read(void){
     uint8_t b[1];
-    enable_mini_uart_irq(RX);
     while(1){
         if(!ring_buf_is_empty(rx_rbuf)){
             ring_buf_read(rx_rbuf, b, 1);
             break;
         }
     }
-    disable_mini_uart_irq(RX);
     return b[0];
 }
 
@@ -214,14 +212,12 @@ size_t sys_uart_write(char *buf, size_t size){
 size_t sys_uart_read(char *buf, size_t size){
     size_t c = 0, tmp;
     
-    enable_mini_uart_irq(RX);
     while(size){
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
 
         size = size - tmp;
         c = c + tmp;
     }
-    disable_mini_uart_irq(RX);
 /*
     for(size_t i = 0 ; i < size ; i++){
        buf[i] = mini_uart_read();
