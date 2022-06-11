@@ -20,17 +20,14 @@ struct task_struct* pick_next_task_from_rq(){
         return NULL;
 }
 
-void schedule(int preempt){
+void schedule(){
     struct task_struct* current, *next;
-    uint64_t daif;
     // prevent running scheduler in softirq
-//    daif = local_irq_disable_save();
     if(in_softirq()){
-        local_irq_restore(daif);
         return;
     }
     
-    if(need_sched || preempt){
+    if(need_sched){
         need_sched = 0;
         next = pick_next_task_from_rq();
 
@@ -48,9 +45,15 @@ void schedule(int preempt){
             switch_to(current, next);
         }
     }
-//    local_irq_restore(daif);
 }
 
+void preempt_schedule(){
+    uint64_t daif;
+    daif = local_irq_disable_save();
+    need_sched = 1;
+    schedule();
+    local_irq_restore(daif);
+}
 
 pid_t get_pid_counter(void){
     pid_t ret;

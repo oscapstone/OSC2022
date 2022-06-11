@@ -97,5 +97,5 @@ void kthread_exit(){
     list_add_tail(&cur->siblings, &kthread_zombies);
     local_irq_restore(daif);
     LOG("kthread_exit end");
-    schedule(1);
+    preempt_schedule();
 }

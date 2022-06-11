@@ -112,9 +112,10 @@ extern int need_sched;
 
 extern void add_task_to_rq(struct task_struct *task);
 extern struct task_struct* pick_next_task_from_rq();
-extern void schedule(int);
+extern void schedule();
 extern void switch_to(struct task_struct*, struct task_struct*);
 extern struct task_struct* get_current();
 extern pid_t get_pid_counter(void);
+extern void preempt_schedule();
 extern void print_rq(void);
 #endif
