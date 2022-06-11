@@ -230,10 +230,6 @@ size_t sys_uart_write(char *buf, size_t size){
             write_str("sys_uart_write error\r\n");
             while(1);
         }
-        write_hex(count);
-        write_str("\r\n");
-        count++; 
-
 
         size = size - tmp;
         c = c + tmp;
