@@ -109,7 +109,7 @@ uint64_t task_dup(struct task_struct* parent){
 
 
 void task_exit(){}
-void task_destroy(struct task_struct*){}
+void task_destroy(struct task_struct* task){}
 void run_init_task(char* filename){
     uint64_t size;
     struct vm_area_struct* pvma;

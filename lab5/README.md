@@ -3,14 +3,10 @@
 ## Features
 
 - Basic Exercise 1
-    - [x] Buddy System  
+    - [x] Thread   
 - Basic Exercise 2 
-    - [x] Dynamic Memory Allocator 
-- Advanced Exercise 1  
-    - [x] Efficient Page Allocation  
-- Advanced Exercise 2
-    - [x] Reserved Memory  
-- Advanced Exercise 3
-    - [x] Startup Allocation 
+    - [ ] User Process and System Call 
+- Advanced Exercise 1 
+    - [ ] POSIX Signal  
 
 
