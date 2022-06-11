@@ -30,7 +30,7 @@ void schedule(int preempt){
         return;
     }
     
-    if(need_sched || preempt){
+    if(need_sched){
         need_sched = 0;
         next = pick_next_task_from_rq();
 

@@ -94,6 +94,7 @@ void kthread_exit(){
 
     local_irq_disable();
     list_add_tail(&cur->siblings, &kthread_zombies);
+    local_irq_enable();
     LOG("kthread_exit end");
     schedule(1);
 }
