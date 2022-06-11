@@ -81,6 +81,8 @@ void core_timer_irq_handler(){
 
     jiffies += 1;
     
+    write_hex(1);
+    write_str("\r\n");
     // update task schedule info
     if(current){
         current->sched_info.rticks++;
