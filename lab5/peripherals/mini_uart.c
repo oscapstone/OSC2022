@@ -32,11 +32,9 @@ inline void disable_mini_uart_irq(uint32_t tx){
 }
 
 inline void disable_mini_uart_tx_irq(){
-    //disable_mini_uart_irq(TX);
 }
 
 inline void disable_mini_uart_rx_irq(){
-    //disable_mini_uart_irq(RX);
 }
 
 void mini_uart_init(){
@@ -201,7 +199,7 @@ ssize_t aio_write_bytes(uint8_t* buf, size_t n){
 
 size_t sys_uart_write(char *buf, size_t size){
     size_t c;
-    c = ring_buf_write(tx_rbuf, buf + c, size);
+    c = ring_buf_write(tx_rbuf, buf, size);
     enable_mini_uart_irq(TX);
     /*
     for(size_t i = 0 ; i < size ; i++){
@@ -216,8 +214,8 @@ size_t sys_uart_write(char *buf, size_t size){
 size_t sys_uart_read(char *buf, size_t size){
     size_t c = 0, tmp;
     
+    enable_mini_uart_irq(RX);
     while(size){
-        enable_mini_uart_irq(RX);
         tmp = ring_buf_read(rx_rbuf, buf + c, size);
 
         size = size - tmp;
