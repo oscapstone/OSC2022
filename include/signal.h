@@ -2,14 +2,9 @@
 #define _SIGNAL_H
 
 #include "type.h"
-#include "exception.h"
-#define SIGMAX 16
 
-typedef struct signal_pair {
-    uint64 spsr_el1;
-    int pid;
-    int code; 
-} signal_pair_t;
+
+typedef struct trapFrame trapFrame_t;
 
 void signal_default_handlder();
 void signal_register(int code, void (*handler)());

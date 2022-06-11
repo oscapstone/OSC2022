@@ -3,7 +3,9 @@
 #include "interrupt.h"
 #include "exception.h"
 #include "thread.h"
+#include "memory.h"
 #include "uart.h"
+#include "syscall.h"
 
 void signal_default_handlder() {
     kill(currThread->signal_pair.pid);
@@ -42,7 +44,7 @@ void signal_execute() {
             lock_interrupt();
             char *signal_user_stack = malloc(THREAD_STACK_SIZE);
             int i = 0;
-            read_context(&currThread->signal_context);
+            store_context(&currThread->signal_context);
             unlock_interrupt();
             
             if(i == 0) {
@@ -67,5 +69,5 @@ void signal_user_mode() {
 void signal_return(trapFrame_t *frame) {
     uint64 signal_ustack = frame->sp_el0 - THREAD_STACK_SIZE;
     free(signal_ustack);
-    write_context(&currThread->signal_context);
+    load_context(&currThread->signal_context);
 }

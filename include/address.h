@@ -1,10 +1,11 @@
 #ifndef ADDRESS
 #define ADDRESS
+#include "mmu.h"
 
-#define MMIO_BASE       0x3F000000
+#define MMIO_BASE       PHY_TO_VIR(0x3F000000)
 
-#define LOAD_ADDR (volatile unsigned int*)(0x80000)
-#define INITRAMFS_ADDR (volatile unsigned int*)(0x8000000)
+#define LOAD_ADDR       (volatile unsigned int*)(PHY_TO_VIR(0x80000))
+#define INITRAMFS_ADDR  (volatile unsigned int*)(PHY_TO_VIR(0x8000000))
 
 // GPIO registers
 #define GPFSEL0         ((volatile unsigned int*)(MMIO_BASE+0x00200000))
@@ -60,6 +61,6 @@
 #define MBOX_EMPTY      0x40000000
 
 // Interrupt
-#define IRQS1  ((volatile unsigned int*)(0x3f00b210))
+#define IRQS1  ((volatile unsigned int*)(PHY_TO_VIR(0x3f00b210)))
 
 #endif

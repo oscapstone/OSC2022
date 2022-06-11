@@ -1,91 +1,46 @@
-#ifndef MEMORY
-#define MEMORY
-#include "type.h"
+#ifndef MEMORY_H
+#define MEMORY_H
 
-extern unsigned long long _heap_start; // linker script symbol
-extern unsigned long long _heap_end;  // linker script symbol
-static char* heap = (char*)&_heap_start;
-static char* heap_end = (char*)&_heap_end;
+#include "list.h"
+#include "uart.h"
+#include "cpio.h"
+#include "address.h"
+#include "interrupt.h"
+#include "mmu.h"
 
-void* simple_malloc(unsigned int size);
-char* memcpy (void *dest, const void *src, unsigned long long len);
+#define MAXORDER 6
+#define MAXCACHEORDER 4 // 32, 64, 128, 256, 512  (for every 32bytes)
 
-#define MAX_ORDER 12
-#define MAX_PAGES 2048
-#define MINI_PAGE_SIZE 4 // kB
-#define PAGE_BEGIN_ADDRESS 0x00000000
-#define BASE_NUM 64 // can't change so far
-#define NUM_POOL 1
-#define KB 1 << 10
+// simple_malloc
+void *simple_malloc(unsigned int size);
+char *memcpy (void *dest, const void *src, unsigned long long len);
+void *memset(void *s, int c, size_t n);
 
-typedef struct node {
-    struct node* prevNode;
-    struct node* nextNode;
-    uint64 address;
-} node_t;
+#define BUDDYSYSTEM_START  PHY_TO_VIR(0x000000L)
+#define BUDDYSYSTEM_PAGE_COUNT 0x3C000 // 0x3C000000 is total size of memory, page size is 0x1000
+//buddy system (for >= 4K pages)
+void *allocpage(unsigned int size);
+void freepage(void *ptr);
 
-typedef struct memoryPool {
-    uint64 address;
-    uint32 size;
-    uint64 stateBitMap;
-    uint64 mask;
-} memoryPool_t;
+void *alloccache(unsigned int size);
+void freecache(void *ptr);
+void page2caches(int order);
 
-typedef struct page {
-    uint32 order;
-    uint64 address;
-    int state;
-    struct page* prevPage;
-    struct page* nextPage;
-    struct page* buddyPage;
-    struct page* parentPage;
-    struct page* appendPage;
-    memoryPool_t* pool;
-} page_t;
+void *malloc(unsigned int size);
+void free(void *ptr);
 
-typedef struct pageHeader {
-    page_t* firstFree;
-    page_t* firstEmpty;
-} pageHeader_t;
+typedef struct frame
+{
+    struct list_head listhead;
+    int val;        // val is order
+    int isused;
+    int cacheorder; // -1 means isn't used for cache
+    unsigned int idx;
+} frame_t;
 
 void initMemoryPages();
-page_t* createPage(uint32 order, uint64 address, int state);
-void initPool(memoryPool_t* pool, uint32 maxSize, uint32 size, uint64 address);
-void* malloc(uint32 size);
-uint32 sizeToSmallestOrder(uint32 size);
-void appendNewPage(page_t* parentPage, page_t* newPage);
-void showAppendPage(page_t *parentPage);
-bool isAllFull(page_t* page, uint32 size);
-bool isFull(page_t* page, uint32 size);
-bool isPoolFull(memoryPool_t* pool, uint32 size);
-void* allocateMemoryFromPage(page_t* page, uint32 size);
-void registerUsedAddress(page_t* page);
-uint32 addressToBlockIdx(uint64 address);
-void removeUsedAddress(page_t* page);
-
-page_t* getFreePageAtOrder(uint32 order);
-void loggingPage(page_t* page);
-void loggingPool(memoryPool_t* pool);
-bool hasFreePageAtOrder(uint32 order);
-bool hasNoFreePageAtOrder(uint32 order);
-void dividePageToLowerOrder(page_t* page);
-page_t* addPageAtOrder(uint32 order, uint64 address, page_t* parentPage);
-uint64 getPageSizeAtOrder(uint32 order);
-uint64 getPageNumAtOrder(uint32 order);
-void bindAsBuddy(page_t* page1, page_t* page2);
-void freePage(page_t* page);
-bool isNotPageHead(page_t* page);
-bool isNotPageTail(page_t* page);
-bool isFirstFree(page_t* page);
-bool isFirstEmpty(page_t* page);
-void mergePagesToHigherOrder(page_t* page);
-void moveToTail(page_t* page);
-void loggingAllPageState();
-void free(uint64 address);
-void init_reserve();
-void reserveMemory(uint64 start, uint64 end);
-void reservePage(uint32 order, uint64 address);
-bool inRange(page_t* page, uint64 address);
-bool inPool(memoryPool_t* pool, uint64 address);
-
+frame_t *release_redundant(frame_t *frame);
+frame_t *get_buddy(frame_t *frame);
+frame_t *coalesce(frame_t* f);
+void memory_reserve(unsigned long long start, unsigned long long end);
 #endif

@@ -33,15 +33,14 @@
 #include "syscall.h"
 #include "thread.h"
 #include "signal.h"
+#include "mmu.h"
 
 
-void raise_exc()
-{
+void raise_exc() {
     asm volatile ("svc 0");
 }
 
-void el1_to_el0(char* program_address, char* user_stack_address)
-{
+void el1_to_el0(char* program_address, char* user_stack_address) {
     asm volatile(
         "msr elr_el1, %0\n\t"
         // "mov x1, 0x3c0\n\t"
@@ -54,18 +53,34 @@ void el1_to_el0(char* program_address, char* user_stack_address)
     );
 }
 
-void svc_handle(trapFrame_t *frame) {
+void svc_handle(trapFrame_t *frame, uint64 x1) {
     uint64 mode = frame->x8;
     uint64 *returnValue = &frame->x0;
 
-    // uart_puts("SVC Handle Mode = "); uart_num(mode); uart_newline();
+    // MMU page fault
+    esr_el1_t *esr;
+    esr = (esr_el1_t *)&x1;
+    if (esr->ec == DATA_ABORT_LOWER) {
+        // raiseError("DATA_ABORT_LOWER Fault\n");
+        handle_abort(esr);
+        return;
+    }
+    else if(esr->ec == INS_ABORT_LOWER) {
+        // raiseError("INS_ABORT_LOWER Fault\n");
+        handle_abort(esr);
+        return;
+    }
+
+    // uart_printf("SVC Handle Mode = %d\n", mode);
     enable_interrupt();
     switch(mode) {
         case 0: *returnValue = getpid(); break;
         case 1: *returnValue = uart_read((char *)frame->x0, (size_t)frame->x1); break;
         case 2: *returnValue = uart_write((char *)frame->x0, (size_t)frame->x1); break;
         case 3: *returnValue = exec(frame, (char *)frame->x0, (char **)frame->x1); break;
-        case 4: *returnValue = fork(frame); /*uart_puts("fork return = "); uart_num(*returnValue); uart_newline();*/ break;
+        case 4: *returnValue = fork(frame);
+            // uart_printf("Return %d Done\n", *returnValue);
+            break;
         case 5: exit((int)frame->x0); break;
         case 6: *returnValue = mbox_call((unsigned char)frame->x0, (unsigned int *)frame->x1); break;
         case 7: kill((int)frame->x0); break;
@@ -74,8 +89,10 @@ void svc_handle(trapFrame_t *frame) {
         case 115: signal_return(frame); break;
         default: break;
     }
-    lock_interrupt();
-    unlock_interrupt();
+
+    // if(mode == 4) {
+    //     uart_printf("SVC Handle Mode %d Done: 0x%x\n", mode, *returnValue);
+    // }
 }
 
 void exc_dump(unsigned long num, unsigned long esr, unsigned long elr, unsigned long spsr, unsigned long type) {
@@ -146,50 +163,43 @@ void uart_dump() {
         11: <Not possible> 
     */
 
-    // buffer read, write
-    if (*AUX_MU_IIR & (0b01 << 1)) //can write
-    {
-        // uart_puts("Interrupt-UART TX\n");
+    // buffer write
+    if (*AUX_MU_IIR & (0b01 << 1)) {
+        // uart_printf("UART TX Interrupt\n");
         disable_uart_w_interrupt();
         add_interrupt(uart_interrupt_w_handler, UART_INTERRUPT_TX_PRIORITY);
-        // uart_interrupt_w_handler();
-        // enable_uart_w_interrupt();
+        // uart_printf("UART TX Done\n");
     }
-    else if (*AUX_MU_IIR & (0b10 << 1)) // can read
-    {
-        // uart_puts("Interrupt-UART RX\n");
+    // buffer read
+    else if (*AUX_MU_IIR & (0b10 << 1)) {
+        // uart_printf("UART RX Interrupt\n");
         disable_uart_r_interrupt();        
         add_interrupt(uart_interrupt_r_handler, UART_INTERRUPT_RX_PRIORITY);
-        // uart_interrupt_r_handler();
-        // enable_uart_r_interrupt();
+        // uart_printf("UART RX Done\n");
     }
-    else
-    {
+    else {
         uart_puts("UART Interrupt error\n");
     }
 }
 
 void irq_dump(trapFrame_t *frame){
-   
-    if(*IRQ_PENDING_1 & IRQ_PENDING_1_AUX_INT && *CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_GPU) // from aux && from GPU0 -> uart exception  
-    {
+   // from aux && from GPU0 -> uart exception  
+    if(*IRQ_PENDING_1 & IRQ_PENDING_1_AUX_INT && *CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_GPU) {
+        // uart_printf("UART Interrupt\n");
         uart_dump();
     }
-    else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ)  //from CNTPNS (core_timer)
-    {
-        // uart_puts("Interrupt-Timer\n");
+    //from CNTPNS (core_timer)
+    else if(*CORE0_INTERRUPT_SOURCE & INTERRUPT_SOURCE_CNTPNSIRQ) {
         disable_core_timer();
+        // uart_printf("Timer Interrupt\n");
         add_interrupt(core_timer_handler, TIMER_INTERRUPT_PRIORITY);
         if (run_queue->next->next != run_queue) schedule();
-        // uart_puts("Done\n");
-        // core_timer_handler();
-        // enable_core_timer();
+        // uart_printf("Timer Add Interrupt Done\n");
     }
     else {
         uart_puts("No support this irq\n");
     }
 
-    
     if ((frame->spsr_el1 & 0b1111) == 0) {;
         signal_execute();
     }

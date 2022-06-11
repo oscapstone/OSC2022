@@ -2,7 +2,8 @@
 #define UART
 
 #include "type.h"
-#define MAX_BUF_SIZE 1024
+#include "sprintf.h"
+#define MAX_BUF_SIZE 256
 
 void uart_init();
 void uart_enable();
@@ -36,4 +37,6 @@ void disable_uart_interrupt();
 void disable_uart_r_interrupt();
 void disable_uart_w_interrupt();
 void raiseError(char *message);
+int uart_printf(char *fmt, ...);
+int uart_async_printf(char *fmt, ...);
 #endif

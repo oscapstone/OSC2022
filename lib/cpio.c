@@ -101,17 +101,6 @@ char* load_user_program(char* address, char* program_address, char* name) {
             continue;
         }
         else if(strcmp(filename, name)) {
-            // uart_puts("Start loading file, size = ");
-            // uart_num(filesize);
-            // uart_newline();
-            // char* kernel = program_address;
-            // while(filesize--) {
-            //     *(kernel++) = *(p++);
-            // }
-
-            // uart_puts("Loading done\n");
-            // delay_ms(10);
-
             break;
         }
         else {
@@ -119,7 +108,7 @@ char* load_user_program(char* address, char* program_address, char* name) {
         }
     } while(strcmp(filename, "TRAILER!!!") == 0);
 
-    uart_async_puts("Get user program\n");
+    // uart_puts("Get user program\n");
     return p;
 }
 

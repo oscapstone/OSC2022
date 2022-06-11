@@ -1,9 +1,8 @@
 #include "thread.h"
 #include "interrupt.h"
+#include "exception.h"
 #include "memory.h"
-#include "list.h"
-#include "utils.h"
-#include "signal.h"
+#include "timer.h"
 
 thread_t threads[PIDMAX + 1];
 thread_t *currThread, *idleThread;
@@ -22,12 +21,14 @@ void initThreads() {
         threads[i].has_signal = 0;
     }
 
-    currThread = idleThread = createThread(idle);
-    asm volatile("msr tpidr_el1, %0" ::"r" (&currThread->context));
+    currThread = idleThread = createThread(idle, 0x1000);
+    asm volatile("mrs %0, ttbr1_el1" : "=r"(idleThread->context.pgd));
+    // uart_printf("IDLE PGD: 0x%x\n", idleThread->context.pgd);
+    asm volatile("msr tpidr_el1, %0" ::"r" (&idleThread->context));
     unlock_interrupt();
 }
 
-thread_t *createThread(void *program) {
+thread_t *createThread(void *program, uint64 datasize) {
     lock_interrupt();
     thread_t *thread;
     for(int i = 0; i <= PIDMAX; i++) {
@@ -37,15 +38,23 @@ thread_t *createThread(void *program) {
         }
     }
 
+    INIT_LIST_HEAD(&thread->used_vm);
     thread->state = USED;
     thread->context.lr = (uint64)program;
     thread->stackPtr = (char*)malloc(THREAD_STACK_SIZE);
     thread->kernel_stackPtr = (char*)malloc(THREAD_STACK_SIZE);
+    thread->data = (char*)malloc(datasize);
+    thread->datasize = datasize;
 
     thread->context.sp = (uint64)thread->stackPtr + THREAD_STACK_SIZE;
     thread->context.fp = thread->context.sp;
-    thread->has_signal = 0;
 
+    thread->has_signal = 0;
+    for(int i = 0; i <= SIGMAX; i++) {
+        thread->signal_handlers[i] = signal_default_handlder;
+    }
+
+    asm volatile("mrs %0, ttbr0_el1" : "=r"(thread->context.pgd));
     list_add(&thread->listHead, run_queue);
     unlock_interrupt();
     return thread;
@@ -54,7 +63,6 @@ thread_t *createThread(void *program) {
 void idle() {
     while(1) {
         kill_zombies();
-        // uart_puts("IDLE\n");
         schedule();
     }    
 }
@@ -65,10 +73,12 @@ void kill_zombies() {
     list_for_each(list, run_queue) {
         thread_t *thread = (thread_t*)list;
         if(thread->state == DEAD) {
-            // uart_puts("Kill thread "); uart_num(thread->pid); uart_newline();
             list_del_entry(list);
+            free(thread->data);
             free(thread->stackPtr);
             free(thread->kernel_stackPtr);
+            free_vm_list_for_thread(thread);
+            free_page_tables_for_thread(thread); // free PGD
             thread->state = IDLE;
         }
     }
@@ -77,25 +87,29 @@ void kill_zombies() {
 
 void schedule() {
     lock_interrupt();
-    
+    // uart_printf("Start Schedule\n");
     do {
+        if(currThread->state == NEW_BORN) currThread->state = USED;
         currThread = (thread_t*)currThread->listHead.next;
-    } while(list_is_head(currThread, run_queue) || currThread->state == DEAD);
-    
-    // uart_puts("Select currThread "); uart_num(currThread->pid); uart_newline();
+        // uart_printf("D");
+    } while(list_is_head(&currThread->listHead, run_queue) || currThread->state == DEAD || currThread->state == NEW_BORN);
+    // uart_printf("Select thread: %d\n", currThread->pid);
     switch_to(get_current(), &currThread->context);
+    // uart_printf("Switch Back thread: %d\n", currThread->pid);
     unlock_interrupt();
+    // uart_printf("Schedule Done\n");
     // return to context.lr
 }
 
 void execThread(char *program, uint64 program_size) {
     lock_interrupt();
-    thread_t *thread = createThread(program);
+    thread_t *thread = createThread(program, program_size);
+    init_page_table(&thread->context.pgd, 0);
+    // uart_printf("New Thread PGD address: 0x%x\n", thread->context.pgd);
 
-    thread->data = malloc(program_size);
-    thread->datasize = program_size;
-    thread->context.lr = (uint64)thread->data;
- 
+    thread->context.sp = USER_STACK_BASE + THREAD_STACK_SIZE;
+    thread->context.fp = USER_STACK_BASE + THREAD_STACK_SIZE;
+    thread->context.lr = USER_KERNEL_BASE;
     for(int i = 0; i < program_size; i++) {
         thread->data[i] = program[i];
     }
@@ -105,30 +119,37 @@ void execThread(char *program, uint64 program_size) {
         thread->signal_handlers[i] = signal_default_handlder;
     }
     
-    // uart_puts("Start new thread\n");
     currThread = thread;
-    unlock_interrupt();
-    set_schedule_timer();
+    // set_page_tables_for_thread(thread);
+    set_vm_list_for_thread(thread);
+
+    schedule_callback("Schedule\n");
+    uart_printf("Start exec\n");
+
+    // uart_printf("Before switch\n");
+    // uart_printf("USER Code at 0x%x\n", thread->data);
+    // parser_table((uint64)thread->data);
+    // uart_printf("USER Stack at 0x%x\n", thread->kernel_stackPtr);
+    // parser_table((uint64)thread->kernel_stackPtr);
+
+    switch_pgd((uint64)thread->context.pgd);
     
-    // eret to exception level 0
+    // uart_printf("After switch\n");
+    // uart_printf("USER Code at 0x%x\n", USER_KERNEL_BASE);
+    // parser_table(USER_KERNEL_BASE);
+    // uart_printf("USER Stack at 0x%x\n", USER_STACK_BASE);
+    // parser_table(USER_STACK_BASE);
+
+    unlock_interrupt();
+
+    // // eret to exception level 0
     asm("msr tpidr_el1, %0\n\t"
         "msr elr_el1, %1\n\t"
         "msr spsr_el1, xzr\n\t" // enable interrupt in EL0. You can do it by setting spsr_el1 to 0 before returning to EL0.
         "msr sp_el0, %2\n\t"
         "mov sp, %3\n\t"
-        "eret\n\t" ::"r"(&thread->context),"r"(thread->context.lr), 
-                        "r"(thread->context.sp), "r"(thread->kernel_stackPtr + THREAD_STACK_SIZE));
-}
-
-void testThread() {
-    for(int i = 0; i < 3; ++i) {
-        uart_puts("Thread id: "); uart_num(currThread->pid);
-        uart_puts(" "); uart_num(i); uart_newline();
-        delay_ms(1000);
-        schedule();
-    }
-
-    thread_exit();
+        "eret\n\t" ::"r"(&thread->context), "r"(thread->context.lr), 
+                     "r"(thread->context.sp), "r"(thread->kernel_stackPtr + THREAD_STACK_SIZE));
 }
 
 void thread_exit() {
@@ -138,12 +159,10 @@ void thread_exit() {
     schedule();
 }
 
-void set_schedule_timer() {
-    uint64 freq = get_timer_frequency();
-    add_timer(schedule_callback, freq >> 5, "Schedule\n");
-}
-
 void schedule_callback(char *message) {
     // uart_puts(message);
-    set_schedule_timer();
+    lock_interrupt();
+    uint64 freq = get_timer_frequency();
+    add_timer(schedule_callback, freq >> 5, message);
+    unlock_interrupt();
 }
