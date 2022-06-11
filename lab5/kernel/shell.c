@@ -100,9 +100,9 @@ void simple_shell(){
                          "eret\n\t"
             );*/
             //disable_mini_uart_rx_irq();
+            disable_mini_uart_irq(RX);
             run_init_task("syscall.img");
-            kthread_exit();
-             
+            return; 
         }else if(strcmp(token, "time") == 0){
             uint64_t j = get_jiffies();
             printf("Elapsed time after booting: %l.%l\r\n", j / HZ, j % HZ);

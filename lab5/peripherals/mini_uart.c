@@ -217,7 +217,7 @@ size_t sys_uart_read(char *buf, size_t size){
         size = size - tmp;
         c = c + tmp;
     }*/
-    disable_mini_uart_irq(RX);
+    //disable_mini_uart_irq(RX);
     for(size_t i = 0 ; i < size ; i++){
        buf[i] = mini_uart_read();
     }
