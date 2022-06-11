@@ -107,5 +107,5 @@ int32_t putchar(uint8_t ch){
     return ch;
 }
 int32_t getchar(){
-    return mini_uart_aio_read();
+    return mini_uart_read();
 }
