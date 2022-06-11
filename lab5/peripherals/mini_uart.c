@@ -150,6 +150,9 @@ void mini_uart_irq_read(){
     uint8_t b[1];
     b[0] = IO_MMIO_read32(AUX_MU_IO_REG) & 0xff;
     ring_buf_write(rx_rbuf, b, 1);
+write_hex(2);
+    write_str("\r\n");
+
     disable_mini_uart_irq(RX);
 }
 
@@ -181,6 +184,10 @@ void mini_uart_irq_write(){
     if(mini_uart_get_tx_len() <= 0){
         disable_mini_uart_irq(TX);
     }
+write_hex(3);
+    write_str("\r\n");
+
+
 }
 
 size_t mini_uart_get_tx_len(){
