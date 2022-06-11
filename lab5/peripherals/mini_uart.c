@@ -194,12 +194,12 @@ void mini_uart_aio_write(uint8_t c){
         if(!ring_buf_is_full(tx_rbuf)){
             b[0] = c;
             ring_buf_write(tx_rbuf, b, 1);
+            enable_mini_uart_irq(TX);
             local_irq_restore(daif);
             break;
         }
         local_irq_restore(daif);
     }
-    enable_mini_uart_irq(TX);
 }
 
 ssize_t aio_write_bytes(uint8_t* buf, size_t n){
@@ -214,8 +214,8 @@ size_t sys_uart_write(char *buf, size_t size){
     while(size){
         daif = local_irq_disable_save();
         tmp = ring_buf_write(tx_rbuf, buf + c, size);
-        enable_mini_uart_irq(TX);
         local_irq_restore(daif);
+        enable_mini_uart_irq(TX);
         
         if(tmp > size){
             write_str("sys_uart_write error\r\n");
