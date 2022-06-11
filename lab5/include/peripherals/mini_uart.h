@@ -4,6 +4,7 @@
 #include "types.h"
 #include "asm.h"
 #include "peripherals/iomapping.h"
+#include "kernel/sched/sched.h"
 #include "debug/debug.h"
 #include "lib/print.h"
 #include "lib/ring_buffer.h"

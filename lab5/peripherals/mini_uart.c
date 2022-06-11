@@ -151,6 +151,7 @@ size_t sys_uart_read(char *buf, size_t size){
 
         size = size - tmp;
         c = c + tmp;
+        schedule(1);
     }
     IO_MMIO_write32(AUX_MU_IER_REG, 0);
     return c;
