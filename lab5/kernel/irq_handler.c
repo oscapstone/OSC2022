@@ -7,7 +7,6 @@ struct softirq_status softirq_s = {
 irq_funcptr softirq_vec[END_OF_LIST] = {
     timer_softirq_callback,
     mini_uart_rx_softirq_callback,
-    mini_uart_tx_softirq_callback
 };
 uint64_t irq_count[END_OF_LIST] = {0, 0, 0};
 
@@ -105,12 +104,10 @@ void irq_handler(){
             if(uart_irq_type == RX){
                 // Receiver holds valid byte
                 do_irq(MINI_UART_RX, mini_uart_irq_read, enable_mini_uart_rx_irq, disable_mini_uart_rx_irq);
-            }else if(uart_irq_type == TX){
-                // Transmit holding register empty
-                do_irq(MINI_UART_TX, mini_uart_irq_write, enable_mini_uart_tx_irq, disable_mini_uart_tx_irq);
             }else{
                 irq_count[UNKNOWN_IRQ]++;
                 LOG("UART interrupt");
+                while(1);
             }
         }else{
             irq_count[UNKNOWN_IRQ]++;

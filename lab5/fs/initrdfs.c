@@ -59,7 +59,7 @@ void initrdfs_cat(){
         if((f->mode & FILE_TYPE_MASK) == FILE_TYPE_REGULAR){ 
             printf("Filename : %s\r\n", f->filename); 
             printf("File size: %u\r\n", f->filesize); 
-            aio_write_bytes(f->data, f->filesize);
+            write_bytes(f->data, f->filesize);
             printf("\r\n");
         }
     }
