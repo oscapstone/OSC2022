@@ -57,6 +57,7 @@ KOBJECTS = \
 		 $(OUTPUT)/sched.o \
 		 $(OUTPUT)/kthread.o \
 		 $(OUTPUT)/task.o \
+		 $(OUTPUT)/signal.o \
 		 $(LIBS)
 
 
@@ -68,7 +69,6 @@ all: start link kernel end
 start: 
 	@echo "Start building kernel8.img"
 
-	$(MAKE) -C boot OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C peripherals OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 
 	$(MAKE) -C init OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)"
 	$(MAKE) -C kernel OUTPUT=$(OUTPUT) HEADERS=$(HEADERS) CFLAGS="$(CFLAGS)" 

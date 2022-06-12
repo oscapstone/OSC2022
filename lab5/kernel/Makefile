@@ -21,6 +21,7 @@ OBJECTS = \
 		syscall_table.o \
 		timer.o \
 		irq_handler.o \
+		signal.o \
 
 .PHONY: all sched
 all: $(OBJECTS) sched
