@@ -2,9 +2,9 @@
 #define _MINI_UART_H_
 
 #include "types.h"
+#include "kernel/sched/sched.h"
 #include "asm.h"
 #include "peripherals/iomapping.h"
-#include "kernel/sched/sched.h"
 #include "debug/debug.h"
 #include "lib/print.h"
 #include "lib/ring_buffer.h"

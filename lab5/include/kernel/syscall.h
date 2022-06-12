@@ -10,4 +10,8 @@ extern int sys_mbox_call(uint8_t, uint32_t *);
 extern void sys_exit();
 extern void sys_kill(uint64_t pid);
 extern int sys_exec(const char *, char *const []);
+extern void sys_sigreturn();
+extern void sys_signal(int, sig_handler);
+extern int sys_sigkill(uint64_t, int);
+
 #endif

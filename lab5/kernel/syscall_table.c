@@ -42,6 +42,19 @@ uint64_t syscall_handler(){
             x0 = trap_frame->x0;
             sys_kill(x0);
             break;
+        case 8:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            sys_signal((int)x0,(void (*)())x1);
+            break;
+        case 9:
+            x0 = trap_frame->x0;
+            x0 = trap_frame->x1;
+            sys_sigkill((uint64_t)x0,(int)x1);
+            break;
+        case 10:
+            sys_sigreturn();
+            break;
         default:
             printf("Unknown system call\r\n");
             while(1);

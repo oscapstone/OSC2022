@@ -104,7 +104,11 @@ uint64_t task_dup(struct task_struct* parent){
     child->sched_info.rticks = 0;
     child->sched_info.priority = parent->sched_info.priority ;
     child->sched_info.counter = child->sched_info.priority;
-   
+
+    // initialzie singal
+    sigpending_init(&child->sigpending);
+    
+    // insert task to run queue and task list
     list_add_tail(&child->list, &task_list);
     local_irq_restore(daif);
     add_task_to_rq(child);
@@ -249,6 +253,9 @@ int task_exec(const char* name, char* const argv[]){
         trap_frame->spsr_el1 = 0;  
         ret = 0;
     }
+    // initialize signal
+    default_sighand_init(&current->sighandler);
+
     local_irq_restore(daif);
     LOG("end task_exec");
     return ret;
@@ -324,7 +331,12 @@ void run_init_task(char* filename){
     task->sched_info.rticks = 0;
     task->sched_info.priority = 1;
     task->sched_info.counter = task->sched_info.priority;
+
+    // initialzie singal
+    sigpending_init(&task->sigpending);
+    default_sighand_init(&task->sighandler);
     
+    // insert task to run queue and task list
     user_init = task;
     list_add_tail(&task->list, &task_list);
     local_irq_restore(daif);

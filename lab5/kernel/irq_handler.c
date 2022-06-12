@@ -96,7 +96,6 @@ void irq_handler(){
     if(core0_irq_source & 2){
         //core timer interrupt
         do_irq(CORE0_TIMER, core_timer_irq_handler, enable_core_timer_irq, disable_core_timer_irq);
-        schedule();
     }else if(irq_pending_1 & (1 << 29)){
         auxirq = IO_MMIO_read32(AUX_IRQ); 
         if(auxirq & 1){

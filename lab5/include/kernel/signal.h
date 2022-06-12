@@ -1,17 +1,21 @@
 #ifndef _SIGNAL_H_
 #define _SIGNAL_H_
 
-#include "kernel/sched/sched.h"
+#include "types.h"
+#include "lib/list.h"
+
 #define SIG_SIGHUP       1
 #define SIG_SIGINT       2  
 #define SIG_SIGQUIT      3
 #define SIG_SIGILL       4 
 #define SIG_SIGTRAP      5
 #define SIG_SIGABRT      6
-#define SIG_SIGBUF       7
+#define SIG_SIGBUS       7
 #define SIG_SIGFPE       8
 #define SIG_SIGKILL      9
+#define SIG_SIGUSR1      10
 #define SIG_SIGSEGV      11
+#define SIG_SIGUSR2      12
 #define SIG_SIGPIPE      13
 #define SIG_SIGALRM      14
 #define SIG_SIGTERM      15
@@ -32,38 +36,44 @@
 #define SIG_SIGPWR       30
 #define SIG_SIGSYS       31
 
-#define SIG_FLAG_KERNAL  1
+#define SIG_FLAG_KERNEL  1
 
 #define SIG_MAX_NUM 32
 
 typedef void (*sig_handler)();
 
-/*struct signal_struct{
-    
-};*/
+struct signal_queue{
+    struct list_head list;
+    int32_t signal;
+};
 
 struct sigpending{
     struct list_head pending;
+    int32_t cur_signal;
 };
 
 struct sigaction{
-    uint32_t sa_handler;
     uint32_t sa_flags;
+    sig_handler sa_handler;
 };
 
 struct sighand_struct{
-    struct sigaction action[SIG_MAX_NUM];
+    struct sigaction actions[SIG_MAX_NUM];
 };
 
+extern void sigpending_init(struct sigpending*);
+extern void default_sighand_init(struct sighand_struct*);
 extern int send_signal(uint64_t, int);
 extern int register_signal(int, sig_handler);
 extern void handle_sigreturn();
-extern int check_sigpending();
 extern void handle_signal();
-extern void* sigreturn_stack_create(struct trap_frame*);
-extern void sigreturn_stack_destroy(struct trap_frame*);
+extern void sigreturn_frame_save();
+extern void sigreturn_frame_restore();
 extern void sys_sigreturn();
 extern void sys_signal(int, sig_handler);
 extern int sys_sigkill(uint64_t, int);
+extern void sig_default();
+extern void sig_terminate();
+
 
 #endif

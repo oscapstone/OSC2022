@@ -2,6 +2,7 @@
 #define _SCHED_H_
 #include "lib/list.h"
 #include "kernel/irq_handler.h"
+#include "kernel/signal.h"
 
 typedef uint64_t pid_t;
 
@@ -107,6 +108,10 @@ struct task_struct{
 
     // schedule info
     struct sched_info sched_info;
+
+    // signal
+    struct sigpending sigpending;
+    struct sighand_struct sighandler;
 
     // relationship
     struct task_struct* parent;

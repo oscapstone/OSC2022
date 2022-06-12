@@ -114,6 +114,7 @@ el0_irq_handler:
 el1_irq_handler:
     save_all
     bl irq_handler
+    bl schedule
     load_all
     eret
 
@@ -161,3 +162,11 @@ switch_to:
 get_current:
     mrs x0, tpidr_el1
     ret
+
+.global sigreturn_trampoline
+sigreturn_trampoline:
+   mov x8, 10
+   svc 0
+
+sigreturn_error:
+   b sigreturn error
