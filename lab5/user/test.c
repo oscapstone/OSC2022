@@ -1,49 +1,30 @@
 #include "user_lib.h"
 #include "types.h"
+void sig_handler_9(){
+    printf("hello world signal 9\r\n");
+}
+
+void sig_handler_31(){
+    printf("hello world signal 31!\r\n");
+}
 
 
-int __start(void){
+
+void main(void){
     int cnt = 1;
     int ret = 0;
-    long long cur_sp;
-    asm volatile("mov %0, sp" : "=r"(cur_sp));
-    printf("Fork test pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-    //debug_info();
-    if ((ret = fork()) == 0) { // child
-                               //debug_info();
-        asm volatile("mov %0, sp" : "=r"(cur_sp));
-        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-        ++cnt;
-
-        if ((ret = fork()) != 0){
-            //debug_info();
-            while(1){
-                asm volatile("mov %0, sp" : "=r"(cur_sp));
-                printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-                delay(1000000);
-            }
+    uint64_t parent_pid = getpid();
+    signal(9, sig_handler_9);
+    signal(31, sig_handler_31);
+    if ((ret = fork()) == 0) { 
+        printf("child pid: %d\r\n", getpid());
+        for(int32_t i = 0 ; i < 60 ; i++){
+            kill(parent_pid, i);
         }
-        else{
-            //debug_info();
-            while (cnt < 5) {
-                asm volatile("mov %0, sp" : "=r"(cur_sp));
-                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-                delay(1000000);
-                ++cnt;
-            }
-            while(1){
-                asm volatile("mov %0, sp" : "=r"(cur_sp));
-                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-                delay(1000000);
-            }
-        }
-    }
-    else {
-        //debug_info();
-        while(1){
-            asm volatile("mov %0, sp" : "=r"(cur_sp));
-            printf("parent here, pid: %d, cnt: %d, ptr: %x, sp : %x\r\n", getpid(), cnt, &cnt, cur_sp);
-            delay(1000000);
+    }else {
+        printf("Parent pid: %d\r\n", getpid());
+        for(int32_t i = 0 ; i < 60 ; i++){
+            kill(ret, i);
         }
     }
     while(1);

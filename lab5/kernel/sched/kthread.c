@@ -75,6 +75,10 @@ uint64_t kthread_create(kthread_func func){
     kthread->sched_info.priority = 1;
     kthread->sched_info.counter = kthread->sched_info.priority;
     list_add_tail(&kthread->list, &task_list);
+
+    // initialzie singal
+    sigpending_init(&kthread->sigpending);
+    default_sighand_init(&kthread->sighandler);
     
     LOG("kthread end");
     daif = local_irq_disable_save();

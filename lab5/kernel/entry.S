@@ -115,6 +115,7 @@ el1_irq_handler:
     save_all
     bl irq_handler
     bl schedule
+    bl handle_signal
     load_all
     eret
 
@@ -133,6 +134,7 @@ svc_handler:
     str x0, [sp]
 
 nothing:
+    bl handle_signal
     load_all 
     eret
 
@@ -169,4 +171,4 @@ sigreturn_trampoline:
    svc 0
 
 sigreturn_error:
-   b sigreturn error
+   b sigreturn_error

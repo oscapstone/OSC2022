@@ -67,7 +67,7 @@ extern int send_signal(uint64_t, int);
 extern int register_signal(int, sig_handler);
 extern void handle_sigreturn();
 extern void handle_signal();
-extern void sigreturn_frame_save();
+extern void sigreturn_frame_save(sig_handler);
 extern void sigreturn_frame_restore();
 extern void sys_sigreturn();
 extern void sys_signal(int, sig_handler);

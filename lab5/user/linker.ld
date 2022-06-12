@@ -1,4 +1,4 @@
-ENTRY(__start) 
+ENTRY(start) 
 
 SECTIONS
 {
@@ -6,7 +6,6 @@ SECTIONS
     __text_start = .;
     .text : 
     {
-		KEEP(*(.text.boot))
         *(.text)
     }
     

@@ -107,6 +107,7 @@ uint64_t task_dup(struct task_struct* parent){
 
     // initialzie singal
     sigpending_init(&child->sigpending);
+    memcpy(&child->sighandler, &parent->sighandler, sizeof(struct sighand_struct));
     
     // insert task to run queue and task list
     list_add_tail(&child->list, &task_list);

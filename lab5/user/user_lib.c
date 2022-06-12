@@ -47,6 +47,26 @@ void debug_info(void){
     );
 }
 
+void signal(uint64_t pid, sig_handler handler){
+    asm volatile("mov x0, %[pid]\n\t"
+                 "mov x1, %[handler]\n\t"
+                 "mov x8, 8\n\t"
+                 "svc 0\n\t"
+                 :
+                 :[pid] "r" (pid), [handler] "r" (handler)
+    );
+}
+
+void kill(uint64_t pid, int signal){
+    asm volatile("mov x0, %[pid]\n\t"
+                 "mov x1, %[signal]\n\t"
+                 "mov x8, 9\n\t"
+                 "svc 0\n\t"
+                 :
+                 :[pid] "r" (pid), [signal] "r" (signal)
+    );
+}
+
 void delay(uint64_t clock){
     for(uint64_t i = 0 ; i < clock ; i++) asm volatile("nop");
 }
