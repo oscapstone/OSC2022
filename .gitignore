@@ -1,3 +1,8 @@
 *.o
 *.img
 *.elf
+nand_*
+make_ioctl
+make_ssd
+ssd_fuse_dut
+ssd_fuse
