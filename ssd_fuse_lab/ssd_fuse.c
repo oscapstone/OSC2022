@@ -42,8 +42,9 @@ union pca_rule
 
 PCA_RULE curr_pca;
 static unsigned int get_next_pca();
+void GC();
 
-unsigned int* L2P,* P2L,* valid_count, free_block_number;
+unsigned int* L2P,* P2L,* valid_count, free_block_number,* pca_status;
 /*
   L2P: logic page number to physical page number
   P2L: physical page number to logic page number
@@ -173,6 +174,10 @@ static unsigned int get_next_pca()
     if(curr_pca.fields.lba == 9)  // current physical block is full
     {
         int temp = get_next_block();
+        if (free_block_number == 1) {
+            GC();
+            return curr_pca.pca;
+        }
         if (temp == OUT_OF_BLOCK)
         {
             return OUT_OF_BLOCK;
@@ -202,15 +207,20 @@ static int ftl_read( char* buf, size_t lba)
 
 static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
 {   
-    unsigned int new_pca = get_next_pca();
-    // GC
-    if (new_pca == OUT_OF_BLOCK) {
-        nand_erase((curr_pca.fields.nand + 1) % PHYSICAL_NAND_NUM);
-        new_pca = get_next_pca();
+    unsigned int pca = get_next_pca();
+    nand_write(buf, pca);
+    if (L2P[lba] != INVALID_PCA) {
+        PCA_RULE old_pca;
+        old_pca.pca = L2P[lba];
+        unsigned int old_pca_idx = old_pca.fields.nand * PAGE_PER_BLOCK + old_pca.fields.lba;
+        pca_status[old_pca_idx] = STALE_PCA;
     }
-    nand_write(buf, new_pca);
-    printf("%d\n", new_pca);
-    L2P[lba] = new_pca;
+    PCA_RULE new_pca;
+    new_pca.pca = pca;
+    unsigned int new_pca_idx = new_pca.fields.nand * PAGE_PER_BLOCK + new_pca.fields.lba;
+    P2L[new_pca_idx] = lba;
+    L2P[lba] = pca;
+    pca_status[new_pca_idx] = VALID_PCA;
 }
 
 
@@ -409,6 +419,36 @@ static int ssd_ioctl(const char* path, unsigned int cmd, void* arg,
     }
     return -EINVAL;
 }
+
+void GC() {
+    printf("-----------------------------------------\n");
+    unsigned int min_valid_count = PAGE_PER_BLOCK, victim = 0;
+    for (int i = PHYSICAL_NAND_NUM - 1; i >= 0; --i) {
+        if (valid_count[i] < min_valid_count) {
+            min_valid_count = valid_count[i];
+            victim = i;
+        }
+    }
+    if (valid_count[victim] != 0) {
+        for (int j = victim; j < victim + PAGE_PER_BLOCK; ++j) {
+            if (pca_status[j] == VALID_PCA) {
+                char *buffer[512];
+                ftl_read(buffer, P2L[j]);
+                nand_write(buffer, curr_pca.pca);
+                L2P[P2L[j]] = curr_pca.pca;
+                P2L[curr_pca.fields.nand * PAGE_PER_BLOCK + curr_pca.fields.lba] = P2L[j];
+                P2L[j] = INVALID_LBA;
+                pca_status[j] = STALE_PCA;
+                pca_status[curr_pca.fields.nand * PAGE_PER_BLOCK + curr_pca.fields.lba] = VALID_PCA;
+                valid_count[curr_pca.fields.nand] += 1;
+                curr_pca.fields.lba += 1;
+            }
+        }
+    }
+    valid_count[victim] = 0;
+    nand_erase(victim);
+}
+
 static const struct fuse_operations ssd_oper =
 {
     .getattr        = ssd_getattr,
@@ -434,6 +474,8 @@ int main(int argc, char* argv[])
     memset(P2L, INVALID_LBA, sizeof(int) * PHYSICAL_NAND_NUM * PAGE_PER_BLOCK);
     valid_count = malloc(PHYSICAL_NAND_NUM * sizeof(int));
     memset(valid_count, FREE_BLOCK, sizeof(int) * PHYSICAL_NAND_NUM);
+    pca_status = malloc(PHYSICAL_NAND_NUM * PAGE_PER_BLOCK * sizeof(int));
+    memset(pca_status, INVALID_PCA, sizeof(int) * PHYSICAL_NAND_NUM * PAGE_PER_BLOCK);
 
     //create nand file
     for (idx = 0; idx < PHYSICAL_NAND_NUM; idx++)

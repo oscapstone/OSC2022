@@ -12,6 +12,8 @@
 #define LOGICAL_NAND_NUM (10)
 #define NAND_SIZE_KB (50)  // LOGICAL_NAND_NUM * PAGE_PER_BLOCK * 512(page size)
 #define INVALID_PCA     (0xFFFFFFFF)
+#define VALID_PCA     (0xFFFFFFF0)
+#define STALE_PCA     (0xFFFFFF00)
 #define INVALID_LBA     (0xFFFFFFFF)
 #define FREE_BLOCK     (0xFFFFFFFF)
 #define OUT_OF_BLOCK     (0xFFFF)

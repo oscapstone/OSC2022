@@ -4,6 +4,5 @@ gcc -Wall ssd_fuse.c `pkg-config fuse3 --cflags --libs` -D_FILE_OFFSET_BITS=64 -
 gcc -Wall ssd_fuse_dut.c -o ssd_fuse_dut
 mkdir /tmp/ssd
 ./ssd_fuse -d /tmp/ssd
- 
 make: Leaving directory '/home/littlelagi/OSC2022/ssd_fuse_lab'
  
