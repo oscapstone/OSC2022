@@ -43,8 +43,12 @@ LIB_ASM_FILES += $(shell find "$(SRC_DIR)/$(LIB_DIR)" -name "*.S")
 LIB_OBJ_FILES  = $(patsubst $(SRC_DIR)/$(LIB_DIR)/%.c,$(BUILD_DIR)/$(LIB_DIR)/%_c.o,$(LIB_C_FILES))
 LIB_OBJ_FILES += $(patsubst $(SRC_DIR)/$(LIB_DIR)/%.S,$(BUILD_DIR)/$(LIB_DIR)/%_s.o,$(LIB_ASM_FILES))
 
-ifdef DEBUG
-   CFLAGS += -g -DDEBUG
+ifdef MM_DEBUG
+	CFLAGS += -g -DMM_DEBUG
+endif
+
+ifdef DEMANDING_PAGE_DEBUG
+	CFLAGS += -g -DDEMANDING_PAGE_DEBUG
 endif
 
 all: $(KERNEL_IMG) $(BOOTLOADER_IMG)
@@ -89,7 +93,7 @@ $(INITRAMFS_CPIO): $(INITRAMFS_FILES)
 	cd initramfs; find . | cpio -o -H newc > ../$(INITRAMFS_CPIO)
 
 qemu: all $(INITRAMFS_CPIO) $(RPI3_DTB)
-	qemu-system-aarch64 -M raspi3 -kernel $(BOOTLOADER_IMG) -display none \
+	qemu-system-aarch64 -M raspi3 -kernel $(BOOTLOADER_IMG) \
 						-initrd $(INITRAMFS_CPIO) \
 						-dtb $(RPI3_DTB) \
 						-chardev pty,id=pty0,logfile=pty.log,signal=off \

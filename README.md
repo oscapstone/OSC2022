@@ -20,7 +20,11 @@ make
 
 * Build kernel8.img with some debug information:
 ```
-make DEBUG=1
+# Options:
+#   MM_DEBUG
+#   DEMANDING_PAGE_DEBUG
+make MM_DEBUG=1
+make DEMANDING_PAGE_DEBUG=1
 ```
 
 * Build myos.img (which you can dd to SD card):
@@ -33,6 +37,18 @@ make image
 * Qemu emulation:
 ```
 make qemu
+```
+
+* You should either attach gdb to qemu, or just remove the arugments `-s -S` passed to qemu in the Makefile
+
+* Qemu will emulate the bootloader and you can then attach to the bootloader shell with:
+```
+sudo screen /dev/pts/<pts_idx>
+```
+
+* In the bootloader shell, you can use the command `load` to ask the bootloader to load the kernel image. After entering the `load` command, you can send the kernel image to the bootloader with the following command:
+```
+sudo ./tools/loadkernel.py /dev/pts/<pts_id> build/kernel8.img
 ```
 
 ## How to burn it into pi3

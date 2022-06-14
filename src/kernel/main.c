@@ -9,6 +9,10 @@
 #include <timer.h>
 #include <irq.h>
 #include <mm/mm.h>
+#include <sched.h>
+#include <kthread.h>
+#include <current.h>
+#include <fs/fsinit.h>
 
 #define BUFSIZE 0x100
 
@@ -24,6 +28,15 @@ static void timeout_print(char *str)
     uart_printf("%s\r\n", str);
 
     kfree(str);
+}
+
+static void foo(void)
+{
+    for (int i = 0; i < 10; ++i) {
+        uart_sync_printf("Thread id: %d %d\r\n", current->tid, i);
+        delay(1000000);
+        schedule();
+    }
 }
 
 static void cmd_alloc(char *ssize)
@@ -76,19 +89,18 @@ static void cmd_help(void)
 {
     uart_printf(
                 "alloc <size>\t: "   "test allocator" "\r\n"
-                "cat <filename>\t: " "get file content"  "\r\n"
                 "exec <filename>\t: " "execute file"  "\r\n"
                 "free <idx>\t: " "test allocator"  "\r\n"
                 "help\t: "   "print this help menu" "\r\n"
                 "hello\t: "  "print Hello World!"   "\r\n"
                 "hwinfo\t: " "print hardware info"  "\r\n"
-                "ls\t: " "list files in initramfs"  "\r\n"
                 "parsedtb\t: " "parse devicetree blob (dtb)"  "\r\n"
                 "reboot\t: " "reboot the device"    "\r\n"
                 "setTimeout <msg> <sec>\t: " 
                     "print @msg after @sec seconds" "\r\n"
                 "sw_timer\t: " "turn on/off timer debug info" "\r\n"
                 "sw_uart_mode\t: " "use sync/async UART" "\r\n"
+                "thread_test\t: " "test kthread" "\r\n"
             );
 }
 
@@ -132,7 +144,7 @@ static void cmd_setTimeout(char *msg, char *ssec)
     memncpy(m, msg, len);
 
     uart_printf("[*] time: %d\r\n", atoi(ssec));
-    timer_add_proc((void (*)(void *))timeout_print, m, atoi(ssec));
+    timer_add_proc_after((void (*)(void *))timeout_print, m, atoi(ssec));
 }
 
 static void cmd_sw_timer(void)
@@ -151,42 +163,22 @@ static void cmd_sw_uart_mode(void)
     }
 }
 
-static void cmd_ls(void)
-{
-    cpio_ls(initramfs_base);
-}
-
-static void cmd_cat(char *filename)
-{
-    cpio_cat(initramfs_base, filename);
-}
-
 static void cmd_exec(char *filename)
 {
-    char *mem;
-    char *user_sp;
-
-    mem = cpio_load_prog(initramfs_base, filename);
-
-    if (mem == NULL) {
-        return;
-    }
-
-    user_sp = kmalloc(PAGE_SIZE);
-
-    if (user_sp == NULL) {
-        kfree(mem);
-        return;
-    }
-
-    exec_user_prog(mem, user_sp);
-
-    // TODO: Free user_sp and mem
+    // TODO: Add argv & envp
+    sched_new_user_prog(filename);
 }
 
 static void cmd_parsedtb(void)
 {
     fdt_traversal(fdt_base);
+}
+
+static void cmd_thread_test(void)
+{
+    for (int i = 0; i < 3; ++i) {
+        kthread_create(foo);
+    }
 }
 
 static int shell_read_cmd(void)
@@ -257,14 +249,10 @@ static void shell(void)
             cmd_sw_timer();
         } else if (!strcmp("sw_uart_mode", shell_buf)) {
             cmd_sw_uart_mode();
-        } else if (!strcmp("ls", shell_buf)) {
-            cmd_ls();
         } else if (!strcmp("parsedtb", shell_buf)) {
             cmd_parsedtb();
-        } else if (!strncmp("cat", shell_buf, 3)) {
-            if (cmd_len >= 5) {
-                cmd_cat(&shell_buf[4]);
-            }
+        } else if (!strcmp("thread_test", shell_buf)) {
+            cmd_thread_test();
         } else if (!strncmp("exec", shell_buf, 4)) {
             if (cmd_len >= 6) {
                 cmd_exec(&shell_buf[5]);
@@ -276,26 +264,43 @@ static void shell(void)
     }
 }
 
+static void idle(void)
+{
+    while (1) {
+        kthread_kill_zombies();
+        schedule();
+    }
+}
+
 void start_kernel(char *fdt)
 {
     fdt_base = fdt;
 
     irq_init();
-
     uart_init();
-    uart_printf("[*] fdt base: %x\r\n", fdt_base);
-    uart_printf("[*] Kernel\r\n");
-    
     initramfs_init();
-
     mm_init();
-
     timer_init();
+    task_init();
+    scheduler_init();
+    kthread_early_init();
+    fs_init();
+    kthread_init();
+
+    uart_printf("[*] fdt base: %x\r\n", fdt_base);
+    uart_printf("[*] Kernel start!\r\n");
+
+    // TODO: Remove shell?
+    // kthread_create(shell);
+
+    // TODO: Add argv & envp
+    // First user program
+    sched_new_user_prog("/initramfs/vfs1.img");
 
     // Enable interrupt from Auxiliary peripherals
     irq1_enable(29);
 
     enable_interrupt();
 
-    shell();
+    idle();
 }
