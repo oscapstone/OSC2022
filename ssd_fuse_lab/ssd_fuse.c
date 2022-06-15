@@ -45,6 +45,34 @@ static unsigned int get_next_pca();
 
 unsigned int* L2P,* P2L,* valid_count, free_block_number;
 
+void list_validcount(){
+    for(int i=0;i<PHYSICAL_NAND_NUM;i++){
+        printf("VAL%d:%d\n",i,valid_count[i]);
+    }
+}
+void list_page(){
+    for (int i = 0; i < PHYSICAL_NAND_NUM; i++)
+    {
+        printf("%d: ",i);
+        for (int j = 0; j < PAGE_PER_BLOCK; j++)
+        {
+            size_t pca_idx = 10*i+j;
+            if(P2L[pca_idx]!=INVALID_LBA){
+                printf("O");
+            }
+            else{
+                printf("X");
+            }
+        } 
+        printf("\n");
+    }
+    
+}
+int gcable(){
+    
+    int cur_valc = valid_count[curr_pca.fields.nand];
+    
+}
 static int ssd_resize(size_t new_size)
 {
     //set logic size to new_size
@@ -189,84 +217,6 @@ static unsigned int get_next_pca()
     return curr_pca.pca;
 
 }
-void garbage_collect()
-{
-    // printf("----------------------GARBAGE-----------------------\n");
-    
-    int vc_idx[PHYSICAL_NAND_NUM];
-    int vc[PHYSICAL_NAND_NUM];
-    int i;
-    for (i = 0; i < PHYSICAL_NAND_NUM; i++) {
-        vc[i]=valid_count[i];
-        vc_idx[i]=i;
-    }
-    for (i = 0; i < PHYSICAL_NAND_NUM; i++)
-    {
-        int min = __INT_MAX__;
-        int min_i = -1;
-        for (int j = i; j < PHYSICAL_NAND_NUM; j++)
-            if(vc[j]<min){
-                min = vc[j];
-                min_i = j;
-            }
-        int tmp;
-        tmp = vc[i];
-        vc[i] = vc[min_i];
-        vc[min_i] = tmp;
-        tmp = vc_idx[i];
-        vc_idx[i]=vc_idx[min_i];
-        vc_idx[min_i]=tmp;
-    }
-    // for (i = 0; i < PHYSICAL_NAND_NUM; i++) printf("%d\n",vc[i]);
-    for (i = 0; i < PHYSICAL_NAND_NUM; i++)if(vc[i]!=-1) break;
-
-    if(i==PHYSICAL_NAND_NUM-1) return;
-    if(vc[i]==-1 || vc[i+1]==-1||vc[i]+vc[i+1]>PAGE_PER_BLOCK) return;
-    printf("--------------------DO GC----------------------\n");
-    int total=0;
-    
-    unsigned int fb = get_next_block();
-    char* buf = malloc(PAGE_PER_BLOCK*512);
-    memset(buf,INVALID_PCA,PAGE_PER_BLOCK*512);
-    for ( i = 0; i < PHYSICAL_NAND_NUM; i++)
-    {   
-        int b_idx = vc_idx[i];
-        for(int pca=65536*b_idx;pca<65536*b_idx+PAGE_PER_BLOCK;pca++){
-            if(total+512>512*PAGE_PER_BLOCK){
-                goto afterCopy;
-            }
-            int lba = P2L[pca/65536 + pca%65536];
-            
-            total+=512;
-        }
-    }
-    afterCopy:
-        printf("DONE\n");
-    
-    
-    // int total=vc[0];
-    // char* buf = malloc(PAGE_PER_BLOCK*512);
-    // memset(buf,INVALID_PCA,PAGE_PER_BLOCK*512);
-    // for (int i = 0; i < PAGE_PER_BLOCK; i++)
-    // {
-    //     int pca = vc_idx[0]*65536+i;
-    //     int lba = P2L[vc_idx[0]*10+i];
-    //     if(lba==INVALID_LBA) continue;
-    //     ssd_do_read(buf+512*i,512,lba*512);
-    // }
-    
-    // for (int i = 1; i < PHYSICAL_NAND_NUM; i++)
-    // {
-    //     int min_i = vc_idx[i];
-    //     if(total+)
-    // }
-    
-    
-    // printf("----------------------END-----------------------\n");
-    
-}
-
-
 
 static int ftl_read( char* buf, size_t lba)
 {
@@ -312,22 +262,125 @@ static int ssd_do_read(char* buf, size_t size, off_t offset)
     free(tmp_buf);
     return size;
 }
+void garbage_collect()
+{
+    // printf("----------------------GARBAGE-----------------------\n");
+    // list_validcount();
+    int vc_idx[PHYSICAL_NAND_NUM];
+    int vc[PHYSICAL_NAND_NUM];
+    int i;
+    for (i = 0; i < PHYSICAL_NAND_NUM; i++) {
+        vc[i]=valid_count[i];
+        vc_idx[i]=i;
+    }
+    for (i = 0; i < PHYSICAL_NAND_NUM; i++)
+    {
+        int min = __INT_MAX__;
+        int min_i = -1;
+        for (int j = i; j < PHYSICAL_NAND_NUM; j++)
+            if(vc[j]<min){
+                min = vc[j];
+                min_i = j;
+            }
+        int tmp;
+        tmp = vc[i];
+        vc[i] = vc[min_i];
+        vc[min_i] = tmp;
+        tmp = vc_idx[i];
+        vc_idx[i]=vc_idx[min_i];
+        vc_idx[min_i]=tmp;
+    }
+   
+    for (i = 0; i < PHYSICAL_NAND_NUM; i++)if(vc[i]!=-1){
+         break;
+    }
+
+    if(i==PHYSICAL_NAND_NUM-1) {
+        printf("All block empty\n");
+        return;
+    }
+    if(vc[i]==-1 || vc[i+1]==-1||vc[i]+vc[i+1]>PAGE_PER_BLOCK) {
+        printf("%d,%d, not two mergeable block\n",vc[i],vc[i+1]);
+        return;
+    }
+    printf("--------------------DO GC----------------------\n");
+    // list_validcount();
+    for (int j = 0; j < PHYSICAL_NAND_NUM; j++)
+    {
+        printf("VC[%d]:%d\n",vc_idx[j],vc[j]);
+    }
+    
+    // write buffer pages to new block
+    list_page();
+    unsigned int fb = get_next_block();
+    char* buf = malloc(PAGE_PER_BLOCK*512);
+    size_t buf_offset = 0;
+    memset(buf,INVALID_PCA,PAGE_PER_BLOCK*512);
+    for (; i < PHYSICAL_NAND_NUM; i++)
+    {   
+        int b_idx = vc_idx[i];
+        for(size_t pca=65536*b_idx;pca<65536*b_idx+PAGE_PER_BLOCK;pca++){
+            if(buf_offset+512>512*PAGE_PER_BLOCK){
+                goto afterCopy;
+            }
+            size_t pca_idx = 10*(pca/65536) + pca%65536;
+            size_t lba = P2L[pca_idx];
+            if(lba!=INVALID_LBA){
+                
+                // int lba_idx = lba/512;
+                size_t new_pca = fb+buf_offset/512;
+                int new_pca_idx = 10*(fb/65536)+buf_offset/512;
+                ssd_do_read((char*)(buf+buf_offset),512,lba*512);
+                P2L[pca_idx] = INVALID_LBA;
+                nand_write(buf+buf_offset,fb+buf_offset/512);
+                curr_pca.pca = fb+buf_offset/512;
+                L2P[lba] = new_pca;
+                P2L[new_pca_idx]=lba;
+                printf("Block %d move page%d to %d,oldpcaid:%d,newpca:%d\n",b_idx,pca_idx%10,fb/65536,pca_idx,fb+buf_offset/512);
+                buf_offset+=512;
+                valid_count[b_idx]--;            
+            }
+        }
+    }
+    afterCopy:
+        // ssd_do_write(buf,512*PAGE_PER_BLOCK,)
+        free(buf);
+        
+        for (int i = 0; i < PHYSICAL_NAND_NUM; i++)
+        {
+            if(valid_count[i]==0){
+                nand_erase(i);
+                free_block_number++;
+            }
+        }
+        list_page();
+    // printf("----------------------END-----------------------\n");
+}
 static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
 {
     // TODO
     
     // union pca_rule* new_pca = malloc(sizeof(union pca_rule));
     unsigned int new_pca;
-    
-    if(L2P[lba/512]!=INVALID_PCA)
-        new_pca = L2P[lba/512];
-    else
-        new_pca = get_next_pca();
-    byte_count[new_pca/65536]+=strlen(buf);
+    if(free_block_number<=1){
+        // list_validcount();
+        garbage_collect();
+        printf("-----After gc, cur pca:%d------\n",curr_pca.pca);
+        list_validcount();
+    }
+    new_pca = get_next_pca();
+    printf("---Writing in block %d\n",new_pca/65536);
     unsigned int p2l_i = 10*(new_pca/65536)+new_pca%65536;
-    
+    // 65535: no next block, 0xFFFF
     nand_write(buf,new_pca);
-    L2P[lba/512] = new_pca;
+    if(L2P[lba]!=INVALID_PCA){
+        size_t old_pca = L2P[lba];
+        int old_pca_idx = 10*(old_pca/65536) + old_pca%65536;
+        P2L[old_pca_idx]=INVALID_LBA;
+        valid_count[old_pca_idx/10]--;
+        // printf("*** over write lba:%d,o_pca:%d,n_pca:%d in block%d\n",lba,old_pca_idx,p2l_i,old_pca_idx/10);
+    }
+    L2P[lba] = new_pca;
     P2L[p2l_i] = lba;
 }
 
@@ -391,7 +444,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
     int tmp_lba, tmp_lba_range, process_size;
     int idx, curr_size, remain_size, rst;
     char* tmp_buf;
-    // garbage_collect();
+    
     host_write_size += size;
     if (ssd_expand(offset + size) != 0)
     {
@@ -407,31 +460,32 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
     tmp_buf = malloc(512);
     for (idx = 0; idx < tmp_lba_range; idx++)
     {
-        if((idx==0) && (offset%512!=0)){
-            ssd_do_read(tmp_buf,offset%512,tmp_lba*512);
+        memset(tmp_buf,0,512);
+        if(L2P[tmp_lba+idx]!=INVALID_PCA){
+            // read modify write
+            ssd_do_read(tmp_buf,512,(tmp_lba+idx)*512);
             // remain_size+=offset%512;
-            process_size = (remain_size>512-offset%512)?512-offset%512:remain_size;
-            memcpy(tmp_buf+offset%512,buf,process_size);
-            tmp_buf[offset%512+process_size]='\0';
-            ftl_write(tmp_buf,tmp_lba_range,(tmp_lba+idx)*512);
+            if((idx==0)){
+                process_size = (remain_size>512-offset%512)?512-offset%512:remain_size;
+                memcpy(tmp_buf+offset%512,buf,process_size);
+            }
+            else{
+                process_size = (remain_size>512)?512:remain_size;
+                memcpy(tmp_buf,(char*)(buf+curr_size),process_size);
+            }
+            // printf("%d %d %d\n",offset%512,process_size,remain_size);
+            // tmp_buf[process_size]='\0';
+            ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
             curr_size+=process_size;
             remain_size -= process_size;
+            // printf("-----------------------READ MODIFY WRITE\n");
+            // list_validcount();
         }
-        // else if(idx==tmp_lba_range-1){
-        //     ssd_do_read(tmp_buf,offset%512,tmp_lba*512);
-        //     // remain_size+=offset%512;
-        //     process_size = (remain_size>512-offset%512)?512-offset%512:remain_size;
-        //     memcpy(tmp_buf,buf+512*idx,process_size);
-        //     tmp_buf[offset%512+process_size]='\0';
-        //     ftl_write(tmp_buf,tmp_lba_range,(tmp_lba+idx)*512);
-        //     curr_size+=process_size;
-        //     remain_size -= process_size;
-        // }
         else{
             process_size = (remain_size>512)?512:remain_size;
             memcpy(tmp_buf,(char*)(buf+curr_size),process_size);
-            tmp_buf[process_size]='\0';
-            ftl_write(tmp_buf,tmp_lba_range,(tmp_lba+idx)*512);
+            // tmp_buf[process_size]='\0';
+            ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
             curr_size+=process_size;
             remain_size -= process_size;
         }
@@ -544,7 +598,6 @@ int main(int argc, char* argv[])
             printf("open fail");
         }
         fclose(fptr);
-        byte_count[idx]=0;
     }
     return fuse_main(argc, argv, &ssd_oper, NULL);
 }
