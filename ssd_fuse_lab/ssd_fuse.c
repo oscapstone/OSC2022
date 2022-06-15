@@ -225,9 +225,7 @@ static int ftl_read( char* buf, size_t lba)
     // 
     
     unsigned int pca = L2P[lba/512];
-    // printf("read at lba:%ld, pca: %d\n",lba,pca);
     nand_read(buf,pca);
-    // printf("%d\n",lba);
 }
 static int ssd_do_read(char* buf, size_t size, off_t offset)
 {
@@ -296,22 +294,21 @@ void garbage_collect()
     }
 
     if(i==PHYSICAL_NAND_NUM-1) {
-        printf("All block empty\n");
+        // printf("All block empty\n");
         return;
     }
     if(vc[i]==-1 || vc[i+1]==-1||vc[i]+vc[i+1]>PAGE_PER_BLOCK) {
-        printf("%d,%d, not two mergeable block\n",vc[i],vc[i+1]);
+        // printf("%d,%d, not two mergeable block\n",vc[i],vc[i+1]);
         return;
     }
-    printf("--------------------DO GC----------------------\n");
-    // list_validcount();
-    for (int j = 0; j < PHYSICAL_NAND_NUM; j++)
-    {
-        printf("VC[%d]:%d\n",vc_idx[j],vc[j]);
-    }
+    // printf("--------------------DO GC----------------------\n");
+    // for (int j = 0; j < PHYSICAL_NAND_NUM; j++)
+    // {
+    //     printf("VC[%d]:%d\n",vc_idx[j],vc[j]);
+    // }
     
     // write buffer pages to new block
-    list_page();
+    // list_page();
     unsigned int fb = get_next_block();
     char* buf = malloc(PAGE_PER_BLOCK*512);
     size_t buf_offset = 0;
@@ -336,7 +333,7 @@ void garbage_collect()
                 curr_pca.pca = fb+buf_offset/512;
                 L2P[lba] = new_pca;
                 P2L[new_pca_idx]=lba;
-                printf("Block %d move page%d to %d,oldpcaid:%d,newpca:%d\n",b_idx,pca_idx%10,fb/65536,pca_idx,fb+buf_offset/512);
+                // printf("Block %d move page%d to %d,oldpcaid:%d,newpca:%d\n",b_idx,pca_idx%10,fb/65536,pca_idx,fb+buf_offset/512);
                 buf_offset+=512;
                 valid_count[b_idx]--;            
             }
@@ -353,7 +350,7 @@ void garbage_collect()
                 free_block_number++;
             }
         }
-        list_page();
+        // list_page();
     // printf("----------------------END-----------------------\n");
 }
 static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
@@ -361,18 +358,20 @@ static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
     // TODO
     
     // union pca_rule* new_pca = malloc(sizeof(union pca_rule));
-    unsigned int new_pca;
+    
     if(free_block_number<=1){
         // list_validcount();
         garbage_collect();
-        printf("-----After gc, cur pca:%d------\n",curr_pca.pca);
-        list_validcount();
+        // printf("-----After gc, cur pca:%d------\n",curr_pca.pca);
+        // list_validcount();
     }
+    unsigned int new_pca;
     new_pca = get_next_pca();
-    printf("---Writing in block %d\n",new_pca/65536);
+    // printf("---Writing in block %d\n",new_pca/65536);
     unsigned int p2l_i = 10*(new_pca/65536)+new_pca%65536;
     // 65535: no next block, 0xFFFF
     nand_write(buf,new_pca);
+
     if(L2P[lba]!=INVALID_PCA){
         size_t old_pca = L2P[lba];
         int old_pca_idx = 10*(old_pca/65536) + old_pca%65536;
@@ -380,6 +379,7 @@ static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
         valid_count[old_pca_idx/10]--;
         // printf("*** over write lba:%d,o_pca:%d,n_pca:%d in block%d\n",lba,old_pca_idx,p2l_i,old_pca_idx/10);
     }
+
     L2P[lba] = new_pca;
     P2L[p2l_i] = lba;
 }
