@@ -461,28 +461,25 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
         memset(tmp_buf,0,512);
         if(L2P[tmp_lba+idx]!=INVALID_PCA){
             // read modify write
-            ssd_do_read(tmp_buf,512,(tmp_lba+idx)*512);
-            // remain_size+=offset%512;
-            if((idx==0)){
+            int ret=ssd_do_read(tmp_buf,512,(tmp_lba+idx)*512);
+            if((idx==0)&&offset%512!=0){
                 process_size = (remain_size>512-offset%512)?512-offset%512:remain_size;
-                memcpy(tmp_buf+offset%512,buf,process_size);
+                memcpy(tmp_buf+offset%512,buf,process_size); //??
+                
             }
             else{
                 process_size = (remain_size>512)?512:remain_size;
                 memcpy(tmp_buf,(char*)(buf+curr_size),process_size);
             }
-            // printf("%d %d %d\n",offset%512,process_size,remain_size);
-            ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
-            curr_size+=process_size;
-            remain_size -= process_size;
         }
         else{
             process_size = (remain_size>512)?512:remain_size;
-            memcpy(tmp_buf,(char*)(buf+curr_size),process_size);
-            ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
-            curr_size+=process_size;
-            remain_size -= process_size;
+            memcpy(tmp_buf,(char*)(buf+curr_size),process_size); 
         }
+        ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
+        // printf("*********[%d]offset:%d,process:%d,cur:%d->%d,remain:%d->%d\n",idx,offset,process_size,curr_size,curr_size+process_size,remain_size,remain_size-process_size);
+        curr_size+=process_size;
+        remain_size -= process_size;
     }
     free(tmp_buf);
     return size;
