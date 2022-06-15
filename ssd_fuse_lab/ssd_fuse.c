@@ -357,31 +357,29 @@ static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
 {
     // TODO
     
-    // union pca_rule* new_pca = malloc(sizeof(union pca_rule));
-    
     if(free_block_number<=1){
-        // list_validcount();
         garbage_collect();
         // printf("-----After gc, cur pca:%d------\n",curr_pca.pca);
         // list_validcount();
     }
-    unsigned int new_pca;
-    new_pca = get_next_pca();
-    // printf("---Writing in block %d\n",new_pca/65536);
-    unsigned int p2l_i = 10*(new_pca/65536)+new_pca%65536;
-    // 65535: no next block, 0xFFFF
-    nand_write(buf,new_pca);
 
+    size_t pca;
+    unsigned int pca_idx;
     if(L2P[lba]!=INVALID_PCA){
-        size_t old_pca = L2P[lba];
-        int old_pca_idx = 10*(old_pca/65536) + old_pca%65536;
-        P2L[old_pca_idx]=INVALID_LBA;
-        valid_count[old_pca_idx/10]--;
-        // printf("*** over write lba:%d,o_pca:%d,n_pca:%d in block%d\n",lba,old_pca_idx,p2l_i,old_pca_idx/10);
+        pca = L2P[lba];
+        pca_idx = 10*(pca/65536) + pca%65536; // ex. 65537-> 11
+        P2L[pca_idx]=INVALID_LBA; // mark the phy page as invalid
+        valid_count[pca_idx/10]--; //valid count of that block
     }
+    pca = get_next_pca();
+    if(pca==OUT_OF_BLOCK) return pca;
+    // printf("---Writing in block %d\n",new_pca/65536);
+    pca_idx = 10*(pca/65536)+pca%65536;
+    //open file failed
+    if(nand_write(buf,pca)==-EINVAL) return -EINVAL;
 
-    L2P[lba] = new_pca;
-    P2L[p2l_i] = lba;
+    L2P[lba] = pca; // manage l2p table
+    P2L[pca_idx] = lba; // manage p2l table
 }
 
 static int ssd_file_type(const char* path)
@@ -474,22 +472,19 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
                 memcpy(tmp_buf,(char*)(buf+curr_size),process_size);
             }
             // printf("%d %d %d\n",offset%512,process_size,remain_size);
-            // tmp_buf[process_size]='\0';
             ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
             curr_size+=process_size;
             remain_size -= process_size;
-            // printf("-----------------------READ MODIFY WRITE\n");
-            // list_validcount();
         }
         else{
             process_size = (remain_size>512)?512:remain_size;
             memcpy(tmp_buf,(char*)(buf+curr_size),process_size);
-            // tmp_buf[process_size]='\0';
             ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
             curr_size+=process_size;
             remain_size -= process_size;
         }
     }
+    free(tmp_buf);
     return size;
 }
 static int ssd_write(const char* path, const char* buf, size_t size,
