@@ -174,7 +174,7 @@ static unsigned int get_next_pca()
     if(curr_pca.fields.lba == 9)  // current physical block is full
     {
         int temp = get_next_block();
-        if (free_block_number == 1) {
+        if (free_block_number == 0) {
             GC();
             return curr_pca.pca;
         }
@@ -421,12 +421,12 @@ static int ssd_ioctl(const char* path, unsigned int cmd, void* arg,
 }
 
 void GC() {
-    printf("-----------------------------------------\n");
     unsigned int min_valid_count = PAGE_PER_BLOCK, victim = 0;
-    for (int i = PHYSICAL_NAND_NUM - 1; i >= 0; --i) {
-        if (valid_count[i] < min_valid_count) {
-            min_valid_count = valid_count[i];
-            victim = i;
+    for (int i = 1; i < PHYSICAL_NAND_NUM; ++i) {
+        int idx = (curr_pca.fields.nand + i) % PHYSICAL_NAND_NUM;
+        if (valid_count[idx] < min_valid_count) {
+            min_valid_count = valid_count[idx];
+            victim = idx;
         }
     }
     if (valid_count[victim] != 0) {
