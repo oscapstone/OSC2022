@@ -44,9 +44,15 @@ vm_enable:
     ldr     x1, =_dtb
     ldr     x0, [x1]
 
+// set tpidr_el1 to NULL to avoid timer interrupt accidently update current task_strcut
+    mov x1, 0
+    msr tpidr_el1, x1
+
+
 // jump to kernel_main
     bl      kernel_main
     b       proc_hang
+
 from_el2_to_el1:
     ldr x0, =__EL1_stack // Set el1 stack to __EL1_stack
     msr sp_el1, x0
