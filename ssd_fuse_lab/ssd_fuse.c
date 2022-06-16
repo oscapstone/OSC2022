@@ -260,6 +260,11 @@ static int ssd_do_read(char* buf, size_t size, off_t offset)
     free(tmp_buf);
     return size;
 }
+int isBlockFull(int bid){
+    if(curr_pca.fields.nand!=bid && valid_count[bid]!=FREE_BLOCK) return 1;
+    else if(curr_pca.fields.nand==bid && curr_pca.fields.lba==9) return 1;
+    else return 0;
+}
 void garbage_collect()
 {
     // sort the valid count array with index array
@@ -290,10 +295,13 @@ void garbage_collect()
 
     // find the first i that valid count != -1(not empty)
     for (i = 0; i < PHYSICAL_NAND_NUM; i++)if(vc[i]!=-1) break;
-
     if(i==PHYSICAL_NAND_NUM-1) return;
     if(vc[i]==-1 || vc[i+1]==-1||vc[i]+vc[i+1]>PAGE_PER_BLOCK) return;
     if(vc_idx[i]==curr_pca.fields.nand && vc[i]+vc[i+1]<PAGE_PER_BLOCK) return;
+ 
+    // if(!isBlockFull(curr_pca.fields.nand)) return;
+    // if(vc_idx[i]==curr_pca.fields.nand && vc[i]!=PAGE_PER_BLOCK) return;
+    
     // printf("--------------------DO GC----------------------\n");
     // for (int j = 0; j < PHYSICAL_NAND_NUM; j++)
     // {
