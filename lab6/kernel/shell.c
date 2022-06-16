@@ -147,7 +147,7 @@ void simple_shell(){
 			token = strtok(NULL, DELIM);
             if(token == NULL) continue;
             p = (void*)atoul(token);
-			page = pfn_to_page(addr_to_pfn(p));
+			page = pfn_to_page(virt_to_pfn(p));
 			
 			free_pages(p, get_page_order(page));
 			printf("Free pages\r\n");

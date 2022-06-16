@@ -39,7 +39,7 @@ struct slab* slab_create(size_t obj_size){
 
 void slab_destroy(struct slab* slab){
     size_t page_num; 
-    struct page* page = pfn_to_page(addr_to_pfn(slab));
+    struct page* page = virt_to_page(slab);
     volatile uint64_t daif;
     LOG("slab_destroy recycle order %u buddy %p", (void*)slab, get_page_order(page));
     // free pages
@@ -59,7 +59,7 @@ void *slab_alloc(struct slab* slab){
         list_del(slab->free_list.next);
         slab->inuse++; 
     }else{
-        page = pfn_to_page(addr_to_pfn(slab));
+        page = virt_to_page(slab);
         order = get_page_order(page); 
         max_size = (1 << order) * PAGE_SIZE;
         if(SLAB_SIZE + (slab->inuse + 1) * slab->size > max_size){
@@ -135,10 +135,10 @@ void* kmalloc(size_t size){
 
 void kfree(void* obj){
     volatile uint64_t daif = local_irq_disable_save();
-    uint64_t pfn = addr_to_pfn(ALIGN_DOWN(obj, PAGE_SIZE));
+    uint64_t pfn = virt_to_pfn(ALIGN_DOWN(obj, PAGE_SIZE));
     struct page* page = pfn_to_page(pfn);
     struct page* buddy_leader = get_buddy_leader(page);
-    struct slab* s = pfn_to_addr(page_to_pfn(buddy_leader));
+    struct slab* s = page_to_virt(buddy_leader);
 
     slab_free(s, obj);
     LOG("kfree(%p) free an object, s->inuse: %l", obj, s->inuse);
@@ -194,7 +194,7 @@ void debug_slab(){
     }
 
     slab_destroy(s);
-    uint64_t pfn = addr_to_pfn(s);
+    uint64_t pfn = virt_to_pfn(s);
     struct page* page = pfn_to_page(pfn);
 
     if(BUDDY_IS_FREED(page) && get_page_order(page) == BUDDY_MAX_ORDER - 1){

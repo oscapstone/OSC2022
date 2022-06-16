@@ -1,9 +1,10 @@
 #ifndef _IOMAPPING_H_
 #define _IOMAPPING_H_
 
+#include "mm/mmu.h"
 
 /* Physical addresses range from 0x3F000000 to 0x3FFFFFFF for peripherals */ 
-#define IO_BASE 0x3F000000
+#define IO_BASE (0x3F000000 + UPPER_ADDR_SPACE_BASE)
 
 /* Register's offset of GPIO */
 #define GPFSEL0 (IO_BASE + 0x200000)

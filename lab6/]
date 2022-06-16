@@ -28,9 +28,8 @@ void kthread_init(){
     kthread->sched_info.priority = 1;
     kthread->sched_info.counter = kthread->sched_info.priority;
 	
-	daif = local_irq_disable_save();
+	daif = local_irq_disable_save()
     list_add_tail(&kthread->list, &task_list);
-	local_irq_restore(daif);
 
     // initialzie singal
     sigpending_init(&kthread->sigpending);
@@ -111,17 +110,16 @@ uint64_t kthread_create(kthread_func func){
     kthread->sched_info.rticks = 0;
     kthread->sched_info.priority = 1;
     kthread->sched_info.counter = kthread->sched_info.priority;
-
-    daif = local_irq_disable_save();
     list_add_tail(&kthread->list, &task_list);
-    local_irq_restore(daif);
 
     // initialzie singal
     sigpending_init(&kthread->sigpending);
     default_sighand_init(&kthread->sighandler);
     
     LOG("kthread end");
+    daif = local_irq_disable_save();
     add_task_to_rq(kthread);
+    local_irq_restore(daif);
     return 0;
 }
 

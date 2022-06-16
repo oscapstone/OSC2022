@@ -40,7 +40,10 @@ void schedule(){
         if( current != NULL && current->thread_info.state != TASK_DEAD){ 
             current->sched_info.counter = current->sched_info.priority;
             list_add_tail(&current->sched_info.sched_list, &rq);
-        }
+        }else if(current == NULL){
+			printf("schedule error\r\b");
+			while(1);
+		}
 
         // context switch
         if(next != NULL){

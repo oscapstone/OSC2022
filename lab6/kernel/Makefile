@@ -6,7 +6,8 @@ CFLAGS ?= \
 		-ffreestanding \
 		-nostartfiles \
 		-mgeneral-regs-only \
-		-fno-builtin
+		-fno-builtin \
+		-g
 CXXFLAGS =
 
 OUTPUT ?= .

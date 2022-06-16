@@ -1,4 +1,5 @@
 #include "lib/simple_malloc.h"
+#include "mm/mmu.h"
 
 extern int __heap_start;
 static struct malloc_state mstate = {

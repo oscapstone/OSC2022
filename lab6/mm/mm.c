@@ -1,4 +1,5 @@
 #include "mm/mm.h"
+#include "mm/mmu.h"
 
 extern int __heap_start;
 extern int __kernel_image_start;
@@ -104,13 +105,13 @@ void _create_memory_rsvmap(void *dtb){
     fdt_parse_rsvmap((uint8_t*)dtb, reserve_memory);
 
     // reverse memory for kernel image 
-    reserve_memory((uint64_t)&__kernel_image_start, (uint64_t)&__kernel_image_end);
+    reserve_memory((uint64_t)&__kernel_image_start - UPPER_ADDR_SPACE_BASE, (uint64_t)&__kernel_image_end - UPPER_ADDR_SPACE_BASE);
 
     // reserve memory for stack
-    reserve_memory((uint64_t)&__EL1_stack - (uint64_t)&__EL1_stack_size, (uint64_t)&__EL1_stack);
+    reserve_memory((uint64_t)&__EL1_stack - (uint64_t)&__EL1_stack_size - UPPER_ADDR_SPACE_BASE, (uint64_t)&__EL1_stack - UPPER_ADDR_SPACE_BASE);
 
     // reserve memory for device tree
-    _reserve_dtb(dtb);
+    _reserve_dtb((void*)((uint64_t)dtb - UPPER_ADDR_SPACE_BASE));
 
     // reserve memory for cpio
     fdt_parser(dtb, _reserve_cpio);
@@ -119,10 +120,9 @@ void _create_memory_rsvmap(void *dtb){
     mem_map = simple_malloc(sizeof(struct page) * (memory_node.end >> PAGE_SHIFT));
 
     // reserve memory for simple memory allocator
-    start = (uint64_t)&__heap_start;
-    end = ALIGN_UP((uint64_t)simple_malloc_get_remainder(), PAGE_SIZE) + 8 * PAGE_SIZE;
+    start = (uint64_t)&__heap_start - UPPER_ADDR_SPACE_BASE;
+    end = ALIGN_UP((uint64_t)simple_malloc_get_remainder() - UPPER_ADDR_SPACE_BASE, PAGE_SIZE) + 8 * PAGE_SIZE;
     reserve_memory(start, end);
-    
 }
 
 void _create_memory_unusedmap(){
@@ -139,8 +139,8 @@ void _create_memory_unusedmap(){
             tmp_mb->start = unused_start;
             tmp_mb->end = mb->start;
             list_add_tail(&tmp_mb->list, &mem_unusedmap);
+            INFO("unused map: start = %p, end = %p", tmp_mb->start, tmp_mb->end);
         }
-        INFO("unused map: start = %p, end = %p", tmp_mb->start, tmp_mb->end);
         unused_start = mb->end;
     }
 

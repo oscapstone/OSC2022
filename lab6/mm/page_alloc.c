@@ -8,8 +8,8 @@ void _init_mem_map(){
     list_for_each(node, &mem_unusedmap){
         mb = list_entry(node, struct mem_block, list);
 
-        start_pfn = addr_to_pfn(mb->start); 
-        end_pfn = addr_to_pfn(mb->end);
+        start_pfn = virt_to_pfn(mb->start + UPPER_ADDR_SPACE_BASE); 
+        end_pfn = virt_to_pfn(mb->end + UPPER_ADDR_SPACE_BASE);
         size = (end_pfn - start_pfn) * sizeof(struct page);
 
         memset(&mem_map[start_pfn], '\0', size);
@@ -18,8 +18,8 @@ void _init_mem_map(){
     list_for_each(node, &mem_rsvmap){
         mb = list_entry(node, struct mem_block, list);
 
-        start_pfn = addr_to_pfn(mb->start); 
-        end_pfn = addr_to_pfn(mb->end);
+        start_pfn = virt_to_pfn(mb->start + UPPER_ADDR_SPACE_BASE); 
+        end_pfn = virt_to_pfn(mb->end + UPPER_ADDR_SPACE_BASE);
         for(uint64_t i = start_pfn ; i < end_pfn ; i++){
             memset(&mem_map[i], '\0', sizeof(struct page));
             mem_map[i].type |= PAGE_TYPE_RESERVED;
@@ -78,7 +78,7 @@ void _free_pages(struct page* page, uint32_t order){
 
         if(!PAGE_IS_RESERVED(buddy_page) && BUDDY_IS_FREED(buddy_page) && buddy_page->order == order){
             // Check if buddy is not reserved and freed
-            LOG("%p is buddy of %p in order %u free list and it can be merged", pfn_to_addr(buddy_pfn), pfn_to_addr(pfn), order);
+            LOG("%p is buddy of %p in order %u free list and it can be merged", pfn_to_virt(buddy_pfn), pfn_to_virt(pfn), order);
             list_del(&buddy_page->list);
             buddy.free_lists[order].count--;
         }else{
@@ -90,7 +90,7 @@ void _free_pages(struct page* page, uint32_t order){
         order++;
     }
 
-    LOG("Merge %p into order %u free list ", pfn_to_addr(pfn), order);
+    LOG("Merge %p into order %u free list ", pfn_to_virt(pfn), order);
     __free_pages(page, order);
     LOG("end merge pages");
 }
@@ -99,7 +99,7 @@ void _free_pages(struct page* page, uint32_t order){
 void free_pages(void* addr, uint32_t order){
     LOG("_free_pages(%p, %u)",addr, order);
     volatile uint64_t daif;
-    uint64_t pfn = addr_to_pfn(addr);
+    uint64_t pfn = virt_to_pfn(addr);
     struct page *page = pfn_to_page(pfn);
     
     daif = local_irq_disable_save();
@@ -110,7 +110,7 @@ void free_pages(void* addr, uint32_t order){
 // free one page
 void free_page(void* addr){
     volatile uint64_t daif;
-    uint64_t pfn = addr_to_pfn(addr);
+    uint64_t pfn = virt_to_pfn(addr);
     struct page *page = pfn_to_page(pfn);
 
     daif = local_irq_disable_save();
@@ -126,7 +126,7 @@ void expand(struct page *page, uint32_t high, uint32_t low){
         high--;
         tmp_page = page + (1 << high);
        
-        LOG("add page %p to order %u free list",pfn_to_addr(page_to_pfn(tmp_page)) , high);
+        LOG("add page %p to order %u free list",page_to_virt(tmp_page) , high);
         __free_pages(tmp_page, high);
     }
 }
@@ -149,7 +149,7 @@ struct page* _alloc_pages(uint32_t order){
         page = list_first_entry(&free_list->list, struct page, list); 
         list_del(&page->list);
         free_list->count--;
-        LOG("get free page %p from order %u", pfn_to_addr(page_to_pfn(page)), i); 
+        LOG("get free page %p from order %u", page_to_virt(page), i); 
         
 
         for(uint32_t j = 0 ; j < (1 << order) ; j++){
@@ -177,7 +177,7 @@ void* alloc_pages(uint32_t order){
     local_irq_restore(daif);
     uint64_t pfn = page_to_pfn(page);
 
-    return pfn_to_addr(pfn);
+    return pfn_to_virt(pfn);
 }
 
 // return one page
@@ -188,7 +188,7 @@ void* alloc_page(){
     local_irq_restore(daif);
 
     uint64_t pfn = page_to_pfn(page);
-    return pfn_to_addr(pfn);
+    return pfn_to_virt(pfn);
 }
 
 void print_buddy_statistics(){
@@ -277,16 +277,16 @@ void debug_buddy(){
     }
     LOG("###########################################");
     for(i = 0 ; i < count ; i++){
-        target_page = pfn_to_page(addr_to_pfn(arr[i]));
+        target_page = virt_to_page(arr[i]);
         if(!BUDDY_IS_ALLOCATED(target_page)){
-            LOG("******* page %p didn't set to allocated *******", pfn_to_addr(page_to_pfn(page)));
+            LOG("******* page %p didn't set to allocated *******", page_to_virt(page));
             goto error;
         }
         for(uint32_t j = 0 ; j < BUDDY_MAX_ORDER ; j++){
             list_for_each(node, &buddy.free_lists[j].list){
                 page = list_entry(node, struct page, list);
                 if(target_page == page){
-                    LOG("******* allocated page didn't remove from free list *******", pfn_to_addr(page_to_pfn(page)));
+                    LOG("******* allocated page didn't remove from free list *******", page_to_virt(page));
                     goto error;
                 }
             }
@@ -340,7 +340,7 @@ void debug_buddy(){
         list_for_each(tmp_node, &buddy.free_lists[i].list){
             tmp_page = list_entry(tmp_node, struct page, list); 
             for(uint32_t j = 0; j < (1 << i) ; j++){
-                printf("[test] : %p\n", pfn_to_addr(page_to_pfn(tmp_page) + j));
+                printf("[test] : %p\n", page_to_virt(tmp_page + j));
             }
         }
     }
@@ -368,8 +368,8 @@ void buddy_init(){
     // Add free page frame to buddy system
     list_for_each(node, &mem_unusedmap){
         mb = list_entry(node, struct mem_block, list);
-        start_pfn = addr_to_pfn(mb->start);
-        end_pfn = addr_to_pfn(mb->end);
+        start_pfn = virt_to_pfn(mb->start + UPPER_ADDR_SPACE_BASE);
+        end_pfn = virt_to_pfn(mb->end + UPPER_ADDR_SPACE_BASE);
 
         _free_pages_memory(start_pfn, end_pfn);
     }

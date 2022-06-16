@@ -15,5 +15,6 @@ extern uint64_t kthread_create(kthread_func func);
 extern void kthread_exit();
 extern void kthread_destroy(struct task_struct*);
 extern void kthread_start(kthread_func);
+extern void kthread_int();
 
 #endif

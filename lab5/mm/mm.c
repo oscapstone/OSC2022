@@ -133,14 +133,16 @@ void _create_memory_unusedmap(){
 
     list_for_each(node, &mem_rsvmap){
         mb = list_entry(node, struct mem_block, list);
+        INFO("rsv map: start = %p, end = %p", mb->start, mb->end);
         if(unused_start < mb->start){
             tmp_mb = (struct mem_block*)simple_malloc(sizeof(struct mem_block));
 
             tmp_mb->start = unused_start;
             tmp_mb->end = mb->start;
             list_add_tail(&tmp_mb->list, &mem_unusedmap);
+            INFO("unused map: start = %p, end = %p", tmp_mb->start, tmp_mb->end);
+
         }
-        INFO("unused map: start = %p, end = %p", tmp_mb->start, tmp_mb->end);
         unused_start = mb->end;
     }
 

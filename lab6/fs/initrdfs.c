@@ -34,7 +34,7 @@ void initrdfs_init(void* addr){
 void* fdt_initrdfs_callback(uint32_t token, fdt_node* node, fdt_property* prop, int32_t layer){
     if(prop != NULL){
         if(strcmp(prop->name, "linux,initrd-start") == 0){
-            uint64_t initrd_start = bswap32(*(uint32_t*)prop->value);
+            uint64_t initrd_start = bswap32(*(uint32_t*)prop->value) + UPPER_ADDR_SPACE_BASE;
             LOG("linux,initrd-start: %x", (uint32_t)initrd_start);
             initrdfs_init((void*)initrd_start);
         }   

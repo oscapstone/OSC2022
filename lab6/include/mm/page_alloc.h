@@ -20,13 +20,16 @@
 #define BUDDY_IS_FREED(x) (!BUDDY_IS_ALLOCATED(x))
 #define PAGE_IS_RESERVED(x) (((struct page*)x)->type & PAGE_TYPE_RESERVED)
 #define _buddy_ffs(x) ((x) == 0 ? BUDDY_MAX_ORDER : ffs64(x))
-#define addr_to_pfn(addr) ((uint64_t)(addr) >> PAGE_SHIFT)
-#define pfn_to_addr(n) ((void*)(n << PAGE_SHIFT))
-#define page_to_pfn(x) ((uint64_t)((struct page*)x - mem_map))
-#define pfn_to_page(x) ((struct page*)&mem_map[x])
 #define find_buddy_pfn(pfn, order) (pfn ^ (1 << order))
 #define get_page_order(p) (p->order & 0xffff)
 #define get_buddy_leader(p) (p->buddy_leader)
+
+#define virt_to_pfn(addr) ((uint64_t)(((uint64_t)addr) - UPPER_ADDR_SPACE_BASE) >> PAGE_SHIFT)
+#define pfn_to_virt(n) ((void*)((n << PAGE_SHIFT) + UPPER_ADDR_SPACE_BASE))
+#define page_to_pfn(x) ((uint64_t)((struct page*)x - mem_map))
+#define pfn_to_page(x) ((struct page*)&mem_map[(uint64_t)x])
+#define page_to_virt(x) (pfn_to_virt(page_to_pfn(x)))
+#define virt_to_page(x) (pfn_to_page(virt_to_pfn(x)))
 
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader

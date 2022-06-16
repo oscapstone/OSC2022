@@ -4,6 +4,7 @@
 #include "lib/print.h"
 #include "lib/simple_malloc.h"
 #include "lib/string.h"
+#include "mm/mmu.h"
 
 #define FDT_BEGIN_NODE  bswap32(0x00000001)
 #define FDT_END_NODE    bswap32(0x00000002)

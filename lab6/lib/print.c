@@ -54,7 +54,7 @@ int32_t printf(char *fmt, ...){
                     break;
                 case 'p':
                     addr = va_arg(ap, void*);
-                    utoa((uint64_t)addr, str, 16);
+                    ultoa((uint64_t)addr, str, 16);
 
                     mini_uart_write('0');
                     mini_uart_write('x');
@@ -70,7 +70,7 @@ int32_t printf(char *fmt, ...){
                     break;
                 case 'x':
                     uval = va_arg(ap, uint32_t);
-                    utoa(uval, str, 16);
+                    ultoa(uval, str, 16);
                     p = str;
                     while(*p){
                         mini_uart_write(*p++);

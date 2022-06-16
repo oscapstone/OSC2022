@@ -159,3 +159,10 @@ uint64_t get_CNTPCT_EL0(){
     return cntpct_el0;
 }
 
+void set_tpidr_el1(uint64_t n){
+    asm volatile("mov x0, %[n]\n\t"
+                 "msr tpidr_el1, x0"
+                 :
+                 :[n] "r" (n)
+    );
+}

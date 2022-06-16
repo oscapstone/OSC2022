@@ -9,6 +9,7 @@
 #include "lib/string.h"
 #include "mm/page_alloc.h"
 #include "mm/slab.h"
+#include "mm/mmu.h"
 
 
 struct mem_block{

@@ -18,6 +18,7 @@ extern void local_irq_enable();
 extern void local_irq_disable();
 extern uint64_t local_irq_disable_save();
 extern void local_irq_restore(uint64_t);
+extern void set_tpidr_el1(uint64_t);
 
 #endif
 
