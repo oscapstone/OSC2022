@@ -295,8 +295,8 @@ void garbage_collect()
 
     // find the first i that valid count != -1(not empty)
     for (i = 0; i < PHYSICAL_NAND_NUM; i++)if(vc[i]!=-1) break;
-    if(i==PHYSICAL_NAND_NUM-1) return;
-    if(vc[i]==-1 || vc[i+1]==-1||vc[i]+vc[i+1]>PAGE_PER_BLOCK) return;
+
+    if(vc[i]+vc[i+1]>PAGE_PER_BLOCK) return;
     if(vc_idx[i]==curr_pca.fields.nand && vc[i]+vc[i+1]<PAGE_PER_BLOCK) return;
  
     // if(!isBlockFull(curr_pca.fields.nand)) return;
