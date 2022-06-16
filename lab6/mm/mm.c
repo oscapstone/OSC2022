@@ -110,7 +110,7 @@ void _create_memory_rsvmap(void *dtb){
     reserve_memory((uint64_t)&__kernel_image_start - UPPER_ADDR_SPACE_BASE, (uint64_t)&__kernel_image_end - UPPER_ADDR_SPACE_BASE);
 
     // reserve memory for stack
-    INFO("3");
+    INFO("3: %p, %p", (uint64_t)&__EL1_stack - (uint64_t)&__EL1_stack_size - UPPER_ADDR_SPACE_BASE,(uint64_t)&__EL1_stack - UPPER_ADDR_SPACE_BASE);
     reserve_memory((uint64_t)&__EL1_stack - (uint64_t)&__EL1_stack_size - UPPER_ADDR_SPACE_BASE, (uint64_t)&__EL1_stack - UPPER_ADDR_SPACE_BASE);
 
     // reserve memory for device tree

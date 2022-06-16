@@ -5,6 +5,8 @@ SECTIONS
     . = 0xffff000000000000; /* kernel space 0xffff000000000000 ~ 0xffffffffffffffff */
     . += 0x80000; /* bootloader (start.elf) will loader kernel8.img to 0x80000*/
     __kernel_image_start = .;
+    __EL1_stack_size = 0x4000;
+    __EL1_stack = .;
     __text_start = .;
     .text : 
     {
@@ -41,6 +43,4 @@ SECTIONS
     __kernel_image_end = .;
     __heap_start = .;
 
-    __EL1_stack_size = 0x4000;
-    __EL1_stack = 0xffff000000000000 + 0x80000;
 }
