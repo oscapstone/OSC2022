@@ -7,6 +7,8 @@
 #include "cpio.h"
 #include "dtb.h"
 #include "time.h"
+#include "thread.h"
+#include "exception.h"
 
 #define PM_PASSWORD 0x5a000000
 #define PM_RSTC 0x3F10001c

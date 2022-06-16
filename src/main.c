@@ -42,7 +42,7 @@ void main()
     
     // set up serial console
     uart_init();
-
+    set_timer_interrupt(false);
     dtb_parse(cpio_init);
     
     init_buddy();
@@ -57,20 +57,10 @@ void main()
     uart_puts("Reserve simple_alloc\n");
     reserve_memory(heap_start, heap_start + heap_size);  // reserve simple_alloc
 
-    //uart_puts("1\n");
     build_free_list();
-    //uart_puts("2\n");
-
-    // uint32_t *addr = 0x06000000;
-    // uart_shex("addr = 0x", addr,"\n");
-    // uart_shex("*addr = 0x", *addr,"\n");
-
-
     build_buddy();
-
-
-    
     mm_init();
+    thread_module_init();
     
     set_start_time();
     

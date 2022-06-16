@@ -57,7 +57,7 @@ int merge_buddy(uint32_t index, uint32_t order, int log_on)
             tmp = (uint32_t) me;
             me = sib;
             sib = (frame_t *) tmp;
-            uart_puts("5\n");
+            //uart_puts("5\n");
         }
         //uart_puts("7\n");
         
@@ -73,15 +73,15 @@ int merge_buddy(uint32_t index, uint32_t order, int log_on)
         list_add_tail((struct list_head *) (PAGE2ADDR(index)), &free_list[me->order]);
         //uart_puts("11\n");
         if (log_on) {
-            uart_puts("Merge ");
-            uart_dec(index);
-            uart_puts(" and ");
-            uart_dec(sib_id);
-            uart_puts(". Order from ");
-            uart_dec(sib->order);
-            uart_puts(" to ");
-            uart_dec(me->order);
-            uart_puts(".\n");
+            // uart_puts("Merge ");
+            // uart_dec(index);
+            // uart_puts(" and ");
+            // uart_dec(sib_id);
+            // uart_puts(". Order from ");
+            // uart_dec(sib->order);
+            // uart_puts(" to ");
+            // uart_dec(me->order);
+            // uart_puts(".\n");
         }
     }
 
@@ -119,14 +119,14 @@ void* buddy_alloc(uint32_t request_order)
     uint32_t order;
     uint32_t sib_id;
 
-    uart_sdec("Start to find request order ", request_order, "\n");
+    //uart_sdec("Start to find request order ", request_order, "\n");
     for (i = request_order; i < FREE_LIST_MAX_ORDER; i++) {
         if (!list_empty(&free_list[i]))
             break;
     }
 
     if (i == FREE_LIST_MAX_ORDER) {
-        uart_sdec("Can't find the order ", request_order, "\n");
+        //uart_sdec("Can't find the order ", request_order, "\n");
         exit(); // can't find the order
     }
 
@@ -134,7 +134,7 @@ void* buddy_alloc(uint32_t request_order)
     index = ADDR2PAGE((uint32_t) buddy);
     order = i;
     
-    uart_sdec("Order found ", order, "\n");
+    //uart_sdec("Order found ", order, "\n");
     
     while (order > request_order) {
         order--;
@@ -143,22 +143,22 @@ void* buddy_alloc(uint32_t request_order)
         frame_arr[sib_id].order = order;
         list_add_tail(((struct list_head *) PAGE2ADDR(sib_id)), &free_list[order]);
 
-        uart_sdec("Relase redundant order ", order, "\n");
+        //uart_sdec("Relase redundant order ", order, "\n");
     }
 
     if (order != request_order) {
-        uart_puts("Something error\n");
+        //uart_puts("Something error\n");
         exit(); // something error
     }
 
     frame_arr[index].status = PG_ALLOC;
     frame_arr[index].order = order;
 
-    uart_puts("Haved request 2^");
-    uart_dec(order);
-    uart_puts(" pages in buddy system. \tPage id = ");
-    uart_dec(index);
-    uart_puts("\t is allocated.\n\n");
+    // uart_puts("Haved request 2^");
+    // uart_dec(order);
+    // uart_puts(" pages in buddy system. \tPage id = ");
+    // uart_dec(index);
+    // uart_puts("\t is allocated.\n\n");
 
     return buddy;
 }
@@ -177,11 +177,11 @@ void buddy_free(void* addr)
 
     for (int order = me->order; order < FREE_LIST_MAX_ORDER - 1; order++) {
         if (!merge_buddy(page_id, order, true)) {
-            uart_puts("Free page_id = ");
-            uart_dec(page_id);
-            uart_puts(". Final order = ");
-            uart_dec(order);
-            uart_puts("\n\n");
+            // uart_puts("Free page_id = ");
+            // uart_dec(page_id);
+            // uart_puts(". Final order = ");
+            // uart_dec(order);
+            // uart_puts("\n\n");
             break;
         }
         else {
@@ -208,52 +208,52 @@ void build_free_list()
     }
 }
 
-void print_free_list()
-{
-    struct list_head *addr;
-    for (int i = 0; i < FREE_LIST_MAX_ORDER; i++) {
-        uart_puts("free_list[");
-        uart_dec(i);
-        uart_puts("]\t = ");
-        addr = free_list[i].next;
-        while(addr != &free_list[i]) {
-            uart_dec(ADDR2PAGE((uint32_t) addr));
-            uart_puts("  ");
-            addr = addr->next;
-        }
-        uart_puts("\n");
-    }
-    uart_puts("\n");
-}
+// void print_free_list()
+// {
+//     struct list_head *addr;
+//     for (int i = 0; i < FREE_LIST_MAX_ORDER; i++) {
+//         uart_puts("free_list[");
+//         uart_dec(i);
+//         uart_puts("]\t = ");
+//         addr = free_list[i].next;
+//         while(addr != &free_list[i]) {
+//             uart_dec(ADDR2PAGE((uint32_t) addr));
+//             uart_puts("  ");
+//             addr = addr->next;
+//         }
+//         uart_puts("\n");
+//     }
+//     uart_puts("\n");
+// }
 
-void print_buddy()
-{
-    for (int i = 0; i < BUDDY_PAGE_NUM; i+=10) {
+// void print_buddy()
+// {
+//     for (int i = 0; i < BUDDY_PAGE_NUM; i+=10) {
 
-        uart_puts("\nid\t");
-        for (int j = 0; j < 20; j++) {
-            if (i+j >= BUDDY_PAGE_NUM)
-                break;
-            uart_dec(i + j);
-            uart_puts("\t");
-        }
+//         uart_puts("\nid\t");
+//         for (int j = 0; j < 20; j++) {
+//             if (i+j >= BUDDY_PAGE_NUM)
+//                 break;
+//             uart_dec(i + j);
+//             uart_puts("\t");
+//         }
 
-        uart_puts("\n\n\t");
-        for (int j = 0; j < 20; j++) {
-            if (i+j >= BUDDY_PAGE_NUM)
-                break;
-            if (frame_arr[i+j].status == PG_ALLOC)
-                uart_puts("X");
-            else if (frame_arr[i+j].status == PG_RESERVED)
-                uart_puts("R");
-            else if (frame_arr[i+j].status == PG_FREE)
-                uart_puts("F");
-            else
-                uart_dec(frame_arr[i+j].order);
-            uart_puts("\t");
-        }
-        uart_puts("\n");
-    }
+//         uart_puts("\n\n\t");
+//         for (int j = 0; j < 20; j++) {
+//             if (i+j >= BUDDY_PAGE_NUM)
+//                 break;
+//             if (frame_arr[i+j].status == PG_ALLOC)
+//                 uart_puts("X");
+//             else if (frame_arr[i+j].status == PG_RESERVED)
+//                 uart_puts("R");
+//             else if (frame_arr[i+j].status == PG_FREE)
+//                 uart_puts("F");
+//             else
+//                 uart_dec(frame_arr[i+j].order);
+//             uart_puts("\t");
+//         }
+//         uart_puts("\n");
+//     }
 
-    uart_puts("\n\n");
-}
+//     uart_puts("\n\n");
+// }

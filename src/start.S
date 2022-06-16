@@ -81,63 +81,81 @@ from_el2_to_el1:
                             // "bits[6]" means FIQ interrupt mask. "bits[7]" means IRQ interrupt mask.
                             // "bits[8]" means SError interrupt mask. "bits[9]" Debug exception mask.
 
-    msr     elr_el2, lr     // lr is link register. For now, it points to address of "bl main" 
+    msr     elr_el2, lr     // lr is link register. For now, it points to address of "adr x1, exception_vector_table" 
     eret                    // return to EL1
 
 
 
+// save general registers to stack
 .macro save_all
-    sub sp, sp, 32 * 8
-    stp x0, x1, [sp ,16 * 0]
-    stp x2, x3, [sp ,16 * 1]
-    stp x4, x5, [sp ,16 * 2]
-    stp x6, x7, [sp ,16 * 3]
-    stp x8, x9, [sp ,16 * 4]
-    stp x10, x11, [sp ,16 * 5]
-    stp x12, x13, [sp ,16 * 6]
-    stp x14, x15, [sp ,16 * 7]
-    stp x16, x17, [sp ,16 * 8]
-    stp x18, x19, [sp ,16 * 9]
-    stp x20, x21, [sp ,16 * 10]
-    stp x22, x23, [sp ,16 * 11]
-    stp x24, x25, [sp ,16 * 12]
-    stp x26, x27, [sp ,16 * 13]
-    stp x28, x29, [sp ,16 * 14]
-    str x30, [sp, 16 * 15]
+    sub     sp, sp, 16 * 18
+    // saving general registers
+    stp     x0, x1, [sp ,16 * 0]
+    stp     x2, x3, [sp ,16 * 1]
+    stp     x4, x5, [sp ,16 * 2]
+    stp     x6, x7, [sp ,16 * 3]
+    stp     x8, x9, [sp ,16 * 4]
+    stp     x10, x11, [sp ,16 * 5]
+    stp     x12, x13, [sp ,16 * 6]
+    stp     x14, x15, [sp ,16 * 7]
+    stp     x16, x17, [sp ,16 * 8]
+    stp     x18, x19, [sp ,16 * 9]
+    stp     x20, x21, [sp ,16 * 10]
+    stp     x22, x23, [sp ,16 * 11]
+    stp     x24, x25, [sp ,16 * 12]
+    stp     x26, x27, [sp ,16 * 13]
+    stp     x28, x29, [sp ,16 * 14]
+    str     x30, [sp ,16 * 15]
+
+    // saving el registers
+    mrs     x0, SPSR_EL1
+    str     x0, [sp, 16 * 15 + 8]
+    mrs     x0, ELR_EL1
+    mrs     x1, SP_EL0
+    stp     x0, x1, [sp, 16 * 16]
 .endm
 
+// load general registers from stack
 .macro load_all
-    ldp x0, x1, [sp ,16 * 0]
-    ldp x2, x3, [sp ,16 * 1]
-    ldp x4, x5, [sp ,16 * 2]
-    ldp x6, x7, [sp ,16 * 3]
-    ldp x8, x9, [sp ,16 * 4]
-    ldp x10, x11, [sp ,16 * 5]
-    ldp x12, x13, [sp ,16 * 6]
-    ldp x14, x15, [sp ,16 * 7]
-    ldp x16, x17, [sp ,16 * 8]
-    ldp x18, x19, [sp ,16 * 9]
-    ldp x20, x21, [sp ,16 * 10]
-    ldp x22, x23, [sp ,16 * 11]
-    ldp x24, x25, [sp ,16 * 12]
-    ldp x26, x27, [sp ,16 * 13]
-    ldp x28, x29, [sp ,16 * 14]
-    ldr x30, [sp, 16 * 15]
-    add sp, sp, 32 * 8
+    // load el registers
+    ldr     x0, [sp, 16 * 15 + 8]
+    msr     SPSR_EL1, x0
+    ldp     x0, x1, [sp, 16 * 16]
+    msr     ELR_EL1, x0
+    msr     SP_EL0, x1
+
+    // load general registers
+    ldp     x0, x1, [sp ,16 * 0]
+    ldp     x2, x3, [sp ,16 * 1]
+    ldp     x4, x5, [sp ,16 * 2]
+    ldp     x6, x7, [sp ,16 * 3]
+    ldp     x8, x9, [sp ,16 * 4]
+    ldp     x10, x11, [sp ,16 * 5]
+    ldp     x12, x13, [sp ,16 * 6]
+    ldp     x14, x15, [sp ,16 * 7]
+    ldp     x16, x17, [sp ,16 * 8]
+    ldp     x18, x19, [sp ,16 * 9]
+    ldp     x20, x21, [sp ,16 * 10]
+    ldp     x22, x23, [sp ,16 * 11]
+    ldp     x24, x25, [sp ,16 * 12]
+    ldp     x26, x27, [sp ,16 * 13]
+    ldp     x28, x29, [sp ,16 * 14]
+    ldr     x30, [sp, 16 * 15]
+
+    add     sp, sp, 16 * 18
 .endm
-
-
 
 core_timer_handler:
     bl print_sec
     mrs x1, cntfrq_el0    // set next expired time
-    lsl x1, x1, #2        // two seconds
+    lsr x1, x1, #5        // two seconds
     msr cntp_tval_el0, x1 // On a write of this register, CNTP_CVAL_EL0 is set to (CNTPCT_EL0 + TimerValue).
     load_all
     eret
 
 exception_handler:
     save_all
+    mov x0, sp
     bl svc_handler
     load_all
     eret
@@ -159,7 +177,7 @@ kernel_irq_source_determine:
     cmp x4, #2
     beq core_timer_handler
 
-    bl exit  // other irq not handle
+    bl exit_280  // other irq not handle
 
 usr_irq_source_determine:
     save_all
@@ -169,9 +187,10 @@ usr_irq_source_determine:
 
     and x4, x3, #2
     cmp x4, #2
+    //bl exit_480
     beq core_timer_handler
 
-    bl exit  // other irq not handle
+    bl exit_480  // other irq not handle
 
 
 
@@ -213,3 +232,84 @@ exception_vector_table:
   .align 7
   b exit
   .align 7
+
+
+.global switch_to
+switch_to:
+    stp x19, x20, [x0, 16 * 0]
+    stp x21, x22, [x0, 16 * 1]
+    stp x23, x24, [x0, 16 * 2]
+    stp x25, x26, [x0, 16 * 3]
+    stp x27, x28, [x0, 16 * 4]
+    stp  fp,  lr, [x0, 16 * 5]
+    mov  x9,  sp
+    str  x9,      [x0, 16 * 6]
+
+    ldp x19, x20, [x1, 16 * 0]
+    ldp x21, x22, [x1, 16 * 1]
+    ldp x23, x24, [x1, 16 * 2]
+    ldp x25, x26, [x1, 16 * 3]
+    ldp x27, x28, [x1, 16 * 4]
+    ldp  fp,  lr, [x1, 16 * 5]
+    ldr  x9,      [x1, 16 * 6]
+    mov  sp,  x9
+    msr tpidr_el1, x2
+    ret
+
+
+.global from_EL1_to_EL0
+from_EL1_to_EL0:
+    msr     elr_el1, x0
+    msr     sp_el0, x1
+    mov     sp, x2
+    mov     x1, 0x340
+    msr     spsr_el1, x1
+    eret
+
+.global store_context
+store_context:
+    stp x19, x20, [x0, 16 * 0]
+    stp x21, x22, [x0, 16 * 1]
+    stp x23, x24, [x0, 16 * 2]
+    stp x25, x26, [x0, 16 * 3]
+    stp x27, x28, [x0, 16 * 4]
+    stp  fp,  lr, [x0, 16 * 5]
+    mov  x9,  sp
+    str  x9,      [x0, 16 * 6]
+    ret
+
+.global load_context
+load_context:
+    ldp x19, x20, [x0, 16 * 0]
+    ldp x21, x22, [x0, 16 * 1]
+    ldp x23, x24, [x0, 16 * 2]
+    ldp x25, x26, [x0, 16 * 3]
+    ldp x27, x28, [x0, 16 * 4]
+    ldp fp, lr, [x0, 16 * 5]
+    ldr x9, [x0, 16 * 6]
+    mov sp,  x9
+    ret
+
+.global sys_get_pid
+sys_get_pid:
+    mov x8, 0
+    svc 0
+    ret
+
+.global sys_fork
+sys_fork:
+    mov x8, 4
+    svc 0
+    ret
+
+.global sys_exit
+sys_exit:
+    mov x8, 5
+    svc 0
+    ret
+
+.global sys_ret
+sys_ret:
+    mov x8, 10
+    svc 0
+    ret

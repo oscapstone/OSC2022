@@ -92,3 +92,7 @@ int ascii2int(char *str, int len)
     return integer;
 }
 
+void copy_prog_from_cpio(char *dst_addr, const char *src_addr, size_t prog_size)
+{
+    memcpy(dst_addr, src_addr, prog_size);
+}

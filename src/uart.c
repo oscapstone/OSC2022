@@ -201,10 +201,10 @@ void sync_uart_puts(char *s) {
 /**
  * Display a binary value in hexadecimal
  */
-void uart_hex(unsigned int d) {
+void uart_hex(unsigned long int d) {
     unsigned int n;
     int c;
-    for(c=28;c>=0;c-=4) {
+    for(c=60;c>=0;c-=4) {
         // get highest tetrad
         n=(d>>c)&0xF;
         // 0-9 => '0'-'9', 10-15 => 'A'-'F'
@@ -213,8 +213,8 @@ void uart_hex(unsigned int d) {
     }
 }
 
-void uart_dec(int num) {
-    unsigned int divisor = 1000000000;
+void uart_dec(long int num) {
+    unsigned long divisor = 10000000000000000000;
     int digit, leading_zero = 1;
 
     if (num == 0) {
@@ -239,14 +239,14 @@ void uart_dec(int num) {
 
 }
 
-void uart_sdec(char* pre, int num, char* post)
+void uart_sdec(char* pre, long int num, char* post)
 {
     uart_puts(pre);
     uart_dec(num);
     uart_puts(post);
 }
 
-void uart_shex(char* pre, unsigned int num, char* post)
+void uart_shex(char* pre, unsigned long int num, char* post)
 {
     uart_puts(pre);
     uart_hex(num);
@@ -313,3 +313,20 @@ void disable_recieve_irq()
     *AUX_MU_IER = value;
 }
 
+size_t uartread(char *buf, size_t size)
+{
+    for (size_t i = 0; i < size; i++) {
+        buf[i] = uart_getc();
+    }
+
+    return size;
+}
+
+size_t uartwrite (const char *buf, size_t size)
+{
+    for (size_t i = 0; i < size; i++) {
+        uart_send(buf[i]);
+    }
+
+    return size;
+}

@@ -42,10 +42,10 @@ void uart_init();
 void uart_send(unsigned int c);
 char uart_getc();
 void uart_puts(char *s);
-void uart_hex(unsigned int d);
-void uart_dec(int num);
-void uart_sdec(char* pre, int num, char* post);
-void uart_shex(char* pre, unsigned int num, char* post);
+void uart_hex(unsigned long int d);
+void uart_dec(long int num);
+void uart_sdec(char* pre, long int num, char* post);
+void uart_shex(char* pre, unsigned long int num, char* post);
 
 extern void cmd_handler();
 

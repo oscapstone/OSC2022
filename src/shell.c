@@ -1,5 +1,9 @@
 #include "shell.h"
 
+extern int sys_fork();
+extern int sys_get_pid();
+extern int sys_exit();
+
 void set(long addr, unsigned int value) {
     volatile unsigned int* point = (unsigned int*)addr;
     *point = value;
@@ -30,31 +34,33 @@ void PrintHelp()
     uart_puts("bfree              : buddy free test\n");
     uart_puts("malloc <order>     : mm alloc test\n");
     uart_puts("mfree              : mm free test\n");
+    uart_puts("thread             : thread test\n");
 
     uart_puts("\n");
 }
 
 void jump2usr_prog(cpio_fp_t *fp)
 {
-    uint64_t spsr_value, sp_value;
+    // uint64_t spsr_value, sp_value;
     size_t prog_size = ascii2int(fp->header->c_filesize, 8);
-    char *prog_addr = simple_alloc(prog_size);
+    char *prog_addr = mm_alloc(prog_size);
+    prog_addr = (unsigned long) prog_addr - 0x10;
 
+    uart_puts("prog_addr: 0x");
+    uart_hex(prog_addr);
+    uart_puts("\n");
+    uart_puts("prog_size: ");
+    uart_dec(prog_size);
+    uart_puts(" bytes\n");
+    uart_puts("fp->data: 0x");
+    uart_hex(fp->data);
+    uart_puts("\n");
     copy_prog_from_cpio(prog_addr, fp->data, prog_size);
-    spsr_value = 0x340;
-    sp_value = simple_alloc(0x8000);
-    sp_value += 0x8000;
     disable_recieve_irq();
-
-    asm volatile ("msr spsr_el1, %0" : : "r"(spsr_value));
-    asm volatile ("msr elr_el1, %0"  : : "r"(prog_addr));
-    asm volatile ("msr sp_el0, %0"   : : "r"(sp_value));
-    asm volatile ("eret");
-}
-
-void copy_prog_from_cpio(char *dst_addr, const char *src_addr, size_t prog_size)
-{
-    memcpy(dst_addr, src_addr, prog_size);
+    disable_transmit_irq();
+    //THREAD_START = 1;
+    //set_timer_interrupt(true);
+    thread_exec(prog_addr);
 }
 
 void PrintHello()
@@ -115,42 +121,107 @@ void clear_screen()
     uart_puts("[H");
 }
 
-void alloc_test(char *str_num)
+void foo()
 {
-    void *addr;
-    size_t size = atoi(str_num);
+    int j;
 
-    if (size == 0) return;
+    for(int i = 0; i < 10; ++i) {
+        sync_uart_puts("Thread id: ");
+        uart_dec(get_cur_thread_id());
+        sync_uart_puts(" i = ");
+        uart_dec(i);
+        sync_uart_puts("\n");
 
-    addr = simple_alloc(size);
-    uart_puts("allocate address: 0x");
-    uart_hex(addr);
-    uart_puts("\nsize is: ");
-    uart_dec(size);
-    uart_puts(" bytes\n");
-    
+        j = 1000000;
+        while (j-- > 0) asm volatile("nop");
+
+        thread_schedule();
+    }
+
+    sync_uart_puts("Thread id: ");
+    uart_dec(get_cur_thread_id());
+    sync_uart_puts(" exit\n");
+
+    thread_exit();
 }
 
-void svc_handler()
+void fork_test()
 {
-    uint32_t value;
-    asm volatile ("mrs %0, spsr_el1": "=r"(value));
-    sync_uart_puts("spsr_el1: 0x");
-    uart_hex(value);
-
-    asm volatile ("mrs %0, elr_el1": "=r"(value));
-    sync_uart_puts("\nelr_el1:  0x");
-    uart_hex(value);
-
-    asm volatile ("mrs %0, esr_el1": "=r"(value));
-    sync_uart_puts("\nesr_el1:  0x");
-    uart_hex(value);
+    sync_uart_puts("\nFork Test, pid ");
+    uart_dec(sys_get_pid());
     sync_uart_puts("\n");
+
+    int cnt = 1;
+    int ret = 0;
+    
+    if ((ret = sys_fork()) == 0) { // child
+
+        long long cur_sp;
+        asm volatile("mov %0, sp" : "=r"(cur_sp));
+
+        sync_uart_puts("first child pid: ");
+        uart_dec(sys_get_pid());
+        sync_uart_puts(", cnt: ");
+        uart_dec(cnt);
+        sync_uart_puts(", ptr: 0x");
+        uart_hex(&cnt);
+        sync_uart_puts(", sp : 0x");
+        uart_hex(cur_sp);
+        sync_uart_puts("\n");
+
+        ++cnt;
+
+        if ((ret = sys_fork()) != 0){
+            asm volatile("mov %0, sp" : "=r"(cur_sp));
+
+            sync_uart_puts("first child pid: ");
+            uart_dec(sys_get_pid());
+            sync_uart_puts(", cnt: ");
+            uart_dec(cnt);
+            sync_uart_puts(", ptr: 0x");
+            uart_hex(&cnt);
+            sync_uart_puts(", sp : 0x");
+            uart_hex(cur_sp);
+            sync_uart_puts("\n");
+        }
+        else{
+            while (cnt < 5) {
+                asm volatile("mov %0, sp" : "=r"(cur_sp));
+
+                sync_uart_puts("second child pid: ");
+                uart_dec(sys_get_pid());
+                sync_uart_puts(", cnt: ");
+                uart_dec(cnt);
+                sync_uart_puts(", ptr: 0x");
+                uart_hex(&cnt);
+                sync_uart_puts(", sp : 0x");
+                uart_hex(cur_sp);
+                sync_uart_puts("\n");
+
+                ++cnt;
+            }
+        }
+        sys_exit();
+    }
+    else {
+        sync_uart_puts("parent here, pid ");
+        uart_dec(sys_get_pid());
+        sync_uart_puts(", child ");
+        uart_dec(ret);
+        sync_uart_puts("\n");
+        sys_exit();
+    }
 }
 
 void shell()
 {
     PrintHelp();
+    //set_start_time();
+    unsigned long ksp;
+    asm volatile("mov %0, sp" : "=r"(ksp));
+    sync_uart_puts("\nksp: 0x");
+    uart_hex(ksp);
+    sync_uart_puts("\n\n");
 
     while (1) {
         if (read_buf_idx > 0)
@@ -195,9 +266,9 @@ void cmd_handler()
     else if (strcmp(tok, "ls") == 0) cpio_ls();
     else if (strcmp(tok, "cat") == 0) cpio_cat(strtok(NULL, ' '));
     else if (strcmp(tok, "lshw") == 0) dtb_parse(NULL);
-    else if (strcmp(tok, "alloc") == 0) alloc_test(strtok(NULL, ' '));
+    // else if (strcmp(tok, "alloc") == 0) alloc_test(strtok(NULL, ' '));
     else if (strcmp(tok, "run") == 0) {
-        cpio_get_file_info("user_program", &fp);
+        cpio_get_file_info("syscall.img", &fp);
         jump2usr_prog(&fp);
     }
     else if (strcmp(tok, "balloc") == 0) {
@@ -214,6 +285,16 @@ void cmd_handler()
     }
     else if (strcmp(tok, "mfree") == 0) {
         mm_free(maddr[maddr_tail++]);
+    }
+    else if (strcmp(tok, "thread") == 0) {
+        for(int i = 0; i < 5; ++i)
+            thread_create(foo);
+
+        idle_thread();
+    }
+    else if (strcmp(tok, "fork") == 0) {
+        set_timer_interrupt(true);
+        thread_exec(fork_test);
     }
     else if (strcmp(tok, "log") == 0){
         uart_sdec("baddr_head = ", baddr_head, "\n");

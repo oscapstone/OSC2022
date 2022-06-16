@@ -3,6 +3,7 @@
 
 #include "stddef.h"
 #include "uart.h"
+#include "thread.h"
 
 uint64_t start_time;
 
