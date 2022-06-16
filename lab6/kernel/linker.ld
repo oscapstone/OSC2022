@@ -37,9 +37,27 @@ SECTIONS
     { 
         *(.bss) 
     }
-
     . = ALIGN(0x1000);
     __bss_end = .;
+    __reserved_page_table_start = .;
+    __PGD_start = .;
+    . = . + 4096;
+    __PGD_end = .;
+
+    __PUD_start = .;
+    . = . + 4096;
+    __PUD_end = .;
+
+    __PMD_start = .;
+    . = . + 4096 * 2;
+    __PMD_end = .;
+
+    __PTE_start = .;
+    . = . + 4096 * 1024;
+    __PTE_end = .;
+
+    . = ALIGN(0x1000);
+    __reserved_page_table_end = .;
     __kernel_image_end = .;
     __heap_start = .;
 

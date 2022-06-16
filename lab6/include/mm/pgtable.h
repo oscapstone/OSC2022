@@ -1,18 +1,25 @@
+#ifndef _PGTABLE_H_
+#define _PGTABLE_H_
+
+#define PGD_SHIFT	    	(39)
 #define PGD_TYPE_MASK		(3 << 0)
 #define PGD_TYPE_TABLE		(3 << 0)
 #define PGD_TABLE_BIT		(1 << 1)
 #define PGD_TYPE_BLOCK		(1 << 0)
 
+#define PUD_SHIFT	    	(30)
 #define PUD_TYPE_MASK		(3 << 0)
 #define PUD_TYPE_TABLE		(3 << 0)
 #define PUD_TABLE_BIT		(1 << 1)
 #define PUD_TYPE_BLOCK		(1 << 0)
 
+#define PMD_SHIFT	    	(21)
 #define PMD_TYPE_MASK		(3 << 0)
 #define PMD_TYPE_TABLE		(3 << 0)
 #define PMD_TABLE_BIT		(1 << 1)
 #define PMD_TYPE_BLOCK		(1 << 0)
 
+#define PTE_SHIFT	    	(12)
 #define PTE_TYPE_MASK		(3 << 0)
 #define PTE_TYPE_FAULT		(0 << 0)
 #define PTE_TYPE_PAGE		(3 << 0)
@@ -54,3 +61,9 @@
 #define BOOT_PGD_ATTR (PGD_TYPE_TABLE)
 #define BOOT_PUD_ATTR (PUD_TYPE_BLOCK | BLOCK_ATTR_AF | (MAIR_IDX_DEVICE_nGnRnE << BLOCK_MAIR_SHIFT))
 
+#define VM_PGD_ATTR (PGD_TYPE_TABLE)
+#define VM_PUD_ATTR (PUD_TYPE_TABLE)
+#define VM_PMD_ATTR (PMD_TYPE_TABLE)
+#define VM_PTE_DEVICE_ATTR (PTE_TYPE_PAGE | PAGE_ATTR_AF | (MAIR_IDX_DEVICE_nGnRnE << PAGE_MAIR_SHIFT))
+#define VM_PTE_NORMAL_ATTR (PTE_TYPE_PAGE | PAGE_ATTR_AF | (MAIR_IDX_NORMAL_NOCACHE << PAGE_MAIR_SHIFT))
+#endif

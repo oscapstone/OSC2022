@@ -53,6 +53,7 @@ KOBJECTS = \
 		 $(OUTPUT)/irq_handler.o \
 		 $(OUTPUT)/page_alloc.o \
 		 $(OUTPUT)/mm.o \
+		 $(OUTPUT)/mmu.o \
 		 $(OUTPUT)/slab.o \
 		 $(OUTPUT)/sched.o \
 		 $(OUTPUT)/kthread.o \

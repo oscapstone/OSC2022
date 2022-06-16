@@ -30,6 +30,8 @@
 #define pfn_to_page(x) ((struct page*)&mem_map[(uint64_t)x])
 #define page_to_virt(x) (pfn_to_virt(page_to_pfn(x)))
 #define virt_to_page(x) (pfn_to_page(virt_to_pfn(x)))
+#define virt_to_phys(addr) (((uint64_t)addr) - UPPER_ADDR_SPACE_BASE)
+#define phys_to_virt(addr) (((uint64_t)addr) + UPPER_ADDR_SPACE_BASE)
 
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader
@@ -51,6 +53,7 @@ struct buddy_system{
 
 extern void buddy_init();
 extern void* alloc_page();
+extern void* calloc_page();
 extern void* alloc_pages(uint32_t);
 extern void free_pages(void*, uint32_t);
 extern void free_page(void*);

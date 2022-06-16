@@ -191,6 +191,15 @@ void* alloc_page(){
     return pfn_to_virt(pfn);
 }
 
+void* calloc_page(){
+    volatile uint64_t daif;
+    daif = local_irq_disable_save();
+    struct page* page = _alloc_pages(0);
+    local_irq_restore(daif);
+    memset(page_to_virt(page), 0, PAGE_SIZE);
+    return page_to_virt(page);
+}
+
 void print_buddy_statistics(){
     uint64_t free_page_count = 0;
     uint64_t tmp;

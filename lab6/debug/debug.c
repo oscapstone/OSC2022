@@ -5,6 +5,7 @@ extern int __text_start, __text_end;
 extern int __rodata_start, __rodata_end;
 extern int __data_start, __data_end;
 extern int __heap_start;
+extern int __reserved_page_table_start, __reserved_page_table_end;
 
 #ifdef DEBUG
 int debug = 1;
@@ -39,6 +40,13 @@ void log_kernel_start(){
            &__bss_end, \
            (uint64_t)&__bss_end - (uint64_t)&__bss_start
     );
+
+    printf("__reserved_page_table_start=%p, __reserved_page_table_end=%p,size=%l\r\n", \
+           &__reserved_page_table_start, \
+           &__reserved_page_table_end, \
+           (uint64_t)&__reserved_page_table_end - (uint64_t)&__reserved_page_table_start
+    );
+
     printf("heap_start=%p\r\n", &__heap_start);
 
     printf("current exception level: %u\r\n", get_currentEL());

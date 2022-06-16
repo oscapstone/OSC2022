@@ -31,11 +31,13 @@ end:
     ldr x0, =EL1_exception_vector_table
     msr vbar_el1, x0
 
+// set up identity pageing
+    bl identity_paging
+
 // from el2 to el1
     bl from_el2_to_el1
 
-// set up identity pageing
-    bl identity_paging
+// enable virtual memory
     ldr x2, =vm_enable
     br x2 
 
@@ -78,8 +80,8 @@ identity_paging:
     msr mair_el1, x0
 
 // initialize identity page table
-    mov x0, 0 // PGD's page frame at 0x0
-    mov x1, 0x1000 // PUD's page frame at 0x1000
+    adr x0, __PGD_start // PGD's page frame at 0x0
+    adr x1, __PUD_start // PUD's page frame at 0x1000
 // initialize PGD
     ldr x2, = BOOT_PGD_ATTR
     orr x2, x1, x2 // combine the physical address of next level page with attribute.

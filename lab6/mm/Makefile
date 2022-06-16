@@ -15,6 +15,7 @@ HEADERS ?= ../include
 OBJECTS = \
 		 page_alloc.o \
 		 slab.o \
+		 mmu.o \
 		 mm.o
 
 .PHONY: all 
