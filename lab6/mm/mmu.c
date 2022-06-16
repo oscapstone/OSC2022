@@ -14,10 +14,10 @@ void page_init(){
     uint64_t pud = (uint64_t)&__PUD_start;
     uint64_t pmd = (uint64_t)&__PMD_start;
     uint64_t pte = (uint64_t)&__PTE_start;
-    pgdval_t* tmp_pgd = (pgdval_t*)pgd;
-    pudval_t* tmp_pud = (pudval_t*)pud;
-    pmdval_t* tmp_pmd = (pmdval_t*)pmd;
-    pteval_t* tmp_pte = (pteval_t*)pte;
+    pgdval_t* tmp_pgd_e = (pgdval_t*)pgd;
+    pudval_t* tmp_pud_e = (pudval_t*)pud;
+    pmdval_t* tmp_pmd_e = (pmdval_t*)pmd;
+    pteval_t* tmp_pte_e = (pteval_t*)pte;
     uint64_t mem_size = ALIGN_UP(memory_node.end - memory_node.start, PAGE_SIZE);
     uint64_t max_page_num = mem_size / PAGE_SIZE;
 
@@ -33,30 +33,30 @@ void page_init(){
 
     INFO("Initialize 4-level page table for upper address space");
 
-    INFO("level 4 page table at %p...", tmp_pte);
+    INFO("level 4 page table at %p...", tmp_pte_e);
     for(uint64_t i = 0 ; i < max_page_num ; i++){
-        pte_set(tmp_pte, VM_PTE_NORMAL_ATTR | (i * PAGE_SIZE));
-        tmp_pte++;
+        pte_set(tmp_pte_e, VM_PTE_NORMAL_ATTR | (i * PAGE_SIZE));
+        tmp_pte_e++;
     }
 
     for(uint64_t i = max_page_num ; i < 2 * 512 * 512; i++){
-        pte_set(tmp_pte, VM_PTE_DEVICE_ATTR | (i * PAGE_SIZE));
-        tmp_pte++;
+        pte_set(tmp_pte_e, VM_PTE_DEVICE_ATTR | (i * PAGE_SIZE));
+        tmp_pte_e++;
     }
 
-    INFO("level 3 page table %p...", tmp_pmd);
+    INFO("level 3 page table %p...", tmp_pmd_e);
     for(uint64_t i = 0 ; i < 2 * 512 ; i++){
-        pmd_set(tmp_pmd, VM_PMD_ATTR | (pte + i * PAGE_SIZE));
-        tmp_pmd++;
+        pmd_set(tmp_pmd_e, VM_PMD_ATTR | (pte + i * PAGE_SIZE));
+        tmp_pmd_e++;
     }
     
-    INFO("level 2 page table %p...", tmp_pud);
+    INFO("level 2 page table %p...", tmp_pud_e);
     for(uint64_t i = 0 ; i < 2 ; i++){
-        pud_set(tmp_pud, VM_PUD_ATTR | (pmd + i * PAGE_SIZE));
-        tmp_pud++;
+        pud_set(tmp_pud_e, VM_PUD_ATTR | (pmd + i * PAGE_SIZE));
+        tmp_pud_e++;
     }
 
-    INFO("level 1 page table %p...", tmp_pgd);
+    INFO("level 1 page table %p...", tmp_pgd_e);
     asm volatile(
         "dsb ish\n\t"           // ensure write has completed
         "tlbi vmalle1is\n\t"    // invalidate all TLB entries 
@@ -70,16 +70,37 @@ void page_init(){
 void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t prot){
     uint64_t vstart, vend;
     uint64_t pgtable = 0;
-    pudval_t* pud;
-    pmdval_t* pmd;
-    pteval_t* pte;
+    pudval_t* pgd_e;
+    pudval_t* pud_e;
+    pmdval_t* pmd_e;
+    pteval_t* pte_e;
     size = ALIGN_UP(size, PAGE_SIZE);
     for(vstart = va, vend = va + size ; vstart != vend ; vstart += PAGE_SIZE){
-        pud = pud_offset(pgd, vstart);
-        if(pud_none(*pud)){
+        pgd_e = pgd_offset(pgd, vstart);
+        if(pgd_none(*pgd_e)){
             pgtable = virt_to_phys(calloc_page());
-            pud_set(pud, PUD_TYPE_TABLE | pgtable);
+            pgd_set(pgd_e, PGD_TYPE_TABLE | pgtable);
         }
+
+        pud_e = pud_offset(pgd_e, vstart);
+        if(pud_none(*pud_e)){
+            pgtable = virt_to_phys(calloc_page());
+            pud_set(pud_e, PUD_TYPE_TABLE | pgtable);
+        }
+
+        pmd_e = pmd_offset(pud_e, vstart);
+        if(pmd_none(*pmd_e)){
+            pgtable = virt_to_phys(calloc_page());
+            pmd_set(pmd_e, PMD_TYPE_TABLE | pgtable);
+        }
+
+        pte_e = pte_offset(pmd_e, vstart);
+        if(pte_none(*pte_e)){
+            printf("Try to modify the physical address of a pte entry to another address");
+            while(1);
+        }
+        pte_set(pte_e, prot | PAGE_ATTR_AF | (pa & PHYS_ADDR_MASK));
+        pa += PAGE_SIZE;
     }
 }
 
