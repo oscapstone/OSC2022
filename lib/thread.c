@@ -3,6 +3,7 @@
 #include "exception.h"
 #include "memory.h"
 #include "timer.h"
+#include "vfs.h"
 
 thread_t threads[PIDMAX + 1];
 thread_t *currThread, *idleThread;
@@ -38,7 +39,7 @@ thread_t *createThread(void *program, uint64 datasize) {
         }
     }
 
-    INIT_LIST_HEAD(&thread->used_vm);
+    // INIT_LIST_HEAD(&thread->used_vm);
     thread->state = USED;
     thread->context.lr = (uint64)program;
     thread->stackPtr = (char*)malloc(THREAD_STACK_SIZE);
@@ -77,12 +78,21 @@ void kill_zombies() {
             free(thread->data);
             free(thread->stackPtr);
             free(thread->kernel_stackPtr);
-            free_vm_list_for_thread(thread);
+            // free_vm_list_for_thread(thread);
             free_page_tables_for_thread(thread); // free PGD
+            free_file_descriptor_table_for_thread(thread);
             thread->state = IDLE;
         }
     }
     unlock_interrupt();
+}
+
+void free_file_descriptor_table_for_thread(thread_t *thread) {
+    for(int i = 0; i < MAX_FD; i++) {
+        if(thread->file_descriptor_table[i]) {
+            vfs_close(thread->file_descriptor_table[i]);
+        }
+    }
 }
 
 void schedule() {
@@ -101,18 +111,34 @@ void schedule() {
     // return to context.lr
 }
 
-void execThread(char *program, uint64 program_size) {
+void execThread(char *pathname) {
     lock_interrupt();
-    thread_t *thread = createThread(program, program_size);
+
+    char abspath[MAX_PATHNAME];
+    get_abspath(abspath, pathname, currThread->pwd);
+    vnode_t *searchNode;
+    if(vfs_lookup(abspath, &searchNode) == -1) {
+        uart_printf("(execThread) Can't find %s (%s)\n", abspath, pathname);
+        raiseError("(execThread) Fail to exec\n");
+    }
+
+    uint64 program_size = searchNode->f_ops->getsize(searchNode);
+    uart_printf("(execThread) get %s with size (%d)\n", abspath, program_size);
+    thread_t *thread = createThread(USER_KERNEL_BASE, program_size);
     init_page_table(&thread->context.pgd, 0);
-    // uart_printf("New Thread PGD address: 0x%x\n", thread->context.pgd);
+
+    file_t *tmp_f;
+    if(vfs_open(abspath, 0, &tmp_f) == -1) { raiseError("(execThread) Fail to open\n"); };
+    if(vfs_read(tmp_f, thread->data, program_size) == -1) { raiseError("(execThread) Fail to read\n"); };
+    if(vfs_close(tmp_f) == -1) { raiseError("(execThread) Fail to close\n"); };
+
+    vfs_open("/dev/uart", 0, &thread->file_descriptor_table[0]);
+    vfs_open("/dev/uart", 0, &thread->file_descriptor_table[1]);
+    vfs_open("/dev/uart", 0, &thread->file_descriptor_table[2]);
 
     thread->context.sp = USER_STACK_BASE + THREAD_STACK_SIZE;
     thread->context.fp = USER_STACK_BASE + THREAD_STACK_SIZE;
     thread->context.lr = USER_KERNEL_BASE;
-    for(int i = 0; i < program_size; i++) {
-        thread->data[i] = program[i];
-    }
 
     thread->has_signal = 0;
     for(int i = 0; i <= SIGMAX; i++) {
@@ -120,26 +146,12 @@ void execThread(char *program, uint64 program_size) {
     }
     
     currThread = thread;
-    // set_page_tables_for_thread(thread);
-    set_vm_list_for_thread(thread);
+    set_page_tables_for_thread(thread);
+    // set_vm_list_for_thread(thread);
 
     schedule_callback("Schedule\n");
     uart_printf("Start exec\n");
-
-    // uart_printf("Before switch\n");
-    // uart_printf("USER Code at 0x%x\n", thread->data);
-    // parser_table((uint64)thread->data);
-    // uart_printf("USER Stack at 0x%x\n", thread->kernel_stackPtr);
-    // parser_table((uint64)thread->kernel_stackPtr);
-
     switch_pgd((uint64)thread->context.pgd);
-    
-    // uart_printf("After switch\n");
-    // uart_printf("USER Code at 0x%x\n", USER_KERNEL_BASE);
-    // parser_table(USER_KERNEL_BASE);
-    // uart_printf("USER Stack at 0x%x\n", USER_STACK_BASE);
-    // parser_table(USER_STACK_BASE);
-
     unlock_interrupt();
 
     // // eret to exception level 0

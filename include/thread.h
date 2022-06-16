@@ -6,6 +6,7 @@
 #include "signal.h"
 #include "exception.h"
 #include "mmu.h"
+#include "vfs.h"
 
 #define PIDMAX 16
 #define SIGMAX 16
@@ -63,10 +64,10 @@ typedef struct thread {
     bool has_signal;
     threadContext_t signal_context;
     list_head_t used_vm;
+    char pwd[MAX_PATHNAME];
+    file_t *file_descriptor_table[MAX_FD];
 } thread_t;
 
-// 0xffff0000000814dc
-// 0x1264
 
 extern thread_t *currThread;
 extern thread_t threads[PIDMAX + 1];
@@ -76,8 +77,9 @@ void initThreads();
 thread_t *createThread(void *program, uint64 datasize);
 void idle();
 void kill_zombies();
+void free_file_descriptor_table_for_thread(thread_t *thread);
 void schedule();
-void execThread(char *program, uint64 program_size);
+void execThread(char *pathname);
 void testThread();
 void thread_exit();
 void set_schedule_timer();

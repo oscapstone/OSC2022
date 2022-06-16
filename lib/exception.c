@@ -61,17 +61,17 @@ void svc_handle(trapFrame_t *frame, uint64 x1) {
     esr_el1_t *esr;
     esr = (esr_el1_t *)&x1;
     if (esr->ec == DATA_ABORT_LOWER) {
-        // raiseError("DATA_ABORT_LOWER Fault\n");
-        handle_abort(esr);
+        raiseError("DATA_ABORT_LOWER Fault\n");
+        // handle_abort(esr);
         return;
     }
     else if(esr->ec == INS_ABORT_LOWER) {
-        // raiseError("INS_ABORT_LOWER Fault\n");
-        handle_abort(esr);
+        raiseError("INS_ABORT_LOWER Fault\n");
+        // handle_abort(esr);
         return;
     }
 
-    // uart_printf("SVC Handle Mode = %d\n", mode);
+    // uart_printf("SVC Handle Mode = %d\n", mode); //delay_ms(100);
     enable_interrupt();
     switch(mode) {
         case 0: *returnValue = getpid(); break;
@@ -84,14 +84,26 @@ void svc_handle(trapFrame_t *frame, uint64 x1) {
         case 5: exit((int)frame->x0); break;
         case 6: *returnValue = mbox_call((unsigned char)frame->x0, (unsigned int *)frame->x1); break;
         case 7: kill((int)frame->x0); break;
+        
         case 8: signal_register(frame->x0, (void (*)())frame->x1); break;
         case 9: signal_kill(frame->spsr_el1, frame->x0, frame->x1); break;
         case 115: signal_return(frame); break;
+        
+        case 11: *returnValue = call_vfs_open((char*)frame->x0, frame->x1); break;
+        case 12: *returnValue = call_vfs_close(frame->x0); break;
+        case 13: *returnValue = call_vfs_write(frame->x0, (char*)frame->x1, frame->x2); break;
+        case 14: *returnValue = call_vfs_read(frame->x0, (char*)frame->x1, frame->x2); break;
+        case 15: *returnValue = call_vfs_mkdir((char*)frame->x0, frame->x1); break;
+        case 16: *returnValue = call_vfs_mount((char*)frame->x0, (char*)frame->x1, (char*)frame->x2, frame->x3, (void*)frame->x4); break;
+        case 17: *returnValue = call_vfs_chdir((char*)frame->x0); break;
+        case 18: *returnValue = call_vfs_lseek64(frame->x0, frame->x1, frame->x2); break;
+        case 19: *returnValue = call_vfs_ioctl(frame->x0, frame->x1, (void*)frame->x2); break;
+
         default: break;
     }
 
     // if(mode == 4) {
-    //     uart_printf("SVC Handle Mode %d Done: 0x%x\n", mode, *returnValue);
+        // uart_printf("SVC Handle Mode %d Done: 0x%x\n", mode, *returnValue);
     // }
 }
 

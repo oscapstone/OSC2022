@@ -68,6 +68,6 @@ void signal_user_mode() {
 
 void signal_return(trapFrame_t *frame) {
     uint64 signal_ustack = frame->sp_el0 - THREAD_STACK_SIZE;
-    free(signal_ustack);
+    free((void*)signal_ustack);
     load_context(&currThread->signal_context);
 }
