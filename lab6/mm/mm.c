@@ -175,7 +175,9 @@ void mm_init(void *dtb){
     INIT_LIST_HEAD(&mem_unusedmap);
     fdt_parser((uint8_t*)dtb, _get_memory_node);
 
+    INFO("_create_memory_rsvmap");
     _create_memory_rsvmap(dtb);
+    INFO("_create_memory_unusedmap");
     _create_memory_unusedmap();
     
     INFO("Memory node: %s, size: %p", memory_node.name, memory_node.end - memory_node.start);

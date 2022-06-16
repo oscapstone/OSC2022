@@ -2,8 +2,6 @@
 
 extern int __heap_start;
 void kernel_init(void *dtb){
-    INFO("dtb: %p", dtb);
-    INFO("mini uart start initialization...");
     mini_uart_init();
     INFO("core timer start initialization...");
     init_core_timer();
