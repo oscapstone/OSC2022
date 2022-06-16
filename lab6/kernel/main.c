@@ -22,7 +22,7 @@ void kernel_main(void *dtb){
     DEBUG_KERNEL_START();
     
     INFO("create kernel main thread");
-    kthread_create(simple_shell);
+    kthread_create(kernel_main_thread);
 
 	kthread_idle();
 }
