@@ -9,7 +9,7 @@
 #define FDT_NOP         (0x00000004)
 #define FDT_END         (0x00000009)
 
-extern uint32* initramfs;
+extern uint64 initramfs;
 
 struct fdt_header {
     uint32 magic;                 // 0xd00dfeed

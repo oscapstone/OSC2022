@@ -4,9 +4,10 @@
 #include "string.h"
 #include "memory.h"
 #include "utils.h"
+#include "timer.h"
 
-volatile interrupt_event_t* interrupt_event_pointer = NULL;
-volatile interrupt_event_t* preemption_event_pointer = NULL;
+interrupt_event_t* interrupt_event_pointer = NULL;
+interrupt_event_t* preemption_event_pointer = NULL;
 
 volatile int flag = 0; // 0 - wait loop, 1 - preemption wait loop
 
@@ -137,17 +138,19 @@ void run_interrupt()
         lock_interrupt();
         interrupt_event_pointer = next_event_p;
     }
+    // uart_printf("Run Interrupt Done\n");
 }
 
 void exec_handler(interrupt_event_t* event_p)
 {
-    // uart_puts("Exec Handler: "); uart_num(event_p->priority); uart_newline();
+    // if(event_p->priority == 1)
+    //     uart_printf("Exec Handler(%d) at 0x%x (0x%x)\n", event_p->priority, event_p->handler, core_timer_handler);
     ((void (*)())event_p->handler)();
     free(event_p);
+    // uart_printf("Exec Interrupt Handle Done\n");
 }
 
-unsigned long long is_disable_interrupt()
-{
+unsigned long long is_disable_interrupt() {
     unsigned long long daif;
     __asm__ __volatile__("mrs %0, daif\n\t"
                          : "=r"(daif));

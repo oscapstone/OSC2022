@@ -2,10 +2,11 @@
 #define EXCEPTION
 
 #include "type.h"
+#include "mmu.h"
 
-#define CORE0_INTERRUPT_SOURCE ((volatile unsigned int*)(0x40000060))
+#define CORE0_INTERRUPT_SOURCE ((volatile unsigned int*)(PHY_TO_VIR(0x40000060)))
 
-#define PBASE 0x3F000000
+#define PBASE PHY_TO_VIR(0x3F000000)
 #define IRQ_BASIC_PENDING	((volatile unsigned int*)(PBASE+0x0000B200))
 #define IRQ_PENDING_1		((volatile unsigned int*)(PBASE+0x0000B204))
 #define IRQ_PENDING_2		((volatile unsigned int*)(PBASE+0x0000B208))
@@ -22,6 +23,15 @@
 #define INTERRUPT_SOURCE_CNTPNSIRQ (1<<1)
 
 #define SIGRETURN 115
+
+#define DATA_ABORT_LOWER 0b100100
+#define INS_ABORT_LOWER 0b100000
+
+#define TF_LEVEL0 0b000100
+#define TF_LEVEL1 0b000101
+#define TF_LEVEL2 0b000110
+#define TF_LEVEL3 0b000111
+
 
 typedef struct trapFrame {
     uint64 x0;
@@ -63,5 +73,5 @@ typedef struct trapFrame {
 
 void raise_exc();
 void el1_to_el0(char* program_address, char* user_stack_address);
-
+void svc_handle(trapFrame_t *frame, uint64 x1);
 #endif

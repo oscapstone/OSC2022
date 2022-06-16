@@ -11,11 +11,12 @@ typedef int int32;
 typedef long long int64;
 typedef unsigned char bool;
 typedef int state_t;
-typedef int size_t;
+typedef unsigned long long size_t;
 
 #define IDLE 1
 #define USED 0
 #define DEAD -1
+#define NEW_BORN 2
 
 #define FREE 1
 #define BUSY 0

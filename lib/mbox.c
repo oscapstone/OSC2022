@@ -1,10 +1,11 @@
 #include "address.h"
 #include "mbox.h"
+#include "mmu.h"
 
 volatile unsigned int  __attribute__((aligned(16))) mbox[36];
 
 int _mbox_call(unsigned char ch) {
-    unsigned int r = (((unsigned int)((unsigned long)&mbox) & ~0xF) | (ch & 0xF));
+    unsigned long r = (((unsigned long)((unsigned long)&mbox) & ~0xF) | (ch & 0xF));
     // wait for ready 
     do {
         asm volatile("nop");
@@ -20,7 +21,7 @@ int _mbox_call(unsigned char ch) {
         } while(*MBOX_STATUS & MBOX_EMPTY);
         
         // make sure it is a response to our message
-        if(r == *MBOX_READ) {
+        if(r == PHY_TO_VIR(*MBOX_READ)) {
             // is it a valid successful response
             return mbox[1] == MBOX_RESPONSE;
         }

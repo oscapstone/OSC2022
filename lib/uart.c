@@ -47,7 +47,6 @@ void uart_disable() {
     *AUX_MU_CNTL = 0x00; 
 }
 
-// Send a character
 void uart_putc(unsigned int c) {
     /* wait for ready */
     do {
@@ -57,7 +56,6 @@ void uart_putc(unsigned int c) {
     *AUX_MU_IO = c; // write character
 }
 
-// Send a string
 void uart_puts(char *s) {
     while(*s) {
         /* convert newline to carrige return + newline */
@@ -69,22 +67,18 @@ void uart_puts(char *s) {
     }
 }
 
-// Show new line
 void uart_newline() {
     uart_puts("\n");
 }
 
-// Show split line
 void uart_dem() {
     uart_puts("\n=================================\n");
 }
 
-// show prefix >>
 void uart_prefix() {
     uart_puts("\n>> ");
 }
 
-// Show hex value
 void uart_hex(uint64 d) {
     unsigned int n;
     int c;
@@ -98,7 +92,6 @@ void uart_hex(uint64 d) {
     }
 }
 
-// Show dec value
 void uart_num(int64 d) {
     unsigned int n;
     char s[16];
@@ -125,7 +118,6 @@ void uart_num(int64 d) {
     }
 }
 
-// Receive a binary
 char uart_getb() {
     char r;
     /* wait for input */
@@ -138,7 +130,6 @@ char uart_getb() {
     return r;
 }
 
-// Receive a character
 char uart_getc() {
     char r;
     /* wait for input */
@@ -152,7 +143,6 @@ char uart_getc() {
     return (r == '\r') ? '\n' : r;
 }
 
-// Receive a number
 unsigned int uart_getn() {
     int num = 0;
     char c;
@@ -171,7 +161,6 @@ unsigned int uart_getn() {
     return num;
 }
 
-// Get a new kernel via uart
 char* uart_img_receiver(char* address) {
     // receive image size (order: little, type: integer, unit: bytes)
     uart_init();
@@ -184,7 +173,7 @@ char* uart_img_receiver(char* address) {
            uart_getb() << 24;
     
     // echo size info
-    uart_hex(address);
+    uart_hex((uint64)address);
     uart_putc(' ');
     uart_puts("Image size = ");
     uart_num(size); 
@@ -201,7 +190,7 @@ char* uart_img_receiver(char* address) {
 
     // echo finish message
     uart_puts("Receive image done, jump to address ");
-    uart_hex(address);
+    uart_hex((uint64)address);
     uart_dem();
     delay_ms(2000); // wait message to be sent before restart new kernel
         
@@ -251,11 +240,9 @@ void uart_async_puts(char *s) {
     }
 }
 
-unsigned int uart_async_putc(char c)
-{
+unsigned int uart_async_putc(char c) {
     // full buffer wait
-    while((tx_buffer_widx + 1) % MAX_BUF_SIZE == tx_buffer_ridx)
-    {
+    while((tx_buffer_widx + 1) % MAX_BUF_SIZE == tx_buffer_ridx) {
         // start asynchronous transfer
         enable_uart_w_interrupt();
         // uart_puts("\n TX fails, uart async tx buffer is full\n");
@@ -277,22 +264,18 @@ unsigned int uart_async_putc(char c)
     return 0;
 }
 
-// Show new line
 void uart_async_newline() {
     uart_async_puts("\n");
 }
 
-// Show split line
 void uart_async_dem() {
     uart_async_puts("\n=================================\n");
 }
 
-// show prefix >>
 void uart_async_prefix() {
     uart_async_puts("\n>> ");
 }
 
-// Show hex value
 void uart_async_hex(uint64 d) {
     unsigned int n;
     int c;
@@ -389,4 +372,47 @@ void raiseError(char *message) {
     uart_puts("[Error] ");
     uart_puts(message);
     while(1);
+}
+
+int uart_printf(char *fmt, ...) {
+    __builtin_va_list args;
+    __builtin_va_start(args, fmt);
+    char buf[MAX_BUF_SIZE];
+    // we don't have memory allocation yet, so we
+    // simply place our string after our code
+    char *s = (char *)buf;
+    // use sprintf to format our string
+    int count = vsprintf(s, fmt, args);
+    // print out as usual
+
+    while (*s)
+    {
+        if(*s == '\n') {
+            uart_putc('\r');
+        }
+        uart_putc(*s++);
+    }
+    __builtin_va_end(args);
+    return count;
+}
+
+int uart_async_printf(char *fmt, ...) {
+    __builtin_va_list args;
+    __builtin_va_start(args, fmt);
+    char buf[MAX_BUF_SIZE];
+    // we don't have memory allocation yet, so we
+    // simply place our string after our code
+    char *s = (char *)buf;
+    // use sprintf to format our string
+    int count = vsprintf(s, fmt, args);
+    // print out as usual
+    while (*s)
+    {
+        if(*s == '\n') {
+            uart_async_putc('\r');
+        }
+        uart_async_putc(*s++);
+    }
+    __builtin_va_end(args);
+    return count;
 }

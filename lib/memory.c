@@ -1,32 +1,24 @@
-#include "address.h"
 #include "memory.h"
-#include "cpio.h"
-#include "uart.h"
-#include "math.h"
-#include "type.h"
-#include "interrupt.h"
 
-uint64 _stack_size = 0x10000ULL;
-page_t* usedPage = NULL;
+extern char _end; // linker script symbol
+extern char _heap_start; // linker script symbol
+static char *heap = &_heap_start;
+static char *kernel_end = &_end;
 
-void* simple_malloc(unsigned int size) {
-    char* r = heap + 0x10;
-    if(size < 0x18)
-        size = 0x18;  // minimum size 0x20 //like ptmalloc
+void *simple_malloc(unsigned int size) {
+    char *r = heap + 0x10;
+    if (size < 0x18) {
+        size = 0x18; // minimum size 0x20 //like ptmalloc
+    }
     size = size + 0x7;
     size = 0x10 + size - size % 0x10;
-    *(unsigned int*)(r - 0x8) = size;
+    *(unsigned int *)(r - 0x8) = size;
     heap += size;
-
-    if(heap > heap_end) {
-        raiseError("Run out of heap\n");
-    }
 
     return r;
 }
 
-char* memcpy (void *dest, const void *src, unsigned long long len)
-{
+char *memcpy (void *dest, const void *src, unsigned long long len) {
   char *d = dest;
   const char *s = src;
   while (len--)
@@ -34,546 +26,255 @@ char* memcpy (void *dest, const void *src, unsigned long long len)
   return dest;
 }
 
-pageHeader_t pagesAtOrder[MAX_ORDER];
-uint64 usedAddress[MAX_PAGES];
+void *memset(void *s, int c, size_t n) {
+  char *start = s;
+  for (size_t i = 0; i < n; i++) {
+    start[i] = c;
+  }
+
+  return s;
+}
+
+static frame_t* framearray;
+static list_head_t freelist[MAXORDER + 1];       // 4K * (idx**ORDER) (for every 4K) (page)
+static list_head_t cachelist[MAXCACHEORDER + 1]; // 32, 64, 128, 256, 512  (for every 32bytes)
 
 void initMemoryPages() {
-    for(int order = 0; order < (MAX_ORDER - 1); order++) {
-        pagesAtOrder[order].firstFree = createPage(order, PAGE_BEGIN_ADDRESS, EMPTY);
-        pagesAtOrder[order].firstEmpty = pagesAtOrder[order].firstFree;
+    framearray = simple_malloc(BUDDYSYSTEM_PAGE_COUNT * sizeof(frame_t));
 
-        /* 
-        The memory used by paging is allocated by simple_malloc which isn't free-able.
-        To avoid memory leaking, we allocate all the memory used by paging at once.
-        */
-        page_t* page = pagesAtOrder[order].firstFree;
-        int pageNum = getPageNumAtOrder(order);
-        // uart_puts("There are "); uart_num(pageNum); uart_puts(" pages in order: "); uart_num(order); uart_newline();
-
-        for(int i = 1; i < pageNum; i++) {
-            page->nextPage = createPage(order, PAGE_BEGIN_ADDRESS + i * getPageSizeAtOrder(order), EMPTY);
-            page->nextPage->prevPage = page; 
-            page = page->nextPage;
+    // init framearray
+    for (int i = 0; i < BUDDYSYSTEM_PAGE_COUNT; i++) {
+        if (i % (1 << MAXORDER) == 0) {
+            framearray[i].isused = 0;
+            framearray[i].val = MAXORDER;
         }
     }
 
-    // uart_puts("There are 1 page in max order: "); uart_num(MAX_ORDER - 1); uart_newline();
-    pagesAtOrder[MAX_ORDER - 1].firstFree = createPage(MAX_ORDER - 1, PAGE_BEGIN_ADDRESS, FREE);
-    pagesAtOrder[MAX_ORDER - 1].firstEmpty = NULL;
-    
-    init_reserve();
-    for(int i = 0; i < MAX_PAGES; i++) {
-        usedAddress[i] = NULL;
+    //init frame freelist
+    for (int i = 0; i <= MAXORDER; i++) {
+        INIT_LIST_HEAD(&freelist[i]);
     }
 
-    // loggingAllPageState();
-}
+    for (int i = 0; i < BUDDYSYSTEM_PAGE_COUNT; i++) {
+        //init listhead for each frame
+        INIT_LIST_HEAD(&framearray[i].listhead);
+        framearray[i].idx = i;
+        framearray[i].cacheorder = -1;
 
-page_t* createPage(uint32 order, uint64 address, int state) {
-    page_t* newPage = (page_t*)simple_malloc(sizeof(page_t));
-    newPage->order = order;
-    newPage->address = address;
-    newPage->state = state;
-    newPage->prevPage = NULL;
-    newPage->nextPage = NULL;
-    newPage->buddyPage = NULL;
-    newPage->parentPage = NULL;
-    newPage->appendPage = NULL;
-    newPage->pool = (memoryPool_t*)simple_malloc(sizeof(memoryPool_t));
-    return newPage;
-}
-
-void initPool(memoryPool_t* pool, uint32 maxSize, uint32 size, uint64 address) {
-    pool->address = address;
-    pool->size = size; 
-    pool->stateBitMap = ~(0x00ULL);
-    int num = maxSize / size;
-    pool->mask = pool->stateBitMap >> (64 - num);
-}
-
-void* malloc(uint32 size) {
-    lock_interrupt();
-    uint32 order = sizeToSmallestOrder(size);
-    size = exp2(order); 
-    order = log2(size / (MINI_PAGE_SIZE * KB));
-
-    // uart_puts("size  = "); uart_num(size); uart_newline();
-    // uart_puts("order  = "); uart_num(order); uart_newline();
-
-    if(usedPage == NULL) {
-        // uart_puts("Init used page\n");
-        usedPage = getFreePageAtOrder(order);
-        initPool(usedPage->pool, getPageSizeAtOrder(order), size, usedPage->address);
-    }
-    else if(isAllFull(usedPage, size)) {
-        // uart_puts("Allocate new page\n");
-        page_t* newPage = getFreePageAtOrder(order);
-        initPool(newPage->pool, getPageSizeAtOrder(order), size, newPage->address);
-        appendNewPage(usedPage, newPage);
-    }
-
-    // showAppendPage(usedPage);
-    void *address = allocateMemoryFromPage(usedPage, size);
-    unlock_interrupt();
-
-    return address;
-}
-
-uint32 sizeToSmallestOrder(uint32 size) {
-    uint32 order = log2(size);
-    if(size > exp2(order)) {
-        order++;
-    }
-
-    return order;
-}
-
-void appendNewPage(page_t* parentPage, page_t* newPage) {
-    page_t* page = parentPage;
-    while(page->appendPage != NULL) {
-        page = page->appendPage;
-    }
-
-    newPage->appendPage = NULL;
-    page->appendPage = newPage;
-}
-
-void showAppendPage(page_t *parentPage) {
-    page_t* page = parentPage;
-    while(page != NULL) {
-        loggingPage(page);
-        page = page->appendPage;
-    }
-}
-
-bool isAllFull(page_t* page, uint32 size) {
-    while(page != NULL) {
-        if(isFull(page, size)) {
-            page = page->appendPage;
-        }
-        else {
-            return false;
+        //add init frame into freelist
+        if (i % (1 << MAXORDER) == 0) {
+            list_add(&framearray[i].listhead, &freelist[MAXORDER]);
         }
     }
 
-    return true;
+
+    //init cachelist
+    for (int i = 0; i <= MAXCACHEORDER; i++) {
+        INIT_LIST_HEAD(&cachelist[i]);
+    }
+
+
+    /* should reserve these memory region
+    Spin tables for multicore boot (0x0000 - 0x1000)
+    Kernel image in the physical memory
+    Initramfs
+    Devicetree (Optional, if you have implement it)
+    Your simple allocator (startup allocator)  
+    stack
+    */
+
+    memory_reserve(PHY_TO_VIR(0x0000), PHY_TO_VIR(0x1000)); 
+    memory_reserve(PHY_TO_VIR(PGD_BASE), PHY_TO_VIR((PTE_BASE + 512 * 512 * 2 * 8)));
+    memory_reserve((unsigned long long)LOAD_ADDR, (unsigned long long)kernel_end);
+    memory_reserve((unsigned long long)&_heap_start, (unsigned long long)heap); //simple
+    memory_reserve((unsigned long long)INITRAMFS_ADDR, (unsigned long long)INITRAMFS_ADDR + MAX_INITRAMFS_SIZE);
+    memory_reserve(PHY_TO_VIR(0x2c000000), PHY_TO_VIR(0x3c000000)); //0x2c000000L - 0x3c000000L (stack)
 }
 
-bool isFull(page_t* page, uint32 size) {
-    return isPoolFull(page->pool, size);
-}
-
-bool isPoolFull(memoryPool_t* pool, uint32 size) {
-    return size > pool->size || (pool->stateBitMap & pool->mask) == 0ULL;
-}
-
-void* allocateMemoryFromPage(page_t* page, uint32 size) {
-    page_t* allocatedPage = NULL;
-
-    // uart_puts("Allocate page for memory\n");
-    while(page != NULL) {
-        if(!isFull(page, size)) {
-            allocatedPage = page;
+// smallest 4K
+void *allocpage(unsigned int size) {
+    // get real val size
+    // int allocsize;
+    int val;
+    for (int i = 0; i <= MAXORDER; i++) {
+        if (size <= (0x1000 << i)) {
+            val = i;
             break;
         }
 
-        page = page->appendPage;
-    }
-
-    if(allocatedPage == NULL) {
-        raiseError("Can't allocate any memory from pages\n");
-    }
-
-    // uart_puts("Allocate pool for memory\n");
-    memoryPool_t* allocatedPool = allocatedPage->pool;
-
-    if(allocatedPool == NULL) {
-        raiseError("Can't allocate any memory from pools (NULL)\n");
-    }
-    else if(isPoolFull(allocatedPool, size)) {
-        raiseError("Can't allocate any memory from pools (FULL)\n");
-    }
-    
-    uint32 shift = log2(allocatedPool->stateBitMap & allocatedPool->mask);
-    allocatedPool->stateBitMap &= ~(1ULL << shift);
-    // loggingPool(allocatedPool);
-
-    // uart_puts("Mark as used memory, state = ");
-    // uart_hex(allocatedPool->stateBitMap >> 32); uart_hex(allocatedPool->stateBitMap);
-    // uart_newline();
-    // uart_puts("AllocatedPage at "); uart_hex(allocatedPage->address); uart_newline();
-    registerUsedAddress(allocatedPage);
-    return (void*)(allocatedPool->address + shift * allocatedPool->size);   
-}
-
-void registerUsedAddress(page_t* page) {
-    uint32 idx = addressToBlockIdx(page->address);
-    uint32 numCoverdPage = exp2(page->order);
-
-    for(int i = 0; i < numCoverdPage; i++) {
-        usedAddress[i + idx] = page; 
-    }
-}
-
-uint32 addressToBlockIdx(uint64 address) {
-    return (address - PAGE_BEGIN_ADDRESS) / (MINI_PAGE_SIZE * KB);
-}
-
-page_t* getFreePageAtOrder(uint32 order) {
-    if(order >= MAX_ORDER) {
-        uart_num(order); uart_puts(" is higher than max order: "); uart_num(MAX_ORDER); uart_newline();
-        raiseError("Run out of memory\n");
-    }
-
-    if(hasNoFreePageAtOrder(order)) {
-        // uart_puts("Has no free page at order: "); uart_num(order); uart_puts(", get page from higher order\n");
-        page_t* pageAtHigherOrder = getFreePageAtOrder(order + 1);
-        // uart_puts("Divide page from order: "); uart_num(order + 1); uart_puts(" to order: "); uart_num(order); uart_newline();
-        dividePageToLowerOrder(pageAtHigherOrder);
-    }
-    
-    // uart_puts("Allocate page at order: "); uart_num(order); uart_newline();
-    page_t* page = pagesAtOrder[order].firstFree;   
-    // loggingPage(page); 
-    page->appendPage = NULL;
-    page->state = BUSY;
-    
-    if(isNotPageTail(pagesAtOrder[order].firstFree)) {
-        pagesAtOrder[order].firstFree = pagesAtOrder[order].firstFree->nextPage;
-    }
-    // else {
-    //     uart_puts("Full use at order: "); uart_num(order); uart_newline();
-    // }
-    
-    return page;
-}
-
-void loggingPage(page_t* page) {
-    uart_puts("Page ("); uart_hex(page); uart_puts(") ");
-    uart_puts("Order: "); uart_num(page->order); uart_puts(" ");
-    uart_puts("Address: "); uart_hex(page->address); uart_puts(" ~ "); 
-        uart_hex(page->address + getPageSizeAtOrder(page->order)); uart_puts(" ");
-    uart_puts("State: "); uart_num(page->state); uart_newline();
-    // uart_puts("Previous page: "); uart_hex(page->prevPage); uart_puts(" ");
-    // uart_puts("Next page: "); uart_hex(page->nextPage); uart_newline();
-    // uart_puts("Buddy page: "); uart_hex(page->buddyPage); uart_puts(" ");
-    // uart_puts("Parent Page: "); uart_hex(page->parentPage); uart_newline();
-
-    // memoryPool_t* pool = page->headPool;
-    // for(int i = 0; i < NUM_POOL; i++) {
-    //     loggingPool(pool);
-    //     pool = pool->nextPool;
-    // }
-}
-
-void loggingPool(memoryPool_t* pool) {
-    uart_puts("Pool ("); uart_hex(pool); uart_puts(") ");
-    uart_puts("Address: "); uart_hex(pool->address); uart_puts(" ");
-    uart_puts("Size: "); uart_num(pool->size); uart_puts(" ");
-    uart_puts("Mask: "); uart_hex(pool->mask>>32); uart_hex(pool->mask); uart_newline();
-
-    uint64 state = pool->stateBitMap & pool->mask;
-    uart_puts("State: "); uart_hex(state>>32); uart_hex(state); uart_newline();
-}
-
-bool hasFreePageAtOrder(uint32 order) {
-    return pagesAtOrder[order].firstFree->state == FREE;
-}
-
-bool hasNoFreePageAtOrder(uint32 order) {
-    return pagesAtOrder[order].firstFree->state != FREE;
-}
-
-void dividePageToLowerOrder(page_t* page) {
-    uint32 order = page->order;
-    uint64 address = page->address;
-    page_t* topHalfPage = addPageAtOrder(order - 1, address, page);
-    page_t* bottomHalfPage = addPageAtOrder(order - 1, address + getPageSizeAtOrder(order - 1), page);
-    bindAsBuddy(topHalfPage, bottomHalfPage);
-}
-
-page_t* addPageAtOrder(uint32 order, uint64 address, page_t* parentPage) {
-    page_t* page = pagesAtOrder[order].firstEmpty;
-    page->address = address;
-    page->state = FREE;
-    page->parentPage = parentPage;
-    if(isNotPageTail(pagesAtOrder[order].firstEmpty)) {
-        pagesAtOrder[order].firstEmpty = pagesAtOrder[order].firstEmpty->nextPage;
-    }
-    // else {
-    //     uart_puts("No any empty page at order: "); uart_num(order); uart_newline();
-    // }
-    return page;
-}
-
-uint64 getPageSizeAtOrder(uint32 order) {
-    uint64 num = exp2(order);
-    return num * MINI_PAGE_SIZE * KB;
-}
-
-uint64 getPageNumAtOrder(uint32 order) {
-    return exp2(MAX_ORDER - 1 - order);
-}
-
-void bindAsBuddy(page_t* page1, page_t* page2) {
-    page1->buddyPage = page2;
-    page2->buddyPage = page1;
-}
-
-void freePage(page_t* page) {
-    if(page->state != BUSY) {
-        uart_puts("Not free-able\n");
-        return;
-    }
-
-    uint32 order = page->order;
-    page->state = FREE;
-
-    // uart_puts("Free page at order: "); uart_num(order); uart_newline();
-
-    if(page->order == (MAX_ORDER - 1)) {
-        return;
-    }
-
-    if(!isFirstEmpty(page)) {    
-        if(isNotPageHead(page)) {
-            // uart_puts("Relink page at order: "); uart_num(order); uart_newline();
-            page->prevPage->nextPage = page->nextPage;
-        }
-        
-        if(pagesAtOrder[order].firstEmpty->state == EMPTY) {
-            page->nextPage->prevPage = page->prevPage;
-            page->nextPage = pagesAtOrder[order].firstEmpty;
-            page->prevPage = pagesAtOrder[order].firstEmpty->prevPage;
-            pagesAtOrder[order].firstEmpty->prevPage->nextPage = page;
-            pagesAtOrder[order].firstEmpty->prevPage = page;
-        }
-        else {
-            // uart_puts("Full use case at order: "); uart_num(order); uart_newline();
-            page->nextPage->prevPage = page->prevPage;
-            page->prevPage = pagesAtOrder[order].firstEmpty;
-            page->nextPage = pagesAtOrder[order].firstEmpty->nextPage;
-            pagesAtOrder[order].firstEmpty->nextPage->prevPage = page;
-            pagesAtOrder[order].firstEmpty->nextPage = page;
-            pagesAtOrder[order].firstEmpty = page;
+        if (i == MAXORDER) {
+            raiseError("Too large to malloc!!!\n");
         }
     }
 
-    if(hasNoFreePageAtOrder(order)) {
-        // uart_puts("Assign as first free page at order: "); uart_num(order); uart_newline();
-        pagesAtOrder[order].firstFree = page;
+    // find the smallest larger frame in freelist
+    int target_list_val;
+    for (target_list_val = val; target_list_val <= MAXORDER; target_list_val++) {
+        if (!list_empty(&freelist[target_list_val]))
+            break;
     }
 
-    if(page->buddyPage->state == FREE) {
-        // uart_puts("Buddy is free too, merge pages from order: "); uart_num(order); uart_puts(" to order: "); uart_num(order + 1); uart_newline();
-        mergePagesToHigherOrder(page);
-    }
-}
-
-bool isNotPageHead(page_t* page) {
-    return page->prevPage != NULL;
-}
-
-bool isNotPageTail(page_t* page) {
-    return page->nextPage != NULL;
-}
-
-bool isFirstFree(page_t* page) {
-    return page == pagesAtOrder[page->order].firstFree;
-}
-
-bool isFirstEmpty(page_t* page) {
-    return page == pagesAtOrder[page->order].firstEmpty;
-}
-
-void mergePagesToHigherOrder(page_t* page) {
-    moveToTail(page);
-    moveToTail(page->buddyPage);
-    freePage(page->parentPage);
-}
-
-void moveToTail(page_t* page) {
-    uint32 order = page->order;
-    page->state = EMPTY;
-
-    if(!isFirstEmpty(page)) {    
-        if(isFirstFree(page)) {
-            pagesAtOrder[order].firstFree = page->nextPage;
-        }
-
-        if(isNotPageHead(page)) {
-            page->prevPage->nextPage = page->nextPage;
-        }
-
-        page->nextPage->prevPage = page->prevPage;
-        page->prevPage = pagesAtOrder[order].firstEmpty;
-        page->nextPage = pagesAtOrder[order].firstEmpty->nextPage;
-        pagesAtOrder[order].firstEmpty->nextPage->prevPage = page;
-        pagesAtOrder[order].firstEmpty->nextPage = page;
-    }
-}
-
-void loggingAllPageState() {
-    for(int order = 0; order < MAX_ORDER; order++) {
-        page_t* page = pagesAtOrder[order].firstFree;
-        while(isNotPageHead(page)) {
-            page = page->prevPage;
-        }
-
-        while(page != NULL) { 
-            switch(page->state) {
-                case FREE: 
-                    uart_putc('F');
-                break;
-                case BUSY: 
-                    uart_putc('B');
-                break;
-                case EMPTY: 
-                    uart_putc('X');
-                break;
-                default:
-                    uart_putc('?');
-                break;
-            }
-
-            uart_putc(' ');
-            page = page->nextPage;
-        }
-
-        uart_newline();   
-    } 
-}
-
-void free(uint64 address) {
-    lock_interrupt();
-    page_t* page = usedAddress[addressToBlockIdx(address)];
-
-    if(page == NULL) {
-        uart_puts("Not free-able address (page)\n");
-        return;
+    if (target_list_val > MAXORDER) {
+        raiseError("malloc ERROR, run out all list that large enough!!!\n");
     }
 
-    memoryPool_t* pool = page->pool;
+    //get the frame
+    frame_t *target_frame_ptr = (frame_t *)freelist[target_list_val].next;
+    list_del_entry((struct list_head *)target_frame_ptr);
 
-    // uart_puts("Original state = ");
-    // uart_hex(pool->stateBitMap >> 32); uart_hex(pool->stateBitMap);
-    // uart_newline();
+    // Release redundant memory block
+    for (int j = target_list_val; j > val; j--) {
+        release_redundant(target_frame_ptr);
+    }
+    target_frame_ptr->isused = 1;
+    return (void *)BUDDYSYSTEM_START + (0x1000 * (target_frame_ptr->idx));
+}
 
-    uint32 shift = (address - pool->address) / pool->size;
-    pool->stateBitMap |= 1ULL << shift;
+void freepage(void *ptr) {
+    frame_t *target_frame_ptr = &framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12];
 
-    // uart_puts("Mark as free memory, state = ");
-    // uart_hex(pool->stateBitMap >> 32); uart_hex(pool->stateBitMap);
-    // uart_newline();
-
-    page_t* page_pointer = usedPage;
-    if(pool->stateBitMap == ~(0ULL)) {
-        // uart_puts("All pools are free, free page: ");
-        // uart_hex(page);
-        // uart_newline();
-        if(page == usedPage) {
-            usedPage = usedPage->appendPage;
-        }
-        else {
-            while(page_pointer->appendPage != page && page_pointer) {
-                // uart_puts("page: "); uart_hex(page_pointer); uart_newline();
-                page_pointer = page_pointer->appendPage;
-            }
-
-            if(page_pointer == NULL) {
-                raiseError("Cant relink usedPage\n");
-            }
-
-            page_pointer->appendPage = page->appendPage;
-        }
-
-        // uart_puts("Remove page: ");
-        // uart_hex(page);
-        // uart_newline();
-
-        removeUsedAddress(page);
-        freePage(page);
+    target_frame_ptr->isused = 0;
+    frame_t* temp;
+    while ((temp = coalesce(target_frame_ptr)) != (frame_t *)-1) {
+        target_frame_ptr = temp;
     }
 
-    unlock_interrupt();
+    list_add(&target_frame_ptr->listhead, &freelist[target_frame_ptr->val]);
 }
 
-void removeUsedAddress(page_t* page) {
-    uint32 idx = addressToBlockIdx(page->address);
-    uint32 numCoverdPage = exp2(page->order);
-
-    for(int i = 0; i < numCoverdPage; i++) {
-        usedAddress[i + idx] = NULL; 
-    }
+frame_t *release_redundant(frame_t *frame_ptr) {
+    frame_ptr->val -= 1;
+    frame_t *buddyptr = get_buddy(frame_ptr);
+    buddyptr->val = frame_ptr->val;
+    buddyptr->isused = 0;
+    list_add(&buddyptr->listhead, &freelist[buddyptr->val]);
+    return frame_ptr;
 }
 
-void init_reserve() {
-    uart_puts("Reserve memory\n");
-    reserveMemory(0x0000, 0x1000);     // spin tables for multicore boot
-    reserveMemory(LOAD_ADDR - _stack_size, heap_end);  // kernel and heap/stack space
-    reserveMemory(INITRAMFS_ADDR, INITRAMFS_ADDR + MAX_INITRAMFS_SIZE);  // initramfs
+frame_t *get_buddy(frame_t *frame) {
+    return &framearray[frame->idx ^ (1 << frame->val)];
 }
 
-void reserveMemory(uint64 start, uint64 end) {
-    uint32 order = 0;
-    uart_puts("Address: "); uart_hex(start); uart_puts(" to "); uart_hex(end); uart_newline();
-    for(uint64 address = start; address <= end; address += MINI_PAGE_SIZE * KB) {
-        // uart_puts("Reserve address: "); uart_hex(address); uart_newline();
-        if(inRange(pagesAtOrder[MAX_ORDER - 1].firstFree, address)) {
-            reservePage(order, address);
-        }
-        else {
-            // uart_puts("Address: "); uart_hex(address); uart_puts(" is not covered by buddy system\n");
+//return 0  -> success
+//return -1 -> cannot coalesce
+frame_t *coalesce(frame_t *frame_ptr) {
+    frame_t *buddy = get_buddy(frame_ptr);
+
+    // MAXORDER
+    if (frame_ptr->val == MAXORDER)
+        return (frame_t*)-1;
+
+    // val not the same (there is some chunks in the buddy used)
+    if (frame_ptr->val != buddy->val)
+        return (frame_t *)-1;
+
+    //buddy is used
+    if (buddy->isused == 1)
+        return (frame_t *)-1;
+
+    list_del_entry((struct list_head *)buddy);
+    frame_ptr->val += 1;
+    buddy->val += 1;
+
+    return buddy < frame_ptr ? buddy : frame_ptr;
+}
+
+void *alloccache(unsigned int size) {
+    //get order
+    int order;
+    for (int i = 0; i <= MAXCACHEORDER; i++) {
+        if (size <= (32 << i)) {
+            order = i;
             break;
         }
     }
+
+    if (list_empty(&cachelist[order])) {
+        page2caches(order);
+    }
+
+    list_head_t *r = cachelist[order].next;
+    list_del_entry(r);
+    return r;
 }
 
-void reservePage(uint32 order, uint64 address) {
-    page_t* waitFreePage = NULL;
-    page_t* page_pointer;
-    page_t* page;
+void page2caches(int order) {
+    //make caches of the order from a page
+    char *page = allocpage(0x1000);
+    frame_t *pageframe_ptr = &framearray[((unsigned long long)page - BUDDYSYSTEM_START) >> 12];
+    pageframe_ptr->cacheorder = order;
 
-    page = pagesAtOrder[order].firstFree;
-    while(isNotPageHead(page)) {
-        page = page->prevPage;
-    }
-
-    while(page != NULL) { 
-        if(page->state == BUSY && inRange(page, address)) {
-            // uart_puts("Already reserved, page: "); uart_hex(page); uart_newline();
-            return;
-        }
-        page = page->nextPage;
-    }
-
-    do {
-        page = getFreePageAtOrder(order);
-        if(waitFreePage == NULL) {
-            waitFreePage = page;
-            page_pointer = page;
-        }
-        else {
-            page_pointer->appendPage = page;
-            page_pointer = page;
-        }
-    } while(!inRange(page, address));
-
-    // uart_puts("Reserve page: "); uart_hex(page); uart_newline();
-    if(waitFreePage != page) {
-        page_pointer->appendPage = NULL;
-        while(waitFreePage != NULL) {
-            if(waitFreePage != page)
-                freePage(waitFreePage);
-            waitFreePage = waitFreePage->appendPage;
-        }
+    // split page into a lot of caches and push them into cachelist
+    int cachesize = (32 << order);
+    for (int i = 0; i < 0x1000; i += cachesize) {
+        list_head_t *c = (list_head_t *)(page + i);
+        list_add(c, &cachelist[order]);
     }
 }
 
-bool inRange(page_t* page, uint64 address) {
-    return page->address <= address && address < (page->address + getPageSizeAtOrder(page->order));
+void freecache(void *ptr) {
+    list_head_t *c = (list_head_t *)ptr;
+    frame_t *pageframe_ptr = &framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12];
+    list_add(c, &cachelist[pageframe_ptr->cacheorder]);
 }
 
-bool inPool(memoryPool_t* pool, uint64 address) {
-    return pool->address <= address && address < (pool->address + pool->size * BASE_NUM);
+void *malloc(unsigned int size) {
+    lock_interrupt();
+
+    //For page
+    if (size > (32 << MAXCACHEORDER)) {
+        void *r = allocpage(size);
+        unlock_interrupt();
+        return r;
+    }
+
+    void *r = alloccache(size);
+
+    //For cache
+    unlock_interrupt();
+    return r;
+}
+
+void free(void *ptr)
+{
+    lock_interrupt();
+    //For page
+    if ((unsigned long long)ptr % 0x1000 == 0 && framearray[((unsigned long long)ptr - BUDDYSYSTEM_START) >> 12].cacheorder == -1) {
+        freepage(ptr);
+        unlock_interrupt();
+        return;
+    }
+
+    //For cache
+    freecache(ptr);
+    unlock_interrupt();
+}
+
+void memory_reserve(unsigned long long start, unsigned long long end) {
+    uart_printf("reserve 0x%x to 0x%x\n", start, end);
+    start -= start % 0x1000; // floor (align 0x1000)
+    end = end % 0x1000 ? end + 0x1000 - (end % 0x1000) : end; // ceiling (align 0x1000)
+
+    //delete page from freelist
+    for (int order = MAXORDER; order >= 0; order--) {
+        list_head_t *pos;
+        list_for_each(pos, &freelist[order]) {
+            unsigned long long pagestart = ((frame_t *)pos)->idx * 0x1000L + BUDDYSYSTEM_START;
+            unsigned long long pageend = pagestart + (0x1000L << order);
+
+            if (start <= pagestart && end >= pageend) { // if page all in reserved memory -> delete it from freelist
+                ((frame_t *)pos)->isused = 1;
+                list_del_entry(pos);
+            }
+            else if (start >= pageend || end <= pagestart) { // no intersection
+                continue;
+            }
+            else { // partial intersection (or reversed memory all in the page)
+                list_del_entry(pos);
+                list_head_t *temppos = pos -> prev;
+                list_add(&release_redundant((frame_t *)pos)->listhead, &freelist[order - 1]);
+                pos = temppos;
+            }
+        }
+    }
 }

@@ -3,15 +3,16 @@
 #include "string.h"
 #include "address.h"
 #include "utils.h"
+#include "mmu.h"
 
-uint32* initramfs = INITRAMFS_ADDR;
+uint64 initramfs = (uint64)INITRAMFS_ADDR;
 
 int initramfs_callback(char* data, char* name, char* prop_name) {
     // get init ramfs location
     if(strcmp(name, "chosen") && strcmp(prop_name, "linux,initrd-start")) {
-        uint32 value = *((uint32*)data);
+        uint64 value = *((uint64*)data);
         value = SWAP32(value); // big endian
-        initramfs = (volatile uint32*)value;
+        initramfs = PHY_TO_VIR(value);
         uart_puts("Get initramfs: ");
         uart_hex(value);
         uart_newline();
