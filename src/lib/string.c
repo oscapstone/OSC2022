@@ -1,6 +1,6 @@
 #include <string.h>
 
-int strcmp(char *str1, char *str2)
+int strcmp(const char *str1, const char *str2)
 {
     char c1, c2;
 
@@ -9,7 +9,7 @@ int strcmp(char *str1, char *str2)
     return c1 - c2;
 }
 
-int strncmp(char *str1, char *str2, int n)
+int strncmp(const char *str1, const char *str2, int n)
 {
     char c1, c2;
 
@@ -21,7 +21,35 @@ int strncmp(char *str1, char *str2, int n)
     return n ? c1 - c2 : 0;
 }
 
-int strlen(char *str)
+int strcasecmp(const char *s1, const char *s2)
+{
+    char c1, c2;
+
+    while (1) {
+        c1 = *s1++;
+        c2 = *s2++;
+
+        if (!c1 || !c2) {
+            break;
+        }
+
+        if ('A' <= c1 && c1 <= 'Z') {
+            c1 |= 0x20;
+        }
+
+        if ('A' <= c2 && c2 <= 'Z') {
+            c2 |= 0x20;
+        }
+
+        if (c1 != c2) {
+            break;
+        }
+    }
+
+    return c1 - c2;
+}
+
+int strlen(const char *str)
 {
     int ret = 0;
     
@@ -32,7 +60,66 @@ int strlen(char *str)
     return ret;
 }
 
-int atoi(char *str)
+int strcpy(char *dst, const char *src)
+{
+    int ret = 0;
+
+    while (*src) {
+        *dst = *src;
+        dst++;
+        src++;
+        ret++;
+    }
+
+    *dst = '\0';
+
+    return ret;
+}
+
+char *strcat(char *dest, const char *src)
+{
+    char *t;
+
+    t = dest;
+
+    while (*t) {
+        t++;
+    }
+
+    while (*src) {
+        *t = *src;
+        t++;
+        src++;
+    }
+
+    *t = '\0';
+
+    return dest;
+}
+
+char *strncat(char *dest, const char *src, int n)
+{
+    char *t;
+
+    t = dest;
+
+    while (*t) {
+        t++;
+    }
+
+    while (n > 0 && *src) {
+        *t = *src;
+        t++;
+        src++;
+        n--;
+    }
+
+    *t = '\0';
+
+    return dest;
+}
+
+int atoi(const char *str)
 {
     int i = 0, tmp = 0;
 
