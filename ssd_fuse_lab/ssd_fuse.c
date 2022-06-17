@@ -221,8 +221,6 @@ static unsigned int get_next_pca()
 static int ftl_read( char* buf, size_t lba)
 {
     // TODO
-    // 1 sector = 512 bytes
-
     size_t pca = L2P[lba];
     if(pca==INVALID_PCA) return 0;
     return nand_read(buf,pca);
@@ -253,10 +251,8 @@ static int ssd_do_read(char* buf, size_t size, off_t offset)
         // TODO
         if(ftl_read(tmp_buf+i*512,tmp_lba+i)==-EINVAL) return -EINVAL;
     }
-
     memcpy(buf, tmp_buf + offset % 512, size);
 
-    
     free(tmp_buf);
     return size;
 }
@@ -299,17 +295,6 @@ void garbage_collect()
     if(vc[i]+vc[i+1]>PAGE_PER_BLOCK) return;
     if(vc_idx[i]==curr_pca.fields.nand && vc[i]+vc[i+1]<PAGE_PER_BLOCK) return;
  
-    // if(!isBlockFull(curr_pca.fields.nand)) return;
-    // if(vc_idx[i]==curr_pca.fields.nand && vc[i]!=PAGE_PER_BLOCK) return;
-    
-    // printf("--------------------DO GC----------------------\n");
-    // for (int j = 0; j < PHYSICAL_NAND_NUM; j++)
-    // {
-    //     printf("VC[%d]:%d\n",vc_idx[j],vc[j]);
-    // }
-    
-    // write buffer pages to new block
-    // list_page();
     unsigned int fb = get_next_block();
     char* buf = malloc(PAGE_PER_BLOCK*512);
     size_t buf_offset = 0;
@@ -324,7 +309,6 @@ void garbage_collect()
             size_t pca_idx = 10*(pca/65536) + pca%65536;
             size_t lba = P2L[pca_idx];
             if(lba!=INVALID_LBA){
-                
                 // int lba_idx = lba/512;
                 size_t new_pca = fb+buf_offset/512;
                 int new_pca_idx = 10*(fb/65536)+buf_offset/512;
@@ -334,7 +318,6 @@ void garbage_collect()
                 curr_pca.pca = fb+buf_offset/512;
                 L2P[lba] = new_pca;
                 P2L[new_pca_idx]=lba;
-                // printf("Block %d move page%d to %d,oldpcaid:%d,newpca:%d\n",b_idx,pca_idx%10,fb/65536,pca_idx,fb+buf_offset/512);
                 buf_offset+=512;
                 valid_count[b_idx]--;            
             }
@@ -353,7 +336,7 @@ void garbage_collect()
 static int ftl_write(const char* buf, size_t lba_rnage, size_t lba)
 {
     // TODO
-    if(free_block_number<=1) garbage_collect();
+    if(free_block_number<=3) garbage_collect();
 
     size_t pca;
     unsigned int pca_idx;
@@ -451,6 +434,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
     tmp_buf = malloc(512);
     for (idx = 0; idx < tmp_lba_range; idx++)
     {
+        // TODO
         memset(tmp_buf,0,512);
         if(L2P[tmp_lba+idx]!=INVALID_PCA){
             // read modify write
@@ -464,9 +448,7 @@ static int ssd_do_write(const char* buf, size_t size, off_t offset)
             process_size = (remain_size>512)?512:remain_size;
             memcpy(tmp_buf,(char*)(buf+curr_size),process_size); 
         }
-        // printf("-----write %d to offset %d\n",size,offset);
         ftl_write(tmp_buf,tmp_lba_range,tmp_lba+idx);
-        // printf("*********[%d]offset:%d,process:%d,cur:%d->%d,remain:%d->%d\n",idx,offset,process_size,curr_size,curr_size+process_size,remain_size,remain_size-process_size);
         curr_size+=process_size;
         remain_size -= process_size;
     }
