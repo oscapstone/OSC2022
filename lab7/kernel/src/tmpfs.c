@@ -58,7 +58,7 @@ int tmpfs_setup_mount(struct filesystem* fs, struct mount* mount) {
 
 int tmpfs_lookup(struct vnode* dir_node, struct vnode** target,
                  const char* component_name) {
-  printf("[lookup] %s\n", component_name);
+  // printf("[lookup] %s\n", component_name);
   struct tmpfs_fentry* fentry = (struct tmpfs_fentry*)dir_node->internal;
   if (fentry->type != FILE_DIRECTORY) return 0;
 

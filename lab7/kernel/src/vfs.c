@@ -44,14 +44,6 @@ void vfs_init() {
   tmpfs->setup_mount = tmpfs_setup_mount;
   register_filesystem(tmpfs);
 
-  // init and register tmpfs
-  // fatfs_init();
-  // struct filesystem* fatfs =
-  //     (struct filesystem*)malloc(sizeof(struct filesystem));
-  // fatfs->name = "fatfs";
-  // fatfs->setup_mount = fatfs_setup_mount;
-  // register_filesystem(fatfs);
-
   // use tmpfs to mount root filesystem
   rootfs = (struct mount*)malloc(sizeof(struct mount));
   struct filesystem* fs = get_fs_by_name("tmpfs");
@@ -63,8 +55,17 @@ void vfs_init() {
   current_dir = rootfs->root;
   cpio_populate_rootfs();
 
-  // vfs_fat_test();
-  // thread_fatfs_test();
+  // init and register cpio
+  cpiofs_init();
+  struct filesystem* cpiofs =
+      (struct filesystem*)malloc(sizeof(struct filesystem));
+  cpiofs->name = "cpiofs";
+  cpiofs->setup_mount = cpiofs_setup_mount;
+  register_filesystem(cpiofs);
+
+  //iniframfs
+  vfs_mkdir("/initramfs");
+  vfs_mount("", "/initramfs", "cpiofs");
 }
 
 int register_filesystem(struct filesystem* fs) {
@@ -133,7 +134,7 @@ struct file* vfs_open(const char* pathname, int flags) {
   // pathname: /mnt/file1 -> pathname_: /mnt,  filename: file1
   // pathname: file1      -> pathname_: file1, filename: NULL
   char* filename = split_last(pathname_, '/');
-  printf("[vfs_open] pathname_ :%s, filename :%s\n", pathname_, filename);
+  // printf("[vfs_open] pathname_ :%s, filename :%s\n", pathname_, filename);
   if (*pathname_ == '\0' && pathname[0] == '/') {
     dir = rootfs->root;
   }
@@ -274,8 +275,8 @@ int vfs_mount(const char* device, const char* mountpoint,
   struct filesystem* fs = get_fs_by_name(filesystem);
   fs->setup_mount(fs, mountfs);
 
-  struct tmpfs_fentry* fentry = (struct tmpfs_fentry*)target->internal;
-  printf("[vfs_mount] %s\n", fentry->name);
+  // struct tmpfs_fentry* fentry = (struct tmpfs_fentry*)target->internal;
+  // printf("[vfs_mount] %s\n", fentry->name);
   
   target->mount = mountfs;
   mountfs->root->v_ops->set_parent(mountfs->root, parent_vnode);
