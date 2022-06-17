@@ -5,7 +5,7 @@
 - Basic Exercise 1
     - [x] Virtual Memory in Kernel Space
 - Basic Exercise 2 
-    - [ ] Virtual Memory in User Space
+    - [x] Virtual Memory in User Space
 - Advanced Exercise 1 
     - [ ] Mmap 
 - Advanced Exercise 2
