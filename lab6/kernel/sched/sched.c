@@ -49,7 +49,7 @@ void schedule(){
 
         // add current task to schdule list
         current = get_current();
-        if( current != NULL && current->thread_info.state != TASK_DEAD){ 
+        if( current != NULL && current->thread_info.state != TASK_DEAD && next != NULL){ 
             current->sched_info.counter = current->sched_info.priority;
             list_add_tail(&current->sched_info.sched_list, &rq);
         }else if(current == NULL){

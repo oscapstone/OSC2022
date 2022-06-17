@@ -8,6 +8,7 @@ void kthread_init(){
     volatile uint64_t daif;
     struct task_struct* kthread = (struct task_struct*)kmalloc(sizeof(struct task_struct));
 
+	daif = local_irq_disable_save();
     kthread->stack = (void*)((uint64_t)&__EL1_stack - (uint64_t)&__EL1_stack_size);
 	LOG("kthread->stack: %p", kthread->stack);
 
@@ -28,15 +29,14 @@ void kthread_init(){
     kthread->sched_info.priority = 1;
     kthread->sched_info.counter = kthread->sched_info.priority;
 	
-	daif = local_irq_disable_save();
     list_add_tail(&kthread->list, &task_list);
-	local_irq_restore(daif);
 
     // initialzie singal
     sigpending_init(&kthread->sigpending);
     default_sighand_init(&kthread->sighandler);
 
 	set_tpidr_el1((uint64_t)kthread); 
+	local_irq_restore(daif);
     LOG("kthread_init end");
 }
 
@@ -66,8 +66,9 @@ void _kthread_remove_zombies(){
 
 void kthread_idle(){
     while(1){
-        preempt_schedule();
+		//LOG("kthread_idle");
         _kthread_remove_zombies();
+        preempt_schedule();
     }
 }
 

@@ -114,3 +114,60 @@ void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t p
     LOG("mappages end");
 }
 
+void free_one_pte(pteval_t* pte){
+    LOG("free_one_pte(%p)", pte);
+    pteval_t* pte_e = pte;
+    void* page_frame;
+    for(uint64_t i = 0 ; i < 512 ; i++){
+        if(!pte_none(pte_e[i])){
+            page_frame = (void*)phys_to_virt(pte_e[i] & PHYS_ADDR_MASK);
+            LOG("free page frame: %p", page_frame);
+            free_page(page_frame);
+        }
+    }
+    free_page(pte);
+}
+
+void free_one_pmd(pmdval_t* pmd){
+    LOG("free_one_pmd(%p)", pmd);
+    pmdval_t* pmd_e = pmd;
+    pteval_t* pte;
+    for(uint64_t i = 0 ; i < 512 ; i++){
+        if(!pmd_none(pmd_e[i])){
+            pte = (pteval_t*)phys_to_virt(pmd_e[i] & PHYS_ADDR_MASK);
+            free_one_pte(pte);
+        }
+    }
+    free_page(pmd);
+}
+
+void free_one_pud(pudval_t* pud){
+    LOG("free_one_pud(%p)", pud);
+    pudval_t* pud_e = pud;
+    pmdval_t* pmd;
+    for(uint64_t i = 0 ; i < 512 ; i++){
+        if(!pud_none(pud_e[i])){
+            pmd = (pmdval_t*)phys_to_virt(pud_e[i] & PHYS_ADDR_MASK);
+            free_one_pmd(pmd);
+        }
+    }
+    free_page(pud);
+}
+
+void free_one_pgd(pgdval_t* pgd){
+    LOG("free_one_pgd(%p)", pgd);
+    pgdval_t* pgd_e = pgd;
+    pudval_t* pud;
+    for(uint64_t i = 0 ; i < 512 ; i++){
+        if(!pgd_none(pgd_e[i])){
+            pud = (pudval_t*)phys_to_virt(pgd_e[i] & PHYS_ADDR_MASK);
+            free_one_pud(pud);
+        }
+    }
+    free_page(pgd);
+}
+
+void free_page_table(pgdval_t* pgd){
+    LOG("free_page_table(%p)", pgd);
+    free_one_pgd(pgd);
+}

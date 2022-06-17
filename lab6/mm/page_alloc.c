@@ -103,7 +103,12 @@ void free_pages(void* addr, uint32_t order){
     struct page *page = pfn_to_page(pfn);
     
     daif = local_irq_disable_save();
-    _free_pages(page, order);
+    page->ref_cnt--;
+    if(page->ref_cnt == 0){
+        _free_pages(page, order);
+    }else{
+        LOG("addr: %p, ref_cnt: %p", addr, page->ref_cnt);
+    }
     local_irq_restore(daif);
 }
 
@@ -114,7 +119,12 @@ void free_page(void* addr){
     struct page *page = pfn_to_page(pfn);
 
     daif = local_irq_disable_save();
-    _free_pages(page, 0);
+    page->ref_cnt--;
+    if(page->ref_cnt == 0){
+        _free_pages(page, 0);
+    }else{
+        LOG("addr: %p, ref_cnt: %p", addr, page->ref_cnt);
+    }
     local_irq_restore(daif);
 }
 
@@ -174,10 +184,10 @@ void* alloc_pages(uint32_t order){
 
     daif = local_irq_disable_save();
     struct page* page = _alloc_pages(order);
+    page->ref_cnt++;
     local_irq_restore(daif);
-    uint64_t pfn = page_to_pfn(page);
 
-    return pfn_to_virt(pfn);
+    return page_to_virt(page);
 }
 
 // return one page
@@ -185,10 +195,10 @@ void* alloc_page(){
     volatile uint64_t daif;
     daif = local_irq_disable_save();
     struct page* page = _alloc_pages(0);
+    page->ref_cnt++;
     local_irq_restore(daif);
 
-    uint64_t pfn = page_to_pfn(page);
-    return pfn_to_virt(pfn);
+    return page_to_virt(page);
 }
 
 void* calloc_page(){
@@ -197,6 +207,7 @@ void* calloc_page(){
     struct page* page = _alloc_pages(0);
     local_irq_restore(daif);
     memset(page_to_virt(page), 0, PAGE_SIZE);
+    page->ref_cnt++;
     return page_to_virt(page);
 }
 

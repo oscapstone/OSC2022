@@ -80,8 +80,18 @@ identity_paging:
     msr mair_el1, x0
 
 // initialize identity page table
-    adr x0, __PGD_start // PGD's page frame at 0x0
-    adr x1, __PUD_start // PUD's page frame at 0x1000
+    adr x0, __PGD_start 
+    mov x1, x0
+    ldr x2, =(0x1000 * 1028)
+pg_zero:
+    sub     x3, x1, x0
+    sub     x3, x3, x2
+    cbz     x3, pg_zero_end 
+    str     xzr, [x1], #8 // store zero to [x1] and add 8 to x1
+    b pg_zero
+
+pg_zero_end:
+    adr x1, __PUD_start 
 // initialize PGD
     ldr x2, = BOOT_PGD_ATTR
     orr x2, x1, x2 // combine the physical address of next level page with attribute.

@@ -12,8 +12,6 @@
 #define BUDDY_MAX_ORDER    7 
 
 #define PAGE_TYPE_RESERVED 1
-#define PAGE_SHIFT 12
-#define PAGE_SIZE (1ul << PAGE_SHIFT)
 
 #define BUDDY_IS_ALLOCATED(x) (((struct page*)x)->order & BUDDY_ALLOCATED)
 #define BUDDY_IS_MEMBER(x) (((struct page*)x)->order & BUDDY_GROUP_MEMBER)
@@ -32,6 +30,7 @@
 #define virt_to_page(x) (pfn_to_page(virt_to_pfn(x)))
 #define virt_to_phys(addr) (((uint64_t)addr) - UPPER_ADDR_SPACE_BASE)
 #define phys_to_virt(addr) (((uint64_t)addr) + UPPER_ADDR_SPACE_BASE)
+#define phys_to_page(addr) (pfn_to_page((uint64_t)addr >> PAGE_SHIFT))
 
 struct page{
 // if (order & BUDDY_MEMBER), then it is freed and it is not a buddy leader
@@ -40,7 +39,7 @@ struct page{
     uint32_t order; 
     uint32_t type;
     struct list_head list;
-    int64_t ref_cnt;
+    size_t ref_cnt;
 };
 
 struct free_list{

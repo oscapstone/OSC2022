@@ -53,7 +53,7 @@ static uint32_t MBox_process(uint8_t* tags, size_t tags_size){
     }
 
     // write to mailbox
-    MBox_write((uint32_t)(uint64_t)MBox_buf, MBOX_CHANNEL_PROPERTY_TAGS);
+    MBox_write((uint32_t)(uint64_t)virt_to_phys(MBox_buf), MBOX_CHANNEL_PROPERTY_TAGS);
     
     // read from mailbox
     uint32_t result = MBox_read(MBOX_CHANNEL_PROPERTY_TAGS);
@@ -73,8 +73,8 @@ void MBox_get_board_revision(uint32_t* ret){
     ((uint32_t*)tag->values)[0] = 0;
     
     // process tags
-    MBox_buffer* mbuf = (MBox_buffer *)(uint64_t)MBox_process(buf, sizeof(MBox_tag) + 4);
-
+    MBox_buffer* mbuf = (MBox_buffer*)phys_to_virt(MBox_process(buf, sizeof(MBox_tag) + 4));
+	
     // precoess response tags
     tag = (MBox_tag*)mbuf->buf;
     uint32_t *pbuf = (uint32_t*)mbuf;
@@ -97,7 +97,7 @@ void MBox_get_arm_memory(uint32_t* ret){
     ((uint32_t*)tag->values)[1] = 0;
     
     // process tags
-    MBox_buffer* mbuf = (MBox_buffer *)(uint64_t)MBox_process(buf, sizeof(MBox_tag) + 8);
+    MBox_buffer* mbuf = (MBox_buffer*)phys_to_virt(MBox_process(buf, sizeof(MBox_tag) + 8));
 
     // precoess response tags
     tag = (MBox_tag*)mbuf->buf;

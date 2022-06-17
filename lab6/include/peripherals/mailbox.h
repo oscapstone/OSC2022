@@ -6,6 +6,7 @@
 #include "debug/debug.h"
 #include "peripherals/iomapping.h"
 #include "kernel/sched/sched.h"
+#include "mm/mm.h"
 
 #define MBOX_CHANNEL_POWER          0
 #define MBOX_CHANNEL_FRAME_BUF      1

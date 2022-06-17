@@ -14,6 +14,10 @@ extern void task_exit();
 extern void task_destroy(struct task_struct*);
 extern void run_init_task(char*);
 extern struct trap_frame* get_current_trap_frame();
-extern void sys_kill(uint64_t pid);
+extern void sys_kill(uint64_t);
+extern struct vm_area_struct* create_vma_stack(struct mm_struct*);
+extern struct vm_area_struct* create_vma_code(struct mm_struct*, char*);
+extern struct mm_struct* mm_struct_create();
+extern void mm_struct_destroy(struct mm_struct*);
 
 #endif
