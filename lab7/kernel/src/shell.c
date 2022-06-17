@@ -10,6 +10,7 @@
 #include "thread.h"
 #include "printf.h"
 #include "dtb.h"
+#include "vfs.h"
 
 void clean_buffer(char * buffer, int buffer_len)
 {
@@ -184,6 +185,10 @@ void command_thread_test3() {
 void command_thread_test4() {
     thread_test4(); 
 }
+
+void commandd_vfs_test() { vfs_test(); }
+
+
 void command_dtb_print(int all) { dtb_print(all); }
 
 void parse_command(char * buffer)
@@ -207,6 +212,7 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "t2")) command_thread_test2();
     else if ( !strcmp(buffer, "t3")) command_thread_test3();
     else if ( !strcmp(buffer, "t4")) command_thread_test4();
+    else if ( !strcmp(buffer, "vfs")) vfs_test();
     else command_not_found(buffer);
 }
 

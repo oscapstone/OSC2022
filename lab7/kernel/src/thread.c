@@ -33,7 +33,7 @@ void user_test3() {
 
 void user_test4() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
-  exec("syscall.img", argv);
+  exec("vfs1.img", argv);
 }
 
 void user_test5() {
@@ -89,6 +89,7 @@ thread_info *thread_create(void (*func)()) {
   thread->context.fp = thread->kernel_stack_base + STACK_SIZE;
   thread->context.lr = (uint64_t)func;
   thread->context.sp = thread->kernel_stack_base + STACK_SIZE;
+  for (int i = 0; i < FD_MAX; ++i) thread->fd_table.files[i] = 0;
   run_queue_push(thread);
   return thread;
 }
@@ -269,4 +270,29 @@ void kill (int kill_pid)
   }
   printf("pid = %d not exist\n",kill_pid);
 
+}
+
+struct file *thread_get_file(int fd) {
+  thread_info *cur = get_current();
+  return cur->fd_table.files[fd];
+}
+
+int thread_register_fd(struct file *file) {
+  if (file == 0) return -1;
+  thread_info *cur = get_current();
+  // find next available fd
+  for (int fd = 3; fd < FD_MAX; ++fd) {
+    if (cur->fd_table.files[fd] == 0) {
+      cur->fd_table.files[fd] = file;
+      return fd;
+    }
+  }
+  return -1;
+}
+
+int thread_clear_fd(int fd) {
+  if (fd < 0 || fd >= FD_MAX) return -1;
+  thread_info *cur = get_current();
+  cur->fd_table.files[fd] = 0;
+  return 1;
 }

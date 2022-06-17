@@ -10,6 +10,7 @@
 #include "thread.h"
 #include "printf.h"
 #include "shell.h"
+#include "vfs.h"
 
 // #include "device_tree.h"
 void main()
@@ -24,6 +25,7 @@ void main()
     timeout_event_init();
     enable_interrupt();
     thread_init();
+    vfs_init();
     run_shell();
 }
 

@@ -6,6 +6,8 @@
 #include "thread.h"
 #include "printf.h"
 #include "mbox.h"
+#include "vfs.h"
+
 int count = 0;
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
@@ -13,16 +15,13 @@ void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
 void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
 
 void sync_handler_currentEL_ELx() {
-  // printf("[sync_handler_currentEL_ELx]\n");
+  printf("[sync_handler_currentEL_ELx]\n");
 
   uint64_t spsr_el1, elr_el1, esr_el1;
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
   asm volatile("mrs %0, elr_el1" : "=r"(elr_el1));
   asm volatile("mrs %0, esr_el1" : "=r"(esr_el1));
-  // printf("SPSR_EL1: 0x%08x\n", spsr_el1);
-  // printf("ELR_EL1: 0x%08x\n", elr_el1);
-  // printf("ESR_EL1: 0x%08x\n", esr_el1);
-  // printf("hi\n");
+  while(1);
 }
 
 void sync_handler_lowerEL_64(uint64_t sp) {
@@ -73,6 +72,59 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
     } else if (iss == 7) {  // kill
       kill((int)trap_frame->x[0]);
+    } //vfs
+      else if (iss == 11) {  // open
+      printf("[open]%s\n",(const char *)trap_frame->x[0]);
+      struct file* file = vfs_open((const char *)trap_frame->x[0],trap_frame->x[1]);
+      int fd = thread_register_fd(file);
+      trap_frame->x[0] = fd;
+
+    } else if (iss == 12) {  // close
+      printf("[close]fd =%d\n",trap_frame->x[0]);
+      struct file* file = thread_get_file(trap_frame->x[0]);
+      vfs_close(file);
+
+    } else if (iss == 13) {  // write
+      // remember to return read size or error code
+      printf("[write]\n");
+      printf("[write]fd =%d\n",trap_frame->x[0]);
+      printf("[write]write_buf =%s\n",trap_frame->x[1]);
+      printf("[write]size =%d\n",trap_frame->x[2]);
+      struct file* file = thread_get_file(trap_frame->x[0]);
+      trap_frame->x[0] = vfs_write(file, (const void *)trap_frame->x[1], trap_frame->x[2]);
+
+    } else if (iss == 14) {  // read
+      // remember to return read size or error code
+      printf("[read]\n");
+      printf("[read]id =%d\n",trap_frame->x[0]);
+      printf("[read]read_buf =%s\n",trap_frame->x[1]);
+      printf("[read]size =%d\n",trap_frame->x[2]);
+      struct file* file = thread_get_file(trap_frame->x[0]);
+      trap_frame->x[0] = vfs_read(file, (void *)trap_frame->x[1], trap_frame->x[2]);
+      printf("[read][after] read_buf =%s\n",trap_frame->x[1]);
+
+    } else if (iss == 15) {  // mkdir
+      // you can ignore mode, since there is no access control
+      printf("[mkdir]%s\n",(const char *)trap_frame->x[0]);
+      trap_frame->x[0] = vfs_mkdir((const char *)trap_frame->x[0]);
+
+    } else if (iss == 16) {  // mount
+      // you can ignore arguments other than target (where to mount) and filesystem (fs name)
+      const char *device = (const char *)trap_frame->x[0];
+      const char *mountpoint = (const char *)trap_frame->x[1];
+      const char *filesystem = (const char *)trap_frame->x[2];
+      printf("[mount]mountpoint %s\n", mountpoint);
+      printf("[mount]filesystem %s\n", filesystem);
+
+      int result = vfs_mount(device, mountpoint, filesystem);
+      trap_frame->x[0] = result;
+
+    } else if (iss == 17) {  // chdir
+      const char *pathname = (const char *)trap_frame->x[0];
+      printf("[chdir]%s\n", pathname);
+
+      int result = vfs_chdir(pathname);
+      trap_frame->x[0] = result;
     } 
   }
 }
