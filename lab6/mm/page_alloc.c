@@ -218,9 +218,9 @@ void* calloc_page(){
     volatile uint64_t daif;
     daif = local_irq_disable_save();
     struct page* page = _alloc_pages(0);
+    page->ref_cnt++;
     local_irq_restore(daif);
     memset(page_to_virt(page), 0, PAGE_SIZE);
-    page->ref_cnt++;
     return page_to_virt(page);
 }
 

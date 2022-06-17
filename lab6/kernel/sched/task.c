@@ -181,7 +181,6 @@ int task_exec(const char* name, char* const argv[]){
 	char* tmp_name;
     size_t s;
 
-    daif = local_irq_disable_save();
 	// since we will destroy pgb and it will cause page table broken,
 	// we have to save the name in userspace first
 	tmp_name = kmalloc(strlen(name) + 10);	
@@ -210,6 +209,7 @@ int task_exec(const char* name, char* const argv[]){
     // initialize signal
     default_sighand_init(&current->sighandler);
 	// switch ttbr0_el1 before return to user space
+    daif = local_irq_disable_save();
 	switch_ttbr0(virt_to_phys(current->mm));
     local_irq_restore(daif);
     LOG("end task_exec");
