@@ -126,5 +126,29 @@ int Mbox_call(uint32_t* mbox, uint8_t ch) {
     return mbox_reg->read == (((uint32_t)(uint64_t)mbox & ~0xF) | ch); 
 }
 int sys_mbox_call(uint8_t ch, uint32_t *mbox){
-    return Mbox_call(mbox, ch);
+	uint64_t va = (uint64_t)mbox;
+	uint64_t pa;
+	struct task_struct* current = get_current();
+	struct page* page;
+	int ret;
+	pgdval_t* pgd_e;
+	pudval_t* pud_e;
+	pmdval_t* pmd_e;
+	pteval_t* pte_e;
+
+	LOG("va: %p",va);
+	pgd_e = pgd_offset(current->mm->pgd, va);
+	LOG("*pgd_e: %p",*pgd_e);
+	pud_e = pud_offset(pgd_e, va);
+	LOG("*pud_e: %p",*pud_e);
+	pmd_e = pmd_offset(pud_e, va);
+	LOG("*pmd_e: %p",*pmd_e);
+	pte_e = pte_offset(pmd_e, va);
+	LOG("*pte_e: %p",*pte_e);
+	page = pte_page(pte_e);	
+	pa = page_to_phys(page) | ((uint64_t)mbox & 0xfff);
+	LOG("page_to_phys: %p, page_to_pfn: %p, pa: %p", page_to_phys(page), page_to_pfn(page), pa);
+    ret = Mbox_call((uint32_t *)pa, ch);
+	LOG("ret: %p", ret);
+	return ret;
 }

@@ -33,16 +33,21 @@ typedef uint64_t pteval_t;
 #define pte_offset(pmd_e, addr) ((pteval_t*)phys_to_virt(((uint64_t)*pmd_e & PHYS_ADDR_MASK)) + pte_index(addr))
 #define pte_none(val) (val == 0)
 #define pte_set(pte, val) do{*((pteval_t*)pte) = val;}while(0)
-#define pte_reuse(pte) do{ \
-                            struct page* page = phys_to_page(((uint64_t)*pmd_e & PHYS_ADDR_MASK)); \
+#define pte_page(pte_e) ((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))
+#define pte_reuse(pte_e) do{ \
+                            uint64_t daif = local_irq_disable_save(); \
+                            struct page* page = phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)); \
                             page->ref_cnt++; \
+                            local_irq_restore(daif); \
                         }while(0)
 
-#define pte_inuse(pte) (((struct page*)phys_to_page(((uint64_t)*pmd_e & PHYS_ADDR_MASK)))->ref_cnt != 0)
+#define pte_inuse(pte_e) (((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))->ref_cnt != 0)
+#define pte_ref_cnt(pte_e) (((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))->ref_cnt)
 
 
 extern void page_init();
 extern void mappages(pgdval_t*, uint64_t, uint64_t, uint64_t, uint64_t);
+extern void dup_pages(pgdval_t*, pgdval_t*, uint64_t, uint64_t, uint64_t);
 extern void free_page_table(pgdval_t*);
 extern void free_one_pgd(pgdval_t*);
 extern void free_one_pud(pudval_t*);

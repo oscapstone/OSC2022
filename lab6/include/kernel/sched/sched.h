@@ -14,10 +14,13 @@ typedef uint64_t pid_t;
 #define TASK_DEAD		64
 #define VMA_STACK 1
 #define VMA_PROGRAM 2
+#define VMA_VC_RAM 3 
 
 #define VMA_CODE_BASE 0
 #define VMA_STACK_END 0xfffffffff000
 #define VMA_STACK_SIZE 0x4000
+#define VMA_VC_BASE 0x3c000000
+#define VMA_VC_END  0x3f000000
 
 #define get_trap_frame(task) (task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame))
 struct thread_info{

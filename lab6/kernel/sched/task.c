@@ -7,72 +7,36 @@ void task_init(){
 
 uint64_t task_dup(struct task_struct* parent){
     LOG("task_dup start");
-/*    volatile uint64_t daif;
+    volatile uint64_t daif;
     struct task_struct* child = (struct task_struct*)kmalloc(sizeof(struct task_struct));
     struct vm_area_struct* pvma, *ppvma;
-    struct vm_area_struct_list* pvmal, *ppvmal;
-    struct list_head *node;
     struct trap_frame *pptrap_frame;
     struct trap_frame *pctrap_frame;
     uint64_t child_pid;
-    uint64_t user_sp, kernel_sp;
-    uint64_t user_fp, kernel_fp;
-
 
     daif = local_irq_disable_save();
     
-    // fix child's kernel stack
-    child->stack = alloc_pages(1);
-    memcpy(child->stack, parent->stack, PAGE_SIZE * 2); 
+    // initialize mm
+	child->mm = mm_struct_create();
+	// copy vma in parent->mm to child->mm except for user stack1
+	dup_mm_struct(child->mm, parent->mm);
+	// create user stack vma
+	dup_vma_stack(child->mm, parent->mm);
+	//create vc ram identity mapping
+	create_vma_vc(child->mm);
+
+
+    // initialize child's trap frame and kernel stack
+	child->stack = alloc_pages(1);
+    memcpy(child->stack, parent->stack, PAGE_SIZE * 2);
 
     pptrap_frame = get_trap_frame(parent);
-    // initialize mm
-    child->mm = kmalloc(sizeof(struct mm_struct));
-    INIT_LIST_HEAD(&child->mm->mmap_list);
-    list_for_each(node, &parent->mm->mmap_list){
-        ppvmal = list_entry(node, struct vm_area_struct_list, list);
-        ppvma = ppvmal->vm_area;
-        
-        LOG("parent's vm area type 0x%x", ppvma->type);
-        if(ppvma->type == VM_AREA_STACK){
-            // user stack
-            pvma = kmalloc(sizeof(struct vm_area_struct));
-            pvmal = kmalloc(sizeof(struct vm_area_struct_list));
-            pvma->type = ppvma->type;
-            pvma->vm_start = (uint64_t)alloc_pages(1);
-            pvma->vm_end = pvma->vm_start + PAGE_SIZE * 2;
-            pvma->ref = 1;
-            pvmal->vm_area = pvma;
-
-            LOG("parent user stack 0x%x", ppvma->vm_end);
-            LOG("Create child user stack 0x%x", pvma->vm_end);
-
-            memcpy((void*)pvma->vm_start, (void*)ppvma->vm_start, PAGE_SIZE * 2);
-            user_sp = pvma->vm_end - (ppvma->vm_end - pptrap_frame->sp_el0);
-            LOG("parent's sp 0x%x", pptrap_frame->sp_el0);
-            LOG("user_sp 0x%x", user_sp);
-
-            user_fp = pvma->vm_end - (ppvma->vm_end - pptrap_frame->x29);
-            LOG("parent's fp 0x%x", pptrap_frame->x29);
-            LOG("user_fp 0x%x", user_fp);
-        }else{
-            pvmal = kmalloc(sizeof(struct vm_area_struct_list));
-            pvmal->vm_area = ppvma;
-            ppvma->ref++;
-        }
-        list_add_tail(&pvmal->list, &child->mm->mmap_list);
-    }
-
-    // fix child's trap frame
     pctrap_frame = get_trap_frame(child);
-    LOG("parent kernel stack: %x\r\n", parent->stack + PAGE_SIZE * 2);
-    LOG("child trap stack: %x\r\n", child->stack + PAGE_SIZE * 2);
+    LOG("parent kernel stack: %p", parent->stack + PAGE_SIZE * 2);
+    LOG("parent trap frame: %p", pptrap_frame);
+    LOG("child trap stack: %p", child->stack + PAGE_SIZE * 2);
+    LOG("child trap frame: %p", pctrap_frame);
 
-    LOG("parent trap frame: %x\r\n", pptrap_frame);
-    LOG("child trap frame: %x\r\n", pctrap_frame);
-    pctrap_frame->x29 = user_fp;
-    pctrap_frame->sp_el0 = user_sp;
-    pctrap_frame->spsr_el1 = 0;
     // set child's return value to 0
     pctrap_frame->x0 = 0;
 
@@ -114,7 +78,7 @@ uint64_t task_dup(struct task_struct* parent){
     local_irq_restore(daif);
     add_task_to_rq(child);
     LOG("task_dup end");
-    return child_pid;*/
+    return child_pid;
 }
 
 void task_kill(uint64_t pid){
@@ -275,6 +239,8 @@ void run_init_task(char* filename){
     // create code memory area
 	vma = create_vma_code(task->mm, filename);
     user_entry = (uint64_t)vma->vm_start;
+	//create vc ram identity mapping
+	create_vma_vc(task->mm);
 	
     // create user stack
 	vma = create_vma_stack(task->mm);
@@ -320,6 +286,56 @@ void run_init_task(char* filename){
 
     LOG("run_init_task end");
     add_task_to_rq(task);
+}
+
+void dup_vma_stack(struct mm_struct* dst_mm, struct mm_struct* src_mm){
+	uint64_t va, pa;
+	uint8_t *dst_stack;
+	struct list_head* node;
+	struct vm_area_struct* vma,*tmp_vma;
+	
+    list_for_each(node, &src_mm->mmap_list){
+        tmp_vma = list_entry(node, struct vm_area_struct, list);
+        if(tmp_vma->type == VMA_STACK){
+			LOG("src_mm's vm area type 0x%x", tmp_vma->type);
+			vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));    
+			vma->vm_start = tmp_vma->vm_start;
+			vma->vm_end = tmp_vma->vm_end;
+			vma->type = tmp_vma->type;
+			list_add_tail(&vma->list, &dst_mm->mmap_list);
+
+			va = vma->vm_start;
+			while(va != vma->vm_end){
+				dst_stack = calloc_page();
+				// copy stack content
+				memcpy(dst_stack, (void*)va, PAGE_SIZE);
+				mappages(dst_mm->pgd, va, virt_to_phys(dst_stack), PAGE_SIZE, VM_PTE_USER_ATTR);
+				
+				va += PAGE_SIZE;
+			}	
+			break;
+		}       
+    }
+}
+
+struct vm_area_struct* create_vma_vc(struct mm_struct* mm){
+	uint64_t va, pa;
+	struct vm_area_struct *vma;
+	uint8_t* addr;
+
+	vma = kmalloc(sizeof(struct vm_area_struct));
+    vma->vm_start = VMA_VC_BASE;
+    vma->vm_end = VMA_VC_END;
+    vma->type = VMA_VC_RAM;
+    list_add_tail(&vma->list, &mm->mmap_list);
+
+	va = vma->vm_start;
+	while(va != vma->vm_end){
+		// identity mapping for vc ram
+		mappages(mm->pgd, va, va, PAGE_SIZE, VM_PTE_USER_ATTR);
+		va += PAGE_SIZE;
+	}
+	return vma; 
 }
 
 struct vm_area_struct* create_vma_stack(struct mm_struct* mm){
@@ -369,6 +385,27 @@ struct vm_area_struct* create_vma_code(struct mm_struct* mm, char* filename){
 		offset += n;
 	}
 	return vma; 
+}
+
+// Only duplicate area that not belong to user stack
+void dup_mm_struct(struct mm_struct* dst_mm, struct mm_struct* src_mm){
+	uint64_t va;
+	struct list_head* node;
+	struct vm_area_struct* vma,*tmp_vma;
+	
+    list_for_each(node, &src_mm->mmap_list){
+        tmp_vma = list_entry(node, struct vm_area_struct, list);
+        if(!(tmp_vma->type == VMA_STACK || tmp_vma->type == VMA_VC_RAM)){
+			LOG("src_mm's vm area type 0x%x", tmp_vma->type);
+			vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));    
+			vma = kmalloc(sizeof(struct vm_area_struct));
+			vma->vm_start = tmp_vma->vm_start;
+			vma->vm_end = tmp_vma->vm_end;
+			vma->type = tmp_vma->type;
+			dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, 0);
+			list_add_tail(&vma->list, &dst_mm->mmap_list);
+		}       
+    }
 }
 
 struct mm_struct* mm_struct_create(){

@@ -27,6 +27,7 @@
 #define page_to_pfn(x) ((uint64_t)((struct page*)x - mem_map))
 #define pfn_to_page(x) ((struct page*)&mem_map[(uint64_t)x])
 #define page_to_virt(x) (pfn_to_virt(page_to_pfn(x)))
+#define page_to_phys(x) (page_to_pfn(x) << PAGE_SHIFT)
 #define virt_to_page(x) (pfn_to_page(virt_to_pfn(x)))
 #define virt_to_phys(addr) (((uint64_t)addr) - UPPER_ADDR_SPACE_BASE)
 #define phys_to_virt(addr) (((uint64_t)addr) + UPPER_ADDR_SPACE_BASE)

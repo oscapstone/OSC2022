@@ -114,6 +114,55 @@ void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t p
     LOG("mappages end");
 }
 
+void dup_pages(pgdval_t* dst_pgd, pgdval_t* src_pgd, uint64_t va, uint64_t size, uint64_t prot){
+    LOG("dup_pages start");
+    uint64_t vstart, vend;
+    uint64_t pgtable = 0;
+    pudval_t* tmp_pgd_e, *pgd_e;
+    pudval_t* tmp_pud_e, *pud_e;
+    pmdval_t* tmp_pmd_e, *pmd_e;
+    pteval_t* tmp_pte_e, *pte_e;
+    size = ALIGN_UP(size, PAGE_SIZE);
+    LOG("dup_pages(%p, %p, %p, %p, %p)", dst_pgd, src_pgd, va, size, prot);
+    for(vstart = va, vend = va + size ; vstart != vend ; vstart += PAGE_SIZE){
+        tmp_pgd_e = pgd_offset(src_pgd, vstart);
+        pgd_e = pgd_offset(dst_pgd, vstart);
+        if(pgd_none(*pgd_e)){
+            pgtable = virt_to_phys(calloc_page());
+            pgd_set(pgd_e, (*tmp_pgd_e & ~PHYS_ADDR_MASK) | pgtable);
+        }
+        LOG("tmp_pgd_e: %p, *tmp_pgd_e = %p",tmp_pgd_e, *tmp_pgd_e);
+        LOG("pgd_e: %p, *pgd_e: %p",pgd_e, *pgd_e);
+        
+
+        tmp_pud_e = pud_offset(tmp_pgd_e, vstart);
+        pud_e = pud_offset(pgd_e, vstart);
+        if(pud_none(*pud_e)){
+            pgtable = virt_to_phys(calloc_page());
+            pud_set(pud_e, (*tmp_pud_e & ~PHYS_ADDR_MASK) | pgtable);
+        }
+        LOG("tmp_pud_e: %p, *tmp_pud_e = %p",tmp_pud_e, *tmp_pud_e);
+        LOG("pud_e: %p, *pud_e: %p",pud_e, *pud_e);
+
+        tmp_pmd_e = pmd_offset(tmp_pud_e, vstart);
+        pmd_e = pmd_offset(pud_e, vstart);
+        if(pmd_none(*pmd_e)){
+            pgtable = virt_to_phys(calloc_page());
+            pmd_set(pmd_e, (*tmp_pmd_e & ~PHYS_ADDR_MASK) | pgtable);
+        }
+        LOG("tmp_pmd_e: %p, *tmp_pmd_e = %p",tmp_pmd_e, *tmp_pmd_e);
+        LOG("pmd_e: %p, *pmd_e: %p",pmd_e, *pmd_e);
+
+        tmp_pte_e = pte_offset(tmp_pmd_e, vstart);
+        pte_e = pte_offset(pmd_e, vstart);
+        pte_set(pte_e, *tmp_pte_e | prot);
+        // add 1 to page reference count 
+        pte_reuse(pte_e);
+        LOG("tmp_pte_e: %p, *tmp_pte_e = %p",tmp_pte_e, *tmp_pte_e);
+        LOG("pte_e: %p, *pte_e: %p, pte_ref_cnt(%p) = %p ",pte_e, *pte_e, pte_e, pte_ref_cnt(pte_e));
+    }
+    LOG("dup_pages end");
+}
 void free_one_pte(pteval_t* pte){
     LOG("free_one_pte(%p)", pte);
     pteval_t* pte_e = pte;
