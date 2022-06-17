@@ -1,5 +1,6 @@
 #ifndef _SCHED_H_
 #define _SCHED_H_
+#include "mm/mmu.h"
 #include "lib/list.h"
 #include "kernel/irq_handler.h"
 #include "kernel/signal.h"
@@ -11,8 +12,13 @@ typedef uint64_t pid_t;
 #define TASK_INTERRUPTIBLE  1
 #define TASK_UNINTERRUPTIBLE    2
 #define TASK_DEAD		64
-#define VM_AREA_STACK 1
-#define VM_AREA_PROGRAM 2
+#define VMA_STACK 1
+#define VMA_PROGRAM 2
+
+#define VMA_CODE_BASE 0
+#define VMA_STACK_END 0xfffffffff000
+#define VMA_STACK_SIZE 0x4000
+
 #define get_trap_frame(task) (task->stack + PAGE_SIZE * 2 - sizeof(struct trap_frame))
 struct thread_info{
     pid_t pid;
@@ -84,16 +90,12 @@ struct vm_area_struct{
     uint64_t vm_start;
     uint64_t vm_end;
     uint64_t type;
-    int64_t ref;
-};
-
-struct vm_area_struct_list{
-    struct vm_area_struct* vm_area;
     struct list_head list;
 };
 
 struct mm_struct{
     struct list_head mmap_list;
+	pgdval_t* pgd;
 };
 
 struct task_struct{

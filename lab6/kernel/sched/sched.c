@@ -23,6 +23,18 @@ struct task_struct* pick_next_task_from_rq(){
     else
         return NULL;
 }
+extern void switch_ttbr0(uint64_t);
+void switch_mm(struct task_struct* next){
+	pgdval_t* pgd;
+	if(next->mm){
+		pgd = next->mm->pgd;
+		if(pgd == 0){
+			printf("switch_mm error\r\n");		
+			while(1);
+		}
+		switch_ttbr0(virt_to_phys(pgd));	
+	}
+}
 
 void schedule(){
     struct task_struct* current, *next;
@@ -48,6 +60,7 @@ void schedule(){
         // context switch
         if(next != NULL){
             list_del(&next->sched_info.sched_list);
+			switch_mm(next);
             switch_to(current, next);
         }
     }

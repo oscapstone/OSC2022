@@ -40,6 +40,7 @@ struct page{
     uint32_t order; 
     uint32_t type;
     struct list_head list;
+    int64_t ref_cnt;
 };
 
 struct free_list{

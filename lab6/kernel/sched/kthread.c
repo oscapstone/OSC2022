@@ -39,6 +39,7 @@ void kthread_init(){
 	set_tpidr_el1((uint64_t)kthread); 
     LOG("kthread_init end");
 }
+
 void kthread_destroy(struct task_struct* task){
 //    LOG("kthread_destroy %l", task->thread_info.pid);
     list_del(&task->list);

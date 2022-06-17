@@ -65,20 +65,30 @@ void initrdfs_cat(){
     }
 }
 
-void initrdfs_loadfile(char* name, uint8_t* addr){
+size_t initrdfs_loadfile(char* name, uint8_t* addr, uint64_t offset, uint64_t size){
     struct list_head* head = &root->list;
     struct list_head* node;
 
+	LOG("initrdfs_loadfile(%s, %p, %lu, %lu)", name, addr, offset, size);
     list_for_each(node, head){
         struct fentry* f = list_entry(node, struct fentry, list);
         if((f->mode & FILE_TYPE_MASK) == FILE_TYPE_REGULAR){ 
             if(strcmp(name, f->filename) == 0){
-                LOG("Load file %s to %p", name, addr);
-                memcpy(addr, f->data, f->filesize);
+				if(offset <= f->filesize){
+					if(offset + size > f->filesize){
+						size = f->filesize - offset;
+					}
+					LOG("Load %lu bytes %s at offset %lu to %p",size , name, offset, addr);
+					memcpy(addr, &f->data[offset], size);
+					return size; 
+				}else{
+					LOG("error occur");
+				}
                 break;
             }
         }
     }
+	return 0;
 }
 
 size_t initrdfs_filesize(char* name){

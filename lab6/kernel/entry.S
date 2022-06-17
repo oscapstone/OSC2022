@@ -173,4 +173,12 @@ sigreturn_trampoline:
 sigreturn_error:
    b sigreturn_error
 
+.global switch_ttbr0
+switch_ttbr0:
+    dsb ish 
+    msr ttbr0_el1, x0 
+    tlbi vmalle1is 
+    dsb ish 
+    isb 
+    ret
 

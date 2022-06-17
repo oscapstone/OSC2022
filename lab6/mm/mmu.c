@@ -1,4 +1,5 @@
 #include "mm/mmu.h"
+#include "mm/mm.h"
 extern int __reserved_page_table_start, __reserved_page_table_end;
 extern int __PGD_start, __PGD_end;
 extern int __PUD_start, __PUD_end;
@@ -68,6 +69,7 @@ void page_init(){
 }
 
 void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t prot){
+    LOG("mappages start");
     uint64_t vstart, vend;
     uint64_t pgtable = 0;
     pudval_t* pgd_e;
@@ -75,32 +77,40 @@ void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t p
     pmdval_t* pmd_e;
     pteval_t* pte_e;
     size = ALIGN_UP(size, PAGE_SIZE);
+    LOG("mappages(%p, %p, %p, %l, %p)", pgd, va, pa, size, prot);
     for(vstart = va, vend = va + size ; vstart != vend ; vstart += PAGE_SIZE){
+        LOG("physical addr: %p", pa);
         pgd_e = pgd_offset(pgd, vstart);
         if(pgd_none(*pgd_e)){
             pgtable = virt_to_phys(calloc_page());
             pgd_set(pgd_e, PGD_TYPE_TABLE | pgtable);
         }
+        LOG("pgd_e: %p, *pgd_e = %p\r\n",pgd_e, *pgd_e);
 
         pud_e = pud_offset(pgd_e, vstart);
         if(pud_none(*pud_e)){
             pgtable = virt_to_phys(calloc_page());
             pud_set(pud_e, PUD_TYPE_TABLE | pgtable);
         }
+        LOG("pud_e: %p, *pud_e = %p\r\n",pud_e, *pud_e);
 
         pmd_e = pmd_offset(pud_e, vstart);
         if(pmd_none(*pmd_e)){
             pgtable = virt_to_phys(calloc_page());
             pmd_set(pmd_e, PMD_TYPE_TABLE | pgtable);
         }
+        LOG("pmd_e: %p, *pmd_e = %p\r\n",pmd_e, *pmd_e);
 
         pte_e = pte_offset(pmd_e, vstart);
-        if(pte_none(*pte_e)){
-            printf("Try to modify the physical address of a pte entry to another address");
+        //printf("pte_index(%p) = %p\r\n", vstart, pte_index(vstart));
+        if(!pte_none(*pte_e)){
+            printf("Try to modify the physical address of a pte entry to another address\r\n");
             while(1);
         }
         pte_set(pte_e, prot | PAGE_ATTR_AF | (pa & PHYS_ADDR_MASK));
+        LOG("pte_e: %p, *pte_e = %p\r\n",pte_e, *pte_e);
         pa += PAGE_SIZE;
     }
+    LOG("mappages end");
 }
 
