@@ -69,7 +69,7 @@ void page_init(){
 }
 
 void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t prot){
-    LOG("mappages start");
+    //LOG("mappages start");
     uint64_t vstart, vend;
     uint64_t pgtable = 0;
     pudval_t* pgd_e;
@@ -77,29 +77,29 @@ void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t p
     pmdval_t* pmd_e;
     pteval_t* pte_e;
     size = ALIGN_UP(size, PAGE_SIZE);
-    LOG("mappages(%p, %p, %p, %l, %p)", pgd, va, pa, size, prot);
+    //LOG("mappages(%p, %p, %p, %l, %p)", pgd, va, pa, size, prot);
     for(vstart = va, vend = va + size ; vstart != vend ; vstart += PAGE_SIZE){
-        LOG("physical addr: %p", pa);
+      //  LOG("physical addr: %p", pa);
         pgd_e = pgd_offset(pgd, vstart);
         if(pgd_none(*pgd_e)){
             pgtable = virt_to_phys(calloc_page());
             pgd_set(pgd_e, PGD_TYPE_TABLE | pgtable);
+            LOG("pgd_e: %p, *pgd_e = %p\r\n",pgd_e, *pgd_e);
         }
-        LOG("pgd_e: %p, *pgd_e = %p\r\n",pgd_e, *pgd_e);
 
         pud_e = pud_offset(pgd_e, vstart);
         if(pud_none(*pud_e)){
             pgtable = virt_to_phys(calloc_page());
             pud_set(pud_e, PUD_TYPE_TABLE | pgtable);
+            LOG("pud_e: %p, *pud_e = %p\r\n",pud_e, *pud_e);
         }
-        LOG("pud_e: %p, *pud_e = %p\r\n",pud_e, *pud_e);
 
         pmd_e = pmd_offset(pud_e, vstart);
         if(pmd_none(*pmd_e)){
             pgtable = virt_to_phys(calloc_page());
             pmd_set(pmd_e, PMD_TYPE_TABLE | pgtable);
+            LOG("pmd_e: %p, *pmd_e = %p\r\n",pmd_e, *pmd_e);
         }
-        LOG("pmd_e: %p, *pmd_e = %p\r\n",pmd_e, *pmd_e);
 
         pte_e = pte_offset(pmd_e, vstart);
         //printf("pte_index(%p) = %p\r\n", vstart, pte_index(vstart));
@@ -108,10 +108,10 @@ void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t p
             while(1);
         }
         pte_set(pte_e, prot | PAGE_ATTR_AF | (pa & PHYS_ADDR_MASK));
-        LOG("pte_e: %p, *pte_e = %p\r\n",pte_e, *pte_e);
+        //LOG("pte_e: %p, *pte_e = %p\r\n",pte_e, *pte_e);
         pa += PAGE_SIZE;
     }
-    LOG("mappages end");
+    //LOG("mappages end");
 }
 
 void dup_pages(pgdval_t* dst_pgd, pgdval_t* src_pgd, uint64_t va, uint64_t size, uint64_t prot){
@@ -130,9 +130,9 @@ void dup_pages(pgdval_t* dst_pgd, pgdval_t* src_pgd, uint64_t va, uint64_t size,
         if(pgd_none(*pgd_e)){
             pgtable = virt_to_phys(calloc_page());
             pgd_set(pgd_e, (*tmp_pgd_e & ~PHYS_ADDR_MASK) | pgtable);
+            LOG("tmp_pgd_e: %p, *tmp_pgd_e = %p",tmp_pgd_e, *tmp_pgd_e);
+            LOG("pgd_e: %p, *pgd_e: %p",pgd_e, *pgd_e);
         }
-        LOG("tmp_pgd_e: %p, *tmp_pgd_e = %p",tmp_pgd_e, *tmp_pgd_e);
-        LOG("pgd_e: %p, *pgd_e: %p",pgd_e, *pgd_e);
         
 
         tmp_pud_e = pud_offset(tmp_pgd_e, vstart);
@@ -140,37 +140,38 @@ void dup_pages(pgdval_t* dst_pgd, pgdval_t* src_pgd, uint64_t va, uint64_t size,
         if(pud_none(*pud_e)){
             pgtable = virt_to_phys(calloc_page());
             pud_set(pud_e, (*tmp_pud_e & ~PHYS_ADDR_MASK) | pgtable);
-        }
-        LOG("tmp_pud_e: %p, *tmp_pud_e = %p",tmp_pud_e, *tmp_pud_e);
-        LOG("pud_e: %p, *pud_e: %p",pud_e, *pud_e);
+            LOG("tmp_pud_e: %p, *tmp_pud_e = %p",tmp_pud_e, *tmp_pud_e);
+            LOG("pud_e: %p, *pud_e: %p",pud_e, *pud_e);
 
+        }
+        
         tmp_pmd_e = pmd_offset(tmp_pud_e, vstart);
         pmd_e = pmd_offset(pud_e, vstart);
         if(pmd_none(*pmd_e)){
             pgtable = virt_to_phys(calloc_page());
             pmd_set(pmd_e, (*tmp_pmd_e & ~PHYS_ADDR_MASK) | pgtable);
+            LOG("tmp_pmd_e: %p, *tmp_pmd_e = %p",tmp_pmd_e, *tmp_pmd_e);
+            LOG("pmd_e: %p, *pmd_e: %p",pmd_e, *pmd_e);
         }
-        LOG("tmp_pmd_e: %p, *tmp_pmd_e = %p",tmp_pmd_e, *tmp_pmd_e);
-        LOG("pmd_e: %p, *pmd_e: %p",pmd_e, *pmd_e);
 
         tmp_pte_e = pte_offset(tmp_pmd_e, vstart);
         pte_e = pte_offset(pmd_e, vstart);
         pte_set(pte_e, *tmp_pte_e | prot);
         // add 1 to page reference count 
         pte_reuse(pte_e);
-        LOG("tmp_pte_e: %p, *tmp_pte_e = %p",tmp_pte_e, *tmp_pte_e);
-        LOG("pte_e: %p, *pte_e: %p, pte_ref_cnt(%p) = %p ",pte_e, *pte_e, pte_e, pte_ref_cnt(pte_e));
+        //LOG("tmp_pte_e: %p, *tmp_pte_e = %p",tmp_pte_e, *tmp_pte_e);
+        //LOG("pte_e: %p, *pte_e: %p, pte_ref_cnt(%p) = %p ",pte_e, *pte_e, pte_e, pte_ref_cnt(pte_e));
     }
     LOG("dup_pages end");
 }
 void free_one_pte(pteval_t* pte){
-    LOG("free_one_pte(%p)", pte);
+    //LOG("free_one_pte(%p)", pte);
     pteval_t* pte_e = pte;
     void* page_frame;
     for(uint64_t i = 0 ; i < 512 ; i++){
         if(!pte_none(pte_e[i])){
             page_frame = (void*)phys_to_virt(pte_e[i] & PHYS_ADDR_MASK);
-            LOG("free page frame: %p", page_frame);
+            //LOG("free page frame: %p", page_frame);
             free_page(page_frame);
         }
     }
@@ -178,7 +179,7 @@ void free_one_pte(pteval_t* pte){
 }
 
 void free_one_pmd(pmdval_t* pmd){
-    LOG("free_one_pmd(%p)", pmd);
+    //LOG("free_one_pmd(%p)", pmd);
     pmdval_t* pmd_e = pmd;
     pteval_t* pte;
     for(uint64_t i = 0 ; i < 512 ; i++){
@@ -191,7 +192,7 @@ void free_one_pmd(pmdval_t* pmd){
 }
 
 void free_one_pud(pudval_t* pud){
-    LOG("free_one_pud(%p)", pud);
+    //LOG("free_one_pud(%p)", pud);
     pudval_t* pud_e = pud;
     pmdval_t* pmd;
     for(uint64_t i = 0 ; i < 512 ; i++){
@@ -204,7 +205,7 @@ void free_one_pud(pudval_t* pud){
 }
 
 void free_one_pgd(pgdval_t* pgd){
-    LOG("free_one_pgd(%p)", pgd);
+    //LOG("free_one_pgd(%p)", pgd);
     pgdval_t* pgd_e = pgd;
     pudval_t* pud;
     for(uint64_t i = 0 ; i < 512 ; i++){

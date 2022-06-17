@@ -1,6 +1,7 @@
 #include "kernel/sched/task.h"
 
 extern void task_load_all(void);
+extern void switch_ttbr0(uint64_t);
 
 void task_init(){
 }
@@ -168,57 +169,51 @@ void task_destroy(struct task_struct* task){
     if(user_init == task) user_init = NULL;
 }
 
-int task_exec(const char* name, char* const argv[]){/*
+int task_exec(const char* name, char* const argv[]){
     LOG("enter task_exec");
     LOG("file name: %s", name);
     int ret = -1; 
     struct list_head* node;
-    struct vm_area_struct *pvma;
-    struct vm_area_struct_list *pvmal;
+    struct vm_area_struct *vma;
     struct task_struct* current = get_current();
     struct trap_frame *trap_frame = get_trap_frame(current);
     volatile uint64_t daif;
+	char* tmp_name;
     size_t s;
 
     daif = local_irq_disable_save();
-    // initialize mm
-    if(s = initrdfs_filesize((char*)name)){
-        list_for_each(node, &current->mm->mmap_list){
-            LOG("node[-1]: %x", ((uint64_t*)node)[-1]);
-            pvmal = list_entry(node, struct vm_area_struct_list, list);
-            LOG("pvmal: %x", pvmal);
-            pvma = pvmal->vm_area;
-            LOG("pvma: %x", pvma);
-            if(pvma->type == VM_AREA_STACK){
-                trap_frame->sp_el0 = pvma->vm_end;
-            }else if(pvma->type == VM_AREA_PROGRAM){
-                pvma->ref--;
-                if(pvma->ref <= 0){
-                    free_pages((void*)pvma->vm_start, BUDDY_MAX_ORDER - 1);
-                }else{
-                    pvma = kmalloc(sizeof(struct vm_area_struct));
-                }
-                pvmal->vm_area = pvma;
-                pvma->vm_start = (uint64_t)alloc_pages(BUDDY_MAX_ORDER - 1);
-                trap_frame->elr_el1 = pvma->vm_start;
-                initrdfs_loadfile((char*)name, (void*)pvma->vm_start);
-                pvma->vm_end = pvma->vm_start + (1 << (BUDDY_MAX_ORDER - 1)) * PAGE_SIZE; 
-                pvma->type = VM_AREA_PROGRAM;
-                pvma->ref = 1;
-            }else{
-                printf("unkown vm area\r\n");
-                while(1);
-            }
-        }
+	// since we will destroy pgb and it will cause page table broken,
+	// we have to save the name in userspace first
+	tmp_name = kmalloc(strlen(name) + 10);	
+	strcpy(tmp_name, name);
+	// initialize mm
+	if(s = initrdfs_filesize((char*)tmp_name)){
+		mm_struct_destroy(current->mm);
+		current->mm = mm_struct_create();
+		// load executable 
+		// create code memory area
+		vma = create_vma_code(current->mm,(char*)tmp_name);
+		trap_frame->elr_el1 = (uint64_t)vma->vm_start;
+		//create vc ram identity mapping
+		create_vma_vc(current->mm);
+		
+		// create user stack
+		vma = create_vma_stack(current->mm);
+		trap_frame->sp_el0 = (uint64_t)vma->vm_end;
+		
+		// initialize Saved Program Status Register el1
         trap_frame->spsr_el1 = 0;  
         ret = 0;
-    }
+	}
+	kfree(tmp_name);
+
     // initialize signal
     default_sighand_init(&current->sighandler);
-
+	// switch ttbr0_el1 before return to user space
+	switch_ttbr0(virt_to_phys(current->mm));
     local_irq_restore(daif);
     LOG("end task_exec");
-    return ret;*/
+    return ret;
 }
 
 

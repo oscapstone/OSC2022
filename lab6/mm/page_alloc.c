@@ -1,6 +1,6 @@
 #include "mm/page_alloc.h"
 static struct buddy_system buddy;
-
+extern struct mem_node memory_node;
 void _init_mem_map(){
     struct list_head *node;
     struct mem_block *mb;
@@ -22,7 +22,7 @@ void _init_mem_map(){
         end_pfn = virt_to_pfn(mb->end + UPPER_ADDR_SPACE_BASE);
         for(uint64_t i = start_pfn ; i < end_pfn ; i++){
             memset(&mem_map[i], '\0', sizeof(struct page));
-            mem_map[i].type |= PAGE_TYPE_RESERVED;
+            mem_map[i].type = PAGE_TYPE_RESERVED;
         }
     }
 }
@@ -61,7 +61,10 @@ void _free_pages(struct page* page, uint32_t order){
     struct page* buddy_page; 
     uint64_t pfn = page_to_pfn(page);
     uint64_t buddy_pfn;
-
+    
+    if(PAGE_IS_RESERVED(page)){
+        INFO("Error: _free_pages(%u) try to free reserved pfn %p", order, pfn);
+    }
     // check the order of page
     if(BUDDY_IS_FREED(page)){
         INFO("Error: _free_pages(%u) try to free freed pfn %p", order, pfn);
@@ -100,7 +103,12 @@ void free_pages(void* addr, uint32_t order){
     LOG("_free_pages(%p, %u)",addr, order);
     volatile uint64_t daif;
     uint64_t pfn = virt_to_pfn(addr);
-    struct page *page = pfn_to_page(pfn);
+    struct page *page;
+    if(pfn >= (memory_node.end >> PAGE_SHIFT)){
+        //INFO("try to free pfn %p that not belong to memory", pfn);
+        return;
+    }
+    page = pfn_to_page(pfn);
     
     daif = local_irq_disable_save();
     page->ref_cnt--;
@@ -116,7 +124,12 @@ void free_pages(void* addr, uint32_t order){
 void free_page(void* addr){
     volatile uint64_t daif;
     uint64_t pfn = virt_to_pfn(addr);
-    struct page *page = pfn_to_page(pfn);
+    struct page *page;
+    if(pfn >= (memory_node.end >> PAGE_SHIFT)){
+        //INFO("try to free pfn %p that not belong to memory", pfn);
+        return;
+    }
+    page = pfn_to_page(pfn);
 
     daif = local_irq_disable_save();
     page->ref_cnt--;
