@@ -1,5 +1,9 @@
 #include "mm/mmu.h"
 #include "mm/mm.h"
+#include "kernel/fault.h"
+#include "kernel/sched/task.h"
+#include "kernel/signal.h"
+
 extern int __reserved_page_table_start, __reserved_page_table_end;
 extern int __PGD_start, __PGD_end;
 extern int __PUD_start, __PUD_end;
@@ -155,12 +159,15 @@ void dup_pages(pgdval_t* dst_pgd, pgdval_t* src_pgd, uint64_t va, uint64_t size,
         }
 
         tmp_pte_e = pte_offset(tmp_pmd_e, vstart);
-        pte_e = pte_offset(pmd_e, vstart);
-        pte_set(pte_e, *tmp_pte_e | prot);
-        // add 1 to page reference count 
-        pte_reuse(pte_e);
-        //LOG("tmp_pte_e: %p, *tmp_pte_e = %p",tmp_pte_e, *tmp_pte_e);
-        //LOG("pte_e: %p, *pte_e: %p, pte_ref_cnt(%p) = %p ",pte_e, *pte_e, pte_e, pte_ref_cnt(pte_e));
+        if(!pmd_none(*tmp_pmd_e)){
+            // Since we have implement demand paging, sometimes page is not exist in memory
+            pte_e = pte_offset(pmd_e, vstart);
+            pte_set(pte_e, *tmp_pte_e | prot);
+            // add 1 to page reference count 
+            pte_reuse(pte_e);
+            LOG("tmp_pte_e: %p, *tmp_pte_e = %p",tmp_pte_e, *tmp_pte_e);
+            LOG("pte_e: %p, *pte_e: %p, pte_ref_cnt(%p) = %p ",pte_e, *pte_e, pte_e, pte_ref_cnt(pte_e));
+        }
     }
     LOG("dup_pages end");
 }
@@ -216,8 +223,140 @@ void free_one_pgd(pgdval_t* pgd){
     }
     free_page(pgd);
 }
+pteval_t* get_pte(pgdval_t* pgd, uint64_t addr){
+    uint64_t pgtable;
+    pudval_t* pgd_e;
+    pudval_t* pud_e;
+    pmdval_t* pmd_e;
+    pteval_t* pte_e;   
+
+    pgd_e = pgd_offset(pgd, addr);
+    if(pgd_none(*pgd_e)){
+        pgtable = virt_to_phys(calloc_page());
+        pgd_set(pgd_e, PGD_TYPE_TABLE | pgtable);
+        LOG("pgd_e: %p, *pgd_e = %p\r\n",pgd_e, *pgd_e);
+    }
+
+    pud_e = pud_offset(pgd_e, addr);
+    if(pud_none(*pud_e)){
+        pgtable = virt_to_phys(calloc_page());
+        pud_set(pud_e, PUD_TYPE_TABLE | pgtable);
+        LOG("pud_e: %p, *pud_e = %p\r\n",pud_e, *pud_e);
+    }
+
+    pmd_e = pmd_offset(pud_e, addr);
+    if(pmd_none(*pmd_e)){
+        pgtable = virt_to_phys(calloc_page());
+        pmd_set(pmd_e, PMD_TYPE_TABLE | pgtable);
+        LOG("pmd_e: %p, *pmd_e = %p\r\n",pmd_e, *pmd_e);
+    }
+
+    pte_e = pte_offset(pmd_e, addr);
+    return pte_e;
+}
 
 void free_page_table(pgdval_t* pgd){
     LOG("free_page_table(%p)", pgd);
     free_one_pgd(pgd);
+}
+uint64_t do_cow_page(){
+    return VM_FAULT_NONE;
+
+}
+uint64_t do_fault(){
+    return VM_FAULT_NONE;
+
+}
+
+uint64_t do_anonymous_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct* vma, uint64_t addr){
+    uint64_t page_frame;
+    if(vma->type == VMA_VC_RAM){
+        // identity mapping
+        pte_set(pte_e, addr | VM_PTE_USER_ATTR);
+    }else{
+        page_frame = virt_to_phys(alloc_page());
+        mappages(mm->pgd, addr, page_frame, PAGE_SIZE, VM_PTE_USER_ATTR);          
+    }
+    return VM_FAULT_NONE;
+}
+
+uint64_t do_wp_page(){
+    return VM_FAULT_NONE;
+}
+
+uint64_t handle_mm_fault(struct mm_struct* mm, struct vm_area_struct* vma, uint64_t far, uint64_t vm_flags){
+    uint64_t addr = ALIGN_DOWN(far, PAGE_SIZE);
+    pteval_t *pte_e = get_pte(mm->pgd, addr);
+    uint64_t ret;
+    if(pte_none(*pte_e)){
+        // page frame does not exist in memory
+        if(vma->type == VMA_FILE){
+            // handle file mapping page frame 
+            ret = do_fault();
+        }else{
+            ret = do_anonymous_page(pte_e, mm, vma, addr);
+        }
+        printf("[Translation fault]: %p\n", far);
+    }else{
+        // page frame exists in memory
+        // copy on write
+        if(vm_flags & VMA_FLAG_WRITE){
+            ret = do_wp_page();
+            printf("[COPY ON WRITE]: %p\n", far);
+        }else{
+            // which kind of situation will lead execution flow to here???
+            INFO("[Unknown MMU fault]: %p", far);
+            INFO("vm_flags: %p, *pte_e: %p", vm_flags, *pte_e); 
+            while(1);
+        }
+    }
+    return ret; 
+}
+
+uint64_t do_page_fault(uint64_t esr, uint64_t far){
+    struct vm_area_struct* vma;
+    struct task_struct* current = get_current();
+    uint32_t ec = esr >> 26;
+    uint64_t vm_flags = 0;
+
+    if(ec == FAULT_INSTR_ABORT_LOW_EL){
+        vm_flags |= VMA_FLAG_EXEC;
+    }else{
+        // get WnR ( wirte not read ) bit
+        vm_flags |= (esr & (1 << 6)) ? VMA_FLAG_WRITE : VMA_FLAG_READ;
+    }
+        
+    //check if far is in user space 
+    if(far >= VM_USER_SPACE){
+        return VM_FAULT_BADACCESS;
+    }
+    // check if the far is in mm
+    vma = find_vma(current->mm, far); 
+    if(vma == NULL){
+        // access invalid address
+        return VM_FAULT_BADMAP;
+    }
+    // check if proccess has permission
+    if(!(vma->vm_flags & vm_flags)){
+        return VM_FAULT_BADACCESS;
+    }
+    
+    return handle_mm_fault(current->mm, vma, far, vm_flags);
+}
+void do_mem_abort(uint64_t esr, uint64_t far){
+    uint64_t fault;
+    // IFSC: instruct fault status code 
+    // DFSC: data fault status code 
+    uint8_t dfsc = esr & 0b111111;
+    if(dfsc == 8 || dfsc == 12){
+        printf("unkown memory fault\r\n");
+        while(1);
+    }else if(dfsc >= 4 && dfsc <= 13){
+        fault = do_page_fault(esr, far);
+    }
+    if(fault != VM_FAULT_NONE){
+        // send signal to notify proccess that MMU error occess
+        send_signal(get_current()->thread_info.pid, SIG_SIGSEGV);
+    }
+    return;
 }

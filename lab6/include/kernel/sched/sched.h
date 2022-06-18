@@ -13,8 +13,13 @@ typedef uint64_t pid_t;
 #define TASK_UNINTERRUPTIBLE    2
 #define TASK_DEAD		64
 #define VMA_STACK 1
-#define VMA_PROGRAM 2
+#define VMA_FILE 2
 #define VMA_VC_RAM 3 
+
+#define VMA_FLAG_READ       (1 << 0)
+#define VMA_FLAG_WRITE      (1 << 1)
+#define VMA_FLAG_EXEC       (1 << 2)
+#define VMA_SHARED_EXEC     (1 << 3)
 
 #define VMA_CODE_BASE 0
 #define VMA_STACK_END 0xfffffffff000
@@ -92,6 +97,7 @@ struct task_ctx{
 struct vm_area_struct{
     uint64_t vm_start;
     uint64_t vm_end;
+    uint64_t vm_flags;
     uint64_t type;
     struct list_head list;
 };

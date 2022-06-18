@@ -23,6 +23,7 @@ OBJECTS = \
 		timer.o \
 		irq_handler.o \
 		signal.o \
+		fault.o \
 
 .PHONY: all sched
 all: $(OBJECTS) sched

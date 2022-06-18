@@ -10,11 +10,11 @@ struct sigaction default_actions[SIG_MAX_NUM] = {
     {SIG_FLAG_KERNEL, sig_default},
     {SIG_FLAG_KERNEL, sig_default},
     {SIG_FLAG_KERNEL, sig_default},
-    {SIG_FLAG_KERNEL, sig_default},
+    {SIG_FLAG_KERNEL, sig_terminate},
     {SIG_FLAG_KERNEL, sig_default},
     {SIG_FLAG_KERNEL, sig_terminate}, // 9
     {SIG_FLAG_KERNEL, sig_default},
-    {SIG_FLAG_KERNEL, sig_default},
+    {SIG_FLAG_KERNEL, sig_terminate},
     {SIG_FLAG_KERNEL, sig_default},
     {SIG_FLAG_KERNEL, sig_default},
     {SIG_FLAG_KERNEL, sig_default},

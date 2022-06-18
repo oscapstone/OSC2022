@@ -25,16 +25,19 @@
 #define PTE_TYPE_PAGE		(3 << 0)
 #define PTE_TABLE_BIT		(1 << 1)
 
-#define PAGE_MAIR_SHIFT        (2)
+#define PAGE_MAIR_SHIFT         (2)
 #define PAGE_ATTR_USER		    (1 << 6)	
 #define PAGE_ATTR_RDONLY		(1 << 7)
 #define PAGE_ATTR_SHARED		(3 << 8)
 #define PAGE_ATTR_AF			(1 << 10)	
 #define PAGE_ATTR_NG			(1 << 11)	
-#define PAGE_ATTR_DBM			(1 << 51)	
-#define PAGE_ATTR_CONT		    (1 << 52)	
-#define PAGE_ATTR_PXN			(1 << 53)	
-#define PAGE_ATTR_UXN			(1 << 54)	
+#define PAGE_ATTR_DBM			(1ul << 51)	
+#define PAGE_ATTR_CONT		    (1ul << 52)	
+#define PAGE_ATTR_PXN			(1ul << 53)	
+#define PAGE_ATTR_UXN			(1ul << 54)
+#define PAGE_ATTR_DIRTY			(1ul << 55) // Hardware doesn't support dirty bit. 
+                                            // It's software-defined attribute for Copy On Write
+                                            // This bit set if page needs Copy On Write
 
 #define BLOCK_MAIR_SHIFT        (2)
 #define BLOCK_ATTR_USER		    (1 << 6)	
@@ -42,10 +45,10 @@
 #define BLOCK_ATTR_SHARED		(3 << 8)
 #define BLOCK_ATTR_AF			(1 << 10)	
 #define BLOCK_ATTR_NG			(1 << 11)	
-#define BLOCK_ATTR_DBM			(1 << 51)	
-#define BLOCK_ATTR_CONT		    (1 << 52)	
-#define BLOCK_ATTR_PXN			(1 << 53)	
-#define BLOCK_ATTR_UXN			(1 << 54)	
+#define BLOCK_ATTR_DBM			(1ul << 51)	
+#define BLOCK_ATTR_CONT		    (1ul << 52)	
+#define BLOCK_ATTR_PXN			(1ul << 53)	
+#define BLOCK_ATTR_UXN			(1ul << 54)	
 
 #define PHYS_ADDR_MASK  (0xfffffffff000)
 

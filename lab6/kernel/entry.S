@@ -126,14 +126,18 @@ el0_sync_handler:
     cmp x24, #0x15
 
     b.eq svc_handler
-    b    nothing
 
+    mrs x0, esr_el1
+    mrs x1, far_el1
+    bl fault_handler
+
+    b end
 svc_handler:
     bl local_irq_enable 
     bl syscall_handler 
     str x0, [sp]
 
-nothing:
+end:
     bl handle_signal
     load_all 
     eret

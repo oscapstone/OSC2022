@@ -59,6 +59,7 @@ KOBJECTS = \
 		 $(OUTPUT)/kthread.o \
 		 $(OUTPUT)/task.o \
 		 $(OUTPUT)/signal.o \
+		 $(OUTPUT)/fault.o \
 		 $(LIBS)
 
 

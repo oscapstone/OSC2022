@@ -44,6 +44,11 @@ typedef uint64_t pteval_t;
 #define pte_inuse(pte_e) (((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))->ref_cnt != 0)
 #define pte_ref_cnt(pte_e) (((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))->ref_cnt)
 
+#define VM_FAULT_NONE 0 
+#define VM_FAULT_BADMAP 1 
+#define VM_FAULT_BADACCESS 2 
+
+#define VM_USER_SPACE 0xffffffffffff 
 
 extern void page_init();
 extern void mappages(pgdval_t*, uint64_t, uint64_t, uint64_t, uint64_t);
@@ -53,4 +58,6 @@ extern void free_one_pgd(pgdval_t*);
 extern void free_one_pud(pudval_t*);
 extern void free_one_pmd(pmdval_t*);
 extern void free_one_pte(pteval_t*);
+extern void do_mem_abort(uint64_t, uint64_t);
+extern pteval_t* get_pte(pgdval_t*, uint64_t);
 #endif

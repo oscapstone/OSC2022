@@ -210,7 +210,7 @@ int task_exec(const char* name, char* const argv[]){
     default_sighand_init(&current->sighandler);
 	// switch ttbr0_el1 before return to user space
     daif = local_irq_disable_save();
-	switch_ttbr0(virt_to_phys(current->mm));
+	switch_ttbr0(virt_to_phys(current->mm->pgd));
     local_irq_restore(daif);
     LOG("end task_exec");
     return ret;
@@ -297,6 +297,7 @@ void dup_vma_stack(struct mm_struct* dst_mm, struct mm_struct* src_mm){
 			vma->vm_start = tmp_vma->vm_start;
 			vma->vm_end = tmp_vma->vm_end;
 			vma->type = tmp_vma->type;
+			vma->vm_flags = tmp_vma->vm_flags;
 			list_add_tail(&vma->list, &dst_mm->mmap_list);
 
 			va = vma->vm_start;
@@ -322,14 +323,15 @@ struct vm_area_struct* create_vma_vc(struct mm_struct* mm){
     vma->vm_start = VMA_VC_BASE;
     vma->vm_end = VMA_VC_END;
     vma->type = VMA_VC_RAM;
+	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE;
     list_add_tail(&vma->list, &mm->mmap_list);
-
+/*
 	va = vma->vm_start;
 	while(va != vma->vm_end){
 		// identity mapping for vc ram
 		mappages(mm->pgd, va, va, PAGE_SIZE, VM_PTE_USER_ATTR);
 		va += PAGE_SIZE;
-	}
+	}*/
 	return vma; 
 }
 
@@ -342,6 +344,7 @@ struct vm_area_struct* create_vma_stack(struct mm_struct* mm){
     vma->vm_start = VMA_STACK_END - VMA_STACK_SIZE;
     vma->vm_end = VMA_STACK_END;
     vma->type = VMA_STACK;
+	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE;
     list_add_tail(&vma->list, &mm->mmap_list);
 
 	va = vma->vm_start;
@@ -365,7 +368,8 @@ struct vm_area_struct* create_vma_code(struct mm_struct* mm, char* filename){
     size = initrdfs_filesize(filename);
     vma->vm_start = VMA_CODE_BASE;
     vma->vm_end = VMA_CODE_BASE + ALIGN_UP(size, PAGE_SIZE);
-    vma->type = VMA_PROGRAM;
+	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE | VMA_FLAG_EXEC;
+    vma->type = VMA_FILE;
     list_add_tail(&vma->list, &mm->mmap_list);
 
     // copy file to code memory area and set page table
@@ -395,9 +399,15 @@ void dup_mm_struct(struct mm_struct* dst_mm, struct mm_struct* src_mm){
 			vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));    
 			vma = kmalloc(sizeof(struct vm_area_struct));
 			vma->vm_start = tmp_vma->vm_start;
+			vma->vm_flags = tmp_vma->vm_flags;
 			vma->vm_end = tmp_vma->vm_end;
 			vma->type = tmp_vma->type;
-			dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, 0);
+            if(vma->type != VMA_VC_RAM){
+                // COW
+                dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, PAGE_ATTR_DIRTY | PAGE_ATTR_RDONLY);
+            }else{
+                dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, 0);
+            }
 			list_add_tail(&vma->list, &dst_mm->mmap_list);
 		}       
     }
@@ -421,6 +431,18 @@ void mm_struct_destroy(struct mm_struct* mm){
     kfree(mm); 
 }
 
+struct vm_area_struct* find_vma(struct mm_struct *mm, uint64_t addr){
+    struct vm_area_struct *vma;
+    struct list_head *node;
+    list_for_each(node, &mm->mmap_list){
+        vma = list_entry(node, struct vm_area_struct, list);
+        if(vma->vm_start <= addr && vma->vm_end > addr){
+            return vma;
+        }
+    }
+    return NULL;
+}
+
 uint64_t sys_fork(){
     return task_dup(get_current());
 }
@@ -439,3 +461,4 @@ void sys_kill(uint64_t pid){
 uint64_t sys_exec(const char* name, char *const argv[]){
     return task_exec(name, argv);
 }
+
