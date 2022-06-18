@@ -7,6 +7,7 @@
 #include "string.h"
 #include "thread.h"
 #include "tmpfs.h"
+#include "device.h"
 
 void vfs_test() {
   const char* argv[] = {"vfs_test", 0};
@@ -66,6 +67,18 @@ void vfs_init() {
   //iniframfs
   vfs_mkdir("/initramfs");
   vfs_mount("", "/initramfs", "cpiofs");
+
+  //device
+  device_init();
+  struct filesystem* devfs =
+      (struct filesystem*)malloc(sizeof(struct filesystem));
+  devfs->name = "dev";
+  devfs->setup_mount = device_setup_mount;
+  register_filesystem(devfs);
+
+  vfs_mkdir("/dev");
+  vfs_mount("", "/dev", "dev");
+
 }
 
 int register_filesystem(struct filesystem* fs) {
@@ -152,6 +165,7 @@ struct file* vfs_open(const char* pathname, int flags) {
 
   int file_found = dir->v_ops->lookup(dir, &target, filename);
   if (flags == O_CREAT) {
+    printf("[open]CREATE\n");
     if (!file_found) {
       dir->v_ops->create(dir, &target, filename, FILE_REGULAR);
       fd = (struct file*)malloc(sizeof(struct file));
@@ -178,7 +192,7 @@ struct file* vfs_open(const char* pathname, int flags) {
 
 int vfs_close(struct file* file) {
   // 1. release the file descriptor
-  free(file);
+  // free(file);
   return 1;
 }
 
@@ -244,6 +258,8 @@ int vfs_chdir(const char* pathname) {
     // printf("[Error] Directory does not exist: %s\n", pathname);
     return 0;
   }
+  vnode_print(current_dir);
+  vnode_print(target);
   current_dir = target;
   // struct tmpfs_fentry* fentry = (struct tmpfs_fentry*)current_dir->internal;
   // printf("[chdir] %s\n", fentry->name);
@@ -255,6 +271,7 @@ int vfs_mount(const char* device, const char* mountpoint,
   printf("[vfs_mount] %s\n", mountpoint);
   struct vnode* target = 0;
   int dir_found = vfs_find_vnode(&target, mountpoint);
+
   if (!dir_found) {
     printf("[Error] Directory does not exist: %s\n", mountpoint);
     return 0;
@@ -264,6 +281,7 @@ int vfs_mount(const char* device, const char* mountpoint,
     return 0;
   }
 
+  // find parent_vnode
   char* pathname_ = (char*)malloc(strlen(mountpoint) + 5);
   strcpy(pathname_, mountpoint);
   struct vnode* parent_vnode = 0;
@@ -275,9 +293,7 @@ int vfs_mount(const char* device, const char* mountpoint,
   struct filesystem* fs = get_fs_by_name(filesystem);
   fs->setup_mount(fs, mountfs);
 
-  // struct tmpfs_fentry* fentry = (struct tmpfs_fentry*)target->internal;
-  // printf("[vfs_mount] %s\n", fentry->name);
-  
+  //target is mountpoint
   target->mount = mountfs;
   mountfs->root->v_ops->set_parent(mountfs->root, parent_vnode);
   return 1;

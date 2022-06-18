@@ -24,8 +24,9 @@ void main()
     uart_puts("*****************************\r\n");
     timeout_event_init();
     enable_interrupt();
-    thread_init();
+    // thread_init();
     vfs_init();
+    thread_init();
     run_shell();
 }
 

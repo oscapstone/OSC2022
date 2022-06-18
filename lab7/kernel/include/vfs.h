@@ -5,6 +5,7 @@
 #define O_CREAT 00000100
 
 typedef enum { FILE_DIRECTORY, FILE_REGULAR, FILE_DEVICE, FILE_NONE } FILE_TYPE;
+typedef enum { STDIN, STDOUT, STDERR } FILENO;
 
 struct vnode {
   struct mount* mount;
@@ -23,6 +24,7 @@ struct file {
 struct mount {
   struct vnode* root;
   struct filesystem* fs;
+  char mount_entry[20];
 };
 
 struct filesystem {
@@ -48,6 +50,11 @@ struct vnode_operations {
                 const char* component_name, FILE_TYPE type);
   int (*set_parent)(struct vnode* child_node, struct vnode* parent_node);
 };
+
+// file system
+struct file * stdin;
+struct file * stdout;
+struct file * stderr;
 
 struct filesystem_list fs_list;
 struct mount* rootfs;

@@ -25,7 +25,9 @@
  
 #pragma once
 #include "gpio.h"
+#include "vfs.h"
 #include <stdint.h>
+
 #define ARM_IRQ_REG_BASE (MMIO_BASE + 0x0000b000)
 
 #define IRQ_PENDING_1 ((volatile unsigned int *)(ARM_IRQ_REG_BASE + 0x00000204))

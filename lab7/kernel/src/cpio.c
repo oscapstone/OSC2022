@@ -126,27 +126,6 @@ void cpiofs_init() {
   cpiofs_f_ops->list = cpiofs_list;
 }
 
-void cpiofs_set_fentry(struct cpiofs_fentry* fentry, const char* component_name, 
-                      struct cpiofs_file* file, FILE_TYPE type, struct vnode* vnode) {
-  strcpy(fentry->name, component_name);
-  fentry->vnode = vnode;
-  fentry->type = type;
-  fentry->file = file;
-
-  if (fentry->type == FILE_DIRECTORY) {
-    for (int i = 0; i < MAX_FILES_IN_DIR; ++i) {
-      fentry->child[i] =
-          (struct cpiofs_fentry*)malloc(sizeof(struct cpiofs_fentry));
-      fentry->child[i]->name[0] = 0;
-      fentry->child[i]->type = FILE_NONE;
-      fentry->child[i]->parent_vnode = vnode;
-    }
-    fentry->file->size = CPIOFS_BUF_SIZE;
-  } else if (fentry->type == FILE_REGULAR) {
-    fentry->file->size = 0;
-  }
-}
-
 int _cpiofs_create(struct vnode* dir_node, struct cpiofs_file* file,
                  const char* component_name, FILE_TYPE type) {
 
@@ -165,6 +144,25 @@ int _cpiofs_create(struct vnode* dir_node, struct cpiofs_file* file,
     }
   }
   return -1;
+}
+
+void cpiofs_set_fentry(struct cpiofs_fentry* fentry, const char* component_name, 
+                      struct cpiofs_file* file, FILE_TYPE type, struct vnode* vnode) {
+  strcpy(fentry->name, component_name);
+  fentry->vnode = vnode;
+  fentry->type = type;
+  fentry->file = file;
+
+  if (fentry->type == FILE_DIRECTORY) {
+    for (int i = 0; i < MAX_FILES_IN_DIR; ++i) {
+      fentry->child[i] =
+          (struct cpiofs_fentry*)malloc(sizeof(struct cpiofs_fentry));
+      fentry->child[i]->name[0] = 0;
+      fentry->child[i]->type = FILE_NONE;
+      fentry->child[i]->parent_vnode = vnode;
+    }
+    fentry->file->size = CPIOFS_BUF_SIZE;
+  }
 }
 
 int cpiofs_setup_mount(struct filesystem* fs, struct mount* mount) {

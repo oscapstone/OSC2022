@@ -74,6 +74,10 @@ void thread_init() {
   run_queue.head = 0;
   run_queue.tail = 0;
   thread_cnt = 0;
+
+  stdin = vfs_open("/dev/uart", 0);
+  stdout = vfs_open("/dev/uart", 0);
+  stderr = vfs_open("/dev/uart", 0);
 }
 
 thread_info *thread_create(void (*func)()) {
@@ -90,6 +94,9 @@ thread_info *thread_create(void (*func)()) {
   thread->context.lr = (uint64_t)func;
   thread->context.sp = thread->kernel_stack_base + STACK_SIZE;
   for (int i = 0; i < FD_MAX; ++i) thread->fd_table.files[i] = 0;
+  thread->fd_table.files[0] = stdin;
+  thread->fd_table.files[1] = stdout;
+  thread->fd_table.files[2] = stderr;
   run_queue_push(thread);
   return thread;
 }
