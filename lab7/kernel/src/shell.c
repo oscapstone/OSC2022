@@ -237,6 +237,14 @@ void run_shell()
                 buffer_len = 0;
                 break;
             }
+            //backspace
+            if (c == 127) {
+                if (buffer_len > 0) {
+                    printf("\b \b");
+                    buffer[--buffer_len] = '\0';
+                }
+                continue;
+            }
             buffer[buffer_len++] = c;
         }
     }

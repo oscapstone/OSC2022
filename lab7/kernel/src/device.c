@@ -20,7 +20,7 @@ void root_init() {
   device_f_ops = (struct file_operations*)malloc(sizeof(struct file_operations));
   device_f_ops->write = device_write;
   device_f_ops->read = device_read;
-  device_f_ops->list = device_list;
+  // device_f_ops->list = device_list;
 }
 
 void uartfs_init() {
@@ -32,7 +32,7 @@ void uartfs_init() {
   uartfs_f_ops = (struct file_operations*)malloc(sizeof(struct file_operations));
   uartfs_f_ops->write = uartfs_write;
   uartfs_f_ops->read = uartfs_read;
-  uartfs_f_ops->list = device_list;
+  // uartfs_f_ops->list = device_list;
 }
 
 void device_init() {

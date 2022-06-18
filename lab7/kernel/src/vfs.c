@@ -139,7 +139,7 @@ struct file* vfs_open(const char* pathname, int flags) {
   // 3. Create a new file if O_CREAT is specified in flags.
   struct vnode* dir = current_dir;
   struct vnode* target = 0;
-  struct file* fd = 0;
+  struct file* file = 0;
 
   char* pathname_ = (char*)malloc(strlen(pathname) + 1);
   strcpy(pathname_, pathname);
@@ -168,10 +168,10 @@ struct file* vfs_open(const char* pathname, int flags) {
     printf("[open]CREATE\n");
     if (!file_found) {
       dir->v_ops->create(dir, &target, filename, FILE_REGULAR);
-      fd = (struct file*)malloc(sizeof(struct file));
-      fd->vnode = target;
-      fd->f_ops = target->f_ops;
-      fd->f_pos = 0;
+      file = (struct file*)malloc(sizeof(struct file));
+      file->vnode = target;
+      file->f_ops = target->f_ops;
+      file->f_pos = 0;
     } else {
       printf("[Error] File already exists: %s\n", pathname);
     }
@@ -180,14 +180,14 @@ struct file* vfs_open(const char* pathname, int flags) {
       printf("[Error] File does not exist: %s\n", pathname);
     } else {
       if (target->mount) target = target->mount->root;
-      fd = (struct file*)malloc(sizeof(struct file));
-      fd->vnode = target;
-      fd->f_ops = target->f_ops;
-      fd->f_pos = 0;
+      file = (struct file*)malloc(sizeof(struct file));
+      file->vnode = target;
+      file->f_ops = target->f_ops;
+      file->f_pos = 0;
     }
   }
   free(pathname_);
-  return fd;
+  return file;
 }
 
 int vfs_close(struct file* file) {
@@ -286,7 +286,8 @@ int vfs_mount(const char* device, const char* mountpoint,
   strcpy(pathname_, mountpoint);
   struct vnode* parent_vnode = 0;
   strcat(pathname_, "/..");
-  int parent_found = vfs_find_vnode(&parent_vnode, pathname_);
+  // int parent_found = vfs_find_vnode(&parent_vnode, pathname_);
+  vfs_find_vnode(&parent_vnode, pathname_);
   free(pathname_);
 
   struct mount* mountfs = (struct mount*)malloc(sizeof(struct mount));
