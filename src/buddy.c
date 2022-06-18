@@ -4,6 +4,7 @@ void init_buddy()
 {
     // alloc frame_arr
     frame_arr = simple_alloc(sizeof(frame_t) * BUDDY_PAGE_NUM);
+    // frame_arr = (uint64_t) frame_arr | 0xFFFF000000000000;
 
     // set all status to be zeros
     for (int i = 0; i < BUDDY_PAGE_NUM; i++) {
@@ -40,7 +41,7 @@ int merge_buddy(uint32_t index, uint32_t order, int log_on)
     frame_t *sib = frame_arr + sib_id;
 
     // uint32_t order = me->order;
-    uint32_t tmp;
+    uint64_t tmp;
 
     if (me->status != ORDER_VALID || sib->status != ORDER_VALID || index >= (BUDDY_PAGE_NUM) || sib_id >= (BUDDY_PAGE_NUM)) {
         return false;
@@ -54,7 +55,7 @@ int merge_buddy(uint32_t index, uint32_t order, int log_on)
             sib_id = index;
             index = tmp;
 
-            tmp = (uint32_t) me;
+            tmp = (uint64_t) me;
             me = sib;
             sib = (frame_t *) tmp;
             //uart_puts("5\n");
@@ -95,10 +96,10 @@ uint32_t sibling(uint32_t index, uint32_t order)
     return sib_id;
 }
 
-void reserve_memory(uint32_t start, uint32_t end)
+void reserve_memory(uint64_t start, uint64_t end)
 {
-    uint32_t start_page_idx = start / PAGE_SIZE;
-    uint32_t end_page_idx = end / PAGE_SIZE;
+    uint64_t start_page_idx = (start - BUDDY_BASE) / PAGE_SIZE;
+    uint64_t end_page_idx = (end - BUDDY_BASE) / PAGE_SIZE;
 
     for (int i = start_page_idx; i <= end_page_idx; i++) {
         frame_arr[i].status = PG_RESERVED;
@@ -131,7 +132,8 @@ void* buddy_alloc(uint32_t request_order)
     }
 
     buddy = list_pop(&free_list[i]);
-    index = ADDR2PAGE((uint32_t) buddy);
+    //uart_shex("buddy: 0x", buddy,"\n");
+    index = ADDR2PAGE((uint64_t) buddy);
     order = i;
     
     //uart_sdec("Order found ", order, "\n");
@@ -165,7 +167,7 @@ void* buddy_alloc(uint32_t request_order)
 
 void buddy_free(void* addr)
 {
-    uint32_t page_id = ADDR2PAGE((uint32_t) addr);
+    uint32_t page_id = ADDR2PAGE((uint64_t) addr);
     void *page_addr = PAGE2ADDR(page_id);
     frame_t* me = &frame_arr[page_id];
 

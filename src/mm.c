@@ -9,6 +9,7 @@ void mm_init()
 void get_one_page()
 {
     cur_mm_addr = buddy_alloc(0);
+    //uart_shex("0x", cur_mm_addr, " is get cur_mm_addr. \n\n");
     struct page_header *head = (struct page_header *) cur_mm_addr;
     head->byte_used = sizeof(struct page_header);
     head->remain_size = PAGE_SIZE - sizeof(struct page_header);
@@ -49,6 +50,7 @@ void* mm_alloc(size_t size)
         head->byte_used += align_size;
         head->remain_size -= align_size;
 
+        // uart_shex("0x", cur_mm_addr, " is cur_mm_addr. \n\n");
         // uart_shex("0x", alloc_addr, " is allocated for you. \n\n");
     }
 
@@ -86,5 +88,5 @@ void mm_free(void* addr)
 
 struct page_header *get_page_head(void* addr)
 {
-    return (struct page_header *) ((uint32_t) addr & (0xFFFFFFFF - PAGE_SIZE + 0x1));
+    return (struct page_header *) ((uint64_t) addr & (0xFFFFFFFFFFFFFFFF - PAGE_SIZE + 0x1));
 }

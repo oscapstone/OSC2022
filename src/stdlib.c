@@ -1,12 +1,8 @@
 #include "stdlib.h"
 
-// static uint32_t heap_start  = 0x10000000;
-// static uint32_t heap_size = 0x10000000;
-// static uint32_t cur_heap_pos = 0x10000000;
-
-void *simple_alloc(size_t size)
+uint64_t simple_alloc(size_t size)
 {
-    void *addr = cur_heap_pos;
+    uint64_t addr = cur_heap_pos;
     cur_heap_pos += size;
     cur_heap_pos = ALIGN(cur_heap_pos, 16);
 

@@ -36,14 +36,14 @@ void set_timer_interrupt (int enable) {
         asm volatile ("msr cntp_ctl_el0, x0");
         // Unmask timer interrupt
         asm volatile ("mov x0, 2");
-        asm volatile ("ldr x1, =0x40000040");
+        asm volatile ("ldr x1, =0xFFFF000040000040");
         asm volatile ("str w0, [x1]");
     }
     else
     {
         // mask timer interrupt
         asm volatile ("mov x0, 0");
-        asm volatile ("ldr x1, =0x40000040");
+        asm volatile ("ldr x1, =0xFFFF000040000040");
         asm volatile ("str w0, [x1]");
     }
 

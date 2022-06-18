@@ -47,15 +47,17 @@ void main()
     
     init_buddy();
     uart_puts("Reserve spin table\n");
-    reserve_memory(0x0, 0x1000);                         // reserve spin table
+    reserve_memory(0xFFFF000000000000, 0xFFFF000000001000);
     uart_puts("Reserve kernel image\n");
-    reserve_memory(0x60000, 0x100000);                   // reserve kernel image
+    reserve_memory(0xFFFF000000060000, 0xFFFF000000100000);
     uart_puts("Reserve initfs\n");
-    reserve_memory(CPIO_BASE, CPIO_END);                 // reserve initfs
+    // uart_hex(CPIO_BASE);
+    // uart_hex(CPIO_END);
+    reserve_memory(CPIO_BASE, CPIO_END);
     uart_puts("Reserve devicetree\n");
-    reserve_memory(DTB_BASE, DTB_END);                   // reserve devicetree
+    reserve_memory(DTB_BASE, DTB_END);
     uart_puts("Reserve simple_alloc\n");
-    reserve_memory(heap_start, heap_start + heap_size);  // reserve simple_alloc
+    reserve_memory(heap_start, heap_start + heap_size);
 
     build_free_list();
     build_buddy();
@@ -63,7 +65,9 @@ void main()
     thread_module_init();
     
     set_start_time();
-    
+
+    uart_shex("frame_arr: 0x", frame_arr, "\n");
+    uart_shex("test PAGEADDR: 0x", PAGE2ADDR(5),"\n");
     shell();
     
 }

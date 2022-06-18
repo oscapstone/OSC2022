@@ -10,8 +10,12 @@ typedef int pid_t;
 #define THREAD_RUNNING      1
 #define THREAD_WAIT         2
 #define THREAD_EXIT         3
-#define THREAD_STACK_SIZE   (PAGE_SIZE * 4)
+#define THREAD_STACK_SIZE   (PAGE_SIZE)
 #define THREAD_MAX_SIG_NUM  16
+
+#define USER_PROG_VA                 (0x0)
+#define USER_STACK_VA                (0xFFFFFFFFD000)
+#define KERNEL_STACK_VA              (0xFFFFFFFFE000)
 
 struct thread_context {
     unsigned long x19;
@@ -38,8 +42,9 @@ struct thread {
     unsigned long u_stack;
     unsigned long k_stack;
     unsigned int status;
-    unsigned long ksp;
-    int privilege;
+    unsigned int code_size;
+    // unsigned long ksp;
+    // int privilege;
 
     struct thread_context context;
     // For POSIX Signal
@@ -48,6 +53,8 @@ struct thread {
     void (*sig_handlers[THREAD_MAX_SIG_NUM]) ();
     unsigned int sig_num[THREAD_MAX_SIG_NUM];
     int under_sig;
+
+    unsigned long *pgd;
 
     struct thread *next;
 };
@@ -75,7 +82,7 @@ pid_t get_cur_thread_id();
 void thread_schedule();
 void idle_thread();
 void thread_exit();
-void thread_exec (void (*prog)());
+void thread_exec (void (*prog)(), size_t prog_size);
 pid_t thread_fork(struct trap_frame* trap_frame);
 void thread_kill(pid_t pid);
 void default_sig_handler();

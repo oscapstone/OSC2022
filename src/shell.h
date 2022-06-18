@@ -20,5 +20,12 @@ char cmd_buf[CMD_BUF_SIZE];
 void set(long addr, unsigned int value);
 void reset(int tick);
 void cancel_reset();
+void PrintHelp();
+void jump2usr_prog(cpio_fp_t *fp);
+void PrintHello();
+void PrintInfo();
+void clear_screen();
+void shell();
+void cmd_handler();
 
 #endif

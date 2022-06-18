@@ -69,7 +69,7 @@ void svc_handler(trap_frame_t* trap_frame)
             trap_frame->regs[0] = exec(trap_frame->regs[0], trap_frame->regs[1], trap_frame);
             break;
         case 4:
-            thread_fork(trap_frame);
+            trap_frame->regs[0] = thread_fork(trap_frame);
             
             // sync_uart_puts("&trap_frame->regs[0] = 0x");
             // uart_hex(&trap_frame->regs[0]);
@@ -104,6 +104,9 @@ void svc_handler(trap_frame_t* trap_frame)
             thread_sig_kill(trap_frame->regs[0], trap_frame->regs[1]);
             break;
         case 10:
+            // sync_uart_puts("svc = ");
+            // uart_dec(svc);
+            // sync_uart_puts(" called\n");
             thread_sig_return();
             break;
         default:
@@ -121,23 +124,27 @@ int exec(const char *name, char *const argv[], trap_frame_t* trap_frame)
     struct thread* cur_thread;
     size_t prog_size;
     char *prog_addr;
+    unsigned long va, pa;
 
+    cur_thread = get_cur_thread();
     cpio_get_file_info(name, &fp);
     prog_size = ascii2int(fp.header->c_filesize, 8);
-    prog_addr = mm_alloc(prog_size);
-    prog_addr = (unsigned long) prog_addr - 0x10;
+    prog_addr = buddy_alloc(log2_ceiling(prog_size / PAGE_SIZE));
+    // prog_addr = mm_alloc(prog_size);
+    // prog_addr = (unsigned long) prog_addr - 0x10;
     copy_prog_from_cpio(prog_addr, fp.data, prog_size);
-    
-    cur_thread = get_cur_thread();
+    for (int i = 0; i < prog_size; i += PAGE_TABLE_SIZE) {
+        va = USER_PROG_VA + i;
+        pa = va_to_pa(prog_addr + i);
 
-    cur_thread->code_addr  = (unsigned long) prog_addr;
-    cur_thread->context.lr = (unsigned long) prog_addr;
-    cur_thread->context.fp = (unsigned long) cur_thread->u_stack + (THREAD_STACK_SIZE);
-    cur_thread->context.sp = (unsigned long) cur_thread->u_stack + (THREAD_STACK_SIZE);
+        alloc_page_table(cur_thread->pgd, va, pa, PD_USER_ATTR);
+    }
+    
+    cur_thread->code_size = prog_size;
 
     // trap_frame->spsr_el1;
-    trap_frame->elr_el1 = (unsigned long) prog_addr;
-    trap_frame->sp_el0 = (unsigned long) cur_thread->u_stack + (THREAD_STACK_SIZE);
+    trap_frame->elr_el1 = (unsigned long) USER_PROG_VA;
+    trap_frame->sp_el0 = (unsigned long) (USER_STACK_VA + THREAD_STACK_SIZE);
 
     return 1;
 }

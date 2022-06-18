@@ -93,7 +93,7 @@ void dtb_parse( void (*fun)(char *, char *) )
                 uart_puts("\n");
             }
             struct_addr += strlen(struct_addr) + 1;
-            struct_addr = ALIGN((uint32_t) struct_addr, 4);
+            struct_addr = ALIGN((uint64_t) struct_addr, 4);
         }
         else if (tag == FDT_END_NODE) {
             height--;
@@ -122,7 +122,7 @@ void dtb_parse( void (*fun)(char *, char *) )
 
             // let struct_addr point to next token
             struct_addr += prop_header.len;
-            struct_addr = ALIGN((uint32_t) struct_addr, 4);
+            struct_addr = ALIGN((uint64_t) struct_addr, 4);
             
             height--;
         }

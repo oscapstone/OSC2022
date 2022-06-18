@@ -64,7 +64,8 @@ int mbox_call(unsigned char ch)
 
 int sys_mbox_call(unsigned char ch, unsigned int *user_mbox)
 {
-    unsigned int r = (((unsigned int)((unsigned long)user_mbox)&~0xF) | (ch&0xF));
+    unsigned int *pmbox = (unsigned int *)user_va_to_pa(user_mbox);
+    unsigned int r = (((unsigned int)((unsigned long)pmbox)&~0xF) | (ch&0xF));
     /* wait until we can write to the mailbox */
     do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
     /* write the address of our message to the mailbox with channel identifier */

@@ -241,16 +241,16 @@ void uart_dec(long int num) {
 
 void uart_sdec(char* pre, long int num, char* post)
 {
-    uart_puts(pre);
+    sync_uart_puts(pre);
     uart_dec(num);
-    uart_puts(post);
+    sync_uart_puts(post);
 }
 
 void uart_shex(char* pre, unsigned long int num, char* post)
 {
-    uart_puts(pre);
+    sync_uart_puts(pre);
     uart_hex(num);
-    uart_puts(post);
+    sync_uart_puts(post);
 }
 
 void uart_irq_handler()

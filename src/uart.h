@@ -47,6 +47,14 @@ void uart_dec(long int num);
 void uart_sdec(char* pre, long int num, char* post);
 void uart_shex(char* pre, unsigned long int num, char* post);
 
-extern void cmd_handler();
+
+void uart_irq_handler();
+void receive_handler();
+void transmit_handler();
+void enable_transmit_irq();
+void disable_transmit_irq();
+void disable_recieve_irq();
+size_t uartread(char *buf, size_t size);
+size_t uartwrite (const char *buf, size_t size);
 
 #endif

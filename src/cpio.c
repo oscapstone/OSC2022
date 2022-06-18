@@ -3,11 +3,11 @@
 void cpio_init(char* name, char *addr)
 {
     if (strcmp(name, "linux,initrd-start") == 0) {
-        CPIO_BASE = addr;
+        CPIO_BASE = (unsigned long) addr + 0xFFFF000000000000;
     }
 
     if (strcmp(name, "linux,initrd-end") == 0) {
-        CPIO_END = addr;
+        CPIO_END = (unsigned long) addr + 0xFFFF000000000000;
     }
 }
 
