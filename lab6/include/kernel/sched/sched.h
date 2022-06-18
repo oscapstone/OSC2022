@@ -99,6 +99,7 @@ struct vm_area_struct{
     uint64_t vm_end;
     uint64_t vm_flags;
     uint64_t type;
+    char* filename;
     struct list_head list;
 };
 

@@ -31,6 +31,7 @@ typedef uint64_t pteval_t;
 
 #define pte_index(addr) (((uint64_t)addr >> PTE_SHIFT) & 0b111111111)
 #define pte_offset(pmd_e, addr) ((pteval_t*)phys_to_virt(((uint64_t)*pmd_e & PHYS_ADDR_MASK)) + pte_index(addr))
+#define pte_val(pte_e) (*pte_e)
 #define pte_none(val) (val == 0)
 #define pte_set(pte, val) do{*((pteval_t*)pte) = val;}while(0)
 #define pte_page(pte_e) ((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))
@@ -42,6 +43,7 @@ typedef uint64_t pteval_t;
                         }while(0)
 
 #define pte_inuse(pte_e) (((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))->ref_cnt != 0)
+#define pte_writable(pte_e) (((uint64_t)*pte_e & PAGE_ATTR_RDONLY) == 0)
 #define pte_ref_cnt(pte_e) (((struct page*)phys_to_page(((uint64_t)*pte_e & PHYS_ADDR_MASK)))->ref_cnt)
 
 #define VM_FAULT_NONE 0 

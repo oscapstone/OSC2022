@@ -159,10 +159,10 @@ void dup_pages(pgdval_t* dst_pgd, pgdval_t* src_pgd, uint64_t va, uint64_t size,
         }
 
         tmp_pte_e = pte_offset(tmp_pmd_e, vstart);
-        if(!pmd_none(*tmp_pmd_e)){
+        if(!pte_none(*tmp_pte_e)){
             // Since we have implement demand paging, sometimes page is not exist in memory
             pte_e = pte_offset(pmd_e, vstart);
-            pte_set(pte_e, *tmp_pte_e | prot);
+            pte_set(pte_e, pte_val(tmp_pte_e) | prot);
             // add 1 to page reference count 
             pte_reuse(pte_e);
             LOG("tmp_pte_e: %p, *tmp_pte_e = %p",tmp_pte_e, *tmp_pte_e);
@@ -259,13 +259,17 @@ void free_page_table(pgdval_t* pgd){
     LOG("free_page_table(%p)", pgd);
     free_one_pgd(pgd);
 }
-uint64_t do_cow_page(){
-    return VM_FAULT_NONE;
 
-}
-uint64_t do_fault(){
-    return VM_FAULT_NONE;
+uint64_t do_file_fault(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct* vma, uint64_t addr, uint64_t vm_flags){
+    uint64_t offset = addr - vma->vm_start;
+    char* filename = vma->filename;
+    uint8_t* page;
 
+    page = alloc_page();
+    initrdfs_loadfile(filename, page, offset, PAGE_SIZE);
+    mappages(mm->pgd, addr, virt_to_phys(page), PAGE_SIZE, VM_PTE_USER_ATTR);
+
+    return VM_FAULT_NONE;
 }
 
 uint64_t do_anonymous_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct* vma, uint64_t addr){
@@ -280,7 +284,26 @@ uint64_t do_anonymous_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area
     return VM_FAULT_NONE;
 }
 
-uint64_t do_wp_page(){
+uint64_t do_wp_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct* vma, uint64_t addr){
+    struct page* page = pte_page(pte_e);
+    uint8_t * old_page, * new_page;
+    uint64_t new_page_frame, orig_attr;
+
+    INFO("start do_wp_page, page ref count: %p, value of pte: %p", pte_ref_cnt(pte_e), pte_val(pte_e));
+    if(pte_ref_cnt(pte_e) == 1){
+        pte_set(pte_e, pte_val(pte_e) & ~PAGE_ATTR_RDONLY); 
+    }else{
+        INFO("start COW pte");
+        old_page = page_to_virt(page);
+        new_page = alloc_page();
+        new_page_frame = virt_to_phys(new_page); 
+        orig_attr = pte_val(pte_e) & ~PAGE_ATTR_RDONLY & ~PHYS_ADDR_MASK;
+
+        memcpy(new_page, old_page, PAGE_SIZE);
+        pte_set(pte_e, orig_attr | new_page_frame); 
+        free_page(old_page);
+    }
+    INFO("end do_wp_page page ref count: %p, value of pte: %p", pte_ref_cnt(pte_e), pte_val(pte_e));
     return VM_FAULT_NONE;
 }
 
@@ -292,7 +315,7 @@ uint64_t handle_mm_fault(struct mm_struct* mm, struct vm_area_struct* vma, uint6
         // page frame does not exist in memory
         if(vma->type == VMA_FILE){
             // handle file mapping page frame 
-            ret = do_fault();
+            ret = do_file_fault(pte_e, mm ,vma, addr, vm_flags);
         }else{
             ret = do_anonymous_page(pte_e, mm, vma, addr);
         }
@@ -300,8 +323,8 @@ uint64_t handle_mm_fault(struct mm_struct* mm, struct vm_area_struct* vma, uint6
     }else{
         // page frame exists in memory
         // copy on write
-        if(vm_flags & VMA_FLAG_WRITE){
-            ret = do_wp_page();
+        if(vm_flags & VMA_FLAG_WRITE && !pte_writable(pte_e)){
+            ret = do_wp_page(pte_e, mm, vma, addr);
             printf("[COPY ON WRITE]: %p\n", far);
         }else{
             // which kind of situation will lead execution flow to here???
@@ -351,9 +374,10 @@ void do_mem_abort(uint64_t esr, uint64_t far){
     if(dfsc == 8 || dfsc == 12){
         printf("unkown memory fault\r\n");
         while(1);
-    }else if(dfsc >= 4 && dfsc <= 13){
+    }else if(dfsc >= 4 && dfsc <= 15){
         fault = do_page_fault(esr, far);
     }
+
     if(fault != VM_FAULT_NONE){
         // send signal to notify proccess that MMU error occess
         send_signal(get_current()->thread_info.pid, SIG_SIGSEGV);

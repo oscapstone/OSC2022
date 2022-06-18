@@ -22,9 +22,9 @@ uint64_t task_dup(struct task_struct* parent){
 	// copy vma in parent->mm to child->mm except for user stack1
 	dup_mm_struct(child->mm, parent->mm);
 	// create user stack vma
-	dup_vma_stack(child->mm, parent->mm);
+	//dup_vma_stack(child->mm, parent->mm);
 	//create vc ram identity mapping
-	create_vma_vc(child->mm);
+//	create_vma_vc(child->mm);
 
 
     // initialize child's trap frame and kernel stack
@@ -283,37 +283,6 @@ void run_init_task(char* filename){
     add_task_to_rq(task);
 }
 
-void dup_vma_stack(struct mm_struct* dst_mm, struct mm_struct* src_mm){
-	uint64_t va, pa;
-	uint8_t *dst_stack;
-	struct list_head* node;
-	struct vm_area_struct* vma,*tmp_vma;
-	
-    list_for_each(node, &src_mm->mmap_list){
-        tmp_vma = list_entry(node, struct vm_area_struct, list);
-        if(tmp_vma->type == VMA_STACK){
-			LOG("src_mm's vm area type 0x%x", tmp_vma->type);
-			vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));    
-			vma->vm_start = tmp_vma->vm_start;
-			vma->vm_end = tmp_vma->vm_end;
-			vma->type = tmp_vma->type;
-			vma->vm_flags = tmp_vma->vm_flags;
-			list_add_tail(&vma->list, &dst_mm->mmap_list);
-
-			va = vma->vm_start;
-			while(va != vma->vm_end){
-				dst_stack = calloc_page();
-				// copy stack content
-				memcpy(dst_stack, (void*)va, PAGE_SIZE);
-				mappages(dst_mm->pgd, va, virt_to_phys(dst_stack), PAGE_SIZE, VM_PTE_USER_ATTR);
-				
-				va += PAGE_SIZE;
-			}	
-			break;
-		}       
-    }
-}
-
 struct vm_area_struct* create_vma_vc(struct mm_struct* mm){
 	uint64_t va, pa;
 	struct vm_area_struct *vma;
@@ -324,6 +293,7 @@ struct vm_area_struct* create_vma_vc(struct mm_struct* mm){
     vma->vm_end = VMA_VC_END;
     vma->type = VMA_VC_RAM;
 	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE;
+    vma->filename == NULL;
     list_add_tail(&vma->list, &mm->mmap_list);
 /*
 	va = vma->vm_start;
@@ -345,15 +315,17 @@ struct vm_area_struct* create_vma_stack(struct mm_struct* mm){
     vma->vm_end = VMA_STACK_END;
     vma->type = VMA_STACK;
 	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE;
+    vma->filename == NULL;
     list_add_tail(&vma->list, &mm->mmap_list);
 
 	va = vma->vm_start;
+    /*
 	while(va != vma->vm_end){
 		addr = calloc_page();
 		mappages(mm->pgd, va, virt_to_phys(addr), PAGE_SIZE, VM_PTE_USER_ATTR);
 		
 		va += PAGE_SIZE;
-	}
+	}*/
 	return vma; 
 
 }
@@ -363,6 +335,7 @@ struct vm_area_struct* create_vma_code(struct mm_struct* mm, char* filename){
 	size_t size, offset = 0, n;
 	struct vm_area_struct *vma;
 	uint8_t* addr;
+    char* tmp_name;
 
     vma = kmalloc(sizeof(struct vm_area_struct));
     size = initrdfs_filesize(filename);
@@ -370,9 +343,14 @@ struct vm_area_struct* create_vma_code(struct mm_struct* mm, char* filename){
     vma->vm_end = VMA_CODE_BASE + ALIGN_UP(size, PAGE_SIZE);
 	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE | VMA_FLAG_EXEC;
     vma->type = VMA_FILE;
+    tmp_name = kmalloc(strlen(filename) + 5);	
+	strcpy(tmp_name, filename);
+
+    vma->filename = tmp_name;
     list_add_tail(&vma->list, &mm->mmap_list);
 
     // copy file to code memory area and set page table
+/*
 	va = VMA_CODE_BASE;
 	while(size){
 		addr = calloc_page();
@@ -383,6 +361,7 @@ struct vm_area_struct* create_vma_code(struct mm_struct* mm, char* filename){
 		size -= n;
 		offset += n;
 	}
+*/
 	return vma; 
 }
 
@@ -391,25 +370,30 @@ void dup_mm_struct(struct mm_struct* dst_mm, struct mm_struct* src_mm){
 	uint64_t va;
 	struct list_head* node;
 	struct vm_area_struct* vma,*tmp_vma;
+    char* tmp_name;
 	
     list_for_each(node, &src_mm->mmap_list){
         tmp_vma = list_entry(node, struct vm_area_struct, list);
-        if(!(tmp_vma->type == VMA_STACK || tmp_vma->type == VMA_VC_RAM)){
-			LOG("src_mm's vm area type 0x%x", tmp_vma->type);
-			vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));    
-			vma = kmalloc(sizeof(struct vm_area_struct));
-			vma->vm_start = tmp_vma->vm_start;
-			vma->vm_flags = tmp_vma->vm_flags;
-			vma->vm_end = tmp_vma->vm_end;
-			vma->type = tmp_vma->type;
-            if(vma->type != VMA_VC_RAM){
-                // COW
-                dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, PAGE_ATTR_DIRTY | PAGE_ATTR_RDONLY);
-            }else{
-                dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, 0);
-            }
-			list_add_tail(&vma->list, &dst_mm->mmap_list);
-		}       
+        LOG("src_mm's vm area type 0x%x", tmp_vma->type);
+        vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));    
+        vma = kmalloc(sizeof(struct vm_area_struct));
+        vma->vm_start = tmp_vma->vm_start;
+        vma->vm_flags = tmp_vma->vm_flags;
+        vma->vm_end = tmp_vma->vm_end;
+        vma->type = tmp_vma->type;
+        if(tmp_vma->type == VMA_FILE){
+            tmp_name = kmalloc(strlen(tmp_vma->filename) + 5);	
+	        strcpy(tmp_name, tmp_vma->filename);
+            vma->filename = tmp_name;
+        }
+
+        // VC RAM should do copy on write and it only support demand paging
+        if(vma->type != VMA_VC_RAM){
+            // COW
+            dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, PAGE_ATTR_RDONLY);
+        }
+
+        list_add_tail(&vma->list, &dst_mm->mmap_list);
     }
 }
 
@@ -424,6 +408,9 @@ void mm_struct_destroy(struct mm_struct* mm){
 	struct vm_area_struct *vma;
     while(!list_empty(&mm->mmap_list)){
         vma = list_first_entry(&mm->mmap_list, struct vm_area_struct, list);
+        if(vma->type == VMA_FILE){
+            kfree(vma->filename);
+        }
         list_del(&vma->list); 
 		kfree(vma);
     }

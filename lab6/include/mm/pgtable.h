@@ -36,8 +36,6 @@
 #define PAGE_ATTR_PXN			(1ul << 53)	
 #define PAGE_ATTR_UXN			(1ul << 54)
 #define PAGE_ATTR_DIRTY			(1ul << 55) // Hardware doesn't support dirty bit. 
-                                            // It's software-defined attribute for Copy On Write
-                                            // This bit set if page needs Copy On Write
 
 #define BLOCK_MAIR_SHIFT        (2)
 #define BLOCK_ATTR_USER		    (1 << 6)	
