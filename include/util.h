@@ -55,9 +55,9 @@ int strlen(const char *s1);
 /* MEMORY OPERATION */
 #define ALIGN(x, a)	 (((x) + ((a) - 1)) & ~((a) - 1))
 #define PALIGN(p, a) ((void *)(ALIGN((unsigned long)(p), (a))))
-int memcmp(const char *dst, const char *src, uint32_t sz);
-void memcpy(char *dst, const char *src, uint32_t sz);
-void memset(char *s1, char c, uint32_t sz);
+int memcmp(const void *dst, const void *src, uint32_t sz);
+void memcpy(void *dst, const void *src, uint32_t sz);
+void memset(void *s1, char c, uint32_t sz);
 
 /* MATH OPERATION */
 uint64_t ceiling_2(uint64_t value);
@@ -79,6 +79,8 @@ int8_t log_2(uint64_t value);
 
 #define _floor(val, bit) ( (val) & ~((1 << bit) - 1) )
 #define _ceil(val, bit)  ( _floor(val + ((1 << bit) - 1), bit) )
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 /* REGISTER OPERATION */
 #define read_sysreg(reg) ({          \
@@ -86,10 +88,16 @@ int8_t log_2(uint64_t value);
     __asm__ volatile("mrs x0, " #reg \
                      : "=r"(_val));  \
                     _val; })
+#define read_normreg(reg) ({         \
+    uint64_t _val;                   \
+    __asm__ volatile("mov x0, " #reg \
+                     : "=r"(_val));  \
+                    _val; })
 
 #define write_sysreg(reg, _val) ({ __asm__ volatile("msr " #reg ", %0" ::"rZ"(_val)); })
 
 /* OTHER HELPER */
-void sleep(int cycles);
+void delay(int cycles);
+#define hangon() do{ while (1); } while (0)
 
 #endif /* _UTIL_H_ */

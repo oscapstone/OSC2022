@@ -1,9 +1,9 @@
-#ifndef _INIT_INITRAMFS_H_
-#define _INIT_INITRAMFS_H_
+#ifndef _INITRAMFS_H_
+#define _INITRAMFS_H_
 
 #include <types.h>
 #include <util.h>
-#include <printf.h>
+#include <fs.h>
 
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
@@ -15,12 +15,17 @@
 #define MINOR(dev) ((uint32_t) ((dev) & MINORMASK))
 #define MKDEV(ma, mi) (((ma) << MINORBITS) | (mi))
 
-extern char *cpio_start, *cpio_end;
+extern uint64_t cpio_start, cpio_end;
+extern const struct filesystem initramfs;
 
-typedef struct _Cpio_header
+#define S_IFMT 00170000
+#define S_IFDIR 0040000
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+
+typedef struct _CpioHeader
 {
     uint64_t c_ino;      /* I-number of file */
-    uint8_t c_mode;      /* File mode */
+    uint16_t c_mode;      /* File mode */
     uid_t c_uid;         /* Owner user ID */
     gid_t c_gid;         /* Owner uroup ID */
     uint64_t c_nlink;    /* Number of links to file */
@@ -30,9 +35,9 @@ typedef struct _Cpio_header
     uint64_t c_devminor; /* Minor device number */
     uint32_t c_rdev;     /* Device major/minor for special file */
     uint64_t c_namesize; /* Length of filename */
-} Cpio_header;
+    const char *content;
+} CpioHeader;
 
-char *cpio_find_file(const char *fname);
-void cpio_ls();
+int initramfs_setup_mount(const struct filesystem *fs, struct mount *mount);
 
-#endif /* _INIT_INITRAMFS_H_ */
+#endif /* _INITRAMFS_H_ */
