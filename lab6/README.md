@@ -9,9 +9,9 @@
 - Advanced Exercise 1 
     - [ ] Mmap 
 - Advanced Exercise 2
-    - [ ] Page Fault Handler & Demand Paging
+    - [x] Page Fault Handler & Demand Paging
 - Advanced Exercise 1 
-    - [ ] Copy on Write 
+    - [x] Copy on Write 
 
 
 
