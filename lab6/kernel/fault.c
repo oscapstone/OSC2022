@@ -6,6 +6,6 @@ void fault_handler(uint64_t esr, uint64_t far){
     if(ec == FAULT_DATA_ABORT_LOW_EL || ec == FAULT_INSTR_ABORT_LOW_EL){
         do_mem_abort(esr, far);
     }else{
-        INFO("unknown error: ec = %f", ec);
+        INFO("unknown error: ec = %p, far: %p, esr: %p", ec, far, esr);
     }
 }

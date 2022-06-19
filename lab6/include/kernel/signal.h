@@ -74,6 +74,7 @@ extern void sys_signal(int, sig_handler);
 extern int sys_sigkill(uint64_t, int);
 extern void sig_default();
 extern void sig_terminate();
+extern void free_sigpendings(struct sigpending*);
 
 
 #endif

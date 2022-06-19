@@ -53,7 +53,7 @@ typedef uint64_t pteval_t;
 #define VM_USER_SPACE 0xffffffffffff 
 
 extern void page_init();
-extern void mappages(pgdval_t*, uint64_t, uint64_t, uint64_t, uint64_t);
+extern void mappages(pgdval_t*, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 extern void dup_pages(pgdval_t*, pgdval_t*, uint64_t, uint64_t, uint64_t);
 extern void free_page_table(pgdval_t*);
 extern void free_one_pgd(pgdval_t*);

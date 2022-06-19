@@ -22,18 +22,19 @@ int send_signal(uint64_t pid, int signal){
     struct signal_queue* sigq;
     volatile uint64_t daif;
     
-    if(!is_valid_signal(signal) || target == NULL) return 0;
+    daif = local_irq_disable_save();
+    if(!is_valid_signal(signal) || target == NULL) goto end;
+    if(target->thread_info.state == TASK_DEAD) goto end;
 
     LOG("target %p", target);
     sigq = kmalloc(sizeof(struct signal_queue));  
 
-    daif = local_irq_disable_save();
     
     sigq->signal = signal;
     list_add_tail(&sigq->list, &target->sigpending.pending);
     
+end:
     local_irq_restore(daif);
-
     LOG("end send_signal");
     return 0;
 }
@@ -177,6 +178,15 @@ void sig_default(){
     local_irq_restore(daif);
 
     LOG("end signal_default");
+}
+
+void free_sigpendings(struct sigpending* sigp){
+    struct signal_queue* sigq;
+    while(!list_empty(&sigp->pending)){
+        sigq = list_first_entry(&sigp->pending, struct signal_queue, list);
+        list_del(&sigq->list); 
+        kfree(sigq);
+    }
 }
 
 void sys_sigreturn(){

@@ -164,7 +164,8 @@ void task_destroy(struct task_struct* task){
 			task->child->parent = NULL;
 		}
 	}
-
+    // free signal pending queue
+    free_sigpendings(&task->sigpending);
     kfree(task);
     if(user_init == task) user_init = NULL;
 }
@@ -391,6 +392,8 @@ void dup_mm_struct(struct mm_struct* dst_mm, struct mm_struct* src_mm){
         if(vma->type != VMA_VC_RAM){
             // COW
             dup_pages(dst_mm->pgd, src_mm->pgd, vma->vm_start, vma->vm_end - vma->vm_start, PAGE_ATTR_RDONLY);
+            // also set parent's page to read only to trigger COW
+            mappages(src_mm->pgd, tmp_vma->vm_start, 0x0, tmp_vma->vm_end - tmp_vma->vm_start, PAGE_ATTR_RDONLY, 1);
         }
 
         list_add_tail(&vma->list, &dst_mm->mmap_list);

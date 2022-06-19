@@ -72,7 +72,7 @@ void page_init(){
     INFO("finish");
 }
 
-void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t prot){
+void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t prot, uint64_t set_attr){
     //LOG("mappages start");
     uint64_t vstart, vend;
     uint64_t pgtable = 0;
@@ -107,11 +107,21 @@ void mappages(pgdval_t* pgd, uint64_t va, uint64_t pa, uint64_t size, uint64_t p
 
         pte_e = pte_offset(pmd_e, vstart);
         //printf("pte_index(%p) = %p\r\n", vstart, pte_index(vstart));
-        if(!pte_none(*pte_e)){
-            printf("Try to modify the physical address of a pte entry to another address\r\n");
-            while(1);
+        
+
+        if(set_attr){
+            // only set attribute
+            if(!pte_none(*pte_e)){
+                pte_set(pte_e, prot | pte_val(pte_e));
+            }
+        }else{
+            if(!pte_none(*pte_e)){
+                INFO("error: try to overwrite pte");
+                while(1);
+            }else{
+                pte_set(pte_e, prot | PAGE_ATTR_AF | (pa & PHYS_ADDR_MASK));
+            }
         }
-        pte_set(pte_e, prot | PAGE_ATTR_AF | (pa & PHYS_ADDR_MASK));
         //LOG("pte_e: %p, *pte_e = %p\r\n",pte_e, *pte_e);
         pa += PAGE_SIZE;
     }
@@ -260,15 +270,17 @@ void free_page_table(pgdval_t* pgd){
     free_one_pgd(pgd);
 }
 
-uint64_t do_file_fault(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct* vma, uint64_t addr, uint64_t vm_flags){
+uint64_t do_file_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct* vma, uint64_t addr, uint64_t vm_flags){
+    //INFO("start do_file_fault, page ref count: %p, value of pte: %p", pte_ref_cnt(pte_e), pte_val(pte_e));
     uint64_t offset = addr - vma->vm_start;
     char* filename = vma->filename;
     uint8_t* page;
 
     page = alloc_page();
     initrdfs_loadfile(filename, page, offset, PAGE_SIZE);
-    mappages(mm->pgd, addr, virt_to_phys(page), PAGE_SIZE, VM_PTE_USER_ATTR);
+    mappages(mm->pgd, addr, virt_to_phys(page), PAGE_SIZE, VM_PTE_USER_ATTR, 0);
 
+    //INFO("end do_file_fault page ref count: %p, value of pte: %p", pte_ref_cnt(pte_e), pte_val(pte_e));
     return VM_FAULT_NONE;
 }
 
@@ -279,7 +291,7 @@ uint64_t do_anonymous_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area
         pte_set(pte_e, addr | VM_PTE_USER_ATTR);
     }else{
         page_frame = virt_to_phys(alloc_page());
-        mappages(mm->pgd, addr, page_frame, PAGE_SIZE, VM_PTE_USER_ATTR);          
+        mappages(mm->pgd, addr, page_frame, PAGE_SIZE, VM_PTE_USER_ATTR, 0);          
     }
     return VM_FAULT_NONE;
 }
@@ -293,7 +305,7 @@ uint64_t do_wp_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area_struct
     if(pte_ref_cnt(pte_e) == 1){
         pte_set(pte_e, pte_val(pte_e) & ~PAGE_ATTR_RDONLY); 
     }else{
-        INFO("start COW pte");
+        INFO("start COW");
         old_page = page_to_virt(page);
         new_page = alloc_page();
         new_page_frame = virt_to_phys(new_page); 
@@ -315,21 +327,21 @@ uint64_t handle_mm_fault(struct mm_struct* mm, struct vm_area_struct* vma, uint6
         // page frame does not exist in memory
         if(vma->type == VMA_FILE){
             // handle file mapping page frame 
-            ret = do_file_fault(pte_e, mm ,vma, addr, vm_flags);
+            ret = do_file_page(pte_e, mm ,vma, addr, vm_flags);
         }else{
             ret = do_anonymous_page(pte_e, mm, vma, addr);
         }
-        printf("[Translation fault]: %p\n", far);
+        printf("%l: [Translation fault]: %p\r\n",get_current()->thread_info.pid, far);
     }else{
         // page frame exists in memory
         // copy on write
         if(vm_flags & VMA_FLAG_WRITE && !pte_writable(pte_e)){
             ret = do_wp_page(pte_e, mm, vma, addr);
-            printf("[COPY ON WRITE]: %p\n", far);
+            printf("%l: [COPY ON WRITE]: %p\r\n",get_current()->thread_info.pid, far);
         }else{
             // which kind of situation will lead execution flow to here???
-            INFO("[Unknown MMU fault]: %p", far);
-            INFO("vm_flags: %p, *pte_e: %p", vm_flags, *pte_e); 
+            printf("[Unknown MMU fault]: %p\r\n", far);
+            INFO("vm_flags: %p, *pte_e: %p\r\n", vm_flags, *pte_e); 
             while(1);
         }
     }

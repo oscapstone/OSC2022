@@ -87,7 +87,7 @@ struct task_struct* find_task_by_pid(uint64_t pid){
     daif = local_irq_disable_save();
     list_for_each(node, &task_list){
         tmp_task = list_entry(node, struct task_struct, list);
-        if(tmp_task->thread_info.pid == pid){
+        if(tmp_task->thread_info.pid == pid && tmp_task->thread_info.state != TASK_DEAD){
             local_irq_restore(daif);
             return tmp_task;
         }

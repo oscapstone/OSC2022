@@ -12,9 +12,9 @@ typedef uint64_t pid_t;
 #define TASK_INTERRUPTIBLE  1
 #define TASK_UNINTERRUPTIBLE    2
 #define TASK_DEAD		64
-#define VMA_STACK 1
-#define VMA_FILE 2
-#define VMA_VC_RAM 3 
+#define VMA_STACK           (1 << 0)
+#define VMA_FILE            (1 << 1) 
+#define VMA_VC_RAM          (2 << 1) 
 
 #define VMA_FLAG_READ       (1 << 0)
 #define VMA_FLAG_WRITE      (1 << 1)
