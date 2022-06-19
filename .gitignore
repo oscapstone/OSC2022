@@ -10,3 +10,6 @@ client
 rootfs
 initramfs.cpio
 bcm2710-rpi-3-b-plus.dtb
+qq
+sfn_nctuos*
+screenlog*

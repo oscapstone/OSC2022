@@ -1,9 +1,10 @@
 #include <util.h>
 #include <types.h>
-#include <txrx/txrx.h>
-#include <gpio/uart.h>
-#include <gpio/base.h>
-#include <lib/printf.h>
+#include <txrx.h>
+#include <gpio.h>
+#include <base.h>
+#include <mailbox.h>
+#include <printf.h>
 
 #define KERNEL_BASE_ADDR 0x80000
 #define PM_REG (PERIF_ADDRESS + 0x100000)
@@ -15,8 +16,7 @@
 void reset(int tick);
 void cancel_reset();
 
-static char *kernel_addr =(char *) KERNEL_BASE_ADDR;
-extern addr_t dtb_base;
+static char *kernel_addr =(char *)KERNEL_BASE_ADDR;
 
 /* Reboot pi after watchdog timer expire */
 void reset(int tick)
@@ -30,85 +30,6 @@ void cancel_reset()
 {
     set_value(*PM_RSTC, PM_PASSWORD | 0, 0, sizeof(reg32)); /* Disable rstc */
     set_value(*PM_WDOG, PM_PASSWORD | 0, 0, sizeof(reg32)); /* Disable wdog */
-}
-
-#define MAILBOX0_BASE (PERIF_ADDRESS + 0xB880)
-#define MAILBOX1_BASE (PERIF_ADDRESS + 0xB8A0)
-
-#define MAILBOX0_READ ((reg32 *)(MAILBOX0_BASE + 0x0))
-#define MAILBOX0_STATUS ((reg32 *)(MAILBOX0_BASE + 0x18))
-#define MAILBOX1_WRITE ((reg32 *)(MAILBOX0_BASE + 0x20))
-#define MAILBOX_CHANNEL_MASK 0x0000000f
-#define MAILBOX_DATA_MASK 0xfffffff0
-
-#define MAILBOX_STATUS_FULL 0x80000000
-#define MAILBOX_STATUS_EMPTY 0x40000000
-
-#define MAILBOX_REQ_CODE_PROC_REQ 0x00000000
-#define MAILBOX_RES_CODE_REQ_SUCC 0x80000000
-#define MAILBOX_RES_CODE_REQ_ERR 0x80000001
-
-#define MAILBOX_TAG_GET_BOARD_REVISION 0x00010002
-#define MAILBOX_TAG_GET_ARM_MEMORY 0x00010005
-#define MAILBOX_TAG_REQ_CODE 0
-#define MAILBOX_TAG_END 0
-
-#define MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC 0x8
-
-volatile uint32_t __attribute__((aligned(0b10000))) mbox_buffer[36];
-int mailbox_call(uint32_t channel, volatile uint32_t *mbox);
-void get_board_revision(uint32_t *frev);
-void get_arm_memory(uint32_t *base, uint32_t *size);
-
-int mailbox_call(uint32_t channel, volatile uint32_t *mbox)
-{
-    uint32_t magic = (channel & MAILBOX_CHANNEL_MASK) |
-                    ( (uint32_t) (((uint64_t) mbox) & MAILBOX_DATA_MASK) );
-    /* Wait for mailbox not full */
-    while (get_bits(*MAILBOX0_STATUS, 0, 32) & MAILBOX_STATUS_FULL);
-    /* Pass message to GPU */
-    *MAILBOX1_WRITE = magic;
-    /* Get the GPU response */
-    
-    /* Wait for mailbox not empty */
-    while (get_bits(*MAILBOX0_STATUS, 0, 32) & MAILBOX_STATUS_EMPTY);
-    return *MAILBOX0_READ == magic;
-}
-
-void get_board_revision(uint32_t *frev)
-{
-    mbox_buffer[0] = 7 * 4;
-    mbox_buffer[1] = MAILBOX_REQ_CODE_PROC_REQ;
-    /* Tags */
-    mbox_buffer[2] = MAILBOX_TAG_GET_BOARD_REVISION;
-    mbox_buffer[3] = sizeof(uint32_t); /* Max value buffer size */
-    mbox_buffer[4] = MAILBOX_TAG_REQ_CODE;
-    mbox_buffer[5] = 0; /* Value buffer */
-    mbox_buffer[6] = MAILBOX_TAG_END;
-
-    int ret = mailbox_call(MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC, mbox_buffer);
-    if (mbox_buffer[1] != MAILBOX_RES_CODE_REQ_SUCC || !ret)
-        { /* TODO: Error handle */ }
-    *frev = mbox_buffer[5];
-}
-
-void get_arm_memory(uint32_t *base, uint32_t *size)
-{
-    mbox_buffer[0] = 8 * 4;
-    mbox_buffer[1] = MAILBOX_REQ_CODE_PROC_REQ;
-    /* Tags */
-    mbox_buffer[2] = MAILBOX_TAG_GET_ARM_MEMORY;
-    mbox_buffer[3] = 8; /* Max value buffer size */
-    mbox_buffer[4] = MAILBOX_TAG_REQ_CODE;
-    mbox_buffer[5] = 0; /* Value buffer [0] */
-    mbox_buffer[6] = 0; /* Value buffer [1] */
-    mbox_buffer[7] = MAILBOX_TAG_END;
-
-    int ret = mailbox_call(MAILBOX0_CHANNEL_PROPERTYTAGS_ARMVC, mbox_buffer);
-    if (mbox_buffer[1] != MAILBOX_RES_CODE_REQ_SUCC || !ret)
-        { /* TODO: Error handle */ }
-    *base = mbox_buffer[5];
-    *size = mbox_buffer[6];
 }
 
 void usage()
@@ -128,7 +49,7 @@ void load_kernel()
     static int _kern_is_loaded = 0;
     char buf[ 1024 + sizeof(Packet) ];
     char *_kern_addr = kernel_addr;
-    Packet *packet = (Packet *) buf;
+    Packet *packet = (Packet *)buf;
     uint8_t checksum;
     
     if (_kern_is_loaded)
@@ -149,7 +70,7 @@ void load_kernel()
     
     while (1)
     {
-        uart_recv_num((char *) packet, sizeof(Packet));
+        uart_recv_num((char *)packet, sizeof(Packet));
         if (packet->status == STATUS_END)
             break;
 
@@ -157,7 +78,7 @@ void load_kernel()
         memcpy(_kern_addr, packet->data, packet->size);
         _kern_addr += packet->size;
 
-        checksum = calc_checksum((unsigned char*) packet->data, packet->size);
+        checksum = calc_checksum((unsigned char*)packet->data, packet->size);
 
         if (checksum != packet->checksum)
         {
@@ -167,10 +88,10 @@ void load_kernel()
         else
             packet->status = STATUS_OK;
 
-        uart_send_num((char *) packet, sizeof(Packet));
+        uart_send_num((char *)packet, sizeof(Packet));
     }
     packet->status = STATUS_FIN;
-    uart_send_num((char *) packet, sizeof(Packet));
+    uart_send_num((char *)packet, sizeof(Packet));
     _kern_is_loaded = 1;
 }
 
