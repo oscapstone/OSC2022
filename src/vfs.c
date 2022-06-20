@@ -578,10 +578,10 @@ void vfs_framebuffer()
   // the closest supported resolution instead
   if(mailbox_call(mbox,MBOX_CH_PROP) && mbox[20] == 32 && mbox[28] != 0) {
     mbox[28] &= 0x3FFFFFFF; // convert GPU address to ARM address
-    // width = mbox[5];        // get actual physical width
-    // height = mbox[6];       // get actual physical height
-    // pitch = mbox[33];       // get number of bytes per line
-    // isrgb = mbox[24];       // get the actual channel order
+    get_current()->fb_info.width = mbox[5];        // get actual physical width
+    get_current()->fb_info.height = mbox[6];       // get actual physical height
+    get_current()->fb_info.pitch = mbox[33];       // get number of bytes per line
+    get_current()->fb_info.isrgb = mbox[24];       // get the actual channel order
     lfb = (void *)((unsigned long)mbox[28]);
     // ((struct tmpfs_inode*)(target_file->vnode->internal))->data->content = lfb;
   } else {

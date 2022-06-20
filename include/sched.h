@@ -13,6 +13,12 @@ enum task_state
     FINISHED,
     ZOMBIE,
 };
+struct framebuffer_info {
+  unsigned int width;
+  unsigned int height;
+  unsigned int pitch;
+  unsigned int isrgb;
+};
 typedef struct cpu_context
 {
     unsigned long x19;
@@ -46,6 +52,7 @@ typedef struct Thread_struct
 
     struct file* fd_table[20];
     struct vnode* pwd;
+    struct framebuffer_info fb_info;
 
 }Thread_struct;
 typedef struct task_queue

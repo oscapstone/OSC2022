@@ -123,6 +123,9 @@ int sys_fork(trap_frame* tf)
     // // copy trap frame to child sp
     trap_frame* child_tf = (trap_frame*)(child_thread->kernel_stack + THREAD_STACK_SIZE-sizeof(trap_frame));
     memcpy((void*)(child_tf),(void*)tf,sizeof(trap_frame));
+    // copy parent's framebuffer info
+    memcpy(&(child_thread->fb_info),&(cur_thread->fb_info),sizeof(struct framebuffer_info));
+
     child_tf->x0 = 0;
     child_tf->sp_el0 = (unsigned long long)(child_thread->user_stack+THREAD_STACK_SIZE) - (unsigned long long)((unsigned long long)cur_thread->user_stack+THREAD_STACK_SIZE-tf->sp_el0);
     
@@ -279,9 +282,16 @@ long sys_lseek64(trap_frame* tf,int fd, long offset, int whence)
     return 0;
 }
 // syscall number : 19
+
 int sys_ioctl(trap_frame* tf)
 {
     disable_interrupt();
+
+    struct framebuffer_info* fb_info = (struct framebuffer_info*)(tf->x2);
+    fb_info->width = get_current()->fb_info.width;
+    fb_info->height = get_current()->fb_info.height;
+    fb_info->pitch = get_current()->fb_info.pitch;
+    fb_info->isrgb = get_current()->fb_info.isrgb;
     // writes_uart_debug("[*]ioctl",TRUE);
    //  struct file* f = get_current()->fd_table[fd];
     enable_interrupt();
