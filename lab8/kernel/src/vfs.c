@@ -2,7 +2,7 @@
 
 #include "alloc.h"
 #include "cpio.h"
-// #include "fatfs.h"
+#include "fatfs.h"
 #include "printf.h"
 #include "string.h"
 #include "thread.h"
@@ -54,8 +54,8 @@ void vfs_init() {
   }
   fs->setup_mount(fs, rootfs);
   current_dir = rootfs->root;
-  cpio_populate_rootfs();
-
+  // cpio_populate_rootfs();
+  
   // init and register cpio
   cpiofs_init();
   struct filesystem* cpiofs =
@@ -64,7 +64,6 @@ void vfs_init() {
   cpiofs->setup_mount = cpiofs_setup_mount;
   register_filesystem(cpiofs);
 
-  //iniframfs
   vfs_mkdir("/initramfs");
   vfs_mount("", "/initramfs", "cpiofs");
 
@@ -79,6 +78,16 @@ void vfs_init() {
   vfs_mkdir("/dev");
   vfs_mount("", "/dev", "dev");
 
+  // init and register fatfs
+  fatfs_init();
+  struct filesystem* fatfs =
+      (struct filesystem*)malloc(sizeof(struct filesystem));
+  fatfs->name = "fatfs";
+  fatfs->setup_mount = fatfs_setup_mount;
+  register_filesystem(fatfs);
+
+  vfs_mkdir("/boot");
+  vfs_mount("", "/boot", "fatfs");
 }
 
 int register_filesystem(struct filesystem* fs) {

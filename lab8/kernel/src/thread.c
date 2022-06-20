@@ -38,7 +38,7 @@ void user_test4() {
 
 void user_test5() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
-  exec("vm.img", argv);
+  exec("vfs2.img", argv);
 }
 
 void thread_test1() { // thread test

@@ -42,7 +42,7 @@ void device_init() {
 
 void device_set_fentry(struct device_fentry* fentry, const char* component_name,
                       struct vnode* vnode, DEV_TYPE type) {
-  printf("[device_set_fentry]\n");
+  // printf("[device_set_fentry]\n");
   strcpy(fentry->name, component_name);
   fentry->vnode = vnode;
   fentry->type = type;
@@ -81,7 +81,7 @@ int device_setup_mount(struct filesystem* fs, struct mount* mount) {
 int device_lookup(struct vnode* dir_node, struct vnode** target,
                  const char* component_name) {
 
-  printf("[device_lookup] %s\n", component_name);
+  // printf("[device_lookup] %s\n", component_name);
   struct device_fentry* fentry = (struct device_fentry*)dir_node->internal;
   if (fentry->type != DEV_ROOT) return 0;
 
@@ -99,7 +99,7 @@ int device_lookup(struct vnode* dir_node, struct vnode** target,
 
   for (int i = 0; i < MAX_DEVICE_IN_DIR; i++) {
     fentry = ((struct device_fentry*)dir_node->internal)->child[i];
-    printf("[device_lookup] %s\n", fentry->name);
+    // printf("[device_lookup] %s\n", fentry->name);
     if (!strcmp(fentry->name, component_name)) {
       *target = fentry->vnode;
       return 1;

@@ -18,6 +18,17 @@ initramfs.cpio:
 clean:
 	rm $(BUILD_DIR)/* initramfs.cpio
 
+setup_loop_device:
+	sudo cp ../sfn_nctuos.img .
+	qemu-img resize sfn_nctuos.img 64M
+	sudo losetup -fP sfn_nctuos.img 
+	sudo mount -t msdos /dev/loop23p1 image_mount
+	sudo cp FAT_R.txt image_mount
+remove_loop_device:
+	sudo umount image_mount
+	sudo losetup -d /dev/loop23 
+
+
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -37,7 +48,7 @@ kernel8.img: kernel8.elf
 	$(OBJCOPY) $(OBJCOPYFLAGS) $(BUILD_DIR)/kernel8.elf $(BUILD_DIR)/kernel8.img
 
 run:
-	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb
+	$(QEMU) -M raspi3 -kernel $(BUILD_DIR)/kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio -dtb bcm2710-rpi-3-b-plus.dtb -drive if=sd,file=sfn_nctuos.img,format=raw
 
 run1:
 	killall -9 qemu-system-aarch64

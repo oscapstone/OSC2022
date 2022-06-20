@@ -77,7 +77,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       printf("[open]%s\n",(const char *)trap_frame->x[0]);
       struct file* file = vfs_open((const char *)trap_frame->x[0],trap_frame->x[1]);
       int fd = thread_register_fd(file);
-      printf("[open]fd :%d\n",(const char *)trap_frame->x[0]);
+      printf("[open]fd :%d\n",fd);
 
       trap_frame->x[0] = fd;
 
