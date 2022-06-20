@@ -5,9 +5,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Wed Jun 15 11:08:34 2022
+# Make data base, printed on Sat Jun 18 14:26:28 2022
 
 # Variables
 
@@ -40,7 +39,7 @@ SHELL = /bin/sh
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en","availableLanguages":{}}
 # environment
-_ = /home/littlelagi/.vscode-server/bin/4af164ea3a06f701fe3e89a2bcbb421d2026b68f/node
+_ = /home/littlelagi/.vscode-server/bin/30d9c6cd9483b2cc586687151bcbcd635f373630/node
 # makefile (from 'Makefile', line 1)
 MAKEFILE_LIST :=  Makefile
 # 'override' directive
@@ -60,9 +59,10 @@ LC_NAME = lzh_TW
 # environment
 VSCODE_CWD = /home/littlelagi
 # environment
-SSH_CONNECTION = 36.226.221.67 58665 140.113.193.201 55146
+SSH_CONNECTION = 36.226.217.200 60720 140.113.193.201 55146
 # environment
-PATH = /home/littlelagi/.vscode-server/bin/4af164ea3a06f701fe3e89a2bcbb421d2026b68f/bin/remote-cli:/home/littlelagi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+ 
+PATH = /home/littlelagi/.vscode-server/bin/30d9c6cd9483b2cc586687151bcbcd635f373630/bin/remote-cli:/home/littlelagi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -70,7 +70,7 @@ VSCODE_LOG_STACK = false
 # environment
 LC_NUMERIC = lzh_TW
 # environment
-VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-f1f70655-34ba-4d0e-a3bf-596f8f3e4fc1.sock
+VSCODE_IPC_HOOK_CLI = /run/user/1000/vscode-ipc-38722724-0c4d-43c8-9a86-8e860dcea433.sock
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -110,7 +110,7 @@ MAKECMDGOALS := all
 # environment
 SHLVL = 0
 # environment
-XDG_SESSION_ID = 810
+XDG_SESSION_ID = 954
 # environment
 USER = littlelagi
 # environment
@@ -132,11 +132,11 @@ MAKEFLAGS = pqrR
 # environment
 MFLAGS = -pqrR
 # environment
-SSH_CLIENT = 36.226.221.67 58665 55146
+SSH_CLIENT = 36.226.217.200 60720 55146
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
 # environment
-BROWSER = /home/littlelagi/.vscode-server/bin/4af164ea3a06f701fe3e89a2bcbb421d2026b68f/bin/helpers/browser.sh
+BROWSER = /home/littlelagi/.vscode-server/bin/30d9c6cd9483b2cc586687151bcbcd635f373630/bin/helpers/browser.sh
 # environment
 VSCODE_HANDLES_SIGPIPE = true
 # default
@@ -178,9 +178,9 @@ MOTD_SHOWN = pam
 
 # Directories
 
-# . (device 66306, inode 19408395): 24 files, no impossibilities.
+# . (device 66306, inode 19408395): 28 files, no impossibilities.
 
-# 24 files, no impossibilities in 1 directories.
+# 28 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -252,7 +252,6 @@ clean:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 8):
 	fusermount -u /tmp/ssd
- 
 	rm -rf /tmp/ssd ssd_fuse ssd_fuse_dut
 
 # files hash-table stats:
@@ -263,12 +262,12 @@ clean:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 31 / storage = 272 B / avg = 8 B
-# current buf: size = 8162 B / used = 272 B / count = 31 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 35 / storage = 321 B / avg = 9 B
+# current buf: size = 8162 B / used = 321 B / count = 35 / avg = 9 B
 
-# strcache performance: lookups = 40 / hit rate = 22%
+# strcache performance: lookups = 44 / hit rate = 20%
 # hash-table stats:
-# Load=31/8192=0%, Rehash=0, Collisions=1/40=2%
-# Finished Make data base on Wed Jun 15 11:08:34 2022
+# Load=35/8192=0%, Rehash=0, Collisions=1/44=2%
+# Finished Make data base on Sat Jun 18 14:26:28 2022
 
  
