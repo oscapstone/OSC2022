@@ -3,9 +3,7 @@
 #include "timer.h"
 #include "peripheral/mini_uart.h"
 #include "exception_c.h"
-#include "allocator.h"
 #define AUX_IRQ (1 << 29)
-
 
 void enable_interrupt() { asm volatile("msr DAIFClr, 0xf"); }
 void disable_interrupt() { asm volatile("msr DAIFSet, 0xf"); }
@@ -44,9 +42,10 @@ void lower_sync_handler()
 void curr_irq_handler()
 {
     disable_interrupt();
-    unsigned int uart = (*IRQ_PENDING_1 & AUX_IRQ);
+    unsigned int irq_is_pending = (*IRQ_PENDING_1 & AUX_IRQ);
+    unsigned int uart = (*AUX_MU_IIR_REG & 0x1) == 0;
     unsigned int core_timer = (*CORE0_INTERRUPT_SOURCE & 0x2);
-    if (uart)
+    if (irq_is_pending && uart)
     {
         uart_handler();
     }
@@ -70,7 +69,7 @@ task *task_queue_head = 0, *task_queue_tail = 0;
 
 void add_task(task_callback cb, void *arg, unsigned int priority)
 {
-    task *new_task = (task *)malloc(sizeof(task));
+    task *new_task = (task *)smalloc(sizeof(task));
     new_task->priority = priority;
     new_task->callback = cb;
     new_task->arg = arg;
@@ -138,7 +137,7 @@ void curr_irq_handler_decouple()
     unsigned int core_timer = (*CORE0_INTERRUPT_SOURCE & 0x2);
     if (uart)
     {
-        Reg *reg = (Reg *)malloc(sizeof(Reg));
+        Reg *reg = (Reg *)smalloc(sizeof(Reg));
         *reg = *AUX_MU_IER_REG;
         add_task(uart_handler, reg, 3);
         *AUX_MU_IER_REG &= ~(0x3);
