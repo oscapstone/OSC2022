@@ -79,7 +79,7 @@ EL1_exception_vector_table:
 	ventry	invalid_handler	    	// Error EL1t
 
 // Exception from the current EL while using SP_ELx 
-	ventry	el1_sync_invalid_handler// Synchronous EL1h
+	ventry	el1_sync_handler        // Synchronous EL1h
 	ventry	el1_irq_handler         // IRQ EL1h
 	ventry	invalid_handler   	    // FIQ EL1h
 	ventry	invalid_handler		    // Error EL1h
@@ -119,6 +119,7 @@ el1_irq_handler:
     load_all
     eret
 
+el1_sync_handler:
 el0_sync_handler:
     save_all
     mrs x24, esr_el1
@@ -171,7 +172,7 @@ get_current:
 
 .global sigreturn_trampoline
 sigreturn_trampoline:
-   mov x8, 10
+   mov x8, 20
    svc 0
 
 sigreturn_error:

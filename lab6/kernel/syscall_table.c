@@ -4,7 +4,7 @@ uint64_t syscall_handler(){
     struct task_struct *current = get_current();
     struct trap_frame* trap_frame = get_trap_frame(current);
     uint64_t NR_syscall = trap_frame->x8;
-    uint64_t x0, x1, x2, x3, x4;
+    uint64_t x0, x1, x2, x3, x4, x5;
     uint64_t ret;
 
     switch(NR_syscall){
@@ -53,10 +53,19 @@ uint64_t syscall_handler(){
             sys_sigkill((uint64_t)x0,(int)x1);
             break;
         case 10:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            x2 = trap_frame->x2;
+            x3 = trap_frame->x3;
+            x4 = trap_frame->x4;
+            x5 = trap_frame->x5;
+            ret = (uint64_t)sys_mmap((void*)x0, (size_t)x1, (int)x2, (int)x3, (int)x4, (int)x5);
+            break;
+        case 20:
             sys_sigreturn();
             break;
         default:
-            printf("Unknown system call\r\n");
+            printf("Unknown system call %p\r\n", NR_syscall);
             while(1);
     }
     return ret;

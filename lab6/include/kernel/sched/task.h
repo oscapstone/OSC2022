@@ -20,6 +20,8 @@ extern struct mm_struct* mm_struct_create();
 extern void dup_mm_struct(struct mm_struct*, struct mm_struct*);
 extern void mm_struct_destroy(struct mm_struct*);
 extern void dup_vma_stack(struct mm_struct*, struct mm_struct*);
+uint64_t mmap(void*, size_t, int, int, int, int);
 extern struct vm_area_struct* create_vma_vc(struct mm_struct*);
 extern struct vm_area_struct* find_vma(struct mm_struct*, uint64_t);
+extern void* sys_mmap(void*, size_t, int, int, int, int);
 #endif

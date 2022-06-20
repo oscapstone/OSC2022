@@ -293,7 +293,7 @@ struct vm_area_struct* create_vma_vc(struct mm_struct* mm){
     vma->vm_start = VMA_VC_BASE;
     vma->vm_end = VMA_VC_END;
     vma->type = VMA_VC_RAM;
-	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE;
+	vma->vm_flags = VMA_PROT_READ | VMA_PROT_WRITE;
     vma->filename == NULL;
     list_add_tail(&vma->list, &mm->mmap_list);
 /*
@@ -306,6 +306,21 @@ struct vm_area_struct* create_vma_vc(struct mm_struct* mm){
 	return vma; 
 }
 
+struct vm_area_struct* create_vma(struct mm_struct* mm, uint64_t vm_start, uint64_t vm_end, uint64_t prot, uint64_t type){
+	uint64_t va, pa;
+	struct vm_area_struct *vma;
+	uint8_t* addr;
+
+	vma = kmalloc(sizeof(struct vm_area_struct));
+    vma->vm_start = vm_start;
+    vma->vm_end = vm_end;
+    vma->type = type;
+	vma->vm_flags = prot;
+    vma->filename == NULL;
+    list_add_tail(&vma->list, &mm->mmap_list);
+
+	return vma; 
+}
 struct vm_area_struct* create_vma_stack(struct mm_struct* mm){
 	uint64_t va, pa;
 	struct vm_area_struct *vma;
@@ -315,7 +330,7 @@ struct vm_area_struct* create_vma_stack(struct mm_struct* mm){
     vma->vm_start = VMA_STACK_END - VMA_STACK_SIZE;
     vma->vm_end = VMA_STACK_END;
     vma->type = VMA_STACK;
-	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE;
+	vma->vm_flags = VMA_PROT_READ | VMA_PROT_WRITE;
     vma->filename == NULL;
     list_add_tail(&vma->list, &mm->mmap_list);
 
@@ -342,7 +357,7 @@ struct vm_area_struct* create_vma_code(struct mm_struct* mm, char* filename){
     size = initrdfs_filesize(filename);
     vma->vm_start = VMA_CODE_BASE;
     vma->vm_end = VMA_CODE_BASE + ALIGN_UP(size, PAGE_SIZE);
-	vma->vm_flags = VMA_FLAG_READ | VMA_FLAG_WRITE | VMA_FLAG_EXEC;
+	vma->vm_flags = VMA_PROT_READ | VMA_PROT_WRITE | VMA_PROT_EXEC;
     vma->type = VMA_FILE;
     tmp_name = kmalloc(strlen(filename) + 5);	
 	strcpy(tmp_name, filename);
@@ -450,5 +465,39 @@ void sys_kill(uint64_t pid){
 }
 uint64_t sys_exec(const char* name, char *const argv[]){
     return task_exec(name, argv);
+}
+
+uint64_t mmap(void* addr, size_t len, int prot, int flags, int fd, int file_offset){
+    struct task_struct* current = get_current();
+    struct mm_struct* mm = current->mm;
+    struct vm_area_struct* tmp_vma, *vma;
+    uint64_t vm_start = 0, vm_end;
+    uint64_t daif;
+    uint64_t tmp_prot = 0, tmp_type = 0;
+    
+    INFO("mmap(%p, %p, %p, %p, %p, %p)", addr, len, prot, flags, fd, file_offset);
+    tmp_prot = prot & (VMA_PROT_READ | VMA_PROT_WRITE | VMA_PROT_EXEC);
+    if(flags & MAP_ANONYMOUS) tmp_type = VMA_ANONYMOUS;
+    
+    daif = local_irq_disable_save(); 
+    if(addr != NULL){
+        vm_start = ALIGN_DOWN(addr, PAGE_SIZE);
+    }else{
+        vm_start =  0x0;
+    }
+    
+    while(tmp_vma = find_vma(mm , vm_start)){
+         vm_start = tmp_vma->vm_end;
+    }
+    vm_end = vm_start + ALIGN_UP(len, PAGE_SIZE);
+    create_vma(mm, vm_start, vm_end, tmp_prot, tmp_type);
+    
+    INFO("return value: %p", vm_start);
+    local_irq_restore(daif); 
+    return vm_start;
+}
+
+void* sys_mmap(void* addr, size_t len, int prot, int flags, int fd, int file_offset){
+    return (void*)mmap(addr, len, prot, flags, fd, file_offset);
 }
 

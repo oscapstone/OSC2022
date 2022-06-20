@@ -335,7 +335,7 @@ uint64_t handle_mm_fault(struct mm_struct* mm, struct vm_area_struct* vma, uint6
     }else{
         // page frame exists in memory
         // copy on write
-        if(vm_flags & VMA_FLAG_WRITE && !pte_writable(pte_e)){
+        if(vm_flags & VMA_PROT_WRITE && !pte_writable(pte_e)){
             ret = do_wp_page(pte_e, mm, vma, addr);
             printf("%l: [COPY ON WRITE]: %p\r\n",get_current()->thread_info.pid, far);
         }else{
@@ -353,15 +353,15 @@ uint64_t do_page_fault(uint64_t esr, uint64_t far){
     struct task_struct* current = get_current();
     uint32_t ec = esr >> 26;
     uint64_t vm_flags = 0;
-
     if(ec == FAULT_INSTR_ABORT_LOW_EL){
-        vm_flags |= VMA_FLAG_EXEC;
+        vm_flags |= VMA_PROT_EXEC;
     }else{
         // get WnR ( wirte not read ) bit
-        vm_flags |= (esr & (1 << 6)) ? VMA_FLAG_WRITE : VMA_FLAG_READ;
+        vm_flags |= (esr & (1 << 6)) ? VMA_PROT_WRITE : VMA_PROT_READ;
     }
         
     //check if far is in user space 
+    //INFO("far: %p", far);
     if(far >= VM_USER_SPACE){
         return VM_FAULT_BADACCESS;
     }
@@ -389,10 +389,10 @@ void do_mem_abort(uint64_t esr, uint64_t far){
     }else if(dfsc >= 4 && dfsc <= 15){
         fault = do_page_fault(esr, far);
     }
-
     if(fault != VM_FAULT_NONE){
         // send signal to notify proccess that MMU error occess
         send_signal(get_current()->thread_info.pid, SIG_SIGSEGV);
     }
     return;
 }
+

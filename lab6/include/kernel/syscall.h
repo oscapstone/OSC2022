@@ -14,5 +14,5 @@ extern int sys_exec(const char *, char *const []);
 extern void sys_sigreturn();
 extern void sys_signal(int, sig_handler);
 extern int sys_sigkill(uint64_t, int);
-
+extern void* sys_mmap(void*, size_t, int, int, int, int);
 #endif

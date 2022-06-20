@@ -150,6 +150,14 @@ void err_handler(uint64_t type, uint64_t esr, uint64_t elr, uint64_t spsr_el1, u
     write_hex(trap_frame->x0);
     write_str("\r\n");
 
+    write_str("trap_frame->x30: ");
+    write_hex(trap_frame->x30);
+    write_str("\r\n");
+
+    write_str("trap_frame->x29: ");
+    write_hex(trap_frame->x29);
+    write_str("\r\n");
+
     write_str("kernel stack: ");
     write_hex((uint64_t)cur->stack);
     write_str("\r\n");

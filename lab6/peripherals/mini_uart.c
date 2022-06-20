@@ -145,6 +145,7 @@ size_t sys_uart_write(char *buf, size_t size){
 
 size_t sys_uart_read(char *buf, size_t size){
     size_t c = 0, tmp;
+    
     IO_MMIO_write32(AUX_MU_IER_REG, 1);
     while(size){
         tmp = ring_buf_read(rx_rbuf, buf + c, size);

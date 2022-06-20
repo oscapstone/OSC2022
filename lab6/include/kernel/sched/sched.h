@@ -15,11 +15,20 @@ typedef uint64_t pid_t;
 #define VMA_STACK           (1 << 0)
 #define VMA_FILE            (1 << 1) 
 #define VMA_VC_RAM          (2 << 1) 
+#define VMA_ANONYMOUS       (3 << 1) 
 
-#define VMA_FLAG_READ       (1 << 0)
-#define VMA_FLAG_WRITE      (1 << 1)
-#define VMA_FLAG_EXEC       (1 << 2)
+#define VMA_PROT_READ       (1 << 0)
+#define VMA_PROT_WRITE      (1 << 1)
+#define VMA_PROT_EXEC       (1 << 2)
 #define VMA_SHARED_EXEC     (1 << 3)
+
+#define PROT_NONE        0
+#define PROT_READ       (1 << 0)
+#define PROT_WRITE      (1 << 1)
+#define PROT_EXEC       (1 << 2)
+
+#define MAP_ANONYMOUS       0x20
+#define MAP_POPULATE        0x08000
 
 #define VMA_CODE_BASE 0
 #define VMA_STACK_END 0xfffffffff000
