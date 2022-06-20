@@ -7,7 +7,7 @@
 - Basic Exercise 2 
     - [x] Virtual Memory in User Space
 - Advanced Exercise 1 
-    - [ ] Mmap 
+    - [x] Mmap 
 - Advanced Exercise 2
     - [x] Page Fault Handler & Demand Paging
 - Advanced Exercise 1 

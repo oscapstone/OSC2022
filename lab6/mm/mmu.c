@@ -290,7 +290,7 @@ uint64_t do_anonymous_page(pteval_t* pte_e, struct mm_struct* mm, struct vm_area
         // identity mapping
         pte_set(pte_e, addr | VM_PTE_USER_ATTR);
     }else{
-        page_frame = virt_to_phys(alloc_page());
+        page_frame = virt_to_phys(calloc_page());
         mappages(mm->pgd, addr, page_frame, PAGE_SIZE, VM_PTE_USER_ATTR, 0);          
     }
     return VM_FAULT_NONE;
