@@ -421,19 +421,19 @@ pid_t thread_fork (struct trap_frame* trap_frame) {
     struct thread *parent_thread;
     struct thread *child_thread;
     struct thread *cur_thread;
-    struct trap_frame *child_trap_frame;
+    //struct trap_frame *child_trap_frame;
     unsigned long prog_base;
 
     unsigned long k_offset, u_offset, trap_offset;
-    unsigned long ksp, usp;
+    //unsigned long ksp, usp;
     // sync_uart_puts("--------------- Thread_fork ----------------\n");
     parent_thread = get_cur_thread();
     prog_base     = buddy_alloc(log2_ceiling(parent_thread->code_size / PAGE_SIZE));
     // child_thread  = thread_create((void *)parent_thread->code_addr);
     child_thread  = thread_create(prog_base);
 
-    asm volatile("mov %0, sp" : "=r"(ksp));
-    asm volatile("mrs %0, sp_el0" : "=r"(usp));
+    //asm volatile("mov %0, sp" : "=r"(ksp));
+    //asm volatile("mrs %0, sp_el0" : "=r"(usp));
 
     // k_offset = (unsigned long) parent_thread->k_stack + THREAD_STACK_SIZE - ksp;
     // u_offset = (unsigned long) parent_thread->u_stack + THREAD_STACK_SIZE - usp;
@@ -450,13 +450,15 @@ pid_t thread_fork (struct trap_frame* trap_frame) {
     // sync_uart_puts("usp: 0x");
     // uart_hex((unsigned long)usp);
     // sync_uart_puts("\n");
-    child_trap_frame = (struct trap_frame *)((unsigned long) child_thread->k_stack + THREAD_STACK_SIZE - trap_offset);
+    //child_trap_frame = (struct trap_frame *)((unsigned long) child_thread->k_stack + THREAD_STACK_SIZE - trap_offset);
 
     store_context(&child_thread->context);
     cur_thread = get_cur_thread();
 
     if (cur_thread->pid == parent_thread->pid) {
+        
         child_thread->code_size = parent_thread->code_size;
+
         for (int i = 0; i < child_thread->code_size; i++)  {
             ((char *)prog_base)[i] = ((char *)(parent_thread->code_addr))[i];
         }

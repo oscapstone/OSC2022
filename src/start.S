@@ -371,7 +371,7 @@ setup_vmem:
     ldr x4, =BOOT_PMD_ATTR
     mov x5, x2                          // addr of PMD
     mov x6, x3                          // addr of PTE
-    mov x7, #(512 * 2)                  // 2 PMD table, 1024 entries
+    mov x7, #(512 * 2)                  // 2 PMD table, total 1024 entries
 setup_pmd:
     orr x8, x6, x4                      // PTE table | ATTR
     str x8, [x5]
@@ -382,9 +382,9 @@ setup_pmd:
 
     // set PTE
     ldr x4, =BOOT_PTE_RAM_ATTR
-    mov x5, #0x00000000
+    mov x5, #0x00000000                 // x5 is physical address
     mov x6, x3                          // addr of PTE
-    mov x7, #(1024 * 512)
+    mov x7, #(1024 * 512)               // iteration count: 1024 PTE page tables * 512 entries
     ldr x8, =PERIPHERAL_BASE
     
 setup_pte_loop:
