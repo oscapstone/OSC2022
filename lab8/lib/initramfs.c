@@ -14,9 +14,6 @@ int initramfs_setup_mount(struct filesystem* fs, struct mount* mount) {
 
     mount->fs = fs;
     mount->root = initramfs_new_node(NULL, "/", DIRECTORY);    
-    
-    printf("[debug] setup root: 0x%x\n", mount);
-    printf("[debug] setup root vnode: 0x%x\n", mount->root);
 
     return 0;
 
@@ -33,6 +30,7 @@ int initramfs_register() {
     initramfs_v_ops->lookup = initramfs_lookup;
     initramfs_v_ops->create = initramfs_create;
     initramfs_v_ops->mkdir = initramfs_mkdir;
+    initramfs_v_ops->load_vnode = NULL;
 
     initramfs_f_ops->open = initramfs_open;
     initramfs_f_ops->read = initramfs_read;

@@ -41,6 +41,7 @@ struct vnode_operations {
                 const char* component_name);
     int (*mkdir)(struct vnode* dir_node, struct vnode** target,
                 const char* component_name);
+    int (*load_vnode)(struct vnode* dir_node, char *component_name);
 };
 
 struct fd_table {
@@ -62,6 +63,7 @@ extern struct mount *rootfs;
 
 void rootfs_init();
 void initramfs_init();
+void fat32_init();
 
 int register_fs(struct filesystem *fs);
 struct file* create_fd(struct vnode* target, int flags);

@@ -1,6 +1,7 @@
 #include "vfs.h"
 #include "tmpfs.h"
 #include "initramfs.h"
+#include "fat32.h"
 #include "string.h"
 #include "mm.h"
 #include "sched.h"
@@ -29,11 +30,21 @@ void initramfs_init() {
 
 }
 
+void fat32_init() {
+
+    vfs_mkdir("/boot");
+    vfs_mount("/boot", "fat32");
+    parse_fat32sd();
+
+}
+
 int register_fs(struct filesystem *fs) {
     if (stringcmp(fs->name, "tmpfs") == 0) {
         return tmpfs_register();
     } else if (stringcmp(fs->name, "initramfs") == 0) {
         return initramfs_register();
+    } else if (stringcmp(fs->name, "fat32") == 0) {
+        return fat32_register();
     }
     return -1;
 }
@@ -126,6 +137,17 @@ int vfs_mount(const char *target, const char *filesystem) {
         mount_dir->mount = mt;
         mt->root->parent = mount_dir->parent;
 
+    } else if (stringcmp(filesystem, "fat32") == 0) {
+
+        struct filesystem *fat32 = (struct filesystem *)chunk_alloc(sizeof(struct filesystem));
+        fat32->name = (char *)chunk_alloc(16);
+        strcpy(fat32->name, "fat32");
+        fat32->setup_mount = fat32_setup_mount;
+        register_fs(fat32);
+        fat32->setup_mount(fat32, mt);
+        mount_dir->mount = mt;
+        mt->root->parent = mount_dir->parent;
+
     }
 
     return SUCCESS;
@@ -184,7 +206,7 @@ void r_traverse(struct vnode *node, const char *path, struct vnode **target_node
         return;
     }
 
-    int res = node->v_ops->lookup(node, target_node, target_path);
+    int res = node->v_ops->lookup(node, target_node, target_path); printf("[debug] lookup ret: %d\n", res);
     if ((*target_node)->mount != NULL) {
         printf("[debug] mountpoint found during lookup: vnode 0x%x\n", (*target_node)->mount->root);
         r_traverse((*target_node)->mount->root, path+i, target_node, target_path);
@@ -193,5 +215,11 @@ void r_traverse(struct vnode *node, const char *path, struct vnode **target_node
         r_traverse(*target_node, path+i, target_node, target_path);
     else if (res == REGULAR_FILE)
         *target_node = node;
+    else if (res == FAIL && node->v_ops->load_vnode != NULL) {
+        int ret = node->v_ops->load_vnode(node, target_path);
+        if (ret == SUCCESS) {
+            r_traverse(node, path, target_node, target_path);
+        }
+    }
     
 }

@@ -30,6 +30,7 @@ int tmpfs_register() {
     tmpfs_v_ops->lookup = tmpfs_lookup;
     tmpfs_v_ops->create = tmpfs_create;
     tmpfs_v_ops->mkdir = tmpfs_mkdir;
+    tmpfs_v_ops->load_vnode = NULL;
 
     tmpfs_f_ops->open = tmpfs_open;
     tmpfs_f_ops->read = tmpfs_read;

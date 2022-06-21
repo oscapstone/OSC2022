@@ -86,7 +86,7 @@ void start_video() {
 
         filesize = hexstr_to_uint(header->c_filesize, 8);
 
-        if (stringncmp(filename, "vfs1.img", namesize) == 0) {
+        if (stringncmp(filename, "vfs2.img", namesize) == 0) {
             code_loc = ((void*)header) + offset;
             break;
         }
@@ -99,8 +99,8 @@ void start_video() {
         header = ((void*)header) + offset;
         
     }
-    printf("vfs1.img found in cpio at location 0x%x.\n", code_loc);
-    printf("vfs1.img has size of %d bytes.\n", (int)filesize);
+    printf("vfs2.img found in cpio at location 0x%x.\n", code_loc);
+    printf("vfs2.img has size of %d bytes.\n", (int)filesize);
     
     void *move_loc = malloc(filesize + 4096); // an extra page for bss just in case
     if(move_loc == NULL) return;

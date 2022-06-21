@@ -7,6 +7,7 @@
 #include "exception.h"
 #include "fork.h"
 #include "vfs.h"
+#include "sdhost.h"
 
 void kernel_main(void)
 {
@@ -17,6 +18,8 @@ void kernel_main(void)
 	timer_init();
 	rootfs_init();
 	initramfs_init();
+	sd_init();
+	fat32_init();
 	enable_interrupt();
 	uart_send_string("OSDI 2022 Spring\n");
 

@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "fork.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "mbr.h": "c",
+        "vfs.h": "c"
     }
 }
