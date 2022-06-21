@@ -193,7 +193,7 @@ int sys_open(trap_frame* tf,const char *pathname, int flags)
     int i=0;
     if((res == lastCompNotFound && flags==O_CREAT) || res==sucessMsg)
     {
-        for(i=3;i<20;i++){
+        for(i=4;i<20;i++){
             if(get_current()->fd_table[i]==nullptr){
                 get_current()->fd_table[i] = target;
                 break;
@@ -273,10 +273,21 @@ int sys_chdir(trap_frame* tf)
 long sys_lseek64(trap_frame* tf,int fd, long offset, int whence)
 {
     disable_interrupt();
+    if(offset<0){
+        enable_interrupt();
+        tf->x0=-1;
+        return -1;
+    }
     // writes_uart_debug("[*]lseek64",TRUE);
-    struct file* f = get_current()->fd_table[fd];
-    if(whence == SEEK_SET)
-        f->f_pos = offset;
+    struct file* f = get_current()->fd_table[3];
+    if(f){
+        if(whence == SEEK_SET)
+        {
+            // busy_wait_writeint(3,FALSE);
+            f->f_pos = offset;
+        }
+    }
+    
     enable_interrupt();
     tf->x0 = 0;
     return 0;

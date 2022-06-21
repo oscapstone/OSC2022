@@ -503,13 +503,17 @@ void vfs_uart()
 unsigned char *lfb;  
 int open_framebuf(struct vnode* file_node, struct file** target){
 
+  // busy_wait_writeint(2,FALSE);
   return 3;
 }
+
+unsigned int lfb_size;
+
 int write_framebuf(struct file* file, const void* buf, size_t len)
 {
-  // writes_uart_debug("WR",TRUE);
-  // char *lfb = ((struct tmpfs_inode*)(file->vnode->internal))->data->content;
-  memcpy((char*)(lfb + file->f_pos),(char*)buf,4);
+  // int size = (file->f_pos+len>lfb_size)?lfb_size-file->f_pos:len;
+  // busy_wait_writeint(1,FALSE);
+  memcpy((char*)(lfb + file->f_pos),(char*)buf,len);
   file->f_pos += len;
   return len;
 }
@@ -583,6 +587,7 @@ void vfs_framebuffer()
     get_current()->fb_info.pitch = mbox[33];       // get number of bytes per line
     get_current()->fb_info.isrgb = mbox[24];       // get the actual channel order
     lfb = (void *)((unsigned long)mbox[28]);
+    lfb_size = mbox[29];
     // ((struct tmpfs_inode*)(target_file->vnode->internal))->data->content = lfb;
   } else {
     writes_uart_debug("Unable to set screen resolution to 1024x768x32",TRUE);
