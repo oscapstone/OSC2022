@@ -11,6 +11,7 @@
 #include "printf.h"
 #include "dtb.h"
 #include "vfs.h"
+#include "fatfs.h"
 
 void clean_buffer(char * buffer, int buffer_len)
 {
@@ -213,6 +214,7 @@ void parse_command(char * buffer)
     else if ( !strcmp(buffer, "t3")) command_thread_test3();
     else if ( !strcmp(buffer, "t4")) command_thread_test4();
     else if ( !strcmp(buffer, "vfs")) vfs_test();
+    else if ( !strcmp(buffer, "list_sd")) list_sd();
     else command_not_found(buffer);
 }
 

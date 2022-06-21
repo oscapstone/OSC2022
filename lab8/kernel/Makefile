@@ -24,10 +24,16 @@ setup_loop_device:
 	sudo losetup -fP sfn_nctuos.img 
 	sudo mount -t msdos /dev/loop23p1 image_mount
 	sudo cp FAT_R.txt image_mount
+
 remove_loop_device:
 	sudo umount image_mount
 	sudo losetup -d /dev/loop23 
 
+setup_sd:
+	sudo mount -t msdos /dev/ttyUSB0 sd_mount
+
+remove_sd:
+	sudo umount sd_mount
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)

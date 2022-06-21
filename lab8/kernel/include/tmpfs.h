@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "vfs.h"
 
-#define MAX_FILES_IN_DIR 16
+#define MAX_FILES_IN_DIR 20
 #define TMPFS_BUF_SIZE (500 * kb)
 
 struct tmpfs_buf {

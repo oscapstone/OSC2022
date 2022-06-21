@@ -21,7 +21,6 @@ void fatfs_init() {
   fatfs_f_ops = (struct file_operations*)malloc(sizeof(struct file_operations));
   fatfs_f_ops->write = fatfs_write;
   fatfs_f_ops->read = fatfs_read;
-  fatfs_f_ops->list = fatfs_list;
   sd_init();
 }
 
@@ -29,19 +28,18 @@ void fatfs_set_directory(struct fatfs_fentry* fentry,
                          struct fatfs_dentry* dentry) {
   for (int i = 0; i < MAX_FILES_IN_DIR; ++i) {
     int weird = 0;
-    // printf("%s\n", (dentry + i)->filename);
-    // printf("file_size = %d\n", (dentry + i)->file_size);
+
     for (int j = 0; j < 8; j++) {
-      // printf("0x%x ", (dentry + i)->filename[j]);
       // handle weird file
       if ((dentry + i)->filename[j] == 0) {
         weird = 1;
+        // clean it 
+        if(i!=0){ // i don't know why can't clean first dentry in real machine
+          for(int k = 0 ; k < 11; k++) (dentry + i)->filename[k] = 0;
+        }
       }
     }
-    // for (int j = 0; j < 3; j++) {
-    //   printf("0x%x ", (dentry + i)->extension[j]);
-    // }
-    // printf("\n");
+
     if ((dentry + i)->filename[0] && !weird) {
       // concate file name
       strncpy(fentry->child[i]->name, (dentry + i)->filename, 8);
@@ -63,15 +61,34 @@ void fatfs_set_directory(struct fatfs_fentry* fentry,
       int buf_size = (dentry + i)->file_size;
       fatfs_set_fentry(fentry->child[i], FILE_REGULAR, vnode, starting_cluster,
                        buf_size);
-
-      printf("starting_cluster = %d\n",starting_cluster);
-      printf("file_size = %d\n", (dentry + i)->file_size);
-      printf("%s\n", fentry->child[i]->name);
+      // printf("num_file = %d\n",i);
+      // printf("starting_cluster = %d\n",starting_cluster);
+      // printf("file_size = %d\n", (dentry + i)->file_size);
+      // printf("%s\n", fentry->child[i]->name);
       current_starting_sector = starting_cluster;
     }
   }
   current_starting_sector++;
 }
+
+void list_sd() {
+  printf("==================================\n");
+
+  printf("sd files :\n");
+  for (int i = 0; i < MAX_FILES_IN_DIR; ++i) {
+    int weird = 0;
+    for (int j = 0; j < 11; j++) {
+      printf("0x%x ", (fat_root_dentry + i)->filename[j]);
+    }
+    printf("\n");
+    if ((fat_root_dentry + i)->filename[0]) {
+      printf("num_file = %d, %s, file_size = %d\n", i, (fat_root_dentry + i)->filename, (fat_root_dentry + i)->file_size);
+    }
+  }
+  printf("==================================\n");
+
+}
+
 
 void fatfs_set_fentry(struct fatfs_fentry* fentry, FILE_TYPE type,
                       struct vnode* vnode, int starting_cluster, int buf_size) {
@@ -117,14 +134,14 @@ int fatfs_setup_mount(struct filesystem* fs, struct mount* mount) {
   free(mbr);
 
   printf("\n========== FAT32 init ==========\n");
-  printf("Partition type: 0x%x", entry->partition_type);
-  if (entry->partition_type == 0xB) {
-    printf(" (FAT32 with CHS addressing)");
-  }
-  printf("\nPartition size: %d (sectors)\n", entry->sector_count);
+  // printf("Partition type: 0x%x", entry->partition_type);
+  // if (entry->partition_type == 0xB) {
+  //   printf(" (FAT32 with CHS addressing)");
+  // }
+  // printf("\nPartition size: %d (sectors)\n", entry->sector_count);
   printf("Block index: %d\n", entry->starting_sector);
   printf("================================\n\n");
-  fat_starting_sector = entry->starting_sector;
+  fat_starting_sector = entry->starting_sector; // 2048
 
   // parse some message from fat_starting_sector block
   char* fat_boot = (char*)malloc(BLOCK_SIZE);
@@ -218,8 +235,7 @@ int fatfs_write(struct file* file, const void* buf, size_t len) {
   }
 
   for (int i = 0; i < MAX_FILES_IN_DIR; i++) {
-    if (!strncmp((fat_root_dentry + i)->filename, fentry->name,
-                 fentry->name_len)) {
+    if (!strncmp((fat_root_dentry + i)->filename, fentry->name, fentry->name_len)) {
       (fat_root_dentry + i)->file_size = fentry->buf->size;
       printf("new file size: %d\n", (fat_root_dentry + i)->file_size);
     }
@@ -238,8 +254,8 @@ int fatfs_read(struct file* file, void* buf, size_t len) {
   size_t read_len = 0;
   struct fatfs_fentry* fentry = (struct fatfs_fentry*)file->vnode->internal;
   int starting_sector = get_starting_sector(fentry->starting_cluster);
-  printf("fentry->starting_cluster = %d\n", fentry->starting_cluster);
-  printf("starting_sector = %d\n", starting_sector);
+  // printf("fentry->starting_cluster = %d\n", fentry->starting_cluster);
+  // printf("starting_sector = %d\n", starting_sector);
   readblock(starting_sector, fentry->buf->buffer);
 
   for (size_t i = 0; i < len; i++) {
@@ -252,15 +268,6 @@ int fatfs_read(struct file* file, void* buf, size_t len) {
   return read_len;
 }
 
-int fatfs_list(struct file* file, void* buf, int index) {
-  struct fatfs_fentry* fentry = (struct fatfs_fentry*)file->vnode->internal;
-  if (fentry->type != FILE_DIRECTORY) return -1;
-  if (index >= MAX_FILES_IN_DIR) return -1;
-
-  if (fentry->child[index]->type == FILE_NONE) return 0;
-  strcpy((char*)buf, fentry->child[index]->name);
-  return fentry->child[index]->buf->size;
-}
 
 int fatfs_create(struct vnode* dir_node, struct vnode** target,
                  const char* component_name, FILE_TYPE type) {
@@ -280,26 +287,35 @@ int fatfs_create(struct vnode* dir_node, struct vnode** target,
       int fentry_name_cnt = 0;
       printf("current_starting_sector = %d\n",current_starting_sector);
       for(int dir_idx = 0 ; dir_idx < MAX_FILES_IN_DIR ; dir_idx ++){
-        if(!(fat_root_dentry + dir_idx)->filename[0]){
-          // copy other file dentry
-          char * dst = (char *)(fat_root_dentry + dir_idx);
-          char * src = (char*)(fat_root_dentry + dir_idx -1); 
+        if(!((fat_root_dentry + dir_idx)->filename[0])) {
+          
+          // copy FAT_R.TXT file dentry
+          char * src;
+          for (int j = 0 ; j < MAX_FILES_IN_DIR ; j++){
+            if (!strncmp((fat_root_dentry + j)->filename, "FAT_R", 5)){
+              src = (char *)(fat_root_dentry + j);
+              break;
+            }
+          }
+          char * dst = (char*)(fat_root_dentry + dir_idx); 
           for(int j = 0; j < sizeof(struct fatfs_dentry); j++) dst[j] = src[j];
-          // parse name
+
+          // parse name & extension
           for(int j = 0; j < 11; j++) (fat_root_dentry + dir_idx)->filename[j] = ' ';
           int p_idx = 0;
           for( p_idx = 0 ; p_idx < 8 ; p_idx++){
             if(component_name[p_idx] == '.') break; 
             fentry->name[fentry_name_cnt++] = (fat_root_dentry + dir_idx)->filename[p_idx] = component_name[p_idx];
           }
-          // parse extension
+
           fentry_name_cnt = 8;
           for(int idx = 0 ; idx < 3 ; idx++){
             fentry->name[fentry_name_cnt++] = (fat_root_dentry + dir_idx)->extension[idx] = component_name[++p_idx];
-            
           }
+
           // deal with cluster
           (fat_root_dentry + dir_idx)->cluster_low = current_starting_sector;
+          writeblock(root_starting_sector, (char*)fat_root_dentry);
           break;
         }
       }
@@ -309,9 +325,4 @@ int fatfs_create(struct vnode* dir_node, struct vnode** target,
     }
   }
   return -1;
-}
-
-void put_to_sd_card()
-{
-  
 }

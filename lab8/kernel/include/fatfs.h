@@ -8,7 +8,7 @@
 
 #define BLOCK_SIZE 512
 #define MBR_PARTITION_BASE 0x1BE
-#define MAX_FILES_IN_DIR 16
+#define MAX_FILES_IN_DIR 20
 #define FATFS_BUF_SIZE (10 * kb)
 
 struct mbr_partition_entry {
@@ -113,6 +113,7 @@ struct file_operations* fatfs_f_ops;
 void fatfs_init();
 void fatfs_set_directory(struct fatfs_fentry* fentry,
                          struct fatfs_dentry* dentry);
+void list_sd();
 void fatfs_set_fentry(struct fatfs_fentry* fentry, FILE_TYPE type,
                       struct vnode* vnode, int starting_cluster, int buf_size);
 int fatfs_setup_mount(struct filesystem* fs, struct mount* mount);
@@ -125,3 +126,4 @@ int fatfs_list(struct file* file, void* buf, int index);
 
 int fatfs_create(struct vnode* dir_node, struct vnode** target,
                  const char* component_name, FILE_TYPE type);
+

@@ -9,7 +9,7 @@
 #define CPIO_MAGIC "070701"
 #define CPIO_END "TRAILER!!!"
 
-#define MAX_FILES_IN_DIR 16
+#define MAX_FILES_IN_DIR 20
 #define CPIOFS_BUF_SIZE (500 * kb)
 
 typedef struct {
