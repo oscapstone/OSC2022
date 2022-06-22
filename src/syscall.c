@@ -83,17 +83,20 @@ int sys_exec(trap_frame* tf,const char* name, char *const argv[])
     vfs_open("/initramfs/vfs1.img",0,&target);
     int fd;
     char *new_start = my_malloc(((struct tmpfs_inode*)(target->vnode->internal))->size);
-    for(fd=4;fd<10;fd++){
+    for(fd=3;fd<10;fd++){
         if(get_current()->fd_table[fd]==nullptr){
             get_current()->fd_table[fd] = target;
             break;
         }
     }
     vfs_read(fd,new_start,((struct tmpfs_inode*)(target->vnode->internal))->size);
-    //if(filesize!=0){ // file not found if filesize == 0
+    for(int i=3;i<10;i++){
+        vfs_close(i);
+    }
+
     tf->sp_el0 = (unsigned long)(get_current()->user_stack + THREAD_STACK_SIZE);
     tf->elr_el1 = (unsigned long)new_start;
-    tf->spsr_el1 = 0;
+    // tf->spsr_el1 = 0;
     // }
     return 0;
 }
@@ -112,10 +115,7 @@ int sys_fork(trap_frame* tf)
     {
         child_thread->signal_handler[i] = cur_thread->signal_handler[i];
     }
-    for(int i=0;i<20;i++)
-    {
-        child_thread->fd_table[i] = cur_thread->fd_table[i];
-    }
+    
     // // copy parent's cpu context to child
     memcpy(&(child_thread->cpu_context),&(cur_thread->cpu_context),sizeof(cpu_context));
     // // copy parent's user stack to child
@@ -124,8 +124,21 @@ int sys_fork(trap_frame* tf)
     trap_frame* child_tf = (trap_frame*)(child_thread->kernel_stack + THREAD_STACK_SIZE-sizeof(trap_frame));
     memcpy((void*)(child_tf),(void*)tf,sizeof(trap_frame));
     // copy parent's framebuffer info
-    memcpy(&(child_thread->fb_info),&(cur_thread->fb_info),sizeof(struct framebuffer_info));
-
+    // memcpy(&(child_thread->fb_info),&(cur_thread->fb_info),sizeof(struct framebuffer_info));
+    for(int i=0;i<20;i++)
+        {
+            struct file *tmp = cur_thread->fd_table[i];
+            if(tmp != nullptr){
+                struct file *new_file = my_malloc(sizeof(struct file));
+                new_file->f_ops = tmp->f_ops;
+                new_file->f_pos = tmp->f_pos;
+                new_file->vnode = tmp->vnode;
+                new_file->flags = tmp->flags;
+                child_thread->fd_table[i] = new_file;
+            }
+            else
+                child_thread->fd_table[i]=nullptr;
+        }
     child_tf->x0 = 0;
     child_tf->sp_el0 = (unsigned long long)(child_thread->user_stack+THREAD_STACK_SIZE) - (unsigned long long)((unsigned long long)cur_thread->user_stack+THREAD_STACK_SIZE-tf->sp_el0);
     
@@ -182,24 +195,21 @@ void sys_ls(trap_frame* tf){
 int sys_open(trap_frame* tf,const char *pathname, int flags)
 {
     disable_interrupt();
-    if(strncmp(pathname,"/dev/framebuffer",sizeof("/dev/framebuffer"))==0){
-        enable_interrupt();
-        tf->x0=3;
-        return 3;
-    }
+    
     struct file* target;
     int res = vfs_open(pathname,flags,&target);
     
     int i=0;
     if((res == lastCompNotFound && flags==O_CREAT) || res==sucessMsg)
     {
-        for(i=4;i<20;i++){
+        for(i=3;i<20;i++){
             if(get_current()->fd_table[i]==nullptr){
                 get_current()->fd_table[i] = target;
                 break;
             }
         }
     }
+
     enable_interrupt();
     if(res == sucessMsg){ 
         tf->x0 = i;
@@ -279,7 +289,7 @@ long sys_lseek64(trap_frame* tf,int fd, long offset, int whence)
         return -1;
     }
     // writes_uart_debug("[*]lseek64",TRUE);
-    struct file* f = get_current()->fd_table[3];
+    struct file* f = get_current()->fd_table[fd];
     if(f){
         if(whence == SEEK_SET)
         {
@@ -298,11 +308,11 @@ int sys_ioctl(trap_frame* tf)
 {
     disable_interrupt();
 
-    struct framebuffer_info* fb_info = (struct framebuffer_info*)(tf->x2);
-    fb_info->width = get_current()->fb_info.width;
-    fb_info->height = get_current()->fb_info.height;
-    fb_info->pitch = get_current()->fb_info.pitch;
-    fb_info->isrgb = get_current()->fb_info.isrgb;
+    // struct framebuffer_info* fb_info = (struct framebuffer_info*)(tf->x2);
+    // fb_info->width = get_current()->fb_info.width;
+    // fb_info->height = get_current()->fb_info.height;
+    // fb_info->pitch = get_current()->fb_info.pitch;
+    // fb_info->isrgb = get_current()->fb_info.isrgb;
     // writes_uart_debug("[*]ioctl",TRUE);
    //  struct file* f = get_current()->fd_table[fd];
     enable_interrupt();

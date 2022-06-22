@@ -116,13 +116,16 @@ int vfs_open(const char* pathname, int flags, struct file** target) {
   // v_dir = rootfs->root;
   // int ret = rootfs->root->v_ops->lookup(v_dir,&v_node,pathname);
   int ret = vfs_lookup(pathname,&v_node);
-  
+
   // v_node = target_file->vnode;
   // 2. Create a new file handle for this vnode if found.
   if(ret == sucessMsg)
   {
     target_file->f_pos = 0;
+    
     target_file->f_ops = v_node->f_ops;
+    if(strncmp(pathname,"/dev/framebuffer",sizeof("/dev/framebuffer"))==0)
+      target_file->f_ops->write = write_framebuf;
     target_file->vnode = v_node;
     target_file->flags = flags;
     writes_uart_debug("[*]Opening file: ",FALSE);
@@ -511,8 +514,7 @@ unsigned int lfb_size;
 
 int write_framebuf(struct file* file, const void* buf, size_t len)
 {
-  // int size = (file->f_pos+len>lfb_size)?lfb_size-file->f_pos:len;
-  // busy_wait_writeint(1,FALSE);
+  if(file->f_pos>=lfb_size) busy_wait_writes("OVERSIZE!!!",TRUE);
   memcpy((char*)(lfb + file->f_pos),(char*)buf,len);
   file->f_pos += len;
   return len;
@@ -528,7 +530,7 @@ void vfs_framebuffer()
   struct file* target_file;
   vfs_mkdir("/dev");
   vfs_open("/dev/framebuffer",O_CREAT,&target_file);
-  struct file_operations* new_fops = my_malloc(sizeof(struct file_operations));
+  
 
   unsigned int __attribute__((aligned(16))) mbox[36];
   // unsigned int width, height, pitch, isrgb; /* dimensions and channel order */
@@ -582,20 +584,23 @@ void vfs_framebuffer()
   // the closest supported resolution instead
   if(mailbox_call(mbox,MBOX_CH_PROP) && mbox[20] == 32 && mbox[28] != 0) {
     mbox[28] &= 0x3FFFFFFF; // convert GPU address to ARM address
-    get_current()->fb_info.width = mbox[5];        // get actual physical width
-    get_current()->fb_info.height = mbox[6];       // get actual physical height
-    get_current()->fb_info.pitch = mbox[33];       // get number of bytes per line
-    get_current()->fb_info.isrgb = mbox[24];       // get the actual channel order
+    // get_current()->fb_info.width = mbox[5];        // get actual physical width
+    // get_current()->fb_info.height = mbox[6];       // get actual physical height
+    // get_current()->fb_info.pitch = mbox[33];       // get number of bytes per line
+    // get_current()->fb_info.isrgb = mbox[24];       // get the actual channel order
     lfb = (void *)((unsigned long)mbox[28]);
     lfb_size = mbox[29];
     // ((struct tmpfs_inode*)(target_file->vnode->internal))->data->content = lfb;
   } else {
     writes_uart_debug("Unable to set screen resolution to 1024x768x32",TRUE);
   }
-  new_fops->open = open_framebuf;
-  new_fops->write = write_framebuf;
-  target_file->f_ops = new_fops;
-  get_current()->fd_table[3] = target_file; // stderr
+
+  // struct file_operations* new_fops = my_malloc(sizeof(struct file_operations));
+  // new_fops->open = vfs_open;
+  // new_fops->write = write_framebuf;
+  // target_file->f_ops = new_fops;
+
+  // get_current()->fd_table[3] = target_file; // stderr
   // free(target_file);
   return;
 }

@@ -53,7 +53,6 @@ typedef struct Thread_struct
     struct file* fd_table[20];
     struct vnode* pwd;
     struct framebuffer_info fb_info;
-
 }Thread_struct;
 typedef struct task_queue
 {

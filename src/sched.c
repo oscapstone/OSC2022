@@ -53,13 +53,14 @@ void schedule()
     disable_interrupt();
     if(run_queue != nullptr)
     {
-        Thread_struct* next = pop_thread(run_queue);
-        // context_switch(next);
         Thread_struct* cur = get_current();
         if (cur->state == RUNNING && cur->id !=0) 
         {
             push_thread(cur);
         }
+        Thread_struct* next = pop_thread(run_queue);
+        // context_switch(next);
+        
         // busy_wait_writes("From ",FALSE);
         // busy_wait_writeint(cur->id,FALSE);
         // busy_wait_writes(" schedule to ",FALSE);
@@ -107,7 +108,11 @@ void idle()
 }
 void kill_zombie()
 {
-
+    Thread_struct* itr = run_queue;
+    while(itr!=nullptr){
+        if(itr->state==ZOMBIE) busy_wait_writes("ZOMBIE!!!",TRUE);
+        itr= itr->next;
+    }
 }
 void thread_exit()
 {
