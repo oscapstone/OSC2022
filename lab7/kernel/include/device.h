@@ -7,7 +7,7 @@
 
 #define MAX_DEVICE_IN_DIR 16
 
-typedef enum { DEV_ROOT, DEV_UART, DEV_NONE } DEV_TYPE;
+typedef enum { DEV_ROOT, DEV_UART, DEV_NONE, DEV_FB } DEV_TYPE;
 
 struct device_fentry {
   char name[20];
@@ -16,6 +16,13 @@ struct device_fentry {
   struct vnode* vnode;
   struct vnode* parent_vnode;
   struct device_fentry* child[MAX_DEVICE_IN_DIR];
+};
+
+struct framebuffer_info {
+  unsigned int width;
+  unsigned int height;
+  unsigned int pitch;
+  unsigned int isrgb;
 };
 
 struct vnode_operations* device_v_ops;
@@ -38,14 +45,21 @@ void device_list(struct vnode* dir);
 
 void root_init();
 
-
-
-/**********************************************/
-/*              uart file system              */
-/**********************************************/
-
 struct vnode_operations* uartfs_v_ops;
 struct file_operations* uartfs_f_ops;
 void uartfs_init();
 int uartfs_read(struct file* file, void* buf, size_t len);
 int uartfs_write(struct file* file, const void* buf, size_t len);
+
+
+struct vnode_operations* fb_v_ops;
+struct file_operations* fb_f_ops;
+void fb_init();
+int fb_write(struct file* file, const void* buf, size_t len);
+
+
+//framebuffer syscall
+long lseek64(int fd, long offset, int whence);
+int ioctl(int fd, unsigned long request, struct framebuffer_info* info );
+unsigned char *lfb;                       /* raw frame buffer address */
+unsigned int isrgb; /* dimensions and channel order */

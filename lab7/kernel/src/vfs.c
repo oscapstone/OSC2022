@@ -54,7 +54,7 @@ void vfs_init() {
   }
   fs->setup_mount(fs, rootfs);
   current_dir = rootfs->root;
-  cpio_populate_rootfs();
+  // cpio_populate_rootfs();
 
   // init and register cpio
   cpiofs_init();
@@ -78,7 +78,10 @@ void vfs_init() {
 
   vfs_mkdir("/dev");
   vfs_mount("", "/dev", "dev");
-
+  // uart
+  stdin = vfs_open("/dev/uart", 0);
+  stdout = vfs_open("/dev/uart", 0);
+  stderr = vfs_open("/dev/uart", 0);
 }
 
 int register_filesystem(struct filesystem* fs) {

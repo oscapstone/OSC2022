@@ -7,6 +7,7 @@
 #include "printf.h"
 #include "mbox.h"
 #include "vfs.h"
+#include "device.h"
 
 int count = 0;
 
@@ -68,7 +69,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
     } else if (iss == 5) {  // exit
       exit();
     } else if (iss == 6) {  // mbox_call
-      // printf("[mbox_call]\n");
+      printf("\n\n\n[mbox_call]\n");
       trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
     } else if (iss == 7) {  // kill
       kill((int)trap_frame->x[0]);
@@ -77,7 +78,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       printf("[open]%s\n",(const char *)trap_frame->x[0]);
       struct file* file = vfs_open((const char *)trap_frame->x[0],trap_frame->x[1]);
       int fd = thread_register_fd(file);
-      printf("[open]fd :%d\n",(const char *)trap_frame->x[0]);
+      printf("[open]fd :%d\n",fd);
 
       trap_frame->x[0] = fd;
 
@@ -88,10 +89,10 @@ void sync_handler_lowerEL_64(uint64_t sp) {
 
     } else if (iss == 13) {  // write
       // remember to return read size or error code
-      printf("[write]\n");
-      printf("[write]fd =%d\n",trap_frame->x[0]);
-      printf("[write]write_buf =%s\n",trap_frame->x[1]);
-      printf("[write]size =%d\n",trap_frame->x[2]);
+      // printf("[write]\n");
+      // printf("[write]fd =%d\n",trap_frame->x[0]);
+      // printf("[write]write_buf =%s\n",trap_frame->x[1]);
+      // printf("[write]size =%d\n",trap_frame->x[2]);
       struct file* file = thread_get_file(trap_frame->x[0]);
       trap_frame->x[0] = vfs_write(file, (const void *)trap_frame->x[1], trap_frame->x[2]);
 
@@ -127,6 +128,17 @@ void sync_handler_lowerEL_64(uint64_t sp) {
 
       int result = vfs_chdir(pathname);
       trap_frame->x[0] = result;
+    } else if (iss == 18) {  // lseek64
+      // printf("[lseek64]\n");
+      // printf("[lseek64]fd = %d\n", trap_frame->x[0]);
+      // printf("[lseek64]offset = %ld\n", (long) trap_frame->x[1]);
+      // printf("[lseek64]whence = %d\n", trap_frame->x[2]);
+      trap_frame->x[0] = lseek64(trap_frame->x[0], trap_frame->x[1], trap_frame->x[2]);
+    } else if (iss == 19) {  // ioctl
+      printf("[ioctl]\n");
+      printf("[ioctl]fd = %d\n", trap_frame->x[0]);
+      printf("[ioctl]request = %ld\n", (long) trap_frame->x[1]);
+      trap_frame->x[0] = ioctl(trap_frame->x[0], trap_frame->x[1], (struct framebuffer_info*)trap_frame->x[2]);
     } 
   }
 }
