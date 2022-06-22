@@ -171,33 +171,76 @@ int fat32_vn_rdwr(struct vnode *vn, struct uio *uiop, int rw) {
       return -1;
     }
 
-    off = off % cluster_size;
     while (remain_size > 0) {
+      off = off % cluster_size;
       for (int i = off / bpb.bytes_per_sector; i < bpb.sectors_per_cluster; i++) {
         load_sector(fat32buf, ith_sector_of_cluster(cur_cluster, i));
-        if (remain_size >= bpb.bytes_per_sector) {
-          memcpy(uiop->buf + read_size, fat32buf, bpb.bytes_per_sector);
-          read_size += bpb.bytes_per_sector;
-          remain_size -= bpb.bytes_per_sector;
+        uint32_t cur_off = off % bpb.bytes_per_sector;
+        uint32_t cur_size = bpb.bytes_per_sector - cur_off;
+        if (remain_size >= cur_size) {
+          memcpy(uiop->buf + read_size, fat32buf + cur_off, cur_size);
+          read_size += cur_size;
+          remain_size -= cur_size;
+          off += cur_size;
         } else {
-          memcpy(uiop->buf + read_size, fat32buf, remain_size);
+          memcpy(uiop->buf + read_size, fat32buf + cur_off, remain_size);
           read_size += remain_size;
+          off += remain_size;
           remain_size = 0;
         }
       }
       cur_cluster = next_cluster(cur_cluster);
       if (cur_cluster >= 0x0ffffff7) break;
-      off = 0;
     }
     
     uiop->ret = read_size;
     return 0;
   } else {
+    // do write here
+    kprintf("[fat32] write %s 0x%x %d\n", item->name, uiop->off, uiop->len);
+    load_sector(fat32buf, ith_sector_of_cluster(item->ent_cluster, item->ent_offset / bpb.bytes_per_sector));
+    struct fat32_dentry *ent = (struct fat32_dentry*)&fat32buf[item->ent_offset % bpb.bytes_per_sector];
+    kprintf("name: %s, size: %d\n", ent->short_name, ent->file_size);
 
+    uint32_t size = ent->file_size;
+    uint32_t cluster_size = bpb.bytes_per_sector * bpb.bytes_per_sector;
+    uint32_t off = uiop->off;
+    uint32_t cur_cluster = item->data_cluster;
+    uint32_t ith_cluster = off / cluster_size;
+    uint32_t written_size = 0;
+    uint32_t remain_size = uiop->len;
+
+    if (off > size) {
+      kprintf("[fat32] sparse file is not implemented! off: %d size: %d\n", off, size);
+      uiop->ret = 0;
+      return 0;
+    }
+
+    for (int i = 0; i < ith_cluster; i++) {
+      cur_cluster = next_cluster(cur_cluster);
+      if (cur_cluster >= 0x0ffffff7) break;
+    }
+
+    while (remain_size > 0) {
+      off = off % cluster_size;
+      for (int i = off / bpb.bytes_per_sector; i < bpb.sectors_per_cluster; i++) {
+        load_sector(fat32buf2, ith_sector_of_cluster(cur_cluster, i));
+        uint32_t cur_off = off % bpb.bytes_per_sector;
+        uint32_t cur_size = bpb.bytes_per_sector - cur_off;
+        if (remain_size >= cur_size) {
+          memcpy(fat32buf2 + cur_off, uiop->buf + written_size, cur_size);
+          written_size += cur_size;
+          remain_size -= cur_size;
+        } else {
+          memcpy(fat32buf2 + cur_off, uiop->buf + written_size, remain_size);
+          written_size += remain_size;
+          remain_size = 0;
+        }
+      }
+    }
     
-    
-    uiop->ret = 0;
-    return -EACCESS;
+    uiop->ret = written_size;
+    return 0;
   }
   return 0;
 }
