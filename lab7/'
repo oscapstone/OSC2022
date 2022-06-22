@@ -1,6 +1,5 @@
 #include "mm/mm.h"
 #include "fs/vfs.h"
-#include "fs/tmpfs.h"
 
 struct mount* rootfs;
 LIST_HEAD(mount_list);
@@ -40,8 +39,6 @@ void vfs_init(struct filesystem_type* fs_type){
     strcpy(name, "/");
     // create root filesystem
     inode_root = create_inode(NULL, NULL, S_IFDIR);
-    inode_root->private_data = kmalloc(sizeof(struct tmpfs_dir));
-    memset(inode_root->private_data, 0, sizeof(struct tmpfs_dir));
     root_dir = create_dentry(name, 0, inode_root);
 
     root_mnt = fs_type->mount(fs_type, root_dir); 
@@ -109,26 +106,24 @@ struct file* vfs_open(const char* pathname, int flags, umode_t mode){
     tok = strtok(name, delim);
     while (tok != NULL) {
         INFO("%s", tok);
-        if(next == NULL || !S_ISDIR(next->d_inode->i_modes)) goto free;
+        if(next == NULL || !S_ISDIR(next->d_flags)) goto free;
         prev_tok = tok;
         prev = next;
-        INFO("next: %p, next->d_flags: %p", next, next->d_inode->i_modes);
         next = next->d_inode->i_ops->lookup(next, tok);  
         tok = strtok(NULL, delim);
     }
     
     if(next == NULL && (flags | O_CREAT)){
+        INFO("create file: %p", next);
         new_file_name = kmalloc(strlen(prev_tok));
         strcpy(new_file_name, prev_tok);
-        new_dentry = create_dentry(new_file_name, 0, NULL);
-        new_inode = create_inode(NULL, NULL, S_IFREG);
-        new_dentry->d_inode = new_inode;
-        if(prev->d_inode->i_ops->create(prev, new_dentry) != -1) next = new_dentry;
+        new_dentry = create_dentry(new_file_name, S_IFREG, NULL);
+        new_inode = create_inode(NULL, NULL, 0);
+        if(prev->d_inode->i_ops->create(new_inode, new_dentry, mode) != -1) next = new_dentry;
         else goto free;
     }
 
-    INFO("create file: %p, ", next);
-    if(next != NULL && S_ISREG(next->d_inode->i_modes)) goto found;
+    if(next != NULL && S_ISREG(next->d_flags)) goto found;
 
 free:
     kfree(name);

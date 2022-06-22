@@ -76,7 +76,7 @@ struct files_struct{
 };
 
 struct inode_operations{
-	int (*create) (struct inode *,struct dentry *, umode_t);
+	int (*create) (struct dentry *,struct dentry *);
 	struct dentry * (*lookup) (struct dentry *, char*);
 	int (*link) (struct dentry *,struct inode *,struct dentry *);
 	int (*mkdir) (struct inode *,struct dentry *,umode_t);

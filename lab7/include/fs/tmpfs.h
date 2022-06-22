@@ -13,7 +13,6 @@ struct tmpfs_dir{
 struct tmpfs_file{
     size_t size;
     void* data;
-    size_t capacity;
 };
 
 
@@ -21,7 +20,7 @@ extern struct filesystem_type tmpfs;
 extern struct inode_operations tmpfs_i_ops;
 extern struct file_operations tmpfs_f_ops;
 extern struct mount* tmpfs_mount(struct filesystem_type*, struct dentry*);
-extern int tmpfs_create(struct inode *,struct dentry *, umode_t);
+extern int tmpfs_create(struct dentry *,struct dentry *);
 extern struct dentry *tmpfs_lookup(struct dentry *, char*);
 extern loff_t tmpfs_lseek64(struct file *, loff_t, int);
 extern ssize_t tmpfs_read(struct file *, char *, size_t, loff_t *);

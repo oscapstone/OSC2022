@@ -14,7 +14,7 @@ int sys_open(const char *pathname, int flags){
     int fd, ret;
     
     fd = get_unused_fd(files); 
-    if((f = vfs_open(pathname, flags, 0)) == NULL){
+    if(fd == -1 || ((f = vfs_open(pathname, flags, 0)) == NULL)){
         put_unused_fd(files, fd); 
         ret = -1;
     }else{

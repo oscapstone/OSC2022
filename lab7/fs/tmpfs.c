@@ -19,8 +19,25 @@ struct file_operations tmpfs_f_ops = {
     .release = tmpfs_release
 };
 
-int tmpfs_create(struct inode *,struct dentry *, umode_t){
+int tmpfs_create(struct dentry * parent, struct dentry * new_file){
     INFO("tmpfs_create");
+    struct dentry* ent;
+    uint64_t daif = local_irq_disable_save();
+    struct inode* parent_inode = parent->d_inode;
+    struct tmpfs_dir* parent_dir = parent_inode->private_data;
+    struct inode* new_inode = new_file->d_inode;
+    for(uint64_t i = 0 ; i < MAX_NUM_DIR_ENTRY ; i++){
+        if(parent_dir->entries[i] == NULL){
+            new_inode->private_data = kmalloc(sizeof(struct tmpfs_file));
+            memset(new_inode->private_data, 0, sizeof(struct tmpfs_dir));
+            parent_dir->entries[i] = new_file; 
+            local_irq_restore(daif);
+            INFO("tmpfs_create: %p", new_file);
+            return 0;
+        }
+    } 
+    local_irq_restore(daif);
+    return -1;
 }
 struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
     INFO("tmpfs_lookup");
