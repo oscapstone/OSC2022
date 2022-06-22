@@ -43,6 +43,55 @@ uint32_t ith_sector_of_cluster(uint32_t cluster, int i) {
 }
 
 
+uint32_t next_free_cluster(uint32_t cur_cluster) {
+  static char fat[4096];
+  if (cur_cluster >= bpb.total_sectors_32) return FSINFO_NXT_FREE_UNK;
+  
+  uint32_t fat_n = cur_cluster / (bpb.bytes_per_sector / 4);
+  load_sector(fat, bpb.num_reserved_sectors + fat_n);
+
+  while (1) {
+    uint32_t i = (cur_cluster * 4) % bpb.bytes_per_sector;
+    uint32_t fat_val = *(uint32_t*)&(fat[i]);
+    if ((fat_val & 0x0fffffff) == FAT32_FAT_FREE) {
+      return cur_cluster;
+    }
+    cur_cluster++;
+    if (cur_cluster % (bpb.bytes_per_sector / 4) == 0) {
+      fat_n = cur_cluster / (bpb.bytes_per_sector / 4);
+      load_sector(fat, bpb.num_reserved_sectors + fat_n);
+    }
+    if (cur_cluster >= bpb.total_sectors_32) return FSINFO_NXT_FREE_UNK;
+  }
+}
+
+uint32_t extend_cluster_chain(uint32_t cur_cluster) {
+  static char fat[4096];
+  if (fsinfo.next_free == FSINFO_NXT_FREE_UNK) {
+    fsinfo.next_free = next_free_cluster(bpb.root_cluster);
+  } else {
+    fsinfo.next_free = next_free_cluster(fsinfo.next_free);
+  }
+  uint32_t free_cluster = fsinfo.next_free;
+  fsinfo.free_count--;
+  writeblock(FAT32_BASE_BLK+1, &fsinfo);
+
+  uint32_t fat_n = cur_cluster / (bpb.bytes_per_sector / 4);
+  load_sector(fat, bpb.num_reserved_sectors + fat_n);
+
+  uint32_t i = (cur_cluster * 4) % bpb.bytes_per_sector;
+  *(uint32_t*)&(fat[i]) = free_cluster & 0x0fffffff;
+  write_sector(fat, bpb.num_reserved_sectors + fat_n);
+
+  fat_n = free_cluster / (bpb.bytes_per_sector / 4);
+  load_sector(fat, bpb.num_reserved_sectors + fat_n);
+  i = (free_cluster * 4) % bpb.bytes_per_sector;
+  *(uint32_t*)&(fat[i]) = FAT32_FAT_END;
+  write_sector(fat, bpb.num_reserved_sectors + fat_n);
+  return free_cluster;
+}
+
+
 int fat32_create_vfs(struct vfs **dst, const char *name) {
   struct vfs *fs = kmalloc(sizeof(struct vfs));
   struct fat32_data *data = kmalloc(sizeof(struct fat32_data));
@@ -209,6 +258,7 @@ int fat32_vn_rdwr(struct vnode *vn, struct uio *uiop, int rw) {
     uint32_t ith_cluster = off / cluster_size;
     uint32_t written_size = 0;
     uint32_t remain_size = uiop->len;
+    uint32_t nxt_cluster = 0;
 
     if (off > size) {
       kprintf("[fat32] sparse file is not implemented! off: %d size: %d\n", off, size);
@@ -236,8 +286,18 @@ int fat32_vn_rdwr(struct vnode *vn, struct uio *uiop, int rw) {
           written_size += remain_size;
           remain_size = 0;
         }
+        kprintf("%d 0x%x write: %s\n", cur_cluster, ith_sector_of_cluster(cur_cluster, i), fat32buf2);
+        write_sector(fat32buf2, ith_sector_of_cluster(cur_cluster, i));
       }
+      nxt_cluster = next_cluster(cur_cluster);
+      if (nxt_cluster >= FAT32_FAT_END) {
+        nxt_cluster = extend_cluster_chain(cur_cluster);
+      }
+      cur_cluster = nxt_cluster;
     }
+
+    ent->file_size = size - uiop->off + written_size;
+    write_sector(fat32buf, ith_sector_of_cluster(item->ent_cluster, item->ent_offset / bpb.bytes_per_sector));
     
     uiop->ret = written_size;
     return 0;
@@ -376,53 +436,6 @@ int fat32_vn_lookup(struct vnode* vn, const char *name, struct vnode** dst){
   return fat32_vn_lookup(vn, name, dst);
 }
 
-uint32_t next_free_cluster(uint32_t cur_cluster) {
-  static char fat[4096];
-  if (cur_cluster >= bpb.total_sectors_32) return FSINFO_NXT_FREE_UNK;
-  
-  uint32_t fat_n = cur_cluster / (bpb.bytes_per_sector / 4);
-  load_sector(fat, bpb.num_reserved_sectors + fat_n);
-
-  while (1) {
-    uint32_t i = (cur_cluster * 4) % bpb.bytes_per_sector;
-    uint32_t fat_val = *(uint32_t*)&(fat[i]);
-    if ((fat_val & 0x0fffffff) == FAT32_FAT_FREE) {
-      return cur_cluster;
-    }
-    cur_cluster++;
-    if (cur_cluster % (bpb.bytes_per_sector / 4) == 0) {
-      fat_n = cur_cluster / (bpb.bytes_per_sector / 4);
-      load_sector(fat, bpb.num_reserved_sectors + fat_n);
-    }
-    if (cur_cluster >= bpb.total_sectors_32) return FSINFO_NXT_FREE_UNK;
-  }
-}
-
-uint32_t extend_cluster_chain(uint32_t cur_cluster) {
-  static char fat[4096];
-  if (fsinfo.next_free == FSINFO_NXT_FREE_UNK) {
-    fsinfo.next_free = next_free_cluster(bpb.root_cluster);
-  } else {
-    fsinfo.next_free = next_free_cluster(fsinfo.next_free);
-  }
-  uint32_t free_cluster = fsinfo.next_free;
-  fsinfo.free_count--;
-  writeblock(FAT32_BASE_BLK+1, &fsinfo);
-
-  uint32_t fat_n = cur_cluster / (bpb.bytes_per_sector / 4);
-  load_sector(fat, bpb.num_reserved_sectors + fat_n);
-
-  uint32_t i = (cur_cluster * 4) % bpb.bytes_per_sector;
-  *(uint32_t*)&(fat[i]) = free_cluster & 0x0fffffff;
-  write_sector(fat, bpb.num_reserved_sectors + fat_n);
-
-  fat_n = free_cluster / (bpb.bytes_per_sector / 4);
-  load_sector(fat, bpb.num_reserved_sectors + fat_n);
-  i = (free_cluster * 4) % bpb.bytes_per_sector;
-  *(uint32_t*)&(fat[i]) = FAT32_FAT_END;
-  write_sector(fat, bpb.num_reserved_sectors + fat_n);
-  return free_cluster;
-}
 
 int fat32_vn_create(struct vnode *vn, const char *name, struct vnode **dst) {
   *dst = NULL;
@@ -483,7 +496,7 @@ int fat32_vn_create(struct vnode *vn, const char *name, struct vnode **dst) {
   }
 
   kprintf("fatname: %s\n", new_name);
-  kprintf("loaction: 0x%x\n", file_cluster);
+  kprintf("location: 0x%x\n", file_cluster);
 
   // create a direntry
   uint32_t cur_cluster = item->data_cluster;

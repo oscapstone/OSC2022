@@ -35,8 +35,8 @@ clean:
 
 run: kernel8.bin
 	cp sfn_nctuos.img.bak sfn_nctuos.img
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initramfs.cpio -serial null -serial stdio  -dtb bcm2710-rpi-3-b-plus.dtb -drive if=sd,file=sfn_nctuos.img,format=raw
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initrd.cpi -serial null -serial stdio  -dtb rpi3bp.dtb -drive if=sd,file=sfn_nctuos.img,format=raw
 
 debug: kernel8.bin
 	cp sfn_nctuos.img.bak sfn_nctuos.img
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initramfs.cpio -serial null -serial stdio  -dtb bcm2710-rpi-3-b-plus.dtb -drive if=sd,file=sfn_nctuos.img,format=raw -S -s
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.bin -initrd initrd.cpi -serial null -serial stdio  -dtb rpi3bp.dtb -drive if=sd,file=sfn_nctuos.img,format=raw -S -s
