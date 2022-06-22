@@ -58,7 +58,8 @@ void vfs_init(struct filesystem_type* fs_type){
 
 
     root_mnt = fs_type->mount(fs_type, root); 
-    
+    root->d_flags |= DENTRY_FLAG_MOUNTED;  
+
     // add root mount to mount list
     list_add_tail(&root_mnt->list, &mount_list);
 
@@ -134,8 +135,8 @@ struct file* vfs_open(const char* pathname, int flags, umode_t mode){
         next = prev->d_inode->i_ops->create(prev, prev_tok);
     }
 
-    FS_LOG("create file: %p, ", next);
-    if(next != NULL && S_ISREG(next->d_inode->i_modes)) goto found;
+    FS_LOG("open file: %p, i_modes: %p", next, next->d_inode->i_modes);
+    if(next != NULL && (S_ISREG(next->d_inode->i_modes) || S_ISCHR(next->d_inode->i_modes))) goto found;
 
 free:
     kfree(name);
@@ -171,7 +172,6 @@ int vfs_close(struct file* file){
 long vfs_write(struct file* file, char* buf, ssize_t len){
     int ret;
     ret = file->f_ops->write(file, buf, len, &file->f_pos);
-    FS_LOG("%s", ((struct tmpfs_file*)file->f_dentry->d_inode->private_data)->data);
     return ret;
 }
 
@@ -187,6 +187,7 @@ struct dentry* vfs_lookup(const char* pathname){
     struct task_struct* current = get_current();
     struct dentry* prev = NULL, *next, *pwd;
     char* tok, *new_file_name;
+    uint64_t daif;
     FS_LOG("vfs_lookup(%s)", pathname); 
     if(pathname[0] == '\0') goto error; 
     
@@ -205,6 +206,8 @@ struct dentry* vfs_lookup(const char* pathname){
     FS_LOG("next->d_name: %s", next->d_name);
 
     tok = strtok(name, delim);
+    
+    daif = local_irq_disable_save();
     while (tok != NULL) {
         FS_LOG("%s", tok);
         if(next == NULL || !S_ISDIR(next->d_inode->i_modes)) goto free;
@@ -214,8 +217,8 @@ struct dentry* vfs_lookup(const char* pathname){
         FS_LOG("next: %p, next->d_name: %s", next, next == NULL ? "[NULL]" : next->d_name);
         tok = strtok(NULL, delim);
     }
-    
-    if(next != NULL && S_ISDIR(next->d_inode->i_modes)) goto found;
+    local_irq_restore(daif); 
+    if(next != NULL) goto found;
 
 free:
     kfree(name);
@@ -228,8 +231,31 @@ found:
     return next;
 }
 
-int vfs_mount(const char* target, const char* filesystem){
+int vfs_mount(struct dentry* target, const char* filesystem){
+    FS_LOG("vfs_mount(%s, %s)", target->d_name, filesystem);
+    struct list_head* node;  
+    struct filesystem_type* fs_type; 
+    struct mount* mount;
+    int ret = -1;
+    uint64_t daif = local_irq_disable_save();
+    if(target->d_flags & DENTRY_FLAG_MOUNTED) goto end;
 
+    list_for_each(node, &filesystem_type_list){
+        fs_type = list_entry(node, struct filesystem_type, list);
+        if(strcmp(fs_type->fs_name,(char*) filesystem) == 0) break;
+    }
+     
+    mount = fs_type->mount(fs_type, target);
+    if(mount){
+        list_add_tail(&mount->list, &mount_list);
+        target->d_flags |= DENTRY_FLAG_MOUNTED;
+        ret = 0;
+    }
+end:
+    if(!ret)FS_LOG("vfs_mount success!");
+    else FS_LOG("vfs_mount failed!");
+    local_irq_restore(daif);
+    return ret;
 }
 
 int register_filesystem(struct filesystem_type* fs){

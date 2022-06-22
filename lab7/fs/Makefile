@@ -17,6 +17,7 @@ OBJECTS = \
 		 vfs.o \
 		 tmpfs.o \
 		 fs.o \
+		 uartfs.o \
 
 .PHONY: all 
 all: $(OBJECTS)

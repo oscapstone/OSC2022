@@ -38,7 +38,7 @@ struct mount{
 };
 
 struct filesystem_type{
-    char* f_name;
+    char* fs_name;
     struct mount* (*mount)(struct filesystem_type*, struct dentry*);
     struct list_head list;
 };
@@ -54,6 +54,7 @@ struct dentry{
     char* d_name;
     struct dentry* d_parent;
     int d_flags;
+    struct mount* d_mnt;
 
     struct inode *d_inode;
 };
@@ -98,7 +99,7 @@ extern int vfs_close(struct file*);
 extern long vfs_write(struct file*, char*, ssize_t);
 extern long vfs_read(struct file*, char*, ssize_t);
 extern struct dentry* vfs_lookup(const char*);
-extern int vfs_mount(const char*, const char*);
+extern int vfs_mount(struct dentry*, const char*);
 extern struct dentry* create_dentry(char *, int, struct inode*);
 extern struct inode* create_inode(struct file_operations *, struct inode_operations *, umode_t);
 extern int register_filesystem(struct filesystem_type*);

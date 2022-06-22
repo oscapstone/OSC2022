@@ -1,6 +1,6 @@
 #include "peripherals/mini_uart.h"
 
-static ring_buffer* rx_rbuf = NULL;
+ring_buffer* rx_rbuf = NULL;
 
 inline void delay_cycles(uint64_t n){
     for(register uint64_t i = 0 ; i < n ; i++) asm volatile("nop");
@@ -134,7 +134,7 @@ uint8_t mini_uart_aio_read(void){
     return b[0];
 }
 
-size_t sys_uart_write(char *buf, size_t size){
+size_t uart_write(char *buf, size_t size){
     uint64_t daif,ret;
     //size_t c;
     daif = local_irq_disable_save();
@@ -143,7 +143,12 @@ size_t sys_uart_write(char *buf, size_t size){
     return ret;
 }
 
-size_t sys_uart_read(char *buf, size_t size){
+
+size_t sys_uart_write(char *buf, size_t size){
+    return uart_write(buf, size);
+}
+
+size_t uart_read(char *buf, size_t size){
     size_t c = 0, tmp;
     
     IO_MMIO_write32(AUX_MU_IER_REG, 1);
@@ -157,3 +162,8 @@ size_t sys_uart_read(char *buf, size_t size){
     IO_MMIO_write32(AUX_MU_IER_REG, 0);
     return c;
 }
+
+size_t sys_uart_read(char *buf, size_t size){
+    return uart_read(buf, size);
+}
+

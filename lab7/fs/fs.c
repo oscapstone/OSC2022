@@ -3,6 +3,11 @@
 void fs_init(){
     vfs_init(&tmpfs);
     register_filesystem(&tmpfs);
+    register_filesystem(&uartfs);
+
+    vfs_mkdir("/dev", 0);
+    vfs_mkdir("/dev/uart", 0);
+    vfs_mount(vfs_lookup("/dev/uart"), "uartfs"); 
 }
 
 // syscall number : 11
@@ -77,6 +82,13 @@ int sys_mkdir(const char *pathname, unsigned mode){
 // you can ignore arguments other than target (where to mount) and filesystem (fs name)
 int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data){
     FS_LOG("sys_mount");
+    int ret = -1;
+    struct dentry* target_dir;
+    target_dir = vfs_lookup(target);
+    if(target_dir != NULL && S_ISDIR(target_dir->d_inode->i_modes)){
+        ret = vfs_mount(target_dir, filesystem);  
+    }
+    return ret;
 }
 
 // syscall number : 17
@@ -86,7 +98,7 @@ int sys_chdir(const char *path){
     struct task_struct* current = get_current();
     dest_dir = vfs_lookup(path);
     
-    if(dest_dir == NULL) {
+    if(dest_dir == NULL || !S_ISDIR(dest_dir->d_inode->i_modes)) {
         return -1;
     }else{
         current->fs->pwd = dest_dir;

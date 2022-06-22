@@ -1,13 +1,13 @@
 #ifndef _MINI_UART_H_
 #define _MINI_UART_H_
 
+#include "lib/ring_buffer.h"
 #include "types.h"
 #include "kernel/sched/sched.h"
 #include "asm.h"
 #include "peripherals/iomapping.h"
 #include "debug/debug.h"
 #include "lib/print.h"
-#include "lib/ring_buffer.h"
 
 #define SYSTEM_CLOCK_RATE (250000000)
 #define BAUD_RATE 115200
@@ -31,5 +31,7 @@ extern size_t mini_uart_get_tx_len();
 extern void enable_mini_uart_rx_irq();
 extern void disable_mini_uart_rx_irq();
 extern void mini_uart_rx_softirq_callback();
+extern size_t uart_write(char *, size_t);
+extern size_t uart_read(char *, size_t);
 
 #endif

@@ -285,6 +285,10 @@ void run_init_task(char* filename){
     // initialize fs
     task->files = (struct files_struct*)kmalloc(sizeof(struct files_struct));
     memset(task->files, 0, sizeof(struct files_struct));
+    task->files->fd_array[0] = vfs_open("/dev/uart", 0, 0);  
+    task->files->fd_array[1] = vfs_open("/dev/uart", 0, 0);  
+    task->files->fd_array[2] = vfs_open("/dev/uart", 0, 0);  
+
     task->fs =  (struct fs_struct*)kmalloc(sizeof(struct fs_struct));
     task->fs->root = rootfs->mnt_root;
     task->fs->pwd = rootfs->mnt_root;

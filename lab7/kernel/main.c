@@ -9,7 +9,7 @@
 void kernel_main_thread(void){
     for(uint32_t i = 0 ; i < 10 ; i++){
         INFO("create kthread kthread_test");
-        kthread_create(kthread_test);
+//        kthread_create(kthread_test);
     }
     INFO("create kthread simple_shell");
     kthread_create(simple_shell);

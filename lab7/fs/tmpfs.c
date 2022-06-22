@@ -1,7 +1,7 @@
 #include "fs/tmpfs.h"
 
 struct filesystem_type tmpfs = {
-    .f_name = "tmpfs",
+    .fs_name = "tmpfs",
     .mount = tmpfs_mount
 };
 
@@ -75,7 +75,7 @@ struct dentry* tmpfs_create(struct dentry * parent, const char* new_file_name){
 }
 
 struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
-    FS_LOG("tmpfs_lookup");
+    FS_LOG("tmpfs_lookup(%s, %s)", parent->d_name, target);
     struct dentry* ent;
     uint64_t daif = local_irq_disable_save();
     struct inode* parent_inode = parent->d_inode;
@@ -83,12 +83,14 @@ struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
 
     for(uint64_t i = 0 ; i < MAX_NUM_DIR_ENTRY ; i++){
         ent = parent_dir->entries[i]; 
+        if(ent!=NULL)FS_LOG("%s", ent->d_name);
         if(ent != NULL && strcmp(ent->d_name, target) == 0){
-            if(S_ISLNK(ent->d_inode->i_modes)){
+            if(ent->d_flags & DENTRY_FLAG_MOUNTED){
+                ent = ent->d_mnt->mnt_root;
+            }else if(S_ISLNK(ent->d_inode->i_modes)){
                 ent = ent->d_inode->private_data;
             }
             FS_LOG("found %s", ent->d_name);
-            local_irq_restore(daif);
             return ent;
         }
     } 
@@ -148,14 +150,23 @@ int tmpfs_release(struct inode * inode, struct file * file){
     if(file->f_count == 0) kfree(file); 
     return 0;
 }
-struct mount* tmpfs_mount(struct filesystem_type* fs_type, struct dentry* mnt_root){
+struct mount* tmpfs_mount(struct filesystem_type* fs_type, struct dentry* target){
     FS_LOG("tmpfs_mount");
     uint64_t daif = local_irq_disable_save();
-    struct inode* root_node = mnt_root->d_inode;
+    struct dentry* new_root = create_tmpfs_file("", NULL, S_IFDIR), *link; 
+    new_root->d_parent = target->d_parent;
+    struct inode* root_node = new_root->d_inode;
+    struct tmpfs_dir* new_dir;
     struct mount* ret = (struct mount*)kmalloc(sizeof(struct mount));
-    ret->mnt_root = mnt_root;
-    root_node->f_ops = &tmpfs_f_ops; 
-    root_node->i_ops = &tmpfs_i_ops; 
+    target->d_mnt = ret;
+    ret->mnt_root = new_root;
+
+    new_dir = new_root->d_inode->private_data;
+    new_dir->count += 2;
+    link = new_root;
+    new_dir->entries[0] = create_tmpfs_file(".", link, S_IFLNK);
+    link = target->d_parent;
+    new_dir->entries[1] = create_tmpfs_file("..", link, S_IFLNK);
     local_irq_restore(daif);
     return ret;
 }
@@ -169,7 +180,7 @@ int tmpfs_mkdir(struct dentry * parent, const char * target, umode_t mode){
 
     for(uint64_t i = 0 ; i < MAX_NUM_DIR_ENTRY ; i++){
         if(parent_dir->entries[i] == NULL){
-            new_file = create_tmpfs_file(target, NULL, mode);
+            new_file = create_tmpfs_file(target, NULL, mode|S_IFDIR);
             new_file->d_parent = parent;
             parent_dir->entries[i] = new_file;
             parent_dir->count++;

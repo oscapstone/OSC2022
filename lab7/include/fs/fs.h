@@ -1,6 +1,7 @@
 #ifndef _FS_H_
 #define _FS_H_
 #include "fs/tmpfs.h"
+#include "fs/uartfs.h"
 
 extern int sys_open(const char *, int);
 extern int sys_close(int);

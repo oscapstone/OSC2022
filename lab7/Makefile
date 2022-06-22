@@ -63,6 +63,7 @@ KOBJECTS = \
 		 $(OUTPUT)/vfs.o \
 		 $(OUTPUT)/tmpfs.o \
 		 $(OUTPUT)/fs.o \
+		 $(OUTPUT)/uartfs.o \
 		 $(LIBS)
 
 

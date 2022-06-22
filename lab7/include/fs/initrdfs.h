@@ -9,6 +9,7 @@
 #include "lib/string.h"
 #include "debug/debug.h"
 #include "peripherals/mini_uart.h"
+#include "fs/vfs.h"
 
 extern void initrdfs_init(void*);
 extern void initrdfs_ls();
