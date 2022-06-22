@@ -7,7 +7,7 @@ void fs_init(){
 
 // syscall number : 11
 int sys_open(const char *pathname, int flags){
-    INFO("sys_open");
+    FS_LOG("sys_open");
     struct task_struct* current = get_current();
     struct files_struct *files = current->files;
     struct file* f;
@@ -21,39 +21,63 @@ int sys_open(const char *pathname, int flags){
         fd_install(files, fd, f);
         ret = fd;
     }
-    INFO("return fd: %d", ret);
+    FS_LOG("return fd: %d", ret);
+    return ret;
 }
 
 // syscall number : 11
 int sys_close(int fd){
-    INFO("sys_close");
+    FS_LOG("sys_close(%p)", fd);
+    if(fd > NR_OPEN_DEFAULT || fd < 0) return -1; 
+    struct task_struct* current = get_current();
+    struct files_struct* files = current->files;
+    struct file* file = get_file_by_fd(files, fd); 
+    int ret = -1;
+    
+    if(file != NULL){
+        ret = vfs_close(file);
+        if(ret != -1){
+            put_unused_fd(files, fd); 
+        }
+    }
+    return ret;
 }
 
 // syscall number : 13
 // remember to return read size or error code
-long sys_write(int fd, const void *buf, unsigned long count){
-    INFO("sys_write");
+long sys_write(int fd, char *buf, unsigned long count){
+    FS_LOG("sys_write(%p, %p, %p)",fd, buf, count);
+    if(fd > NR_OPEN_DEFAULT || fd < 0) return -1; 
+    struct task_struct* current = get_current();
+    struct file* file = get_file_by_fd(current->files, fd);
+
+    return vfs_write(file, buf, count);
 }
 
 // syscall number : 14
 // remember to return read size or error code
-long sys_read(int fd, void *buf, unsigned long count){
-    INFO("sys_read");
+long sys_read(int fd, char *buf, unsigned long count){
+    FS_LOG("sys_read(%p, %p, %p)",fd, buf, count);
+    if(fd > NR_OPEN_DEFAULT || fd < 0) return -1; 
+    struct task_struct* current = get_current();
+    struct file* file = get_file_by_fd(current->files, fd);
+
+    return vfs_read(file, buf, count);
 }
 
 // syscall number : 15
 // you can ignore mode, since there is no access control
 int sys_mkdir(const char *pathname, unsigned mode){
-    INFO("sys_mkdir");
+    FS_LOG("sys_mkdir");
 }
 
 // syscall number : 16
 // you can ignore arguments other than target (where to mount) and filesystem (fs name)
 int sys_mount(const char *src, const char *target, const char *filesystem, unsigned long flags, const void *data){
-    INFO("sys_mount");
+    FS_LOG("sys_mount");
 }
 
 // syscall number : 17
 int sys_chdir(const char *path){
-    INFO("sys_chdir");
+    FS_LOG("sys_chdir");
 }

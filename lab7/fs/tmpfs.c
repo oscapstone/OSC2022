@@ -19,28 +19,55 @@ struct file_operations tmpfs_f_ops = {
     .release = tmpfs_release
 };
 
-int tmpfs_create(struct dentry * parent, struct dentry * new_file){
-    INFO("tmpfs_create");
+struct dentry* create_tmpfs_file(const char* name){
+    char *new_file_name = kmalloc(strlen(name));
+    struct dentry* ret;
+    struct tmpfs_file * tmp_file;
+    strcpy(new_file_name, name);
+
+    // create dentry
+    ret = create_dentry(new_file_name, 0, NULL);
+
+    // create and initialzie inode
+    ret->d_inode = create_inode(&tmpfs_f_ops, &tmpfs_i_ops, S_IFREG);
+    ret->d_inode->private_data = kmalloc(sizeof(struct tmpfs_file));
+    
+    // create file data space
+    tmp_file = ret->d_inode->private_data;
+    tmp_file->size = 0;
+    tmp_file->data = calloc_page();
+
+    return ret;
+}
+
+struct tmpfs_dir* create_tmpfs_dir(){
+    struct tmpfs_dir* ret = kmalloc(sizeof(struct tmpfs_dir));
+    memset(ret, 0, sizeof(struct tmpfs_dir));
+    return ret;
+}
+
+struct dentry* tmpfs_create(struct dentry * parent, const char* new_file_name){
+    FS_LOG("tmpfs_create");
     struct dentry* ent;
     uint64_t daif = local_irq_disable_save();
     struct inode* parent_inode = parent->d_inode;
     struct tmpfs_dir* parent_dir = parent_inode->private_data;
-    struct inode* new_inode = new_file->d_inode;
+    struct dentry* new_file;
+
     for(uint64_t i = 0 ; i < MAX_NUM_DIR_ENTRY ; i++){
         if(parent_dir->entries[i] == NULL){
-            new_inode->private_data = kmalloc(sizeof(struct tmpfs_file));
-            memset(new_inode->private_data, 0, sizeof(struct tmpfs_dir));
-            parent_dir->entries[i] = new_file; 
+            new_file = create_tmpfs_file(new_file_name);
+            parent_dir->entries[i] = new_file;
             local_irq_restore(daif);
-            INFO("tmpfs_create: %p", new_file);
-            return 0;
+            return new_file;
         }
     } 
     local_irq_restore(daif);
-    return -1;
+    return NULL;
 }
+
 struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
-    INFO("tmpfs_lookup");
+    FS_LOG("tmpfs_lookup");
     struct dentry* ent;
     uint64_t daif = local_irq_disable_save();
     struct inode* parent_inode = parent->d_inode;
@@ -58,26 +85,57 @@ struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
 }
 
 loff_t tmpfs_lseek64(struct file *, loff_t, int){
-    INFO("tmpfs_lseek64");
+    FS_LOG("tmpfs_lseek64");
 }
 
-ssize_t tmpfs_read(struct file *, char *, size_t, loff_t *){
-    INFO("tmpfs_read");
+long tmpfs_read(struct file *file, char *buf, size_t len, loff_t *offset){
+    FS_LOG("tmpfs_read");
+    uint64_t daif = local_irq_disable_save();
+    struct dentry* d_file = file->f_dentry;
+    struct tmpfs_file* tmp_file = d_file->d_inode->private_data;
+    char* data = tmp_file->data;
+    size_t file_size = tmp_file->size;
+    if(*offset + len > file_size) len = file_size - *offset;
+
+    memcpy(buf, &data[*offset], len);
+    *offset += len;
+
+    local_irq_restore(daif);
+    return len;
 }
-ssize_t tmpfs_write(struct file *, char *, size_t, loff_t *){
-    INFO("tmpfs_write");
+
+long tmpfs_write(struct file * file, char * buf, size_t len, loff_t * offset){
+    FS_LOG("tmpfs_write");
+    uint64_t daif = local_irq_disable_save();
+    struct dentry* d_file = file->f_dentry;
+    struct tmpfs_file* tmp_file = d_file->d_inode->private_data;
+    char* data = tmp_file->data;
+    if(*offset + len > MAX_FILE_SIZE) len = MAX_FILE_SIZE - *offset;
+
+    memcpy(&data[*offset], buf, len);
+    *offset += len;
+    tmp_file->size = *offset;
+
+    local_irq_restore(daif);
+    return len;
 }
+
 int tmpfs_open(struct inode *, struct file *){
-    INFO("tmpfs_open");
+    FS_LOG("tmpfs_open");
 }
 int tmpfs_flush(struct file *){
-    INFO("tmpfs_flush");
+    FS_LOG("tmpfs_flush");
+    return 0;
 }
-int tmpfs_release(struct inode *, struct file *){
-    INFO("tmpfs_release");
+int tmpfs_release(struct inode * inode, struct file * file){
+    FS_LOG("tmpfs_release");
+    if(file == NULL) return -1;
+
+    file->f_count--;
+    if(file->f_count == 0) kfree(file); 
 }
 struct mount* tmpfs_mount(struct filesystem_type* fs_type, struct dentry* mnt_root){
-    INFO("tmpfs_mount");
+    FS_LOG("tmpfs_mount");
     uint64_t daif = local_irq_disable_save();
     struct inode* root_node = mnt_root->d_inode;
     struct mount* ret = (struct mount*)kmalloc(sizeof(struct mount));

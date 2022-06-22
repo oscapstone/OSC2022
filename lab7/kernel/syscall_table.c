@@ -64,28 +64,28 @@ uint64_t syscall_handler(){
         case 11:
             x0 = trap_frame->x0;
             x1 = trap_frame->x1;
-            sys_open((const char*)x0,(int)x1);
+            ret = sys_open((const char*)x0,(int)x1);
             break;
         case 12:
             x0 = trap_frame->x0;
-            sys_close((int)x0);
+            ret = sys_close((int)x0);
             break;
         case 13:
             x0 = trap_frame->x0;
             x1 = trap_frame->x1;
             x2 = trap_frame->x2;
-            sys_write((int)x0, (const void*)x1, (ssize_t)x2);
+            ret = sys_write((int)x0, (char*)x1, (ssize_t)x2);
             break;
         case 14:
             x0 = trap_frame->x0;
             x1 = trap_frame->x1;
             x2 = trap_frame->x2;
-            sys_read((int)x0, (void*)x1, (ssize_t)x2);
+            ret = sys_read((int)x0, (char*)x1, (ssize_t)x2);
             break;
         case 15:
             x0 = trap_frame->x0;
             x1 = trap_frame->x1;
-            sys_mkdir((const char*)x0, (unsigned)x1);
+            ret = sys_mkdir((const char*)x0, (unsigned)x1);
             break;
         case 16:
             x0 = trap_frame->x0;
@@ -97,7 +97,7 @@ uint64_t syscall_handler(){
             break;
         case 17:
             x0 = trap_frame->x0;
-            sys_chdir((const char*)x0);
+            ret = sys_chdir((const char*)x0);
             break;
         case 20:
             sys_sigreturn();

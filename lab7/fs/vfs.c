@@ -1,10 +1,18 @@
 #include "mm/mm.h"
-#include "fs/vfs.h"
 #include "fs/tmpfs.h"
+#include "fs/vfs.h"
 
 struct mount* rootfs;
 LIST_HEAD(mount_list);
 LIST_HEAD(filesystem_type_list);
+
+struct file* get_file_by_fd(struct files_struct* files, int fd){
+    struct file* ret;
+    uint64_t daif = local_irq_disable_save(); 
+    ret = files->fd_array[fd];
+    local_irq_restore(daif);
+    return ret;
+}
 
 int get_unused_fd(struct files_struct* files){
     int fd = -1;
@@ -76,6 +84,7 @@ struct file* create_file(struct dentry* d, unsigned int flags, unsigned mode){
     ret->f_dentry = d;
     ret->f_count = 1;
     ret->f_flags = flags;
+    ret->f_pos = 0;
     ret->f_ops = d->d_inode->f_ops;
     ret->f_mode = mode;
 
@@ -86,10 +95,9 @@ struct file* vfs_open(const char* pathname, int flags, umode_t mode){
     const char* delim = "/";
     char* name, *prev_tok;
     struct task_struct* current = get_current();
-    struct dentry* prev = NULL, *next, *pwd, *new_dentry;
-    struct inode* new_inode;
+    struct dentry* prev = NULL, *next, *pwd;
     char* tok, *new_file_name;
-    INFO("vfs_open(%s, %p, %p)", pathname, flags, mode); 
+    FS_LOG("vfs_open(%s, %p, %p)", pathname, flags, mode); 
     if(pathname[0] == '\0') goto error; 
     
     if(pathname[0] == '/'){
@@ -103,54 +111,69 @@ struct file* vfs_open(const char* pathname, int flags, umode_t mode){
     
     name = (char*)kmalloc(strlen(pathname));
     strcpy(name, pathname);
-    INFO("pathname: %s", name);
-    INFO("next->d_name: %s", next->d_name);
+    FS_LOG("pathname: %s", name);
+    FS_LOG("next->d_name: %s", next->d_name);
 
     tok = strtok(name, delim);
     while (tok != NULL) {
-        INFO("%s", tok);
+        FS_LOG("%s", tok);
         if(next == NULL || !S_ISDIR(next->d_inode->i_modes)) goto free;
         prev_tok = tok;
         prev = next;
-        INFO("next: %p, next->d_flags: %p", next, next->d_inode->i_modes);
+        FS_LOG("next: %p, next->d_flags: %p", next, next->d_inode->i_modes);
         next = next->d_inode->i_ops->lookup(next, tok);  
         tok = strtok(NULL, delim);
     }
     
     if(next == NULL && (flags | O_CREAT)){
-        new_file_name = kmalloc(strlen(prev_tok));
-        strcpy(new_file_name, prev_tok);
-        new_dentry = create_dentry(new_file_name, 0, NULL);
-        new_inode = create_inode(NULL, NULL, S_IFREG);
-        new_dentry->d_inode = new_inode;
-        if(prev->d_inode->i_ops->create(prev, new_dentry) != -1) next = new_dentry;
-        else goto free;
+        next = prev->d_inode->i_ops->create(prev, prev_tok);
     }
 
-    INFO("create file: %p, ", next);
+    FS_LOG("create file: %p, ", next);
     if(next != NULL && S_ISREG(next->d_inode->i_modes)) goto found;
 
 free:
     kfree(name);
 error:
-    INFO("not found");
+    FS_LOG("not found");
     return NULL;
 found:
-    INFO("found");
+    FS_LOG("found");
     kfree(name);
     return create_file(next, flags, mode);
 }
 
 int vfs_close(struct file* file){
-
-}
-
-int vfs_write(struct file* file, const void* buf, ssize_t len){
+    struct inode* inode = file->f_dentry->d_inode;
+    int ret = -1;
     
+    do{
+        if(file == NULL) break;
+
+        ret = file->f_ops->flush(file);
+        if(ret == -1) break;
+
+        ret = file->f_ops->release(inode, file);
+        if(ret == -1) break;
+        
+        
+
+        ret = 0;
+    }while(0);
+    return ret;
 }
 
-int vfs_read(struct file* file, void* buf, ssize_t len){
+long vfs_write(struct file* file, char* buf, ssize_t len){
+    int ret;
+    ret = file->f_ops->write(file, buf, len, &file->f_pos);
+    FS_LOG("%s", ((struct tmpfs_file*)file->f_dentry->d_inode->private_data)->data);
+    return ret;
+}
 
+long vfs_read(struct file* file, char* buf, ssize_t len){
+    int ret;
+    ret = file->f_ops->read(file, buf, len, &file->f_pos);
+    return ret;
 }
 
 int vfs_lookup(const char* pathname, struct dentry* dir){

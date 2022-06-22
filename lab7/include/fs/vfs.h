@@ -76,7 +76,7 @@ struct files_struct{
 };
 
 struct inode_operations{
-	int (*create) (struct dentry *,struct dentry *);
+	struct dentry *(*create) (struct dentry *, const char*);
 	struct dentry * (*lookup) (struct dentry *, char*);
 	int (*link) (struct dentry *,struct inode *,struct dentry *);
 	int (*mkdir) (struct inode *,struct dentry *,umode_t);
@@ -85,8 +85,8 @@ struct inode_operations{
 
 struct file_operations{
 	loff_t (*lseek64) (struct file *, loff_t, int);
-	ssize_t (*read) (struct file *, char *, size_t, loff_t *);
-	ssize_t (*write) (struct file *, char *, size_t, loff_t *);
+	long (*read) (struct file *, char *, size_t, loff_t *);
+	long (*write) (struct file *, char *, size_t, loff_t *);
 	int (*open) (struct inode *, struct file *);
     int (*flush) (struct file *);
 	int (*release) (struct inode *, struct file *);
@@ -94,8 +94,8 @@ struct file_operations{
 
 extern struct file* vfs_open(const char*, int, umode_t);
 extern int vfs_close(struct file*);
-extern int vfs_write(struct file*, const void*, ssize_t);
-extern int vfs_read(struct file*, void*, ssize_t);
+extern long vfs_write(struct file*, char*, ssize_t);
+extern long vfs_read(struct file*, char*, ssize_t);
 extern int vfs_lookup(const char*, struct dentry*);
 extern int vfs_mount(const char*, const char*);
 extern struct dentry* create_dentry(char *, int, struct inode*);
@@ -105,6 +105,7 @@ extern void vfs_init(struct filesystem_type*);
 extern int get_unused_fd(struct files_struct* );
 extern int put_unused_fd(struct files_struct*, int);
 extern int fd_install(struct files_struct*, int, struct file*);
+extern struct file* get_file_by_fd(struct files_struct*, int);
 
 extern struct mount* rootfs;
 #endif
