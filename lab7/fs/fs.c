@@ -82,4 +82,15 @@ int sys_mount(const char *src, const char *target, const char *filesystem, unsig
 // syscall number : 17
 int sys_chdir(const char *path){
     FS_LOG("sys_chdir");
+    struct dentry* dest_dir;
+    struct task_struct* current = get_current();
+    dest_dir = vfs_lookup(path);
+    
+    if(dest_dir == NULL) {
+        return -1;
+    }else{
+        current->fs->pwd = dest_dir;
+        FS_LOG("PWD: %s", current->fs->pwd->d_name);
+        return 0;
+    }
 }

@@ -97,7 +97,7 @@ extern struct file* vfs_open(const char*, int, umode_t);
 extern int vfs_close(struct file*);
 extern long vfs_write(struct file*, char*, ssize_t);
 extern long vfs_read(struct file*, char*, ssize_t);
-extern int vfs_lookup(const char*, struct dentry*);
+extern struct dentry* vfs_lookup(const char*);
 extern int vfs_mount(const char*, const char*);
 extern struct dentry* create_dentry(char *, int, struct inode*);
 extern struct inode* create_inode(struct file_operations *, struct inode_operations *, umode_t);

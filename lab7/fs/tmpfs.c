@@ -84,10 +84,11 @@ struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
     for(uint64_t i = 0 ; i < MAX_NUM_DIR_ENTRY ; i++){
         ent = parent_dir->entries[i]; 
         if(ent != NULL && strcmp(ent->d_name, target) == 0){
-            local_irq_restore(daif);
             if(S_ISLNK(ent->d_inode->i_modes)){
-                return ent->d_inode->private_data;
+                ent = ent->d_inode->private_data;
             }
+            FS_LOG("found %s", ent->d_name);
+            local_irq_restore(daif);
             return ent;
         }
     } 
@@ -172,16 +173,15 @@ int tmpfs_mkdir(struct dentry * parent, const char * target, umode_t mode){
             new_file->d_parent = parent;
             parent_dir->entries[i] = new_file;
             parent_dir->count++;
-            local_irq_restore(daif);
 
             // add . and ..
             new_dir = new_file->d_inode->private_data;
             new_dir->count += 2;
-            link = parent;
+            link = new_file;
             new_dir->entries[0] = create_tmpfs_file(".", link, S_IFLNK);
-            link = parent->d_parent;
+            link = parent;
             new_dir->entries[1] = create_tmpfs_file("..", link, S_IFLNK);
-            
+            local_irq_restore(daif);
             return 0;
         }
     }

@@ -116,8 +116,8 @@ struct file* vfs_open(const char* pathname, int flags, umode_t mode){
     
     name = (char*)kmalloc(strlen(pathname));
     strcpy(name, pathname);
-    FS_LOG("pathname: %s", name);
-    FS_LOG("next->d_name: %s", next->d_name);
+    FS_LOG("target pathname: %s", name);
+    FS_LOG("lookup start from: %s", next->d_name);
 
     tok = strtok(name, delim);
     while (tok != NULL) {
@@ -181,8 +181,51 @@ long vfs_read(struct file* file, char* buf, ssize_t len){
     return ret;
 }
 
-int vfs_lookup(const char* pathname, struct dentry* dir){
+struct dentry* vfs_lookup(const char* pathname){
+    const char* delim = "/";
+    char* name, *prev_tok;
+    struct task_struct* current = get_current();
+    struct dentry* prev = NULL, *next, *pwd;
+    char* tok, *new_file_name;
+    FS_LOG("vfs_lookup(%s)", pathname); 
+    if(pathname[0] == '\0') goto error; 
+    
+    if(pathname[0] == '/'){
+        next = rootfs->mnt_root; 
+        pathname++;
+    }else{
+        current = get_current();
+        pwd = current->fs->pwd;
+        next = pwd;
+    }
+    
+    name = (char*)kmalloc(strlen(pathname));
+    strcpy(name, pathname);
+    FS_LOG("pathname: %s", name);
+    FS_LOG("next->d_name: %s", next->d_name);
 
+    tok = strtok(name, delim);
+    while (tok != NULL) {
+        FS_LOG("%s", tok);
+        if(next == NULL || !S_ISDIR(next->d_inode->i_modes)) goto free;
+        prev_tok = tok;
+        prev = next;
+        next = next->d_inode->i_ops->lookup(next, tok);  
+        FS_LOG("next: %p, next->d_name: %s", next, next == NULL ? "[NULL]" : next->d_name);
+        tok = strtok(NULL, delim);
+    }
+    
+    if(next != NULL && S_ISDIR(next->d_inode->i_modes)) goto found;
+
+free:
+    kfree(name);
+error:
+    FS_LOG("not found");
+    return NULL;
+found:
+    FS_LOG("found");
+    kfree(name);
+    return next;
 }
 
 int vfs_mount(const char* target, const char* filesystem){
