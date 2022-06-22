@@ -4,6 +4,7 @@
 #include "lib/list.h"
 #include "kernel/irq_handler.h"
 #include "kernel/signal.h"
+#include "fs/vfs.h"
 
 typedef uint64_t pid_t;
 
@@ -133,6 +134,10 @@ struct task_struct{
     // signal
     struct sigpending sigpending;
     struct sighand_struct sighandler;
+
+    // fs
+    struct files_struct *files;
+    struct fs_struct* fs;
 
     // relationship
     struct task_struct* parent;

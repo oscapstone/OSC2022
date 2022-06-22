@@ -17,6 +17,9 @@ void kernel_init(void *dtb){
     // change ttbr1_el1 to 4-level 
     page_init();
 
+    // fs initialize
+    fs_init();
+
     fdt_parser(dtb, fdt_initrdfs_callback); 
     return; 
 }

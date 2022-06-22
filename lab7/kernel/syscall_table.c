@@ -61,6 +61,44 @@ uint64_t syscall_handler(){
             x5 = trap_frame->x5;
             ret = (uint64_t)sys_mmap((void*)x0, (size_t)x1, (int)x2, (int)x3, (int)x4, (int)x5);
             break;
+        case 11:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            sys_open((const char*)x0,(int)x1);
+            break;
+        case 12:
+            x0 = trap_frame->x0;
+            sys_close((int)x0);
+            break;
+        case 13:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            x2 = trap_frame->x2;
+            sys_write((int)x0, (const void*)x1, (ssize_t)x2);
+            break;
+        case 14:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            x2 = trap_frame->x2;
+            sys_read((int)x0, (void*)x1, (ssize_t)x2);
+            break;
+        case 15:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            sys_mkdir((const char*)x0, (unsigned)x1);
+            break;
+        case 16:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            x2 = trap_frame->x2;
+            x3 = trap_frame->x3;
+            x4 = trap_frame->x4;
+            ret = (int)sys_mount((const char*)x0, (const char*)x1, (const char*)x2, (uint64_t)x3, (const void*)x4);
+            break;
+        case 17:
+            x0 = trap_frame->x0;
+            sys_chdir((const char*)x0);
+            break;
         case 20:
             sys_sigreturn();
             break;

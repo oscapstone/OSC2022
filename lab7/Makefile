@@ -60,6 +60,9 @@ KOBJECTS = \
 		 $(OUTPUT)/task.o \
 		 $(OUTPUT)/signal.o \
 		 $(OUTPUT)/fault.o \
+		 $(OUTPUT)/vfs.o \
+		 $(OUTPUT)/tmpfs.o \
+		 $(OUTPUT)/fs.o \
 		 $(LIBS)
 
 

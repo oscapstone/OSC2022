@@ -2,6 +2,7 @@
 #define _SYSCALL_H_
 #include "types.h"
 #include "kernel/signal.h"
+#include "fs/fs.h"
 extern uint64_t sys_hello(uint64_t);
 extern size_t sys_uart_write(char *, size_t);
 extern size_t sys_uart_read(char *, size_t);

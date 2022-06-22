@@ -164,6 +164,10 @@ void task_destroy(struct task_struct* task){
 			task->child->parent = NULL;
 		}
 	}
+    // free fs
+    kfree(task->files); // remember to close all files
+    kfree(task->fs);
+
     // free signal pending queue
     free_sigpendings(&task->sigpending);
     kfree(task);
@@ -274,6 +278,13 @@ void run_init_task(char* filename){
     // initialzie singal
     sigpending_init(&task->sigpending);
     default_sighand_init(&task->sighandler);
+
+    // initialize fs
+    task->files = (struct files_struct*)kmalloc(sizeof(struct files_struct));
+    memset(task->files, 0, sizeof(struct files_struct));
+    task->fs =  (struct fs_struct*)kmalloc(sizeof(struct fs_struct));
+    task->fs->root = rootfs->mnt_root;
+    task->fs->pwd = rootfs->mnt_root;
     
     // insert task to run queue and task list
     user_init = task;

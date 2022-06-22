@@ -13,7 +13,11 @@ CXXFLAGS =
 OUTPUT ?= .
 HEADERS ?= ../include
 OBJECTS = \
-		 initrdfs.o 
+		 initrdfs.o \
+		 vfs.o \
+		 tmpfs.o \
+		 fs.o \
+
 .PHONY: all 
 all: $(OBJECTS)
 

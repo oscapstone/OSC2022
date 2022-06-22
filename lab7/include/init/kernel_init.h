@@ -10,6 +10,7 @@
 #include "asm.h"
 #include "kernel/sched/sched.h"
 #include "kernel/sched/kthread.h"
+#include "fs/fs.h"
 
 extern void kernel_init(void *);
 
