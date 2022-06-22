@@ -391,6 +391,7 @@ void do_mem_abort(uint64_t esr, uint64_t far){
     }
     if(fault != VM_FAULT_NONE){
         // send signal to notify proccess that MMU error occess
+        LOG("esr: %p, far: %p, elr_el1: %p", esr, far, ((struct trap_frame*)get_trap_frame(get_current()))->elr_el1);
         send_signal(get_current()->thread_info.pid, SIG_SIGSEGV);
     }
     return;

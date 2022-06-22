@@ -99,7 +99,7 @@ void simple_shell(){
                          "msr elr_el1, x0\n\t"
                          "eret\n\t"
             );*/
-            run_init_task("syscall.img");
+            run_init_task("vfs1.img");
             while(1){
                 local_irq_disable();
                 if(user_init == NULL) break;

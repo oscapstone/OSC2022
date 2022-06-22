@@ -69,6 +69,8 @@ long sys_read(int fd, char *buf, unsigned long count){
 // you can ignore mode, since there is no access control
 int sys_mkdir(const char *pathname, unsigned mode){
     FS_LOG("sys_mkdir");
+
+    return vfs_mkdir(pathname, mode);
 }
 
 // syscall number : 16

@@ -73,7 +73,10 @@ uint64_t task_dup(struct task_struct* parent){
     // initialzie singal
     sigpending_init(&child->sigpending);
     memcpy(&child->sighandler, &parent->sighandler, sizeof(struct sighand_struct));
-    
+
+    // initialize fs
+    dup_fs(parent, child);   
+
     // insert task to run queue and task list
     list_add_tail(&child->list, &task_list);
     local_irq_restore(daif);
@@ -457,6 +460,23 @@ struct vm_area_struct* find_vma(struct mm_struct *mm, uint64_t addr){
         }
     }
     return NULL;
+}
+
+void dup_fs(struct task_struct* parent, struct task_struct *child){
+    uint64_t daif = local_irq_disable_save(); 
+    child->files = (struct files_struct*)kmalloc(sizeof(struct files_struct));
+    memcpy(child->files, parent->files, sizeof(struct files_struct));
+    // add reference count of file
+    for(uint64_t i = 0 ; i < NR_OPEN_DEFAULT ; i++){
+        if(child->files->fd_array[i] != NULL){
+            child->files->fd_array[i]->f_count++;
+        }
+    } 
+
+    child->fs =  (struct fs_struct*)kmalloc(sizeof(struct fs_struct));
+    child->fs->root = parent->fs->root;
+    child->fs->pwd = parent->fs->pwd;
+    local_irq_restore(daif);
 }
 
 uint64_t sys_fork(){

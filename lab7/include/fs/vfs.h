@@ -52,6 +52,7 @@ struct inode{
 
 struct dentry{
     char* d_name;
+    struct dentry* d_parent;
     int d_flags;
 
     struct inode *d_inode;
@@ -79,7 +80,7 @@ struct inode_operations{
 	struct dentry *(*create) (struct dentry *, const char*);
 	struct dentry * (*lookup) (struct dentry *, char*);
 	int (*link) (struct dentry *,struct inode *,struct dentry *);
-	int (*mkdir) (struct inode *,struct dentry *,umode_t);
+	int (*mkdir) (struct dentry *, const char *, umode_t);
 	int (*mknod) (struct inode *,struct dentry *,umode_t,dev_t);
 };
 
@@ -87,7 +88,7 @@ struct file_operations{
 	loff_t (*lseek64) (struct file *, loff_t, int);
 	long (*read) (struct file *, char *, size_t, loff_t *);
 	long (*write) (struct file *, char *, size_t, loff_t *);
-	int (*open) (struct inode *, struct file *);
+	struct file* (*open) (struct dentry *, unsigned int, umode_t);
     int (*flush) (struct file *);
 	int (*release) (struct inode *, struct file *);
 };
@@ -106,6 +107,8 @@ extern int get_unused_fd(struct files_struct* );
 extern int put_unused_fd(struct files_struct*, int);
 extern int fd_install(struct files_struct*, int, struct file*);
 extern struct file* get_file_by_fd(struct files_struct*, int);
+extern int vfs_mkdir(const char*, umode_t);
+extern struct file* create_file(struct dentry* , unsigned int, unsigned);
 
 extern struct mount* rootfs;
 #endif

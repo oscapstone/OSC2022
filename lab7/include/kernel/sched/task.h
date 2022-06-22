@@ -24,4 +24,5 @@ uint64_t mmap(void*, size_t, int, int, int, int);
 extern struct vm_area_struct* create_vma_vc(struct mm_struct*);
 extern struct vm_area_struct* find_vma(struct mm_struct*, uint64_t);
 extern void* sys_mmap(void*, size_t, int, int, int, int);
+extern void dup_fs(struct task_struct*, struct task_struct *);
 #endif

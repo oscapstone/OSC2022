@@ -42,17 +42,22 @@ int fd_install(struct files_struct* files, int fd, struct file *f){
 
 void vfs_init(struct filesystem_type* fs_type){
     struct inode* inode_root;
-    struct dentry* root_dir;
+    struct dentry* root, *link;
+    struct tmpfs_dir* root_dir;
     struct mount* root_mnt;
-    char* name = kmalloc(4);
-    strcpy(name, "/");
-    // create root filesystem
-    inode_root = create_inode(NULL, NULL, S_IFDIR);
-    inode_root->private_data = kmalloc(sizeof(struct tmpfs_dir));
-    memset(inode_root->private_data, 0, sizeof(struct tmpfs_dir));
-    root_dir = create_dentry(name, 0, inode_root);
 
-    root_mnt = fs_type->mount(fs_type, root_dir); 
+    // create root filesystem
+    root = create_tmpfs_file("/", NULL, S_IFDIR); 
+    root->d_parent = root;
+
+    root_dir = root->d_inode->private_data;
+    root_dir->count += 2;
+    link = root;
+    root_dir->entries[0] = create_tmpfs_file(".", link, S_IFLNK);
+    root_dir->entries[1] = create_tmpfs_file("..", link, S_IFLNK);
+
+
+    root_mnt = fs_type->mount(fs_type, root); 
     
     // add root mount to mount list
     list_add_tail(&root_mnt->list, &mount_list);
@@ -120,8 +125,8 @@ struct file* vfs_open(const char* pathname, int flags, umode_t mode){
         if(next == NULL || !S_ISDIR(next->d_inode->i_modes)) goto free;
         prev_tok = tok;
         prev = next;
-        FS_LOG("next: %p, next->d_flags: %p", next, next->d_inode->i_modes);
         next = next->d_inode->i_ops->lookup(next, tok);  
+        FS_LOG("next: %p, next->d_name: %s", next, next == NULL ? "[NULL]" : next->d_name);
         tok = strtok(NULL, delim);
     }
     
@@ -140,7 +145,7 @@ error:
 found:
     FS_LOG("found");
     kfree(name);
-    return create_file(next, flags, mode);
+    return prev->d_inode->f_ops->open(next, flags, mode);
 }
 
 int vfs_close(struct file* file){
@@ -188,4 +193,51 @@ int register_filesystem(struct filesystem_type* fs){
     // register the file system to the kernel.
     // you can also initialize memory pool of the file system here.
     list_add_tail(&fs->list, &filesystem_type_list);
+}
+
+int vfs_mkdir(const char* pathname, umode_t mode){
+    const char* delim = "/";
+    char* name, *prev_tok;
+    struct task_struct* current = get_current();
+    struct dentry* prev = NULL, *next, *pwd;
+    char* tok, *new_file_name;
+    FS_LOG("vfs_mkdir(%s, %p)", pathname, mode); 
+    if(pathname[0] == '\0') goto error; 
+    
+    if(pathname[0] == '/'){
+        next = rootfs->mnt_root; 
+        pathname++;
+    }else{
+        current = get_current();
+        pwd = current->fs->pwd;
+        next = pwd;
+    }
+    
+    name = (char*)kmalloc(strlen(pathname));
+    strcpy(name, pathname);
+    FS_LOG("pathname: %s", name);
+    FS_LOG("next->d_name: %s", next->d_name);
+
+    tok = strtok(name, delim);
+    while (tok != NULL) {
+        FS_LOG("%s", tok);
+        if(next == NULL || !S_ISDIR(next->d_inode->i_modes)) goto free;
+        prev_tok = tok;
+        prev = next;
+        next = next->d_inode->i_ops->lookup(next, tok);  
+        FS_LOG("next: %p, next->d_name: %s", next, (next == NULL) ? "[NULL]" : next->d_name);
+        tok = strtok(NULL, delim);
+    }
+    
+    if(next == NULL){
+        if(!prev->d_inode->i_ops->mkdir(prev, prev_tok, mode|S_IFDIR)) goto success;
+    }
+
+free:
+    kfree(name);
+error:
+    return -1;
+success:
+    kfree(name);
+    return 0;
 }

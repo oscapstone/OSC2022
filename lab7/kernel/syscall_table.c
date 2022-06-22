@@ -84,8 +84,7 @@ uint64_t syscall_handler(){
             break;
         case 15:
             x0 = trap_frame->x0;
-            x1 = trap_frame->x1;
-            ret = sys_mkdir((const char*)x0, (unsigned)x1);
+            ret = sys_mkdir((const char*)x0, 0);
             break;
         case 16:
             x0 = trap_frame->x0;
