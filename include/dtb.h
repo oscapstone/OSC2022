@@ -1,6 +1,5 @@
 #ifndef DTB_H
 #define DTB_H
-#include "mmu.h"
 #include "uart.h"
 #include "string.h"
 

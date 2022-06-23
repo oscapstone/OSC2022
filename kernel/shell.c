@@ -15,7 +15,7 @@ struct cmd cmd_list[] = {
     // {"async",     cmd_async,     "test async print"},
     // {"prog",      cmd_prog,      "load a user program in the initramfs, and jump to it"},
     // {"sec2",      cmd_sec2,      "print the seconds after booting and set the next timeout to 2 seconds later."},
-    // {"setTimeout",cmd_setTimeout,"prints message after seconds"},
+    {"setTimeout",cmd_setTimeout,"prints message after seconds"},
     // {"testfoo",   cmd_foo,       "test thread"},
     // {"preempt",   cmd_preempt,   "test preemption"},
     // {"pageTest",  cmd_pageTest,  "test page frame allocator"},
@@ -33,7 +33,6 @@ void read_cmd() {
     while (1) {
         // read char
         uart_read(&c, 1);
-        // c = uart_read_char_async();
         // handle buffer
         switch (c) {
             case '\r':
@@ -110,16 +109,28 @@ void cmd_reboot(char* param) {
 }
 
 void cmd_revision() {
-    unsigned int board_revision;
-    get_board_revision(&board_revision);
-    uart_printf("Board Revision : 0x%x\r\n", board_revision);
+    volatile unsigned int mbox[36];
+    if (get_board_revision(mbox)) {
+        uart_printf("Board Revision : 0x");
+        uart_write_hex(mbox[5]);
+        uart_printf("\r\n");
+    }
+    else
+        uart_printf("Failed to get board revision\r\n");
 }
 
 void cmd_memory() {
-    unsigned int arm_mem_base, arm_mem_size;
-    get_arm_memory(&arm_mem_base, &arm_mem_size);
-    uart_printf("ARM Memory Base Address : 0x%x\r\n", arm_mem_base);
-    uart_printf("ARM Memory Size         : 0x%x\r\n", arm_mem_size);
+    volatile unsigned int mbox[36];
+    if (get_arm_memory(mbox)) {
+        uart_printf("ARM Memory Base Address : 0x");
+        uart_write_hex(mbox[5]);
+        uart_printf("\r\n");
+        uart_printf("ARM Memory Size         : 0x");
+        uart_write_hex(mbox[6]);
+        uart_printf("\r\n");
+    }
+    else
+        uart_printf("Failed to get ARM memory base address and size\r\n");
 }
 
 void cmd_ls(char* param) {
@@ -198,7 +209,7 @@ void foo() {
 
 void cmd_foo() {
     for (int i = 0; i < 3; i++) {
-        thread_create(foo, 0x1000);
+        thread_create(foo);
     }
     schedule();
 }

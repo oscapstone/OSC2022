@@ -147,7 +147,6 @@ err_el1h_invalid:
 sync_el0_64:
     save_all
     mov     x0, sp      // trap frame
-    mrs     x1, esr_el1
     bl      sync64_router
     load_all
     eret

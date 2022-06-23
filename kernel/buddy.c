@@ -91,7 +91,6 @@ void page_alloc_init() {
 }
 
 void *alloc_pages(int num) {
-    // uart_printf_async("------------ In function alloc_pages(%d) ------------\r\n", num);
     int idx, exp, alloc_exp;
     frame_hdr *hdr;
 
@@ -130,12 +129,10 @@ void *alloc_pages(int num) {
 
         buddy_hdr = idx_to_addr(buddy_idx);
         list_add(&buddy_hdr->list, &freelists[alloc_exp]);
-        // uart_printf_async("[-] Release redundant memory (idx : %d -> %d), this block has exp : %d\r\n", idx, buddy_idx, alloc_exp);
     }
 
     frame_ents[idx].exp = exp;
     frame_ents[idx].allocated = 1;
-    // uart_printf_async("[+] Successfully allocate (idx : %d, exp : %d)\r\n", idx, exp);
     return (void *)hdr;
 }
 
@@ -149,7 +146,6 @@ static inline void _free_page(frame_hdr *page) {
     buddy_idx = idx ^ (1 << exp);
     // merge
     while (exp < MAX_ORDER - 1 && !frame_ents[buddy_idx].allocated && frame_ents[buddy_idx].exp == exp) {
-        // uart_printf_async("[*] Coalesce blocks (idx : %d & %d), and their new exp is %d\r\n", idx, buddy_idx, exp + 1);
         frame_hdr *hdr;
         exp += 1;
         hdr = idx_to_addr(idx);
@@ -166,7 +162,6 @@ static inline void _free_page(frame_hdr *page) {
 }
 
 void free_page(void *page) {
-    // uart_printf_async("++++++++++++ In function free_page(idx = %d) ++++++++++++\r\n", addr_to_idx(page));
     _free_page((frame_hdr *)page);
 }
 
@@ -179,17 +174,16 @@ void memory_reserve(void *start, void *end) {
         int idx = addr_to_idx(start);
         frame_ents[idx].allocated = 1;
         start = (void *)((unsigned long long int)start + PAGE_SIZE);
-        // uart_printf_async("Reserve page idx : %d, address : 0x%x\r\n", idx, idx_to_addr(idx));
     }
 }
 
 void mm_init() {
     // buddy system first stage init
-    buddy_alloc_init((void *)PHYS_TO_VIRT(0), (void *)PHYS_TO_VIRT(0x3c000000));
+    buddy_alloc_init((void *)0, (void *)0x3c000000);
     // small chunk first stage init
     sc_alloc_init();
     // Spin tables for multicore boot
-    memory_reserve((void *)PHYS_TO_VIRT(0), (void *)PHYS_TO_VIRT(0x5000));
+    memory_reserve((void *)0, (void *)0x1000);
     // Kernel image in the physical memory
     memory_reserve(&_text_start, &_heap_start);
     // Initramfs
@@ -197,9 +191,9 @@ void mm_init() {
     // Device tree (qemu = 83580, rpi3 = 32937)
     memory_reserve(DTB_ADDRESS, DTB_ADDRESS + 83580);
     // for simple_alloc
-    memory_reserve((void *)PHYS_TO_VIRT(0x2c000000), (void *)PHYS_TO_VIRT(0x2e000000));
+    memory_reserve((void *)0x2c000000, (void *)0x2e000000);
     // for kernel stack
-    memory_reserve((void *)PHYS_TO_VIRT(0x2e000000), (void *)PHYS_TO_VIRT(0x3c000000));
+    memory_reserve((void *)0x2e000000, (void *)0x3c000000);
     // buddy system second stage init
     page_alloc_init();
     // small chunk second stage init
@@ -216,22 +210,16 @@ void page_allocator_test()
     char *ptr5 = alloc_pages(2);    // idx = 32786
     char *ptr6 = alloc_pages(1);    // idx = 32785
 
-    // uart_printf_async("------------------------------------------------------------\r\n");
-
     // test alloc_pages -> release redundant memory
     free_page(ptr3);                // idx = 4      (idx 5, 6, 7 are also freed)
     char *ptr7 = alloc_pages(1);    // idx = 4      (split ptr3)
     char *ptr8 = alloc_pages(2);    // idx = 6
     char *ptr9 = alloc_pages(1);    // idx = 5
 
-    // uart_printf_async("------------------------------------------------------------\r\n");
-
     // test free_page -> coalesce blocks
     free_page(ptr7);
     free_page(ptr8);
     free_page(ptr9);
-
-    // uart_printf_async("------------------------------------------------------------\r\n");
 
     // free all pointer
     free_page(ptr1);

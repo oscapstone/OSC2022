@@ -6,7 +6,7 @@
 
 #define MAX_BUF_SIZE 0x1000
 
-#define IRQS1               ((volatile unsigned int*)(PHYS_TO_VIRT(0x3f00b210)))
+#define IRQS1               ((volatile unsigned int*)(0x3f00b210))
 
 #define AUX_BASE            (MMIO_BASE + 0x00215000)
 

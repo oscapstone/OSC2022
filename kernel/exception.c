@@ -1,13 +1,6 @@
 #include "exception.h"
 
-void sync64_router(trapframe_t *tpf, unsigned long x1) {
-    // for page fault
-    esr_el1_t *esr;
-    esr = (esr_el1_t *)&x1;
-    if (esr->ec == DATA_ABORT_LOWER || esr->ec == INS_ABORT_LOWER) {
-        handle_abort(esr);
-        return;
-    }
+void sync64_router(trapframe_t *tpf) {
     // for sys call
     enable_interrupt();
     unsigned long long syscall_no = tpf->x8;
@@ -32,8 +25,20 @@ void sync64_router(trapframe_t *tpf, unsigned long x1) {
         signal_register(tpf->x0, (void (*)())tpf->x1);
     else if (syscall_no == 9)
         signal_kill(tpf->x0, tpf->x1);
-    else if (syscall_no == 10)
-        sys_mmap(tpf, (void *)tpf->x0, tpf->x1, tpf->x2, tpf->x3, tpf->x4, tpf->x5);
+    else if (syscall_no == 11)
+        sys_open(tpf, (char*)tpf->x0, tpf->x1);
+    else if (syscall_no == 12)
+        sys_close(tpf, tpf->x0);
+    else if (syscall_no == 13)
+        sys_write(tpf, tpf->x0, (char *)tpf->x1, tpf->x2);
+    else if (syscall_no == 14)
+        sys_read(tpf, tpf->x0, (char *)tpf->x1, tpf->x2);
+    else if (syscall_no == 15)
+        sys_mkdir(tpf, (char *)tpf->x0, tpf->x1);
+    else if (syscall_no == 16)
+        sys_mount(tpf, (char *)tpf->x0, (char *)tpf->x1, (char *)tpf->x2, tpf->x3, (void*)tpf->x4);
+    else if (syscall_no == 17)
+        sys_chdir(tpf, (char *)tpf->x0);
     else if (syscall_no == 31)
         sigreturn(tpf);
 }

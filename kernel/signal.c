@@ -35,23 +35,21 @@ void run_signal(trapframe_t* tpf, int signal) {
         return;
     }
     // run signal handler in user mode
-    // char *temp_signal_userstack = kmalloc(USTACK_SIZE);
+    char *temp_signal_userstack = kmalloc(USTACK_SIZE);
     asm volatile(
         "msr elr_el1, %0\n\t"
         "msr sp_el0, %1\n\t"
         "msr spsr_el1, %2\n\t"
-        "mov x0, %3\n\t"
         "eret\n\t"
-        :: "r"(USER_SIG_WRAPPER_VIRT_ADDR_ALIGNED + ((unsigned long)signal_handler_wrapper % 0x1000)), "r"(tpf->sp_el0), "r"(tpf->spsr_el1), "r"(curr_thread->curr_signal_handler)
+        :: "r"(signal_handler_wrapper), "r"(temp_signal_userstack + USTACK_SIZE), "r"(tpf->spsr_el1)
     );
 }
 
 void signal_handler_wrapper() {
     // run signal handler
-    // (curr_thread->curr_signal_handler)();
+    (curr_thread->curr_signal_handler)();
     // sigreturn
     asm volatile(
-        "blr x0\n\t"
         "mov x8, 31\n\t"
         "svc 0\n\t"
     );

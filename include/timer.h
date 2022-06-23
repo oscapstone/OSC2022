@@ -1,6 +1,5 @@
 #ifndef TIMER_H
 #define TIMER_H
-#include "mmu.h"
 #include "uart.h"
 #include "list.h"
 #include "string.h"
@@ -8,7 +7,7 @@
 #include "simple_alloc.h"
 
 // https://github.com/Tekki/raspberrypi-documentation/blob/master/hardware/raspberrypi/bcm2836/QA7_rev3.4.pdf (p.13)
-#define CORE0_TIMER_IRQ_CTRL PHYS_TO_VIRT(0x40000040)
+#define CORE0_TIMER_IRQ_CTRL 0x40000040
 #define STR(x) #x
 #define XSTR(s) STR(s)
 
