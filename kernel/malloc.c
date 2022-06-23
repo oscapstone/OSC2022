@@ -39,7 +39,11 @@ void sc_init() {
 }
 
 void *sc_alloc(int size) {
-    uart_printf("------------ In function sc_alloc(0x%x) ------------\r\n", size);
+    if (size > 0x1000) {
+        uart_printf("Error : sc_alloc(size), size > 0x1000\r\n");
+        return 0;
+    }
+
     sc_hdr *hdr;
     unsigned int size_idx = find_size_idx(size);
 
@@ -56,32 +60,29 @@ void *sc_alloc(int size) {
             hdr = (sc_hdr *)((char *)page + i);
             list_add_tail(&hdr->list, &sc_freelists[size_idx]);
         }
-        uart_printf("[+] In small chunk alloc (alloc page idx : %d, cut into chunk size : 0x%x)\r\n", frame_idx, sc_sizes[size_idx]);
     }
 
     // allocate this chunk and remove from free list
-    hdr = sc_freelists[size_idx].next;
+    hdr = (sc_hdr *)sc_freelists[size_idx].next;
     list_del_entry(&hdr->list);
-    uart_printf("[-] Successfully allocate a small chunk, addr : 0x%x, chunk size : 0x%x\r\n", hdr, sc_sizes[size_idx]);
 
     return hdr;
 }
 
 int sc_free(void *sc) {
-    uart_printf("++++++++++++ In function sc_free ++++++++++++\r\n");
     sc_hdr *hdr;
     int frame_idx = addr_to_idx(sc);
     int size_idx;
 
     // this chunk is not managed by Small Chunk allocator
-    if (!sc_frame_ents[frame_idx].splitted)
+    if (!sc_frame_ents[frame_idx].splitted) {
         return -1;
+    }
     
     // add this chunk to free list
     size_idx = sc_frame_ents[frame_idx].size_idx;
     hdr = (sc_hdr *)sc;
     list_add(&hdr->list, &sc_freelists[size_idx]);
-    uart_printf("[+] Successfully free a chunk (addr : 0x%x, chunk size : 0x%x)\r\n", sc, sc_sizes[size_idx]);
 
     return 0;
 }
@@ -104,4 +105,35 @@ void sc_test() {
 
     char *ptr6 = sc_alloc(0x369); // Allocate a page and create 0x400 chunks
     sc_free(ptr6);
+}
+
+void *kmalloc(int size) {
+    void *ret;
+
+    lock();
+
+    if (size <= PAGE_SIZE) {
+        ret = sc_alloc(size);
+    }
+    else {
+        int page_cnt = ALIGN(size, PAGE_SIZE) / PAGE_SIZE;
+        ret = alloc_pages(page_cnt);
+    }
+
+    unlock();
+
+    return ret;
+}
+
+void kfree(void *ptr) {
+    lock();
+
+    if (!sc_free(ptr)) {
+        unlock();
+        return;
+    }
+
+    free_page(ptr);
+    unlock();
+    return;
 }

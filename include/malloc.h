@@ -15,6 +15,9 @@ void sc_init();
 void *sc_alloc(int size);
 int sc_free(void *sc);
 
+void *kmalloc(int size);
+void kfree(void *ptr);
+
 void sc_test();
 
 #endif

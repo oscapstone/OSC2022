@@ -1,7 +1,11 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
-#include "timer.h"
+#include "tpf.h"
 #include "uart.h"
+#include "task.h"
+#include "timer.h"
+#include "sched.h"
+#include "syscall.h"
 
 // https://github.com/Tekki/raspberrypi-documentation/blob/master/hardware/raspberrypi/bcm2836/QA7_rev3.4.pdf (p.16)
 #define CORE0_INTERRUPT_SOURCE ((volatile unsigned int*)(0x40000060))
@@ -27,10 +31,19 @@ pending base' register different from the other 'base' interrupt registers
 #define DISABLE_BASIC_IRQS	((volatile unsigned int*)(PBASE+0x0000B224))
 #define IRQ_PENDING_1_AUX_INT (1<<29)
 
-void sync_64_router(unsigned long long x0);
-void irq_router(unsigned long long x0);
+void sync_64_router(trapframe_t *tpf);
+void irq_router(trapframe_t *tpf);
 void invalid_exception_router(unsigned long long x0);
-void enable_interrupt();
-void disable_interrupt();
+
+static inline void enable_interrupt() {
+    asm volatile("msr daifclr, 0xf");
+}
+static inline void disable_interrupt() {
+    asm volatile("msr daifset, 0xf");
+}
+
+unsigned long long is_disable_interrupt();
+void lock();
+void unlock();
 
 #endif

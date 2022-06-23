@@ -4,6 +4,12 @@
 struct list_head *timer_event_list;
 
 void timer_list_init() {
+    unsigned long long tmp;
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(tmp));
+    tmp |= 1;
+    asm volatile("msr cntkctl_el1, %0" :: "r"(tmp));
+    
+    timer_event_list = kmalloc(sizeof(list_head_t));
     INIT_LIST_HEAD(timer_event_list);
 }
 
@@ -26,29 +32,33 @@ void core_timer_disable() {
 }
 
 void core_timer_handler() {
+    lock();
     // if there is no timer_event => set large tval
     if (list_empty(timer_event_list)) {
         set_core_timer_interrupt_abs(get_tick_plus_s(10000));
+        unlock();
         return;
     }
     // next timer_event
     timer_event_callback((timer_event_t *)timer_event_list->next);
+    unlock();
 }
 
-void add_timer(void *function, unsigned long long timeout, char *args) {
-    timer_event_t *tmp_timer_event = simple_alloc(sizeof(timer_event_t));
+void add_timer(void *function, unsigned long long timeout, char *args, int bytick) {
+    timer_event_t *tmp_timer_event = kmalloc(sizeof(timer_event_t));
     // store function into timer_event
     tmp_timer_event->func = function;
     // store argument string into timer_event
-    tmp_timer_event->args = simple_alloc(strlen(args) + 1);
+    tmp_timer_event->args = kmalloc(strlen(args) + 1);
     memcpy(tmp_timer_event->args, args, strlen(args) + 1);
     // store interrupt time into timer_event
-    tmp_timer_event->interrupt_time = get_tick_plus_s(timeout);
-
-    // init list head
-    INIT_LIST_HEAD(&tmp_timer_event->listhead);
+    if (bytick == 0)
+        tmp_timer_event->interrupt_time = get_tick_plus_s(timeout);
+    else
+        tmp_timer_event->interrupt_time = get_tick_plus_s(0) + timeout;
 
     // add timer_event into timer_event_list (sorted)
+    lock();
     struct list_head *curr;
     list_for_each (curr, timer_event_list) {
         // put this timer before the first element larger than it
@@ -65,6 +75,7 @@ void add_timer(void *function, unsigned long long timeout, char *args) {
 
     // set interrupt to first event
     set_core_timer_interrupt_abs(((timer_event_t *)timer_event_list->next)->interrupt_time);
+    unlock();
 }
 
 // set timer interrupt (absolutely) use cval
@@ -95,10 +106,13 @@ unsigned long long get_tick_plus_s(unsigned long long second) {
 
 // execute timer_event function and set next timer interrupt
 void timer_event_callback(timer_event_t *timer_event) {
-    // delete the event
-    list_del_entry((struct list_head *)timer_event);
     // call the callback function in timer_event
     ((void (*)(char *))timer_event->func)(timer_event->args);
+    // delete the event
+    list_del_entry((struct list_head *)timer_event);
+    // free the timer event and its args
+    kfree(timer_event->args);
+    kfree(timer_event);
 
     // if next timer_event is existing => set interrupt
     if (!list_empty(timer_event_list))
@@ -117,5 +131,5 @@ void two_second_alert(char *str) {
     // print message
     uart_printf("Core Timer Interrupt -> seconds after booting : %d\r\n", cntpct_el0 / cntfrq_el0);
     // set next timer
-    add_timer(two_second_alert, 2, "");
+    add_timer(two_second_alert, 2, "", 0);
 }

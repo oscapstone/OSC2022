@@ -34,14 +34,14 @@ unsigned int mailbox_call(volatile unsigned int mbox[36], unsigned char ch){
     /* Combine the message address (upper 28 bits) with channel number (lower 4 bits) */
     unsigned int req = (((unsigned int)((unsigned long)mbox) & (~0xF)) | (ch & 0xF));
     /* wait until we can write to the mailbox */
-    while(*MAILBOX_STATUS & MAILBOX_FULL){asm volatile("nop");}
+    do{asm volatile("nop");}while(*MAILBOX_STATUS & MAILBOX_FULL);
     /* write the address of our message to the mailbox with channel identifier */
     *MAILBOX_WRITE = req;
 
     /* now wait for the response */
-    while(1){
+    while (1) {
         /* wait the response signal */
-        while(*MAILBOX_STATUS & MAILBOX_EMPTY){asm volatile("nop");}
+        do{asm volatile("nop");}while(*MAILBOX_STATUS & MAILBOX_EMPTY);
         /* read the response to compare our req and request_code */
         if(req == *MAILBOX_READ)
             return mbox[1] == MAILBOX_RESPONSE;
