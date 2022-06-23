@@ -1,13 +1,17 @@
 #include "fs/fs.h"
-
+char *fbuf = "/dev/framebuffer";
 void fs_init(){
     vfs_init(&tmpfs);
     register_filesystem(&tmpfs);
     register_filesystem(&uartfs);
+    register_filesystem(&framebufferfs);
 
     vfs_mkdir("/dev", 0);
     vfs_mkdir("/dev/uart", 0);
     vfs_mount(vfs_lookup("/dev/uart"), "uartfs"); 
+
+    vfs_mkdir(fbuf, 0);
+    vfs_mount(vfs_lookup(fbuf), "framebufferfs"); 
 }
 
 // syscall number : 11
@@ -105,4 +109,28 @@ int sys_chdir(const char *path){
         FS_LOG("PWD: %s", current->fs->pwd->d_name);
         return 0;
     }
+}
+
+// syscall number : 18
+// you only need to implement seek set
+long sys_lseek64(int fd, long offset, int whence){
+    FS_LOG("sys_lseek64(%p, %p, %p)",fd, offset, whence);
+    if(fd > NR_OPEN_DEFAULT || fd < 0) return -1; 
+    struct task_struct* current = get_current();
+    struct file* file = get_file_by_fd(current->files, fd);
+
+    return vfs_lseek64(file, offset, whence);
+}
+
+// syscall number : 19
+long sys_ioctl(int fd, long request, ...){
+    FS_LOG("sys_ioctl(%p, %p, ...)",fd, request);
+    if(fd > NR_OPEN_DEFAULT || fd < 0) return -1; 
+    struct task_struct* current = get_current();
+    struct file* file = get_file_by_fd(current->files, fd);
+    va_list ap;
+    
+    va_start(ap, request);
+
+    return vfs_ioctl(file, request, ap);
 }

@@ -8,6 +8,10 @@
 #include "kernel/sched/sched.h"
 #include "mm/mm.h"
 
+#define MBOX_REQUEST 0
+#define MBOX_CH_PROP 8
+#define MBOX_TAG_LAST 0
+
 #define MBOX_CHANNEL_POWER          0
 #define MBOX_CHANNEL_FRAME_BUF      1
 #define MBOX_CHANNEL_VIRTUAL_UART   2
@@ -173,5 +177,5 @@ typedef struct{
 
 extern void MBox_get_board_revision(uint32_t*);
 extern void MBox_get_arm_memory(uint32_t*);
-
+extern int Mbox_call(uint32_t*, uint8_t);
 #endif

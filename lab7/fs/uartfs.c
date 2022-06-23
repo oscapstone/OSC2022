@@ -30,7 +30,7 @@ struct dentry *uartfs_lookup(struct dentry *parent, char* target){
     return NULL;
 }
 
-loff_t uartfs_lseek64(struct file *, loff_t, int){
+int uartfs_lseek64(struct file *, loff_t, int){
     FS_LOG("uartfs_lseek64");
 }
 

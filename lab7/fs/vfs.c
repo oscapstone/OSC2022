@@ -40,6 +40,10 @@ int fd_install(struct files_struct* files, int fd, struct file *f){
     local_irq_restore(daif);
 }
 
+int vfs_lseek64(struct file * file, loff_t offset, int whence){
+    return file->f_ops->lseek64(file, offset, whence);
+}
+
 void vfs_init(struct filesystem_type* fs_type){
     struct inode* inode_root;
     struct dentry* root, *link;
@@ -309,4 +313,8 @@ error:
 success:
     kfree(name);
     return 0;
+}
+
+int vfs_ioctl(struct file *file, uint32_t request, va_list args){
+    return file->f_ops->ioctl(file, request, args);
 }

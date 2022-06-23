@@ -64,6 +64,7 @@ KOBJECTS = \
 		 $(OUTPUT)/tmpfs.o \
 		 $(OUTPUT)/fs.o \
 		 $(OUTPUT)/uartfs.o \
+		 $(OUTPUT)/framebuffer.o \
 		 $(LIBS)
 
 

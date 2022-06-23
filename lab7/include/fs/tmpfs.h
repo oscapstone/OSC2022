@@ -23,7 +23,7 @@ extern struct file_operations tmpfs_f_ops;
 extern struct mount* tmpfs_mount(struct filesystem_type*, struct dentry*);
 extern struct dentry* tmpfs_create(struct dentry *, const char*);
 extern struct dentry *tmpfs_lookup(struct dentry *, char*);
-extern loff_t tmpfs_lseek64(struct file *, loff_t, int);
+extern int tmpfs_lseek64(struct file *, loff_t, int);
 extern long tmpfs_read(struct file *, char *, size_t, loff_t *);
 extern long tmpfs_write(struct file *, char *, size_t, loff_t *);
 extern struct file* tmpfs_open(struct dentry *,uint32_t , umode_t );

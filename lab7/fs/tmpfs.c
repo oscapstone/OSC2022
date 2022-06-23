@@ -98,7 +98,7 @@ struct dentry *tmpfs_lookup(struct dentry *parent, char* target){
     return NULL;
 }
 
-loff_t tmpfs_lseek64(struct file *, loff_t, int){
+int tmpfs_lseek64(struct file *, loff_t, int){
     FS_LOG("tmpfs_lseek64");
 }
 

@@ -98,6 +98,21 @@ uint64_t syscall_handler(){
             x0 = trap_frame->x0;
             ret = sys_chdir((const char*)x0);
             break;
+        case 18:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            x2 = trap_frame->x2;
+            ret = sys_lseek64((int)x0, (uint64_t)x1, (int)x2);
+            break;
+        case 19:
+            x0 = trap_frame->x0;
+            x1 = trap_frame->x1;
+            x2 = trap_frame->x2;
+            x3 = trap_frame->x3;
+            x4 = trap_frame->x4;
+            ret = (int)sys_ioctl((int)x0, (uint32_t)x1, x2, x3, x4);
+            break;
+
         case 20:
             sys_sigreturn();
             break;

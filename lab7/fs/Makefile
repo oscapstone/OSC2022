@@ -18,6 +18,7 @@ OBJECTS = \
 		 tmpfs.o \
 		 fs.o \
 		 uartfs.o \
+		 framebuffer.o \
 
 .PHONY: all 
 all: $(OBJECTS)

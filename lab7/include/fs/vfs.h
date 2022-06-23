@@ -5,9 +5,14 @@
 #include "lib/print.h"
 #include "types.h"
 #include "lib/string.h"
+#include <stdarg.h>
 typedef uint64_t umode_t;
 typedef uint64_t loff_t;
 typedef uint64_t dev_t;
+#define SEEK_SET 0x0
+#define SEEK_CUR 0x1
+#define SEEK_END 0x2
+
 #define NR_OPEN_DEFAULT 64
 
 #define O_CREAT 00000100
@@ -86,12 +91,13 @@ struct inode_operations{
 };
 
 struct file_operations{
-	loff_t (*lseek64) (struct file *, loff_t, int);
+	int (*lseek64) (struct file *, loff_t, int);
 	long (*read) (struct file *, char *, size_t, loff_t *);
 	long (*write) (struct file *, char *, size_t, loff_t *);
 	struct file* (*open) (struct dentry *, unsigned int, umode_t);
     int (*flush) (struct file *);
 	int (*release) (struct inode *, struct file *);
+    int (*ioctl)(struct file*, unsigned long, va_list );
 };
 
 extern struct file* vfs_open(const char*, int, umode_t);
@@ -110,6 +116,8 @@ extern int fd_install(struct files_struct*, int, struct file*);
 extern struct file* get_file_by_fd(struct files_struct*, int);
 extern int vfs_mkdir(const char*, umode_t);
 extern struct file* create_file(struct dentry* , unsigned int, unsigned);
+extern int vfs_lseek64(struct file *, loff_t, int);
+extern int vfs_ioctl(struct file *, uint32_t, va_list );
 
 extern struct mount* rootfs;
 #endif
