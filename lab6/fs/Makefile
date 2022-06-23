@@ -14,6 +14,7 @@ OUTPUT ?= .
 HEADERS ?= ../include
 OBJECTS = \
 		 initrdfs.o 
+
 .PHONY: all 
 all: $(OBJECTS)
 
