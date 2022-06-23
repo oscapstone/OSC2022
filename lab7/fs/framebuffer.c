@@ -104,7 +104,7 @@ struct mount* framebufferfs_mount(struct filesystem_type* fs_type, struct dentry
     return ret;
 }
 
-int framebufferfs_ioctl(struct file*file, unsigned long request, va_list){
+int framebufferfs_ioctl(struct file*file, unsigned long request, va_list args){
     unsigned int __attribute__((aligned(16))) mbox[36];
     unsigned int width, height, pitch, isrgb; /* dimensions and channel order */
     unsigned char *lfb;                       /* raw frame buffer address */
@@ -163,7 +163,13 @@ int framebufferfs_ioctl(struct file*file, unsigned long request, va_list){
         fb_info.isrgb = mbox[24];       // get the actual channel order
         fb_info.lfb = mbox[28];
         fb_info.lfb_size = mbox[29];
-        FS_LOG("lfb: %p", fb_info.lfb);
+
+        struct framebuffer_info* info = va_arg(args, void*);
+        info->width = fb_info.width;
+        info->height = fb_info.height;
+        info->pitch = fb_info.pitch;
+        info->isrgb = fb_info.isrgb;
+    //    FS_LOG("lfb: %p", fb_info.lfb);
     }
     return 0;
 }
