@@ -191,6 +191,7 @@ int task_exec(const char* name, char* const argv[]){
 
 	// since we will destroy pgb and it will cause page table broken,
 	// we have to save the name in userspace first
+    if(name[0] == '/') name++;
 	tmp_name = kmalloc(strlen(name) + 10);	
 	strcpy(tmp_name, name);
 	// initialize mm
