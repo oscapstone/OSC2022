@@ -1,6 +1,6 @@
 #ifndef _SCHEDULE_HEADER_
 #define _SCHEDULE_HEADER_
-#define THREAD_STACK_SIZE 4096//4096
+#define THREAD_STACK_SIZE 8192//4096
 #include "signal.h"
 #include "vfs.h"
 #include "tmpfs.h"

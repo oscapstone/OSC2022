@@ -99,7 +99,7 @@ void exception_entry(trap_frame* tf){
             sys_chdir(tf);
             break;
         case 18:
-            sys_lseek64(tf,(int)(tf->x0),(int)(tf->x1),(int)(tf->x2));
+            sys_lseek64(tf,(int)(tf->x0),(long)(tf->x1),(int)(tf->x2));
             break;
         case 19:
             sys_ioctl(tf);

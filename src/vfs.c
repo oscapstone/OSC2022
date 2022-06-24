@@ -125,7 +125,10 @@ int vfs_open(const char* pathname, int flags, struct file** target) {
     
     target_file->f_ops = v_node->f_ops;
     if(strncmp(pathname,"/dev/framebuffer",sizeof("/dev/framebuffer"))==0)
+    {
       target_file->f_ops->write = write_framebuf;
+    }
+      
     target_file->vnode = v_node;
     target_file->flags = flags;
     writes_uart_debug("[*]Opening file: ",FALSE);
@@ -515,7 +518,12 @@ unsigned int lfb_size;
 int write_framebuf(struct file* file, const void* buf, size_t len)
 {
   if(file->f_pos>=lfb_size) busy_wait_writes("OVERSIZE!!!",TRUE);
-  memcpy((char*)(lfb + file->f_pos),(char*)buf,len);
+  // busy_wait_writes("wto: ",FALSE);
+  // busy_wait_writeint(len,FALSE);
+  // busy_wait_writes(buf,FALSE);
+  // busy_wait_writes(" to ",FALSE);
+  // busy_wait_writeint(file->f_pos,TRUE);
+  memcpy((void*)(lfb + (file->f_pos)),(char*)buf,len);
   file->f_pos += len;
   return len;
 }
@@ -584,10 +592,10 @@ void vfs_framebuffer()
   // the closest supported resolution instead
   if(mailbox_call(mbox,MBOX_CH_PROP) && mbox[20] == 32 && mbox[28] != 0) {
     mbox[28] &= 0x3FFFFFFF; // convert GPU address to ARM address
-    // get_current()->fb_info.width = mbox[5];        // get actual physical width
-    // get_current()->fb_info.height = mbox[6];       // get actual physical height
-    // get_current()->fb_info.pitch = mbox[33];       // get number of bytes per line
-    // get_current()->fb_info.isrgb = mbox[24];       // get the actual channel order
+    get_current()->fb_info.width = mbox[5];        // get actual physical width
+    get_current()->fb_info.height = mbox[6];       // get actual physical height
+    get_current()->fb_info.pitch = mbox[33];       // get number of bytes per line
+    get_current()->fb_info.isrgb = mbox[24];       // get the actual channel order
     lfb = (void *)((unsigned long)mbox[28]);
     lfb_size = mbox[29];
     // ((struct tmpfs_inode*)(target_file->vnode->internal))->data->content = lfb;
