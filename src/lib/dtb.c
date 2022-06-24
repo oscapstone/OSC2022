@@ -4,6 +4,15 @@
 #include <kmalloc.h>
 #include <string.h>
 void *_DTB_ADDRESS = (void *)0xffffffff; // set initial value to put the var into data rather than bss
+int _DTB_INIT;
+
+void dtb_init()
+{
+    _DTB_INIT = 1;
+    _DTB_ADDRESS = (uint64_t)_DTB_ADDRESS + 0xffff000000000000;
+    char *fdt = (char *)_DTB_ADDRESS;
+    kmalloc_memory_reserve((uint64_t)fdt, fdt_size_dt_struct(fdt));
+}
 
 char *fdt_nextnode(char *fdt_addr, char *maxaddr, int* depth)
 {
@@ -41,8 +50,11 @@ static inline char *fdt_getname(char *node)
 
 fdt_prop *fdt_getnextprop(char *fdt_addr, char **nexttok)
 {
+    if((uint64_t)_DTB_ADDRESS==0xffffffff) return 0;
+    if(_DTB_INIT==0){
+        dtb_init();
+    }
     char *fdt = (char *)_DTB_ADDRESS;
-    if((uint64_t)fdt==0xffffffff) return 0;
     char *fdt_string = fdt + fdt_off_dt_strings(fdt);
 
     //uart_print("fdt_getnextprop addr: 0x");
@@ -81,17 +93,20 @@ fdt_prop *fdt_getnextprop(char *fdt_addr, char **nexttok)
 
 int fdt_traverse(int (*it)(char* node, const char *name, int depth, void *data), void *data)
 {
+    if((uint64_t)_DTB_ADDRESS==0xffffffff) return -1;
+    if(_DTB_INIT==0){
+        dtb_init();
+    }
     char *fdt = (char *)_DTB_ADDRESS;
 
     //uart_print("Traverse dtb: 0x");
     //uart_putshex((uint64_t)fdt);
 
-    if((uint64_t)fdt==0xffffffff) return -1;
-
     char *fdt_struc = fdt + fdt_off_dt_struct(fdt);
     char *fdt_string = fdt + fdt_off_dt_strings(fdt);
     char *maxaddr = fdt_struc + fdt_size_dt_struct(fdt);
     
+    //kmalloc_memory_reserve((uint64_t)fdt, fdt_size_dt_struct(fdt));
     //uart_print("fdt_size_dt_struct: 0x");
     //uart_putshex((uint64_t)fdt_size_dt_struct(fdt));
 

@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include <uart.h>
+#include <kmalloc.h>
 
 int strcmp(const char* a, const char* b)
 {
@@ -59,7 +61,7 @@ char u42hex(uint32_t num)
     return '?';
 }
 
-void u322hex(uint32_t num, char* buf, size_t len)
+size_t u322hex(uint32_t num, char* buf, size_t len)
 {
     len--;
     buf[0] = '0';
@@ -75,9 +77,10 @@ void u322hex(uint32_t num, char* buf, size_t len)
         buf[i-j-1] = tmp;
     }
     buf[(i>0?i:1)] = 0;
+    return i>0?i:1;
 }
 
-void u642hex(uint64_t num, char* buf, size_t len)
+size_t u642hex(uint64_t num, char* buf, size_t len)
 {
     len--;
     buf[0] = '0';
@@ -93,6 +96,7 @@ void u642hex(uint64_t num, char* buf, size_t len)
         buf[i-j-1] = tmp;
     }
     buf[(i>0?i:1)] = 0;
+    return i>0?i:1;
 }
 
 int atoi(const char* buf)
@@ -105,4 +109,84 @@ int atoi(const char* buf)
         i++;
     }
     return num;
+}
+
+size_t u642dec(uint64_t num, char* buf, size_t len)
+{
+    len--;
+    buf[0] = '0';
+    buf[1] = 0;
+    size_t i = 0;
+    while(num && i<len){
+        buf[i++] = '0'+(num%10);
+        num = num/10;
+    }
+    for(int j=0;j<i/2;j++){
+        char tmp = buf[j];
+        buf[j] = buf[i-j-1];
+        buf[i-j-1] = tmp;
+    }
+    buf[(i>0?i:1)] = 0;
+    return i>0?i:1;
+}
+
+size_t strncpy(char *dst, char *src, size_t len)
+{
+    int i=0;
+    for(;src[i] && i<len-1;i++){
+        dst[i] = src[i];
+    }
+    dst[i] = 0;
+    return i;
+}
+
+//#define format_buf_len 0x800
+//char format_buf_global[format_buf_len];
+//char *format_buf;
+//uint64_t format_buf_len;
+
+char *vstrformat(char *buf, uint64_t len, const char *format, va_list ap)
+{
+    int i = 0, oi = 0;
+    //va_list ap;
+    //va_start(ap, format);
+    for(;format[i] && oi < len-1;i++){
+        if(format[i] != '%'){
+            buf[oi++] = format[i];
+        }
+        else{
+            i++;
+            if(!format[i]){
+                break;
+            }
+            switch (format[i]){
+                case '%':
+                    buf[oi++] = '%';
+                    break;
+                case 'd':
+                    oi += u642dec(va_arg(ap, uint64_t), &buf[oi], len-oi-1);
+                    //oi++;
+                    break;
+                case 'x':
+                    oi += u642hex(va_arg(ap, uint64_t), &buf[oi], len-oi-1);
+                    //oi++;
+                    break;
+                case 's':
+                    oi += strncpy(&buf[oi], va_arg(ap, char *), len-oi-1);
+                    break;
+            }
+        }
+    }
+    buf[oi] = 0;
+    //va_end(ap);
+    return buf;
+}
+
+char *strformat(char *buf, uint64_t len, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    vstrformat(buf, len, format, ap);
+    va_end(ap);
+    return buf;
 }

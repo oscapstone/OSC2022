@@ -11,8 +11,12 @@ void kfree(void *ptr);
 int kmalloc_memory_reserve(uint64_t address, uint64_t size);
 void kmalloc_init();
 void *buddy_alloc(uint64_t page_num);
+void *buddy_calloc(uint64_t page_num);
 void buddy_free(void *ptr);
+void buddy_ref(void *ptr);
 
 #define PAGE_SIZE 12
+
+int KMALLOC_INIT;
 
 #endif

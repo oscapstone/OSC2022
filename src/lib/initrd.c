@@ -59,8 +59,8 @@ int initrd_init()
         uart_putshex((uint64_t)ifdtdata.initrd_start);
         uart_print("/chosen linux,initrd-end: 0x");
         uart_putshex((uint64_t)ifdtdata.initrd_end);
-        INITRD_ADDRESS_START = ifdtdata.initrd_start;
-        INITRD_ADDRESS_END = ifdtdata.initrd_end;
+        INITRD_ADDRESS_START = ifdtdata.initrd_start + 0xffff000000000000;
+        INITRD_ADDRESS_END = ifdtdata.initrd_end + 0xffff000000000000;
         kmalloc_memory_reserve((uint64_t)INITRD_ADDRESS_START, (uint64_t)INITRD_ADDRESS_END - (uint64_t)INITRD_ADDRESS_START);
         return 0;
     }

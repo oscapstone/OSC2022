@@ -4,6 +4,8 @@
 #include <sched.h>
 #include <kmalloc.h>
 #include <string.h>
+#include <error.h>
+#include <mmu.h>
 
 #define MAILBOX_EMPTY   0x40000000
 #define MAILBOX_FULL    0x80000000
@@ -18,7 +20,7 @@ int mailbox_request(unsigned char ch, unsigned int* mailbox)
     memcpy(message, mailbox, (size_t)mailbox[0]);
     uart_print("mailbox_request(): copy request message to buffer 0x");
     uart_putshex((uint64_t)message);
-    unsigned int mailbox_addr = (unsigned int)((unsigned long long)message & 0xfffffff0);
+    unsigned int mailbox_addr = kernel_va_to_pa((unsigned int)((unsigned long long)message & 0xfffffff0));
     //mailbox_addr |= 8;
     mailbox_addr |= ch&0xf;
     uart_puts("mailbox_request(): Wait mailbox not full.");
@@ -31,6 +33,7 @@ int mailbox_request(unsigned char ch, unsigned int* mailbox)
         if((unsigned char)(data & 0xf) != ch) continue;
         if(data == mailbox_addr){
             memcpy(mailbox, message, (size_t)message[0]);
+            kmsg("Mailbox read success.");
             return 1;
         }
         else{

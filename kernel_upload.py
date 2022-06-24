@@ -9,6 +9,7 @@ r = serialtube("/dev/ttyS%d"%pty, convert_newlines=False)
 
 if load_kernel:
     kernel = open("kernel8.img", "rb").read()
+    print(len(kernel))
     input("@")
     r.send(str(len(kernel))+"\n")
     #print(r.recv())

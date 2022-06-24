@@ -6,7 +6,9 @@
 #include <string.h>
 #include <uart.h>
 #include <syscall.h>
-#define STACK_PAGES 2
+#include <mmu.h>
+#include <error.h>
+#define STACK_PAGES 4
 
 #define process_flag_running 0b1
 #define process_flag_wait 0b10
@@ -70,7 +72,8 @@ ProcMem *alloc_procmem(uint64_t size)
 
 Process *process_create(const char *filename)
 {
-    uart_puts("process_create()");
+    //uart_puts("process_create()");
+    kmsg("create new process. file: %s",filename);
     Process* newprocess = (Process*)kmalloc(sizeof(Process));
     newprocess->tid = thread_get_current();
     size_t filenamelen = strlen(filename);
@@ -80,8 +83,12 @@ Process *process_create(const char *filename)
     newprocess->status = ProcessStatus_init;
     newprocess->exit_code = 0;
     newprocess->pid = newprocess->tid;
-    uart_print("process_create(): newprocess->filename = ");
-    uart_puts(newprocess->filename);
+    newprocess->process_memory_region = 0;
+    newprocess->ttbr0_el0 = kernel_va_to_pa((uint64_t)buddy_calloc(1));
+    kmsg("new PGD: 0x%x",newprocess->ttbr0_el0);
+    //uart_print("process_create(): newprocess->filename = ");
+    //uart_puts(newprocess->filename);
+    //kmsg("newprocess->filename = %s",)
     // interrupt_disable();
     // newprocess->pid = ++Process_ID;
     // interrupt_enable();
@@ -92,31 +99,28 @@ Process *process_create(const char *filename)
     uint64_t exec_pagenum = 0;
     exec_pagenum = (uint64_t)execfile->filesize / (uint64_t)(1<<PAGE_SIZE) + 1;
     uint64_t stack_pagenum = STACK_PAGES;
-    ProcMem *exec_mem = alloc_procmem(exec_pagenum);
-    uart_print("process_create(): exec_mem = 0x");
-    uart_putshex(exec_mem->addr);
-    if(exec_mem==0){
+    MemoryRegion *exec_mr=0, *stack_mr=0;
+    if(mmu_new_mr(&(newprocess->process_memory_region), &exec_mr, 0x0, execfile->filesize, 7, 0, newprocess->filename)){
+        kmsg("Can't alloc new memory region for execfile when create new process.");
         goto err;
     }
-    newprocess->process_memory = exec_mem;
-    ProcMem *stack_mem = alloc_procmem(stack_pagenum);
-    uart_print("process_create(): stack_mem = 0x");
-    uart_putshex(stack_mem->addr);
-    if(stack_mem==0){
+    if(mmu_new_mr(&(newprocess->process_memory_region), &stack_mr, 0xffffffffb000, STACK_PAGES << PAGE_SIZE, 7, MAP_ANONYMOUS, 0)){
+        kmsg("Can't alloc new memory region for stack when create new process.");
         goto err;
     }
-    stack_mem->next = newprocess->process_memory;
-    newprocess->process_memory = stack_mem;
-    newprocess->stack = stack_mem->addr;
-    newprocess->sp = (void*)((uint64_t)stack_mem->addr + ((uint64_t)stack_mem->size << PAGE_SIZE) - 16);
-    newprocess->exec = exec_mem->addr;
-    newprocess->entry = exec_mem->addr;
-    uart_print("process_create(): execfile->filecontent = 0x");
-    uart_putshex(execfile->filecontent);
-    uart_print("process_create(): execfile->filesize = 0x");
-    uart_putshex(execfile->filesize);
-    memcpy(exec_mem->addr, execfile->filecontent, execfile->filesize);
-    uart_puts("process_create(): exec file has been copied to exec memory.");
+    mmu_map_peripheral(newprocess->ttbr0_el0);
+    newprocess->stack = stack_mr->VA_base;
+    newprocess->sp = (void*)((uint64_t)stack_mr->VA_base + ((uint64_t)stack_mr->pages << PAGE_SIZE) - 16);
+    newprocess->exec = exec_mr->VA_base;
+    newprocess->entry = exec_mr->VA_base;
+    //uart_print("process_create(): execfile->filecontent = 0x");
+    //uart_putshex(execfile->filecontent);
+    kmsg("execfile->filecontent = 0x%x", execfile->filecontent);
+    //uart_print("process_create(): execfile->filesize = 0x");
+    //uart_putshex(execfile->filesize);
+    kmsg("execfile->filesize = 0x%x", execfile->filesize);
+    //memcpy(exec_mem->addr, execfile->filecontent, execfile->filesize);
+    //uart_puts("process_create(): exec file has been copied to exec memory.");
 
     newprocess->signal_tid = 0;
     newprocess->signal_handling = 0;
@@ -129,6 +133,8 @@ Process *process_create(const char *filename)
     return newprocess;
 
     err:
+    //TODO: free allocated memory region
+    kfree(newprocess);
     return 0;
 }
 
@@ -136,16 +142,16 @@ void process_free(Process *process)
 {
     unlink_process(process);
     kfree(process->filename);
-    ProcMem *cur_mem = process->process_memory;
-    ProcMem *pre_mem = 0;
-    while(cur_mem){
-        // uart_print("process_free(): free process memory: 0x");
-        // uart_putshex((uint64_t)cur_mem->addr);
-        buddy_free(cur_mem->addr);
-        pre_mem = cur_mem;
-        cur_mem = cur_mem->next;
-        kfree(pre_mem);
-    }
+    // ProcMem *cur_mem = process->process_memory;
+    // ProcMem *pre_mem = 0;
+    // while(cur_mem){
+    //     // uart_print("process_free(): free process memory: 0x");
+    //     // uart_putshex((uint64_t)cur_mem->addr);
+    //     buddy_free(cur_mem->addr);
+    //     pre_mem = cur_mem;
+    //     cur_mem = cur_mem->next;
+    //     kfree(pre_mem);
+    // }
     kfree(process);
 }
 
@@ -173,6 +179,12 @@ int32_t process_exec(const char* name)
     asm("msr spsr_el1, %0"::"r"((uint64_t)0x0)); // 0x0 enable all interrupt
     asm("msr elr_el1, %0"::"r"(newprocess->entry));
     asm("msr sp_el0, %0"::"r"(newprocess->sp));
+    asm("mov x0, %0"::"r"(newprocess->ttbr0_el0));
+    asm("dsb ish");
+    asm("msr ttbr0_el1, x0");
+    asm("tlbi vmalle1is");
+    asm("dsb ish");
+    asm("isb");
     asm(
         "mov x0, #0\t\n"
         "mov x1, #0\t\n"
@@ -212,15 +224,20 @@ int32_t process_exec(const char* name)
 int process_getpid()
 {
     Thread *thread = get_thread(thread_get_current());
-    return thread->process->pid;
+    if(thread->process)
+        return thread->process->pid;
+    else
+        return 0;
 }
 
 void _process_exit(Thread *thread, int status)
 {
     Process *process = thread->process;
+    kmsg("Process %d exit.", process->pid);
     process->exit_code = status;
     process->status = ProcessStatus_exit;
     thread->status = ThreadStatus_zombie;
+    schedule();
 }
 
 void process_exit(int status)
@@ -228,11 +245,12 @@ void process_exit(int status)
     Thread *cur_thread = get_thread(thread_get_current());
     Thread *proc_thread = get_thread(cur_thread->process->tid);
     _process_exit(proc_thread, status);
-    schedule();
+    //schedule();
 }
 
 void process_kill(int pid)
 {
+    kmsg("Kill process %d", pid);
     Process *process = get_process(pid);
     if(process == 0) return ;
     _process_exit(get_thread(process->tid), 0);
@@ -245,7 +263,7 @@ typedef struct ForkProcess_{
 
 void process_fork_exec(void *argv)
 {
-    uart_puts("process_fork_exec()");
+    //uart_puts("process_fork_exec()");
     ForkProcess *forkprocess = (ForkProcess*)argv;
     Process *process = forkprocess->process;
     uint64_t pad = 0;
@@ -253,31 +271,32 @@ void process_fork_exec(void *argv)
     process->status = ProcessStatus_running;
     Thread *thread = get_thread(thread_get_current());
     thread->process = process;
-    // uart_print("process_fork_exec(): forkprocess->trapframe->spsr_el1 = 0x");
-    // uart_putshex(forkprocess->trapframe->spsr_el1);
-    // uart_print("process_fork_exec(): process->entry = 0x");
-    // uart_putshex(process->entry);
-    // uart_print("process_fork_exec(): process->sp = 0x");
-    // uart_putshex(process->sp);
+    kmsg("forkprocess->trapframe->spsr_el1 = 0x%x", forkprocess->trapframe->spsr_el1);
+    kmsg("process->entry = 0x%x", process->entry);
+    kmsg("process->sp = 0x%x", process->sp);
     interrupt_disable();
     asm("msr spsr_el1, %0"::"r"((uint64_t)forkprocess->trapframe->spsr_el1)); // 0x0 enable all interrupt
     asm("msr elr_el1, %0"::"r"(process->entry));
     asm("msr sp_el0, %0"::"r"(process->sp));
+
+    asm("mov x0, %0"::"r"(process->ttbr0_el0));
+    asm("dsb ish");
+    asm("msr ttbr0_el1, x0");
+    asm("tlbi vmalle1is");
+    asm("dsb ish");
+    asm("isb");
     //uint64_t sp = 0;
     //asm("mov %0, sp":"=r"(sp));
     //sp -= ((sizeof(TrapFrame)>>4)+1)<<4;
     forkprocess->trapframe->x0 = 0; // child
-    // uart_print("process_fork_exec(): &trapframe = 0x");
-    // uart_putshex(&trapframe);
-    // uart_print("process_fork_exec(): forkprocess->trapframe = 0x");
-    // uart_putshex(forkprocess->trapframe);
+    kmsg("&trapframe = 0x%x", &trapframe);
+    kmsg("forkprocess->trapframe = 0x%x", forkprocess->trapframe);
     memcpy(&trapframe, forkprocess->trapframe, sizeof(TrapFrame));
-    // uart_puts("process_fork_exec(): trapframe has been copied to stack.");
-    // uart_print("process_fork_exec(): trapframe.x0 = 0x");
-    // uart_putshex(trapframe.x0);
+    kmsg("trapframe has been copied to stack.");
+    kmsg("trapframe.x0 = 0x%x", trapframe.x0);
     kfree(forkprocess->trapframe);
     kfree(forkprocess);
-    uart_puts("process_fork_exec(): Ready to exec fork process.");
+    kmsg("Ready to exec fork process.");
     asm("mov sp, %0"::"r"(&trapframe));
     asm(
         "ldp x0, x1, [sp ,16 * 0]\t\n"
@@ -314,7 +333,9 @@ int process_fork(TrapFrame *trapframe)
     memcpy(newprocess->filename, origin_process->filename, filenamelen);
     newprocess->filename[filenamelen] = 0;
     newprocess->process_memory = 0;
+    newprocess->signal_tid = 0;
 
+    /*
     ProcMem *cur_mem = origin_process->process_memory;
     ProcMem *stack_mem = 0;
     ProcMem *exec_mem = 0;
@@ -339,16 +360,30 @@ int process_fork(TrapFrame *trapframe)
     newprocess->sp = (void *)((uint64_t)trapframe->sp_el0 - (uint64_t)origin_process->stack + (uint64_t)newprocess->stack);
     newprocess->exec = exec_mem->addr;
     newprocess->entry = (void *)((uint64_t)trapframe->elr_el1 - (uint64_t)origin_process->exec + (uint64_t)newprocess->exec);
+    */
+
+    mmu_copy_process_mem(newprocess, origin_process);
+    mmu_map_peripheral(newprocess->ttbr0_el0);
+    newprocess->stack = origin_process->stack;
+    newprocess->sp = trapframe->sp_el0;
+    newprocess->exec = origin_process->exec;
+    newprocess->entry = trapframe->elr_el1;
 
     ForkProcess *forkprocess = (ForkProcess *)kmalloc(sizeof(ForkProcess));
     forkprocess->process = newprocess;
     forkprocess->trapframe = (TrapFrame *)kmalloc(sizeof(TrapFrame));
     memcpy(forkprocess->trapframe, trapframe, sizeof(TrapFrame));
 
-    forkprocess->trapframe->x29 = (uint64_t)forkprocess->trapframe->x29 - (uint64_t)origin_process->stack + (uint64_t)newprocess->stack;
-    forkprocess->trapframe->x30 = (uint64_t)forkprocess->trapframe->x30 - (uint64_t)origin_process->exec + (uint64_t)newprocess->exec;
+    //forkprocess->trapframe->x29 = (uint64_t)forkprocess->trapframe->x29 - (uint64_t)origin_process->stack + (uint64_t)newprocess->stack;
+    //forkprocess->trapframe->x30 = (uint64_t)forkprocess->trapframe->x30 - (uint64_t)origin_process->exec + (uint64_t)newprocess->exec;
 
     //newprocess->sp = ;
+
+    newprocess->signal_tid = 0;
+    newprocess->signal_handling = 0;
+    newprocess->signal_handlers = 0;
+    for(int i=0;i<=SIGNAL_NUM;i++)newprocess->signal[i] = 0;
+
     newprocess->next = Process_list;
     Process_list = newprocess;
 
@@ -362,6 +397,7 @@ int process_fork(TrapFrame *trapframe)
     return newprocess->pid;
 
     err:
-    uart_puts("process_fork(): error");
+    //uart_puts("process_fork(): error");
+    kmsg("error");
     return -1;
 }

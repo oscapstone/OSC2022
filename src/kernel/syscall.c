@@ -42,6 +42,9 @@ void syscall_handler(TrapFrame *trapframe)
             signal_kill(trapframe->x0, trapframe->x1);
             break;
         case 10: // sigreturn()
+            trapframe->x0 = (uint64_t)mmap(trapframe->x0, trapframe->x1, trapframe->x2, trapframe->x3);
+            break;
+        case 15: // sigreturn()
             signal_sigreturn();
             break;
     }

@@ -2,6 +2,7 @@
 .extern _stack_end
 .extern _init
 .extern _DTB_ADDRESS
+.extern enable_kernel_mmu
 .global _start
 _start:
     ADR X1, _DTB_ADDRESS
@@ -10,6 +11,9 @@ _start:
     MOV SP, X0
     MOV X29, X0
     bl from_el2_to_el1
+    LDR x0, =_start_rest
+    bl enable_kernel_mmu
+_start_rest:
     ADRP X0, _stack_end
     MOV SP, X0
     MOV X29, X0
