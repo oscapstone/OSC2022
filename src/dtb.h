@@ -36,7 +36,12 @@ typedef struct fdt_prop_header
 } fdt_prop_header_t;
 
 void *DTB_BASE;
-
+void *DTB_END;
 void big2little(uint32_t *num);
+uint32_t read_dtb32(uint32_t **addr);
+void print_height(int height);
+void print_prop_value(char *addr, int len);
+void read_fdt_header(void *header, char *addr);
+void dtb_parse( void (*fun)(char *, char *) );
 
 #endif

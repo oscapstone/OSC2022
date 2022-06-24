@@ -1,9 +1,13 @@
 #include "cpio.h"
 
-void cpio_init(char* name, char *base_addr)
+void cpio_init(char* name, char *addr)
 {
     if (strcmp(name, "linux,initrd-start") == 0) {
-        CPIO_BASE = base_addr;
+        CPIO_BASE = (unsigned long) addr + 0xFFFF000000000000;
+    }
+
+    if (strcmp(name, "linux,initrd-end") == 0) {
+        CPIO_END = (unsigned long) addr + 0xFFFF000000000000;
     }
 }
 
@@ -88,3 +92,7 @@ int ascii2int(char *str, int len)
     return integer;
 }
 
+void copy_prog_from_cpio(char *dst_addr, const char *src_addr, size_t prog_size)
+{
+    memcpy(dst_addr, src_addr, prog_size);
+}

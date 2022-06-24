@@ -43,6 +43,7 @@ typedef struct cpio_file_pointer
 } cpio_fp_t;
 
 char *CPIO_BASE;
+char *CPIO_END;
 
 void cpio_init(char* name, char *base_addr);
 void cpio_cat(char *filename);
@@ -50,5 +51,6 @@ void cpio_ls();
 void cpio_read_file(void **addr, cpio_fp_t *fp);
 int ascii2int(char *str, int len);
 void cpio_get_file_info(char *filename, cpio_fp_t *fp);
+void copy_prog_from_cpio(char *dst_addr, const char *src_addr, size_t prog_size);
 
 #endif

@@ -33,7 +33,7 @@
 char read_buf[READ_BUF_SIZE];
 uint32_t read_buf_idx;
 
-#define WRITE_BUF_SIZE 128
+#define WRITE_BUF_SIZE 256
 char write_buf[WRITE_BUF_SIZE];
 uint32_t write_buf_in;
 uint32_t write_buf_out;
@@ -42,9 +42,19 @@ void uart_init();
 void uart_send(unsigned int c);
 char uart_getc();
 void uart_puts(char *s);
-void uart_hex(unsigned int d);
-void uart_dec(int d);
+void uart_hex(unsigned long int d);
+void uart_dec(long int num);
+void uart_sdec(char* pre, long int num, char* post);
+void uart_shex(char* pre, unsigned long int num, char* post);
 
-extern void cmd_handler();
+
+void uart_irq_handler();
+void receive_handler();
+void transmit_handler();
+void enable_transmit_irq();
+void disable_transmit_irq();
+void disable_recieve_irq();
+size_t uartread(char *buf, size_t size);
+size_t uartwrite (const char *buf, size_t size);
 
 #endif

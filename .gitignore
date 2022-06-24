@@ -53,5 +53,7 @@ dkms.conf
 
 *.sh
 *.img
+*.myimg
+*.objdump
 .vscode/
 workspace.code-workspace
