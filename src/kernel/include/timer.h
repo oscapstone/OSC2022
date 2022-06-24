@@ -7,7 +7,7 @@ void coretimer_el0_enable();
 void coretimer_el0_handler();
 void coretimer_el0_set(uint32_t t); // ms
 
-#define CORE0_TIMER_IRQ_CTRL 0x40000040
+#define CORE0_TIMER_IRQ_CTRL 0x40000040 + 0xffff000000000000
 
 struct TIMER_{
     uint64_t time;

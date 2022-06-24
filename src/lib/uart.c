@@ -140,13 +140,26 @@ size_t uart_gets(char* buf)
 
 void uart_print_hex(uint64_t num)
 {
-    char buf[0x10];
-    u642hex(num, buf, 0x10);
+    char buf[0x15];
+    u642hex(num, buf, 0x15);
+    uart_print(buf);
+}
+
+void uart_print_dec(uint64_t num)
+{
+    char buf[0x20];
+    u642dec(num, buf, 0x20);
     uart_print(buf);
 }
 
 void uart_putshex(uint64_t num)
 {
     uart_print_hex(num);
+    uart_puts("");
+}
+
+void uart_puts_dec(uint64_t num)
+{
+    uart_print_dec(num);
     uart_puts("");
 }

@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <dtb.h>
 #include <uart.h>
+#include <error.h>
 #include <interrupt.h>
 #define BUDDY_SYSTEM_SIZE 16
 #define HEAP_SIZE 32 //pages
@@ -43,7 +44,7 @@ struct struc_buddy_system_element_{
     //struct struc_buddy_system_element_* bk;
     uint64_t frame_id;
     uint8_t frame_size;
-    uint8_t alloc;
+    uint8_t alloc; //ref
 };
 typedef struct struc_buddy_system_element_ struc_buddy_system_element;
 
@@ -59,6 +60,7 @@ struct struc_buddy_system_{
     uint64_t base_address;
     uint64_t totalsize;
     uint8_t flags;
+    uint8_t ref;
     struct struc_buddy_system_element_* freelist[BUDDY_SYSTEM_SIZE+1];
     struct struc_buddy_system_element_* frame_array;
     struct struc_buddy_system_* next;
@@ -116,11 +118,12 @@ struc_usable_memory *new_usable_memory_entry(uint64_t address, uint64_t size)
 
 void kmalloc_init()
 {
-    usable_memory = new_usable_memory_entry(0, 0x3c000000);
+    usable_memory = new_usable_memory_entry(0xffff000000000000, 0x3c000000);
     struc_usable_memory *head = new_usable_memory_entry(0, 0);
     head->next = usable_memory;
     usable_memory = head;
-    kmalloc_memory_reserve(0x0, 0x1000);
+    kmalloc_memory_reserve(0xffff000000000000, 0x1000);
+    kmalloc_memory_reserve(0xffff000000001000, 0x3000); // kernel page table
     kmalloc_memory_reserve((uint64_t)&_kernel_reserved_memory_start, (uint64_t)&_kernel_reserved_memory_end - (uint64_t)&_kernel_reserved_memory_start);
     if((uint64_t)_DTB_ADDRESS != 0xffffffff){
         uint32_t dtbsize = fdt_totalsize(_DTB_ADDRESS);
@@ -128,6 +131,7 @@ void kmalloc_init()
     }
     buddy_system = 0;
     kernel_heap = 0;
+    KMALLOC_INIT = 1;
 }
 
 int kmalloc_memory_reserve(uint64_t address, uint64_t size)
@@ -377,6 +381,7 @@ void *buddy_alloc(uint64_t page_num)
         KBDEBUG(uart_puts("buddy_alloc(): Too large size, direct alloc a memory without manage by buddy system."));
         struc_buddy_system *new_buddy_dalloc = buddy_new(buddy_type_directalloc, new_page_num * (1<<(PAGE_SIZE)));
         buddy_setflag(new_buddy_dalloc, buddy_flag_alloc);
+        new_buddy_dalloc->ref = 1;
         return (void *)(new_buddy_dalloc->base_address);
     }
     struc_buddy_system *cur_buddy = buddy_system;
@@ -414,6 +419,16 @@ void *buddy_alloc(uint64_t page_num)
     return (void *)(new_buddy->base_address + ((frame_id) * (1<<PAGE_SIZE)));
 }
 
+void *buddy_calloc(uint64_t page_num)
+{
+    uint64_t *victim = (uint64_t *)buddy_alloc(page_num);
+    if(victim == 0) return 0;
+    for(uint64_t i=0;i<512*page_num;i++){
+        victim[i] = 0;
+    }
+    return victim;
+}
+
 void buddy_free_unlink(struc_buddy_system *buddy, uint64_t frame_id)
 {
     uint64_t frame_size = buddy->frame_array[frame_id].frame_size;
@@ -430,6 +445,39 @@ void buddy_free_unlink(struc_buddy_system *buddy, uint64_t frame_id)
         }
         cur_ele = cur_ele->fd;
     }
+    return ;
+}
+
+void buddy_ref(void *ptr)
+{
+    kmsg("ref 0x%x", ptr);
+    interrupt_disable();
+    uint64_t addr = (uint64_t)ptr;
+    struc_buddy_system *cur_buddy = buddy_system;
+    while(cur_buddy){
+        if(addr >= cur_buddy->base_address && addr < (cur_buddy->base_address + cur_buddy->totalsize)){
+            break;
+        }
+    }
+    if(cur_buddy == 0)goto ret ;
+
+    if(buddy_readflag(cur_buddy, buddy_flag_directalloc)){
+        //buddy_unsetflag(cur_buddy, buddy_flag_alloc);
+        if(cur_buddy->ref<255){
+            cur_buddy->ref++;
+        }
+        goto ret ;
+    }
+
+    uint64_t frame_id = ((addr - cur_buddy->base_address) / (1<<PAGE_SIZE));
+    kmsg("frame_id: %d", frame_id);
+
+    if(cur_buddy->frame_array[frame_id].alloc<255){
+        cur_buddy->frame_array[frame_id].alloc++;
+    }
+
+    ret:
+    interrupt_enable();
     return ;
 }
 
@@ -452,6 +500,8 @@ void buddy_free(void *ptr)
 
     if(buddy_readflag(cur_buddy, buddy_flag_directalloc)){
         KBDEBUG(uart_print("buddy_free(): This buddy system is direct alloc. Just unset buddy alloc flag."));
+        cur_buddy->ref--;
+        if(cur_buddy->ref) goto ret;
         buddy_unsetflag(cur_buddy, buddy_flag_alloc);
         goto ret ;
     }
@@ -462,10 +512,15 @@ void buddy_free(void *ptr)
 
     if(cur_buddy->frame_array[frame_id].alloc == 0){
         uart_puts("buddy_free(): Buddy Double Free detected. !!!");
-        return ;
+        goto ret;
     }
 
     KBDEBUG(uart_puts("buddy_free(): Trying to merge."));
+
+    cur_buddy->frame_array[frame_id].alloc--;
+    if(cur_buddy->frame_array[frame_id].alloc){
+        goto ret;
+    }
 
     cur_buddy->frame_array[frame_id].alloc = 0;
 
@@ -574,10 +629,12 @@ Heap *heap_new(uint64_t heap_size)
 
 void unlink(Heap_Chunk* chunk)
 {
+    //kmsg("unlink 0x%x", chunk);
     chunk->bk->fd = chunk->fd;
     if(chunk->fd) chunk->fd->bk = chunk->bk;
     chunk->fd = 0;
     chunk->bk = 0;
+    //kmsg("unlink 0x%x done", chunk);
 }
 
 void heap_free(Heap* heap, void *ptr)
@@ -590,6 +647,7 @@ void heap_free(Heap* heap, void *ptr)
 
     KMDEBUG(uart_print("heap_free(): chunk->size=0x"));
     KMDEBUG(uart_putshex((uint64_t)victim->size));
+    //kmsg("chunk->size=0x%x", (uint64_t)victim->size);
 
     if(SIZE(victim)<0x120){
         KMDEBUG(uart_puts("heap_free(): Put the chunk into fastbin."));
@@ -624,14 +682,16 @@ void heap_free(Heap* heap, void *ptr)
         Heap_Chunk *next = next_chunk(victim);
         KMDEBUG(uart_print("heap_free(): next chunk could be merge: 0x"));
         KMDEBUG(uart_putshex((uint64_t)next));
+        //kmsg("next chunk could be merge: 0x%x", next);
         victim->size += next->size;
         next_chunk(next)->prev_size = victim->size;
     }
 
     KMDEBUG(uart_puts("heap_free(): Chain to unsorted_bin."));
+    //kmsg("heap->unsorted_bin.fd = 0x%x", heap->unsorted_bin.fd);
     victim->fd = heap->unsorted_bin.fd;
     victim->bk = &(heap->unsorted_bin);
-    heap->unsorted_bin.fd->bk = victim;
+    if(heap->unsorted_bin.fd) heap->unsorted_bin.fd->bk = victim;
     heap->unsorted_bin.fd = victim;
     debug_print_heap(heap);
 }
@@ -747,11 +807,13 @@ void *kmalloc(size_t size)
     kernel_heap = new_heap;
     void *victim = heap_malloc(new_heap, size);
     interrupt_enable();
+    if(!victim)uart_puts("kmalloc(): Out of Memory.");
     return victim;
 }
 
 void kfree(void *ptr)
 {
+    //kmsg("free: 0x%x", ptr);
     interrupt_disable();
     Heap *cur_heap = kernel_heap;
     while(cur_heap){

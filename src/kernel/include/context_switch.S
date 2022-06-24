@@ -11,8 +11,9 @@ context_switch_to:
     mov x9, sp
     //mrs x10, sp_el0
     //mrs x11, elr_el1
+    mrs x12, ttbr0_el1
     stp x9, x10, [x0, 16 * 6]
-    str x11, [x0, 16 * 7]
+    stp x11, x12, [x0, 16 * 7]
 
     ldp x19, x20, [x1, 16 * 0]
     ldp x21, x22, [x1, 16 * 1]
@@ -21,7 +22,7 @@ context_switch_to:
     ldp x27, x28, [x1, 16 * 4]
     ldp fp, lr, [x1, 16 * 5]
     ldp x9, x10, [x1, 16 * 6]
-    ldr x11, [x1, 16 * 7]
+    ldp x11, x12, [x1, 16 * 7]
     //mov x0, x9
     //bl uart_putshex
     mov sp,  x9
@@ -29,6 +30,11 @@ context_switch_to:
     //msr elr_el1, x11
     msr tpidr_el1, x2
     //bl reboot_now
+    dsb ish
+    msr ttbr0_el1, x12
+    tlbi vmalle1is // invalidate all TLB entries
+    dsb ish // ensure completion of TLB invalidatation
+    isb // clear pipeline
     ret
 
 .global thread_get_current

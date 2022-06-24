@@ -32,7 +32,9 @@
     ldp x1, x2, [sp, 16 * 16]
     msr sp_el0, x0
     msr elr_el1, x1
+    //mov x2, 0
     msr spsr_el1, x2
+    //msr spsr_el1, 0
     ldp x0, x1, [sp ,16 * 0]
     ldp x2, x3, [sp ,16 * 1]
     ldp x4, x5, [sp ,16 * 2]

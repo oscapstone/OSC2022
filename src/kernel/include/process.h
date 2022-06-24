@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <syscall.h>
 #include <signal.h>
+#include <mmu-mr.h>
 
 typedef struct ProcMem_{
     void *addr;
@@ -35,6 +36,8 @@ typedef struct Process_{
     uint8_t signal_handling;
     SignalHandler *signal_handlers;
     ProcMem *process_memory;
+    MemoryRegion *process_memory_region;
+    uint64_t ttbr0_el0;
 } Process;
 
 void process_init();

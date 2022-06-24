@@ -2,7 +2,7 @@
 #ifndef _DEF_MMIO
 #define _DEF_MMIO
 
-#define MMIO_BASE       0x3f000000
+#define MMIO_BASE       0xffff00003f000000
 #define MAILBOX_BASE    MMIO_BASE + 0xb880
 
 #define MAILBOX_READ    MAILBOX_BASE

@@ -8,6 +8,7 @@
 #include <timer.h>
 #include <lock.h>
 #include <signal.h>
+#include <error.h>
 
 extern void context_switch_to(void *, void *, uint64_t);
 
@@ -40,6 +41,7 @@ void run_queue_push(Thread *thread)
     thread->status = ThreadStatus_running;
     //lock_get(run_queue_lock);
     queue_push(run_queue, thread);
+    //kmsg("push thread into runqueue: 0x%x", thread);
     //lock_release(run_queue_lock);
 }
 
@@ -149,15 +151,19 @@ void schedule()
     Thread *new_thread;
     do{
         new_thread = queue_pop(run_queue);
+        //kmsg("find thread to switch to: thread=0x%x", new_thread);
         //queue_pop(run_queue);
-    } while(new_thread->status == ThreadStatus_zombie && new_thread != 0);
+    } while(new_thread && new_thread->status == ThreadStatus_zombie && new_thread != 0);
     if(new_thread){
         //uart_print("Switch to thread 0x");
         //uart_putshex(new_thread->thread_id);
+        //kmsg("Prev Thread: 0x%x (tid=0x%x, status=%d)", cur_thread, cur_thread->thread_id, cur_thread->status);
         if(cur_thread->status == ThreadStatus_running){
             run_queue_push(cur_thread);
         }
+        signal_check();
         context_switch_to(&(cur_thread->saved_reg), &(new_thread->saved_reg), new_thread->thread_id);
+        signal_check();
     }
     interrupt_enable();
 }
@@ -166,8 +172,9 @@ void _kill_zombie(Thread *thread, Thread *pre)
 {
     //uart_print("_kill_zombie(): Free stack 0x");
     //uart_putshex((uint64_t)thread->stack_pointer);
-    uart_print("_kill_zombie(): killing zombie thread 0x");
-    uart_putshex((uint64_t)thread->thread_id);
+    //uart_print("_kill_zombie(): killing zombie thread 0x");
+    //uart_putshex((uint64_t)thread->thread_id);
+    kmsg("killing zombie thread %x", thread->thread_id);
     if(thread->process && thread->process->signal_tid != thread->thread_id){
         if(thread->process->sigstack)buddy_free(thread->process->sigstack);
         if(thread->process->signal_tid){
@@ -205,6 +212,7 @@ void kill_zombies()
 void idle_thread()
 {
     while(1){
+        //kmsg("Check zombies.");
         kill_zombies();
         schedule();
     }
@@ -230,6 +238,7 @@ void wait(Queue *waitqueue)
     Thread* thread = get_thread(thread_get_current());
     //thread_unsetflag(thread, thread_flag_running);
     //thread_setflag(thread, thread_flag_wait);
+    signal_check();
     thread->status = ThreadStatus_wait;
     //interrupt_disable();
     queue_push(waitqueue, thread);
@@ -287,5 +296,4 @@ void sched_preempt()
     //uart_puts("Preempt");
     add_timer(31, sched_preempt, 0);
     schedule();
-    signal_check();
 }

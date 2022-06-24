@@ -14,7 +14,8 @@ KERNEL_OBJS := $(KERNEL_SRCS:%=$(BUILD_DIR)/%.o)
 BOOTLOADER_SRCS := $(shell cd src; find bootloader -name '*.[cS]')
 BOOTLOADER_OBJS := $(BOOTLOADER_SRCS:%=$(BUILD_DIR)/%.o)
 
-CFLAGS := -O0 -I $(SRC_DIR)/include -I $(KERNEL_DIR)/include -fno-stack-protector -ffreestanding -fdata-sections -ffunction-sections -ggdb
+CFLAGS := -mcpu=cortex-a53+nofp+nosimd -mgeneral-regs-only -O0 -I $(SRC_DIR)/include -I $(KERNEL_DIR)/include -fno-stack-protector -ffreestanding -fdata-sections -ffunction-sections -ggdb
+CFLAGS_bootloader := -O0 -I $(SRC_DIR)/bootloader -fno-stack-protector -ffreestanding -fdata-sections -ffunction-sections
 
 .PHONY: clean all rootfs
 
@@ -51,11 +52,11 @@ $(BUILD_DIR)/kernel/%.S.o: $(KERNEL_DIR)/%.S
 
 $(BUILD_DIR)/bootloader/%.c.o: $(BOOTLOADER_DIR)/%.c
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -DBOOTLOADER -c $< -o $@
+	$(CC) $(CFLAGS_bootloader) -DBOOTLOADER -c $< -o $@
 
 $(BUILD_DIR)/bootloader/%.S.o: $(BOOTLOADER_DIR)/%.S
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -DBOOTLOADER -c $< -o $@
+	$(CC) $(CFLAGS_bootloader) -DBOOTLOADER -c $< -o $@
 
 $(BUILD_DIR)/lib/%.c.o: $(LIB_DIR)/%.c
 	mkdir -p $(dir $@)

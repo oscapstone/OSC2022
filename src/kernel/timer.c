@@ -4,6 +4,7 @@
 #include <uart.h>
 #include <kmalloc.h>
 #include <interrupt.h>
+#include <sched.h>
 
 TIMER* timer_queue;
 
@@ -64,7 +65,7 @@ ret:
 
 void timer_queue_pop()
 {
-    if(!timer_queue) return 0;
+    if(!timer_queue) return ;
     interrupt_disable();
     TIMER* timer = timer_queue;
     timer_queue = timer_queue->next;
@@ -82,7 +83,12 @@ TIMER* timer_queue_top()
 void timer_sched()
 {
     TIMER* timer = timer_queue_top();
-    if(!timer) return ;
+    //if(!timer) return ;
+    if(!timer){
+        uart_puts("timer_sched(): no timer to sched");
+        add_timer(31, sched_preempt, 0);
+        return ;
+    }
     uint64_t cntpct_el0;
     asm("mrs %0, cntpct_el0":"=r"(cntpct_el0));
     _coretimer_el0_set(timer->time-cntpct_el0);

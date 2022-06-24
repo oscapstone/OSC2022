@@ -12,6 +12,7 @@
 #include <timer.h>
 #include <sched.h>
 #include <process.h>
+#include <error.h>
 
 #define PM_PASSWORD 0x5a000000
 
@@ -35,6 +36,7 @@ void _init()
     }
     boot();
     thread_start(main_new);
+    //thread_start(kernel_shell);
 }
 
 void reset(int tick) {                 // reboot after watchdog timer expire
@@ -156,29 +158,37 @@ void boot()
     get_board_revision(&board_revision);
     get_ARM_memory_info(&arm_memory_base, &arm_memory_size);
 
-    u322hex(board_revision, buf, 0x10);
-    uart_print("Board Revision: 0x");
-    uart_puts(buf);
+    // u322hex(board_revision, buf, 0x10);
+    // uart_print("Board Revision: 0x");
+    // uart_puts(buf);
 
-    u642hex((unsigned long long)arm_memory_base, buf, 0x10);
-    uart_print("ARM Memory Base: 0x");
-    uart_puts(buf);
+    kmsg("Board Revision: 0x%x", board_revision);
+
+    // u642hex((unsigned long long)arm_memory_base, buf, 0x20);
+    // uart_print("ARM Memory Base: 0x");
+    // uart_puts(buf);
+
+    kmsg("ARM Memory Base: 0x%x", arm_memory_base);
     
-    u322hex(arm_memory_size, buf, 0x10);
-    uart_print("ARM Memory Size: 0x");
-    uart_puts(buf);
+    // u322hex(arm_memory_size, buf, 0x10);
+    // uart_print("ARM Memory Size: 0x");
+    // uart_puts(buf);
 
-    uart_print("DTB Loaded Address: 0x");
-    uart_putshex((uint64_t)_DTB_ADDRESS);
+    kmsg("ARM Memory Size: 0x%x", arm_memory_size);
 
-    void *test_kmalloc_simple1 = kmalloc(1);
-    void *test_kmalloc_simple2 = kmalloc(16);
-    u642hex((uint64_t)test_kmalloc_simple1, buf, 0x10);
-    uart_print("Test Simple Allocator 1: 0x");
-    uart_puts(buf);
-    u642hex((uint64_t)test_kmalloc_simple2, buf, 0x10);
-    uart_print("Test Simple Allocator 2: 0x");
-    uart_puts(buf);
+    // uart_print("DTB Loaded Address: 0x");
+    // uart_putshex((uint64_t)_DTB_ADDRESS);
+
+    kmsg("DTB Loaded Address: 0x%x", (uint64_t)_DTB_ADDRESS);
+
+    // void *test_kmalloc_simple1 = kmalloc(1);
+    // void *test_kmalloc_simple2 = kmalloc(16);
+    // u642hex((uint64_t)test_kmalloc_simple1, buf, 0x20);
+    // uart_print("Test Simple Allocator 1: 0x");
+    // uart_puts(buf);
+    // u642hex((uint64_t)test_kmalloc_simple2, buf, 0x20);
+    // uart_print("Test Simple Allocator 2: 0x");
+    // uart_puts(buf);
 
     exception_vector_table_init();
     coretimer_el0_enable();
@@ -229,7 +239,8 @@ void main_new()
     // //create_thread(process_exec, "test_el0_exception");
     //thread_run(create_thread(process_exec, "test_loop"));
     //thread_run(create_thread(process_exec, "test_syscall"));
-    thread_run(create_thread(process_exec, "syscall.img"));
+    //thread_run(create_thread(process_exec, "syscall.img"));
+    thread_run(create_thread(process_exec, "vm.img"));
     sched_preempt();
     while(1){
         //uart_puts("Kernel thread.");

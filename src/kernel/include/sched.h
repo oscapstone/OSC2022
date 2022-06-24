@@ -20,7 +20,7 @@ typedef struct CPUState_{
     uint64_t sp;
     uint64_t sp_el0;
     uint64_t elr_el1;
-    uint64_t pad;
+    uint64_t ttbr0_el1;
 } CPUState;
 
 typedef enum ThreadStatus_{
