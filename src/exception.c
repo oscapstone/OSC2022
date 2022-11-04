@@ -239,35 +239,35 @@ void Timer_interrupt_handler(){
     );
     // schedule();
     
-    // if(is_timerq_empty()){
-    //     // write_int_uart((int)(time_count/time_freq),0);
-    //     // writes_uart(" seconds After booting\r\n");
-    //     // set_expired_time(0x0fffffff);
-    //     disable_timer_interrupt();
-    //     return;
-    // }
-    // else{
-    //     writes_uart("Current time is: ");
-    //     write_int_uart((int)(time_count/time_freq),1);
-    //     timer* h = get_head_timer();
-    //     h->callback(h->message);
-    //     // writes_uart("DEBUG:");
-    //     // writes_nl_uart(h->message);
-    //     if(h->next==nullptr){
-    //         writes_uart("next timer is not exist.\r\n");
-    //         h = to_next_timer();
-    //         disable_timer_interrupt();
-    //     }
-    //     else{
-    //         h = to_next_timer();
-    //         writes_uart("Found next timer in ");
-    //         write_int_uart(h->value,TRUE);
-    //         unsigned long long time_count=0;
-    //         unsigned long long time_freq=0;
-    //         get_current_time(&time_count,&time_freq);
-    //         set_expired_time(h->value - time_count/time_freq);
-    //         enable_timer_interrupt();
-    //     }
-    // }
+    if(is_timerq_empty()){
+        // write_int_uart((int)(time_count/time_freq),0);
+        // writes_uart(" seconds After booting\r\n");
+        // set_expired_time(0x0fffffff);
+        disable_timer_interrupt();
+        return;
+    }
+    else{
+        writes_uart("Current time is: ");
+        write_int_uart((int)(time_count/time_freq),1);
+        timer* h = get_head_timer();
+        h->callback(h->message);
+        // writes_uart("DEBUG:");
+        // writes_nl_uart(h->message);
+        if(h->next==nullptr){
+            writes_uart("next timer is not exist.\r\n");
+            h = to_next_timer();
+            disable_timer_interrupt();
+        }
+        else{
+            h = to_next_timer();
+            writes_uart("Found next timer in ");
+            write_int_uart(h->value,TRUE);
+            unsigned long long time_count=0;
+            unsigned long long time_freq=0;
+            get_current_time(&time_count,&time_freq);
+            set_expired_time(h->value - time_count/time_freq);
+            enable_timer_interrupt();
+        }
+    }
     
 }

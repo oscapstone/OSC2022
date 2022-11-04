@@ -2,6 +2,12 @@
 #include "stdlib.h"
 #include "exception.h"
 #include "string.h"
+char uart_buf_read[1024];
+char uart_buf_write[1024];
+int uart_read_i_l;
+int uart_read_i_r;
+int uart_write_i_l;
+int uart_write_i_r;
 void init_uart(){
     *AUXENB |=1; // enable mini UART, then mini uart register can be accessed.
     *AUX_MU_CNTL_REG = 0; // Disable transmitter and receiver during configuration.

@@ -46,12 +46,7 @@ void write_int_uart(unsigned int,bool newline);
 #define GPPUDCLK1       ((volatile unsigned int*)(MMIO_BASE+0x0020009C))
 
 #define IRQ_ENABLE1 ((volatile unsigned *)(0x3F00B210))
-char uart_buf_read[1024];
-char uart_buf_write[1024];
-int uart_read_i_l;
-int uart_read_i_r;
-int uart_write_i_l;
-int uart_write_i_r;
+
 void init_uart_buf();
 void uart_buf_read_push(char c);
 void uart_buf_write_push(char c);
