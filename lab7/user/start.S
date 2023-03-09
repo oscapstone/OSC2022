@@ -1,0 +1,2 @@
+start:
+    bl main
