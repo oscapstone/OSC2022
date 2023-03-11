@@ -1,0 +1,14 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-o",
+      "rt",
+      "realpath_test.c"
+    ],
+    "directory": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/x86_test",
+    "file": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/x86_test/realpath_test.c",
+    "output": "/home/marvin/oldfuntoo/marvin/homework/osc2022/lab7/x86_test/rt"
+  }
+]
