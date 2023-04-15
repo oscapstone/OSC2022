@@ -9,6 +9,7 @@
 #include "mailbox.h"
 #include "queue.h"
 #include "task.h"
+#include "mmu.h"
 
 #define uart_puts uart_printf
 
@@ -60,17 +61,28 @@ void exception_entry(unsigned long type, unsigned long esr, unsigned long elr, u
                         break;
                     case 4:
                         irq_disable();
-                        tf->x[0] = set_fork(tf);
+                        tf->x[0] = set_fork(sp_addr);
                         irq_enable();
                         return;
                         break;
                     case 5:
                         UserExit();
                         break;
-                    case 6:
-                        tf->x[0] = mailbox_call(tf->x[1],tf->x[0]);
+                    case 6:{
+                        uint32_t* mbox = malloc(*(uint32_t*)(tf->x[1]));
+                        for(int i=0;i<*(uint32_t*)(tf->x[1]) / 4;i++){
+                            uint32_t tr = *((uint32_t*)(tf->x[1]) + i);
+                            mbox[i] = tr;
+                        }
+                        unsigned char channel = tf->x[0];
+                        mailbox_call(mbox,channel);
+                        for(int i=0;i<*(uint32_t*)(tf->x[1]) / 4;i++){
+                            *((uint32_t*)(tf->x[1]) + i) = mbox[i];
+                        }
+                        free(mbox);
                         return;
                         break;
+                    }
                     case 7:
                         UserKill(tf->x[0]);
                         return;
@@ -83,13 +95,30 @@ void exception_entry(unsigned long type, unsigned long esr, unsigned long elr, u
                         sentSignal(tf->x[0],tf->x[1]);
                         return;
                         break;
+                    case 10:
+                        tf->x[0] = mmap_set(tf->x[0],tf->x[1],tf->x[2],tf->x[3]);
+                        return;
+                        break;
                     case 20:
-                        ret_to_sig_han(sp_addr);
+                        ret_to_sig_han(sp_addr + 0x110);
                         return;
                         break;
                     default:
                         break;
                 }
+            }else if(esr>>26==0b100100 || esr>>26==0b100101){
+                uint64_t far;
+                asm volatile("mrs %[input0],far_el1\n"
+                             : [input0] "=r" (far));
+                // For Translation fault
+                uart_printf("[Translation fault]: 0x%x %x\n", far>>32, far);
+                if(!mmap_check(far)){
+                    // For Segmentation fault
+                    uart_printf("[Segmentation fault]: Kill Process\n");
+                    asm volatile("msr DAIFClr, 0xf\n");
+                    UserExit();
+                }
+                return;
             }
             uart_puts("Synchronous"); 
             break;

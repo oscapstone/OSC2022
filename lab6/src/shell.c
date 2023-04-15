@@ -9,6 +9,8 @@
 #include "getopt.h"
 #include "scheduler.h"
 #include "loadimg.h"
+#include "mailbox.h"
+#include "mmu.h"
 
 struct ARGS{
     char** argv;
@@ -18,14 +20,14 @@ struct ARGS{
 
 extern unsigned char __heap_start, _end_, _begin_;
 extern byte __dtb_addr;
-uint32 cpio_start,cpio_end;
+uint64_t cpio_start,cpio_end;
 char cmd_buffer[1024];
 unsigned int cmd_index = 0;
 unsigned int cmd_flag  = 0;
 
 
 void shell_init(){
-    uint32 *heap = (uint32*)(&__heap_start-8);
+    uint64 *heap = (uint64*)(&__heap_start-8);
     *heap &= 0x00000000;
     uart_init();
     uart_printf("\n\n\nHello From RPI3\n");
@@ -33,7 +35,7 @@ void shell_init(){
     uart_flush();
     core_timer_init();
     init_allocator();
-    uint32 *ramf_start,*ramf_end;
+    uint64 *ramf_start,*ramf_end;
     ramf_start=find_property_value("/chosen\0","linux,initrd-start\0");  //get ramf start addr from dtb
     ramf_end=find_property_value("/chosen\0","linux,initrd-end\0"); //get ramf end addr from dtb
     if(ramf_start != 0){
@@ -43,20 +45,25 @@ void shell_init(){
         uart_printf("Ramf end: 0x%x\n",letobe(*ramf_end));
         cpio_end=letobe(*ramf_end);
     }
-    memory_reserve(0x0,0x1000);  //Spin tables for multicore boot
+    cpio_start |= 0xFFFF000000000000;
+    cpio_end |= 0xFFFF000000000000;
+    memory_reserve(0xffff000000000000,0xffff000000080000);  //Spin tables for multicore boot
+
+    memory_reserve(0xFFFF000000001000,0xFFFF000000003000);  //Spin tables for multicore boot
     
     memory_reserve(cpio_start,cpio_end);  //Initramfs
 
     memory_reserve(&_begin_,&_end_);  //Kernel image in the physical memory and simple allocator
 
-    uint32 *addr = &__dtb_addr;
+    uint64 *addr = &__dtb_addr;
 
     memory_reserve(*addr,*addr + 0x100000); //Device tree
 
-    memory_reserve(0x0,0x80000);  //Kernel stack
+    memory_reserve(0xFFFF000000000000,0xFFFF000000080000);  //Kernel stack
 
     init_thread();
 
+    cow_init();
 }
 
 void reset_flag(){
@@ -269,7 +276,8 @@ void check(char *input){
     }else if(strcmp(cmd->argv[0],"lp")){
         loadimg();
     }else if(strcmp(cmd->argv[0],"test")){
-        Thread(fork_test);
+        get_board_revision();
+        get_arm_memory();
     }else{
         uart_printf("command not found: %s\n",input);
     }

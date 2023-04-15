@@ -1,5 +1,5 @@
 #include "mini_uart.h"
-#include "mmio.h"
+#include "peripheral/mmio.h"
 #include "string.h"
 typedef unsigned int uint32;
 typedef unsigned char byte;
@@ -73,13 +73,6 @@ void get_arm_memory() {
     mailbox[7] = 0x0;                     // end tag
     // tags end
     mailbox_call(mailbox, 8);
-    uart_printf("ARM memory base addr: 0x");
-    char a[11];
-    i16toa(mailbox[5],a,8);
-    uart_printf(a);
-    uart_printf(" size: 0x");
-    char b[11];
-    i16toa(mailbox[6],b,8);
-    uart_printf(b);
-    uart_printf("\n");
+    uart_printf("ARM memory base addr: 0x%x size: 0x%x\n",mailbox[5],mailbox[6]);
+
 }

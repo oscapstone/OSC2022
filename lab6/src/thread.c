@@ -24,10 +24,10 @@ int Thread(void *func(void),...){
     t->signal = 0;
     t->status = starting;
     t->childs = NULL;
+    t->ustack = malloc(0x10000);
     t->registers[0] = func;
-    t->registers[1] = ( (uint64)(t->stack + 0x10000) & 0xfffffff0);
+    t->registers[1] = ( (uint64)(t->ustack + 0x10000) & 0xfffffffffffffff0);
     t->registers[2] = arg;
-    t->registers[4] = user_process;
     struct thread *temp = get_current();
     t->ptid = temp->tid;
     t->malloc_table[0] = NULL;
@@ -52,6 +52,7 @@ int Thread(void *func(void),...){
             break;
         }
     }
+    move_last_mem(t->tid);
     push2run_queue(t);
     return t->tid;
 }
@@ -69,8 +70,10 @@ void set_first_thread(){
     threads[0] = t;
     t->malloc_table[0] = NULL;
     t->next = NULL;
+    t->ustack = malloc(0x10000);
+    delete_last_mem();
     t->registers[0] = idle;
-    t->registers[1] = ( (uint64)(t->stack + 0x10000) & 0xfffffff0);
+    t->registers[1] = ( (uint64)(t->ustack + 0x10000) & 0xfffffffffffffff0);
     for(int i=0;i<32;i++) t->sig_handler[i] = NULL;
     push2run_queue(t);
 }
@@ -100,6 +103,7 @@ void idle(){
     while(1){
         handle_child(0);
         kill_zombies();
+        free_mem_table(threads[0]);
         Thread(uart_read_line);
         schedule();  
     }
@@ -177,7 +181,7 @@ void printf_thread(){
             uart_printf("addr: 0x%x\n",threads[i]);
             uart_printf("status: %d\n",threads[i]->status);
             uart_printf("ptid: %d\n",threads[i]->ptid);
-            uart_printf("stack: 0x%x ~ 0x%x\n",threads[i]->stack,threads[i]->stack+0x10000);
+            uart_printf("stack: 0x%x ~ 0x%x\n",threads[i]->ustack,threads[i]->ustack+0x10000);
         }
     }
 }
@@ -189,18 +193,17 @@ int getpid(){
 
 int kill(pid_t pid){
     free_mem_table(threads[pid]);
-    //free(threads[pid]);
     threads[pid]->status = dead;
     threads[pid] = NULL;
     remove_from_queue(pid);
 }
 
-void move_last_mem(tid_t tid){
+int move_last_mem(tid_t tid){
     struct thread *now = get_current();
     void* addr;
     for(int i=0;i<256;i++){
         if(now->malloc_table[i] == NULL){
-            if(i == 0) return;
+            if(i == 0) return -1;
             addr = now->malloc_table[i-1];
             now->malloc_table[i-1] = NULL;
             break;
@@ -213,7 +216,7 @@ void move_last_mem(tid_t tid){
         if(t->malloc_table[i] == NULL){
             t->malloc_table[i] = addr;
             if(i<255) t->malloc_table[i+1] = NULL;
-            break;
+            return 0;
         }
     }
 }

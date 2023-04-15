@@ -6,7 +6,8 @@
 #include "queue.h"
 #include "scheduler.h"
 #include "task.h"
-extern unsigned int cpio_start;
+#include "mmu.h"
+extern uint64_t cpio_start;
 
 typedef struct cpio_newc_header {  //cpio new ascii struct
 		   char	   c_magic[6];
@@ -26,7 +27,7 @@ typedef struct cpio_newc_header {  //cpio new ascii struct
 }CPIO_H ;
 
 
-void list(uint32 addr){ // proceed ls
+void list(uint64_t addr){ // proceed ls
     CPIO_H *cpio=(CPIO_H*) addr;
     while(strncmp(cpio->c_magic,"070701\0",6)==1){ //c_magic is always "070701"
         int namesize=a16ntoi(cpio->c_namesize, 8);
@@ -52,7 +53,7 @@ void list(uint32 addr){ // proceed ls
     }
 }
 
-uint32 find_file_addr(char *file_name, uint32 addr){
+uint64_t find_file_addr(char *file_name, uint64_t addr){
     CPIO_H *cpio=(CPIO_H*) addr;
     while(strncmp(cpio->c_magic,"070701\0",6)==1){
         int namesize=a16ntoi(cpio->c_namesize, 8);
@@ -79,7 +80,7 @@ uint32 find_file_addr(char *file_name, uint32 addr){
     return NULL;
 }
 
-void* getContent(uint32 addr,int *length){
+void* getContent(uint64_t addr,int *length){
     CPIO_H *cpio=(CPIO_H*) addr;
     int namesize=a16ntoi(cpio->c_namesize, 8);
     int filesize=a16ntoi(cpio->c_filesize, 8);
@@ -88,8 +89,8 @@ void* getContent(uint32 addr,int *length){
     return addr;
 }
 
-void print_content(char *file, uint32 addr){
-    uint32 f_addr=find_file_addr(file,addr);
+void print_content(char *file, uint64_t addr){
+    uint64_t f_addr=find_file_addr(file,addr);
     if(f_addr != NULL){
         int length;
         char *content_addr = getContent(f_addr, &length);
@@ -104,57 +105,29 @@ void print_content(char *file, uint32 addr){
     }
 }
 
-void execute(char *file,char *const argv[]){
-    uint32 f_addr=find_file_addr(file,cpio_start);
+void copy_content(char *file,void **addr, uint64_t *size){
+    uint64_t f_addr=find_file_addr(file,cpio_start);
     if(f_addr != NULL){
         int length;
-        uint32 address = getContent(f_addr, &length);
+        uint64_t address = getContent(f_addr, &length);
         char *content_addr = address;
         if(address%4 != 0){
             address /= 4;
             address *= 4;
             address += 4;
         }
-        void * start = malloc(length + 0x20000);
-        byte *ucode = (uint64)start + 0x10000;
+        void * start = malloc(length);
+        move_last_mem(0);
+        byte *ucode = (uint64)start;
         byte *file = address;
         for(int i=0;i<length;i++){
             ucode[i] = file[i];
         }
-        int tid = Thread(InitUserTaskScheduler);
-        move_last_mem(0);
-        tid = UserThread(ucode,NULL);
-        move_last_mem(0);
-        return;
+        *addr = ucode;
+        *size = length;
     }else{
         uart_printf("Not found file \"%s\"\n",file);
         return;
     }
 }
 
-void exec(char *file,char *const argv[]){
-    uint32 f_addr=find_file_addr(file,cpio_start);
-    if(f_addr != NULL){
-        int length;
-        uint32 address = getContent(f_addr, &length);
-        char *content_addr = address;
-        if(address%4 != 0){
-            address /= 4;
-            address *= 4;
-            address += 4;
-        }
-        void * start = malloc(length + 0x20000);
-        byte *ucode = (uint64)start + 0x10000;
-        byte *file = address;
-        for(int i=0;i<length;i++){
-            ucode[i] = file[i];
-        }
-        move_last_mem(0);
-        struct thread *t = get_current();
-        from_el1_to_el0(ucode, t->stack + 65535);
-        return;
-    }else{
-        uart_printf("Not found file \"%s\"\n",file);
-        return;
-    }
-}
