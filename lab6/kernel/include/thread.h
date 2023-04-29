@@ -1,0 +1,83 @@
+#pragma once
+
+#include "utils.h"
+
+#define STACK_SIZE 4096
+#define USER_STACK_BASE ((uint64_t)0xffffffffb000)
+#define USER_PROGRAM_BASE 0x80000
+#define USER_PROGRAM_SIZE (512 * kb)
+
+#define MAX_PAGE_FRAME_PER_THREAD 1000
+
+#define THREAD_DEAD 1
+#define THREAD_FORK 2
+#define THREAD_READY 4
+
+typedef struct {
+  uint64_t x19;
+  uint64_t x20;
+  uint64_t x21;
+  uint64_t x22;
+  uint64_t x23;
+  uint64_t x24;
+  uint64_t x25;
+  uint64_t x26;
+  uint64_t x27;
+  uint64_t x28;
+  uint64_t fp;
+  uint64_t lr;
+  uint64_t sp;
+} cpu_context;
+
+typedef struct thread_info {
+  cpu_context context;
+  uint32_t pid;
+  uint32_t child_pid;
+  int status;
+  uint64_t trap_frame_addr;
+  uint64_t kernel_stack_base;
+  uint64_t user_stack_base;
+  uint64_t user_program_base;
+  uint32_t user_program_size;
+  uint64_t *pgd;
+  uint32_t page_frame_ids[MAX_PAGE_FRAME_PER_THREAD];
+  uint32_t page_frame_count;
+  struct thread_info *next;
+} thread_info;
+
+typedef struct {
+  thread_info *head, *tail;
+} thread_queue;
+
+typedef struct {
+  uint64_t x[31];
+} trap_frame_t;
+
+thread_queue run_queue;
+uint32_t thread_cnt;
+
+extern thread_info *get_current();
+extern void switch_to(thread_info *, thread_info *);
+
+void foo();
+void thread_test1();
+void thread_test2();
+void thread_test3();
+void thread_test4();
+
+void thread_init();
+thread_info *thread_create(void (*func)());
+void schedule();
+void idle();
+void exit();
+void run_queue_push(thread_info *thread);
+void kill_zombies();
+void exec(const char *program_name, const char **argv);
+void fork(uint64_t sp);
+void handle_fork();
+void create_child(thread_info *parent, thread_info *child);
+void kill (int kill_pid);
+
+uint64_t thread_allocate_page(thread_info *thread, uint64_t size);
+void thread_free_page(thread_info *thread);
+void switch_pgd(uint64_t next_pgd);

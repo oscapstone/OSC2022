@@ -17,36 +17,56 @@ void foo() {
   return;
 }
 
-void thread_test1() {
-  thread_info *idle_t = thread_create(0);
-  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
-  for (int i = 0; i < 5; ++i) {
-    thread_create(foo);
-  }
-  idle();
+void user_test1() {
+  const char *argv[] = {"argv_test", "-o", "arg2", 0};
+  exec("my_test", argv);
 }
 
 void user_test2() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
+  exec("my_test2", argv);
+}
+void user_test3() {
+  const char *argv[] = {"argv_test", "-o", "arg2", 0};
   exec("fork_test", argv);
 }
 
-void thread_test2() {
-  thread_info *idle_t = thread_create(0);
-  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
-  thread_create(user_test2);
-  idle();
-}
-
-void user_test3() {
+void user_test4() {
   const char *argv[] = {"argv_test", "-o", "arg2", 0};
   exec("syscall.img", argv);
 }
 
-void thread_test3() {
+void user_test5() {
+  const char *argv[] = {"argv_test", "-o", "arg2", 0};
+  exec("vm.img", argv);
+}
+
+void thread_test1() { // thread test
+  thread_info *idle_t = thread_create(0);
+  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+  thread_create(user_test1);
+  thread_create(user_test2);
+  idle();
+}
+
+void thread_test2() { // fork test
   thread_info *idle_t = thread_create(0);
   asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
   thread_create(user_test3);
+  idle();
+}
+
+void thread_test3() { //vedio player1 test
+  thread_info *idle_t = thread_create(0);
+  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+  thread_create(user_test4);
+  idle();
+}
+
+void thread_test4() { //vedio player1 test
+  thread_info *idle_t = thread_create(0);
+  asm volatile("msr tpidr_el1, %0\n" ::"r"((uint64_t)idle_t));
+  thread_create(user_test5);
   idle();
 }
 
@@ -63,7 +83,7 @@ thread_info *thread_create(void (*func)()) {
   thread->status = THREAD_READY;
   thread->next = 0;
   thread->kernel_stack_base = (uint64_t)malloc(STACK_SIZE);
-  thread->user_stack_base = 0;
+  thread->user_stack_base = (uint64_t)malloc(STACK_SIZE);
   thread->user_program_base =
       USER_PROGRAM_BASE + thread->pid * USER_PROGRAM_SIZE;
   thread->context.fp = thread->kernel_stack_base + STACK_SIZE;
@@ -148,9 +168,7 @@ void kill_zombies() {
 
 void exec(const char *program_name, const char **argv) {
   thread_info *cur = get_current();
-  if (cur->user_stack_base == 0) {
-    cur->user_stack_base = (uint64_t)malloc(STACK_SIZE);
-  }
+
   uint64_t user_sp = cur->user_stack_base + STACK_SIZE;
   cur->user_program_size = cpio_load_user_program(program_name, cur->user_program_base);
   // printf("cur->pid = %d, cur->user_program_base = %x\n",cur->pid,cur->user_program_base);

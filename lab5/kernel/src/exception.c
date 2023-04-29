@@ -26,6 +26,7 @@ void sync_handler_currentEL_ELx() {
 }
 
 void sync_handler_lowerEL_64(uint64_t sp) {
+  // printf("sync_handler_lowerEL_64 sp : %x\n",sp);
   uint64_t spsr_el1, elr_el1, esr_el1;
   asm volatile("mrs %0, spsr_el1" : "=r"(spsr_el1));
   asm volatile("mrs %0, elr_el1" : "=r"(elr_el1));
@@ -37,6 +38,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
   uint32_t ec = (esr_el1 >> 26) & 0x3f;
   // printf("EC: %x\n", ec);
   if (ec == 0b010101) {  // SVC instruction
+    // printf("pid = %d, ",get_current()->pid);
     uint64_t iss;
     asm volatile("mov %0, x8" : "=r"(iss));
     // printf("syscall number: %d\n", iss);
@@ -46,6 +48,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       uint32_t pid = get_current()->pid;
       trap_frame->x[0] = pid;
     } else if (iss == 1) {  // uartread
+      // printf("[read]\n");
       disable_uart_interrupt();
       enable_interrupt();
       char *str = (char *)(trap_frame->x[0]);
@@ -53,6 +56,7 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       size = uart_gets(str, size);
       trap_frame->x[0] = size;
     } else if (iss == 2) {  // uartwrite
+      // printf("[write]\n");
       char *str = (char *)(trap_frame->x[0]);
       trap_frame->x[0] = uart_write(str,trap_frame->x[1]);
     } else if (iss == 3) {  // exec
@@ -60,16 +64,19 @@ void sync_handler_lowerEL_64(uint64_t sp) {
       const char **argv = (const char **)trap_frame->x[1];
       exec(program_name, argv);
     } else if (iss == 4) {  // fork
+      // printf("[fork]\n");
       fork(sp);
     } else if (iss == 5) {  // exit
       exit();
     } else if (iss == 6) {  // mbox_call
+      // printf("[mbox_call]\n");
       trap_frame->x[0] = mbox_call(trap_frame->x[0],(unsigned int *)trap_frame->x[1]);
     } else if (iss == 7) {  // kill
       kill((int)trap_frame->x[0]);
     } 
   }
 }
+
 
 void irq_handler_currentEL_ELx() {
   // printf("====irq_handler_currentEL_ELx=====\n");
