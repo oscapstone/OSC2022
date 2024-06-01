@@ -3,7 +3,9 @@
 #include "string.h"
 #include "timer.h"
 #include "task.h"
-
+#include "syscall.h"
+#include "sched.h"
+#include "signal.h"
 void enable_interrupt(){
     asm volatile(
         "msr DAIFClr, 0xf"
@@ -17,8 +19,8 @@ void disable_interrupt(){
 }
 
 
-void exception_entry(){
-    busy_wait_writes("EXCEPTION ENTRY",TRUE);
+void exception_entry(trap_frame* tf){
+    // busy_wait_writes("EXCEPTION ENTRY",TRUE);
     // spsr_el1, elr_el1, and esr_el1
     unsigned long long reg_spsr_el1, reg_elr_el1,reg_esr_el1;
     asm volatile(
@@ -29,18 +31,102 @@ void exception_entry(){
           "=r" (reg_elr_el1),
           "=r" (reg_esr_el1)
     );
-    writes_uart("Exception\r\n");
-    writes_uart("spsr_el1: ");
-    writehex_uart(reg_spsr_el1,1);
-    writes_uart("reg_elr_el1: ");
-    writehex_uart(reg_elr_el1,1);
-    writes_uart("reg_esr_el1: ");
-    writehex_uart(reg_esr_el1,1);
+    /*
+    https://developer.arm.com/documentation/ddi0601/2021-12/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-?lang=en
+    EC, bits [31:26], 0b010101: SVC instruction execution in AArch64 state.
+    */
+    unsigned long long ec = reg_esr_el1>>26;
+    if(ec == 0b010101){
+        switch (tf->x8)
+        {
+        case 0: // getpid
+            sys_getpid(tf);
+            break;
+        case 1: // uart_read
+            sys_uart_read(tf,(char*)tf->x0,tf->x1);
+            break;
+        case 2: // uart_write
+            sys_uart_write(tf,(char*)tf->x0,tf->x1);
+            break;
+        case 3: // exec
+            sys_exec(tf,(char*)tf->x0,(char**)tf->x1);
+            break;
+        case 4: // fork
+            sys_fork(tf);
+            break;
+        case 5: // exit
+            sys_exit(tf);
+            break;
+        case 6: // mbox_call
+            sys_mbox_call(tf,(unsigned char)tf->x0,(unsigned int*)tf->x1);
+            break;
+        case 7: // kill
+            sys_kill(tf,(int)tf->x0);
+            break;
+        case 8:
+            signal_register(tf->x0, (void (*)())(tf->x1));
+            break;
+        case 9:
+            signal_kill(tf->x0,tf->x1);
+            break;
+        case 10:
+            sys_ls(tf);
+            break;
+        case 11:
+        {
+            sys_open(tf,(const char*)(tf->x0),tf->x1);
+            break;
+        }
+        case 12:
+            // writes_uart_debug("sys close",TRUE);
+            sys_close(tf,(int)(tf->x0));
+            break;
+        case 13:
+            // writes_uart_debug("sys write",TRUE);
+            sys_write(tf,(int)(tf->x0),(const void*)(tf->x1),(unsigned long)(tf->x2));
+            break;
+        case 14:
+            // writes_uart_debug("sys read",TRUE);
+            sys_read(tf,(int)(tf->x0),(void*)(tf->x1),(unsigned long)(tf->x2));
+            break;
+        case 15:
+            sys_mkdir(tf,(const char*)(tf->x0),0);
+            break;
+        case 16:
+            sys_mount(tf);
+            break;
+        case 17:
+            sys_chdir(tf);
+            break;
+        case 18:
+            sys_lseek64(tf,(int)(tf->x0),(long)(tf->x1),(int)(tf->x2));
+            break;
+        case 19:
+            sys_ioctl(tf);
+            break;
+        case 21:
+            sigreturn();
+            break;
+        default:
+            break;
+        }
+    }
+    else{
+        disable_timer_interrupt();
+        writes_uart("Exception\r\n");
+        writes_uart("spsr_el1: ");
+        writehex_uart(reg_spsr_el1,1);
+        writes_uart("reg_elr_el1: ");
+        writehex_uart(reg_elr_el1,1);
+        writes_uart("reg_esr_el1: ");
+        writehex_uart(reg_esr_el1,1);
+        enable_timer_interrupt();
+    }
     return;
 }
 
 int curr_task_privilege = 100;
-void irq_entry(){
+void irq_entry(trap_frame* tf){
         
     // writes_uart("IRQ entry\r\n");
     // writes_uart("Interrupt Source:");
@@ -92,14 +178,14 @@ void irq_entry(){
         add_task(Timer_interrupt_handler,INTERRUPT_PRIVILEGE_TIMER);
         if(curr_task_privilege<INTERRUPT_PRIVILEGE_TIMER)
                 return;
-        //itr_timer_queue();
         enable_interrupt();
         //writes_nl_uart("DO TIMER INTERRUPT NOW");
         do_task(&curr_task_privilege);
-        if(!is_timerq_empty())
-        {
-            enable_timer_interrupt();
-        }
+        // if(!is_timerq_empty())
+        // {
+        enable_timer_interrupt();
+        schedule();
+        //}
         // Timer_interrupt_handler();
     }
     else{
@@ -110,6 +196,11 @@ void irq_entry(){
     // asm volatile(
     //     "msr DAIFClr, 0xf"
     // );
+    // if the exception|irq is from user mode(el0), because kernel doesn't have content in Thread_struct.
+    if ((tf->spsr_el1 & 0b1111) == 0)
+    {
+        run_signal(tf);
+    }
     
     return;
 }
@@ -141,9 +232,16 @@ void Timer_interrupt_handler(){
         );
     //itr_timer_queue();
     // busy_wait_writes("TIMER INT",TRUE);
+    // for schedule timer interrupt
+    asm volatile(
+        "msr cntp_tval_el0, %0\n\t"
+        ::"r" (time_freq>>5)
+    );
+    // schedule();
+    
     if(is_timerq_empty()){
-        write_int_uart((int)(time_count/time_freq),0);
-        writes_uart(" seconds After booting\r\n");
+        // write_int_uart((int)(time_count/time_freq),0);
+        // writes_uart(" seconds After booting\r\n");
         // set_expired_time(0x0fffffff);
         disable_timer_interrupt();
         return;

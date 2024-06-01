@@ -1,3 +1,5 @@
+#ifndef _UART_HEADER_
+#define _UART_HEADER
 #include "utils.h"
 #define MMIO_BASE   0x3F000000
 
@@ -44,12 +46,7 @@ void write_int_uart(unsigned int,bool newline);
 #define GPPUDCLK1       ((volatile unsigned int*)(MMIO_BASE+0x0020009C))
 
 #define IRQ_ENABLE1 ((volatile unsigned *)(0x3F00B210))
-char uart_buf_read[1024];
-char uart_buf_write[1024];
-int uart_read_i_l;
-int uart_read_i_r;
-int uart_write_i_l;
-int uart_write_i_r;
+
 void init_uart_buf();
 void uart_buf_read_push(char c);
 void uart_buf_write_push(char c);
@@ -59,17 +56,25 @@ char uart_buf_write_pop();
 void busy_wait_writes(char *s,bool newline);
 void busy_wait_writec(char s);
 void busy_wait_writeint(int i,bool newline);
+void busy_wait_writehex(unsigned long long h,bool newline);
 int is_empty_write();
 int is_empty_read();
 
-#ifdef __DEBUG_LOG
-    static inline void writes_uart_debug(char* s, bool newline){
-         while(*s){
-            if(*s=='\n')
-                writec_uart('\r');
-            writec_uart(*s++);
-        }
-        if(newline)
-            writes_uart("\r\n");
-    }
+
+#ifndef _DEBUG_UART_
+#define _DEBUG_UART_
+static inline void writes_uart_debug(char* s, bool newline){
+    //     while(*s){
+    //     if(*s=='\n')
+    //         busy_wait_writec('\r');
+    //     busy_wait_writec(*s++);
+    // }
+    // if(newline)
+    //     busy_wait_writes("\r\n",FALSE);
+}
 #endif
+
+#endif
+
+
+

@@ -4,30 +4,16 @@
 #include "shell.h"
 #include "utils.h"
 #include "dtb.h"
+#include "exception.h"
 #define CPIO_HEADER_MAGIC "070701"
 #define CPIO_FOOTER_MAGIC "TRAILER!!!"
 #define CPIO_ALIGNMENT 4
 uint32_t* cpio_addr;
  //((volatile unsigned int*)(0x8000000))
-typedef struct {
-    char c_magic[6];      /* Magic header '070701'. */
-    char c_ino[8];        /* "i-node" number. */
-    char c_mode[8];       /* Permisions. */
-    char c_uid[8];        /* User ID. */
-    char c_gid[8];        /* Group ID. */
-    char c_nlink[8];      /* Number of hard links. */
-    char c_mtime[8];      /* Modification time. */
-    char c_filesize[8];   /* File size. */
-    char c_devmajor[8];   /* Major dev number. */
-    char c_devminor[8];   /* Minor dev number. */
-    char c_rdevmajor[8];
-    char c_rdevminor[8];
-    char c_namesize[8];   /* Length of filename in bytes. */
-    char c_check[8];      /* Checksum. */
-}cpio_newc_header;
+
 
 /* Transform the string type hex to unsigned long.  */
-static unsigned long parse_hex_str(char *s, unsigned int max_len)
+unsigned long parse_hex_str(char *s, unsigned int max_len)
 {
     unsigned long r = 0;
     unsigned long i;
@@ -90,11 +76,19 @@ void cpio_ls(){
         if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0)
             break;
         writes_n_uart(filename,parse_hex_str(cnh->c_namesize,sizeof(cnh->c_namesize)));
+        writes_uart("[");
+        // c_nlink: file: 1, dir: at least 2, .: 3
+        // https://www.freebsd.org/cgi/man.cgi?query=cpio&sektion=5
+        long c_nlink = parse_hex_str(cnh->c_nlink,sizeof(cnh->c_nlink));
+        if(c_nlink == 1)
+            writes_uart("FILE");
+        else
+            writes_uart("DIR");
+        writes_uart("]");
         writes_uart("\r\n");
         //writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
         //writes_uart("\r\n");
         cnh = next_header;
-        
     }
     
 }
@@ -108,7 +102,7 @@ void cpio_cat(){
     writes_uart("Filename: ");
     char* read_name;
     read_string(&read_name);
-  
+    
     while(1){
         int parse_result = cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header);
         if(parse_result!=0){
@@ -132,28 +126,31 @@ void cpio_cat(){
     }
 }
 
-unsigned long long cpio_get_addr(){
+unsigned long cpio_get_addr(char** filedata,unsigned long* filesize){
     cpio_newc_header* cnh = (cpio_newc_header*)cpio_addr;
     cpio_newc_header* next_header;
     char *filename;
-    char *filedata;
-    unsigned long filesize;
+    // char *filedata;
+    // unsigned long filesize;
     writes_uart("Filename: ");
     char* read_name;
     read_string(&read_name);
     
     while(1){
-        if(cpio_parse_header(cnh,&filename,&filesize,&filedata,&next_header)!=0){
+        if(cpio_parse_header(cnh,&filename,filesize,filedata,&next_header)!=0){
             writes_uart("File not found!\r\n");
+            *filesize=0;
             break;
         }
         if(strncmp(read_name,".",strlen(read_name))==0){
             writes_uart(".: Is a directory\r\n");
+            *filesize=0;
             break;
         }
         else if(strncmp(read_name,filename,strlen(read_name))==0){
             // writes_n_uart(filedata,parse_hex_str(cnh->c_filesize,sizeof(cnh->c_filesize)));
             // writes_uart("\r\n");
+            
             return (unsigned long long)filedata;
             break;
         }
@@ -168,11 +165,11 @@ unsigned long long cpio_get_addr(){
 
 void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop){
     if(strncmp(name,"linux,initrd-start",18)==0){ // start address of initrd
-        writes_uart("Found target: \"");
-        writes_n_uart(name,18);
-        writes_uart("\" at target_cpio_addraddress ");
+        // writes_uart("Found target: \"");
+        // writes_n_uart(name,18);
+        // writes_uart("\" at target_cpio_addraddress ");
         cpio_addr = (unsigned int*)((unsigned long)big2little(*((uint32_t*)(prop+1))));
-        writehex_uart((unsigned long)cpio_addr,TRUE);
+        // writehex_uart((unsigned long)cpio_addr,TRUE);
         return (void*)cpio_addr;
     }
     return nullptr;
@@ -180,11 +177,11 @@ void* initramfs_start_callback(fdt_prop* prop,char * name,uint32_t len_prop){
 void* initramfs_end_callback(fdt_prop* prop,char * name,uint32_t len_prop){
     if(strncmp(name,"linux,initrd-end",16)==0)
     {
-        writes_uart("Found target: \"");
-        writes_n_uart(name,18);
-        writes_uart("\" at address ");
+        // writes_uart("Found target: \"");
+        // writes_n_uart(name,18);
+        // writes_uart("\" at address ");
         void* target_cpio_addr = (void*)((unsigned long)big2little(*((uint32_t*)(prop+1))));
-        writehex_uart((unsigned long)target_cpio_addr,TRUE);
+        // writehex_uart((unsigned long)target_cpio_addr,TRUE);
         return (void*)target_cpio_addr;
     }
     return nullptr;

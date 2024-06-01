@@ -35,4 +35,4 @@ ptty:
 boot:
 	sudo python3 uart_boot.py
 screenb:
-	sudo screen /dev/pts/1 115200
+	sudo screen /dev/pts/4 115200

@@ -59,4 +59,17 @@ void memory_reserve(unsigned long long start, unsigned long long end);
 void init_memory();
 void pop_frame(int idx);
 
+static inline void *my_memset(void *ptr, int val, int len)
+{
+  int  i = len;
+  unsigned char *p = ptr;
+  while(i > 0)
+  {
+    *p = val;
+    p++;
+    i--;
+  }
+  return(ptr);
+}
+
 #endif

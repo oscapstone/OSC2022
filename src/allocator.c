@@ -2,9 +2,7 @@
 #include "stdlib.h"
 #include "mini_uart.h"
 #include "cpio.h"
-#ifndef __DEBUG_LOG
-#define __DEBUG_LOG
-#endif
+
 int chunk_size_arr[] = {
                         // 0x1, //2^0
                         // 0x2, //2^1
@@ -104,10 +102,10 @@ void* get_freeframe_addr(unsigned int size){
     for (i = 0; i <= MAX_CONTIBLOCK_SIZE; i++)
     {
         if(frame_freelist[i]!=nullptr && BLOCK_SIZE*power(2,i)>=size){
-            writes_uart("Require ");
-            write_int_uart(size,FALSE);
-            writes_uart(" ,Min free block size: ");
-            write_int_uart(BLOCK_SIZE *power(2,i),TRUE);
+            // writes_uart("Require ");
+            // write_int_uart(size,FALSE);
+            // writes_uart(" ,Min free block size: ");
+            // write_int_uart(BLOCK_SIZE *power(2,i),TRUE);
             break;
         }
     }
@@ -154,8 +152,8 @@ void* get_freeframe_addr(unsigned int size){
     
     // frame_freelist[i] = frame_freelist[i]->next;
     
-    writes_uart("Got block size: ");
-    write_int_uart(-frame_array[node->_index]->size,TRUE);
+    // writes_uart("Got block size: ");
+    // write_int_uart(-frame_array[node->_index]->size,TRUE);
     unsigned long long freeframe_addr = ALLOCATOR_START + node->_index*BLOCK_SIZE;
     return (void*)freeframe_addr;
     
@@ -406,10 +404,10 @@ void* get_freechunk_addr(int size){
 void* my_malloc(unsigned int size){
     void* malloc_addr = nullptr;
     if(size<=chunk_size_arr[chunk_arr_len-1]){
-        writes_uart("Chunk malloc ");
+        // writes_uart("Chunk malloc ");
 
         int chunk_size = getBestChunkSize(size);
-        write_int_uart(chunk_size,TRUE);
+        // write_int_uart(chunk_size,TRUE);
         malloc_addr = get_freechunk_addr(chunk_size);
         
         // unsigned int chunk_frame_idx = frameAddrToIdx(malloc_addr);
@@ -418,6 +416,10 @@ void* my_malloc(unsigned int size){
     else{
         malloc_addr = get_freeframe_addr(size);
     }
+    if(malloc_addr == nullptr){
+        writes_uart("Memory allocate full.\r\n");
+    }
+    my_memset(malloc_addr,0,size);
     return malloc_addr;
 }
 
